@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.elementPesquisador::-webkit-scrollbar {
+    height: 10px; 
+    width: 0;              /* width of the entire scrollbar */
+  
+  }
+  
+  .elementPesquisador::-webkit-scrollbar-track {
+    background: transparent; 
+    width: 0;            /* color of the tracking area */
+  }
+  
+  .elementPesquisador::-webkit-scrollbar-thumb {
+    background-color: transparent;    /* color of the scroll thumb */
+          /* roundness of the scroll thumb */
+    margin: 3px;/* creates padding around scroll thumb */
+  }
+  
+  .elementBarra::-webkit-scrollbar {
+    height: 8px;  
+    width: 8px; 
+    padding-left: 5px;            /* width of the entire scrollbar */
+  
+  }
+  
+  .elementBarra::-webkit-scrollbar-track {
+    background: transparent;        /* color of the tracking area */
+   
+  }
+  
+  .elementBarra::-webkit-scrollbar-thumb {
+    background-color: #E6E6E6;    /* color of the scroll thumb */
+          /* roundness of the scroll thumb */
+    margin: 3px;/* creates padding around scroll thumb */
+  }

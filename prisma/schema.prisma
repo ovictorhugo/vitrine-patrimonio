@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:root@localhost:5432/fump"
+}
+
+model Alunos {
+  mat_aluno       String? @db.Char(15)
+  nom_aluno       String  @db.VarChar(100)
+  telcel_aluno    String? @db.Char(9)
+  cpf_aluno       String  @db.Char(16) @id
+  datnsc_aluno    DateTime? @db.Date
+  pai_aluno       String? @db.VarChar(60)
+  mae_aluno       String? @db.VarChar(60)
+  cod_curso       String? @db.VarChar(50)
+  ano_sem_ing_aluno String? @db.Char(7)
+  datnsc_pai_aluno DateTime? @db.Date
+  datnsc_mae_aluno DateTime? @db.Date
+  email           String? @db.VarChar(50)
+}
