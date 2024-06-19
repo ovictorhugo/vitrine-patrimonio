@@ -25,7 +25,7 @@ export const ModalProvider = () => {
     <DeleteAcconunt/>
 
     <ImportCsv/>
-    <ItensOciosos/>
+    
     </>
   )
 }

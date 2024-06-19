@@ -16,7 +16,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { CoinVertical, Coins, Envelope, FileCsv, FilePdf, FileXls, Package, Trash, Info, MapPin, User, CursorText, Calendar } from "phosphor-react";
+import { CoinVertical, Coins, Envelope, FileCsv, FilePdf, FileXls, Package, Check, Trash, Info, ArrowUUpLeft, MapPin, User, CursorText, Calendar } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, DollarSign, ChevronLeft } from "lucide-react";
@@ -42,6 +42,7 @@ import {
 import { Badge } from "../ui/badge";
 
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ItensOciosos } from "../modal/itens-ociosos";
 
 const useQuery = () => {
   return new URLSearchParams(useLocation().search);
@@ -96,10 +97,16 @@ interface unique_values {
   set_nom:string
 }
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+
 export function VisaoSala() {
     const { isOpen, type} = useModalDashboard();
     const {user, urlGeral} = useContext(UserContext)
     const {onOpen} = useModal();
+
+    const { onClose, isOpen:isOpenModal, type: typeModal } = useModal();
+    
+    const isModalOpenItensOciosos = (isOpenModal && typeModal === 'itens-ociosos')
 
     const query = useQuery();
   const sala = query.get('sala');
@@ -109,7 +116,7 @@ export function VisaoSala() {
 
     const [total, setTotal] = useState<TotalPatrimonios[]>([]);
 
-    const urlPatrimonioInsert = `${urlGeral}totalPatrimonio?loc_nom=${sala}`;
+    const urlPatrimonioInsert = `${urlGeral}totalPatrimonio?loc_nom=${(sala != null || sala != "" || sala != undefined) && sala}`;
 console.log(urlPatrimonioInsert)
 
     useEffect(() => {
@@ -140,7 +147,7 @@ console.log(urlPatrimonioInsert)
 
     const [patrimonio, setPatrimonio] = useState<Patrimonio[]>([]);
 
-    const urlPatrimonio = `${urlGeral}allPatrimonio?loc_nom=${sala}`;
+    const urlPatrimonio = `${urlGeral}allPatrimonio?loc_nom=${sala !== null ? sala: ''}`;
 
     useEffect(() => {
       const fetchData = async () => {
@@ -176,17 +183,23 @@ console.log(urlPatrimonioInsert)
       });
     };
 
+    const isValidCsvCod = (value:any) => ["OC", "QB", "NE", "SP"].includes(value);
+
     const data = patrimonio.map((item) => ({
       bem_cod: item.bem_cod,
       bem_dgv: item.bem_dgv,
       bem_num_atm: item.bem_num_atm,
       bem_dsc_com: item.bem_dsc_com,
       tre_cod: item.tre_cod,
-      csv_cod: item.csv_cod,
       bem_val: item.bem_val,
-      condicao: item.toggleGroupValue, 
+      csv_cod: isValidCsvCod(item.csv_cod.trim()) ? item.csv_cod : item.toggleGroupValue, // Verificação de csv_cod
 
-    }))
+    }));
+
+    console.log(patrimonio)
+    console.log(data)
+
+    let validData = []
 
     const handleButtonClick = async () => {
       const validValues = ["OC", "QB", "NE", "SP"];
@@ -201,14 +214,14 @@ console.log(urlPatrimonioInsert)
           },
         });
       } else {
-        const validData = patrimonio.filter(item => item.toggleGroupValue === "OC");
+         validData = patrimonio.filter(item => item.toggleGroupValue === "OC");
     
         if (validData.length > 0) {
           onOpen('itens-ociosos');
         } else {
           try {
 
-            let urlPatrimonioInsert = urlGeral + ``
+            let urlPatrimonioInsert = urlGeral + `insertCondicaoBem`
             const response = await fetch(urlPatrimonioInsert, {
               mode: 'cors',
               method: 'POST',
@@ -398,7 +411,7 @@ console.log(urlPatrimonioInsert)
               </Button>
 
               <Button onClick={() => handleButtonClick()}  size="sm" className="ml-auto gap-1">
-              <FileCsv className="h-4 w-4" />
+              <Check className="h-4 w-4" />
                   Salvar alterações
                   
                
@@ -451,7 +464,7 @@ console.log(urlPatrimonioInsert)
                           <TableCell className=" text-sm w-[150px]">
                           <ToggleGroup
                               type="single"
-                              defaultValue={props.csv_cod}
+                              defaultValue={props.csv_cod.trim()}
                          
                               onValueChange={(value) => handleToggleChange(value, index)}
                               variant="outline"
@@ -474,7 +487,39 @@ console.log(urlPatrimonioInsert)
             </CardContent>
                 </Alert>
 
+                <Dialog open={isModalOpenItensOciosos} onOpenChange={onClose}> 
+        <DialogContent className="min-w-[40vw] ">
+        <DialogHeader className="pt-8 px-6 flex flex-col items-center">
+                 <DialogTitle className="text-2xl text-center font-medium">
+               {validData.length ==1 ? (
+                ' Você possui 1 item ocioso, deseja divulgar no Vitrine Patrimônio?'
+               ):(
+                `  Você possui ${validData.length} itens ociosos, deseja divulgar no Vitrine Patrimônio?`
+               )}
+                 </DialogTitle>
+                 <DialogDescription className="text-center text-zinc-500 max-w-[350px]">
+                 Atualize os itens do {typeModal == 'import-csv' ? ('patrimônio'):('patrimônio baixado')} na Vitrine com a planilha .xls gerada no SICPAT
+                 </DialogDescription>
+               </DialogHeader>
+
+               <div className="mb-4">
+               
+               </div>
+
+
+               <DialogFooter>
+                <Button onClick={() => onClose()} variant={'ghost'}><ArrowUUpLeft size={16} className="" />Cancelar</Button>
+                <Button   ><Check size={16} className="" />Atualizar dados</Button>
+
+                </DialogFooter>
+
+                <div>
               
+               </div>
+
+               </DialogContent>
+               
+               </Dialog>
             </main>
         )}
         </>

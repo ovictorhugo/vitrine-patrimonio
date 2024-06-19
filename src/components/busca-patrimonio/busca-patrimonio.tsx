@@ -152,7 +152,7 @@ export function BuscaPatrimonio() {
 
     
     const onClickBuscaPatrimonio = () => {
-      fetchData();
+      fetchData
      if (bemCod && bemDgv) {
       query.set('bem_cod', bemCod);
       query.set('bem_dgv', bemDgv);

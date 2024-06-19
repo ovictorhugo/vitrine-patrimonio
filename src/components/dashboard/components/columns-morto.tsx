@@ -26,7 +26,7 @@ export const columnsMorto: ColumnDef<Patrimonio>[] = [
     header: "Código",
     cell: ({ row }) => {
 
-      return <div>{row.getValue("bem_cod")} - {row.getValue("bem_dgv")}</div>
+      return <div>{row.getValue("bem_cod")} - {row.original.bem_dgv}</div>
     }
   },
   {
