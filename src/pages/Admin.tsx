@@ -19,22 +19,17 @@ export function Admin() {
     const location = useLocation();
 
     useEffect(() => {
-        if(location.pathname == '/admin') {
-            onOpen('general')
-            onClose()
-        } else if (location.pathname == '/admin/gerenciar-usuarios') {
-            onOpen('gerenciar-usuarios')
-            onClose()
-        } else if (location.pathname == '/dashboard') {
+        if(location.pathname == '/dashboard') {
             onOpen('visao-geral-user')
-            onClose()
-        } else if (location.pathname == '/dashboard/atualizar-dados') {
-            onOpen('atualizar-dados')
-            onClose()
-        } else if (location.pathname == '/dashboard/configuracoes') {
-            onOpen('configuracoes')
-            onClose()
+  
+        } else if (location.pathname == '/todos-os-patrimonios') {
+            onOpen('lista-patrimonio')
+        } else if (location.pathname == '/visao-sala') {
+            onOpen('visao-sala')
+        } else if (location.pathname == '/novo-item') {
+            onOpen('novo-item')
         }
+
     }, [location]);
   
 

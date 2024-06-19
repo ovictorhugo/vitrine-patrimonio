@@ -6,6 +6,9 @@ import { VisaoGeralUser } from "../dashboard/visao-geral-user";
 import { AtualizarDados } from "../dashboard/atualizar-dados";
 import { GerenciarUsuarios } from "../dashboard/gerenciar-usuarios";
 import { ConfiguracoesDashboard } from "../dashboard/configuracoes";
+import { ListaPatrimonios } from "../dashboard/lista-patrimonios";
+import { NovoItem } from "../dashboard/novo-item";
+import { VisaoSala } from "../dashboard/visao-sala";
 
 
 
@@ -22,8 +25,13 @@ export const DashboardProvider = () => {
 
   return (
     <>
+    <VisaoGeralUser/>
+    <ListaPatrimonios/>
+    <NovoItem/>
+    <VisaoSala/>
+
    <GeralDashboard/>
-   <VisaoGeralUser/>
+   
    <AtualizarDados/>
    <GerenciarUsuarios/>
    <ConfiguracoesDashboard/>

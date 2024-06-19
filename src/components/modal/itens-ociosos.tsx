@@ -39,10 +39,10 @@ interface Patrimonio {
     pes_nome:string
 }
 
-export function ImportCsv() {
+export function ItensOciosos() {
     const { onClose, isOpen, type: typeModal } = useModal();
     
-    const isModalOpen = (isOpen && typeModal === 'import-csv')|| (isOpen && typeModal === 'import-csv-morto')
+    const isModalOpen = (isOpen && typeModal === 'itens-ociosos')
 
     const {urlGeral} = useContext(UserContext)
     const [fileInfo, setFileInfo] = useState({ name: '', size: 0 });
@@ -195,7 +195,7 @@ export function ImportCsv() {
           urlPatrimonioInsert = `${urlGeral}insertPatrimonioMorto`;
         }
     
-        
+        for (const chunk of chunks) {
           const response = await fetch(urlPatrimonioInsert, {
             mode: 'cors',
             method: 'POST',
@@ -206,18 +206,28 @@ export function ImportCsv() {
               'Access-Control-Max-Age': '3600',
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(chunk),
           });
-
-          if (response.ok) {
-            toast("Dados enviados com sucesso", {
-              description: "Todos os dados foram enviados.",
+    
+          if (!response.ok) {
+            toast("Erro ao enviar os dados ao servidor", {
+              description: `Erro no lote ${chunks.indexOf(chunk) + 1}`,
               action: {
                 label: "Fechar",
                 onClick: () => console.log("Fechar"),
               },
             });
+            return;
           }
+        }
+    
+        toast("Dados enviados com sucesso", {
+          description: "Todos os dados foram enviados.",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
 
         setData([])
         setFileInfo({
@@ -247,7 +257,7 @@ export function ImportCsv() {
         <DialogContent className="min-w-[40vw] ">
         <DialogHeader className="pt-8 px-6 flex flex-col items-center">
                  <DialogTitle className="text-2xl text-center font-medium">
-                 Importar arquivo .xls
+                Você possui itens ociosos, deseja divulgar no Vitrine Patrimônio?
                  </DialogTitle>
                  <DialogDescription className="text-center text-zinc-500 max-w-[350px]">
                  Atualize os itens do {typeModal == 'import-csv' ? ('patrimônio'):('patrimônio baixado')} na Vitrine com a planilha .xls gerada no SICPAT

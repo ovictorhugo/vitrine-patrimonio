@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AddBackground } from "../modal/add-background";
 import { DeleteAcconunt } from "../modal/delete-account";
 import { ImportCsv } from "../modal/import-csv";
+import { ItensOciosos } from "../modal/itens-ociosos";
 
 
 
@@ -22,7 +23,9 @@ export const ModalProvider = () => {
     <>
     <AddBackground/>
     <DeleteAcconunt/>
+
     <ImportCsv/>
+    <ItensOciosos/>
     </>
   )
 }

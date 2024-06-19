@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv'
+export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos'
 
 interface ModalData {
   id?: string,

@@ -24,9 +24,10 @@ import {
     navigationMenuTriggerStyle,
   } from "../../components/ui/navigation-menu"
 
+
   
 import { ChartLine, Gear, GraduationCap, GridFour, ListDashes, SignIn, Textbox, UserPlus } from "phosphor-react";
-import { DotSquare, GitBranch, Grip, LogIn, Moon, Search, Sun } from "lucide-react";
+import { DotSquare, GitBranch, Grip, Laptop, LogIn, Moon, Search, Sun, User } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
 import { UserConfigHeader } from "./user-config-header";
@@ -45,6 +46,7 @@ import { LogoVitrineWhite } from "../svg/LogoVitrineWhite";
 import { LogoVitrine } from "../svg/LogoVitrine";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Input } from "../ui/input";
+import { SymbolEE } from "../svg/SymbolEE";
 
 export function Header() {
   const {loggedIn, user} = useContext(UserContext)
@@ -137,22 +139,49 @@ export function Header() {
               </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
+        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("light")}>
+        <Sun className="h-4 w-4" /> Modo Claro
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
+        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("dark")}>
+        <Moon className="h-4 w-4" />   Modo Escuro
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
+        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("system")}>
+        <Laptop className="h-4 w-4" />  Padrão do sistema
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <Button variant="ghost" size="icon" >
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+      <Button variant="ghost" size="icon" >
                 <Grip className="h-4 w-4" />
                 <span className="sr-only">Menu de ações rápidas</span>
               </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" >
+        <div className="grid gap-3 grid-cols-3">
+        <Link to={'/'}>
+        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
+                      <div className="h-8 mb-4"><SymbolEE/></div>
+                      <div className="flex  text-xs font-medium max-w-[70px] truncate  text-center"> Vitrine Patrimônio</div>
+                      </DropdownMenuItem></Link>
+
+                      <Link to={'/'}>
+        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
+                      <div className="h-8 mb-4"><SymbolEE/></div>
+                      <div className="flex  text-xs font-medium max-w-[70px]  truncate text-center"> ConectEE</div>
+                      </DropdownMenuItem></Link>
+
+                      <Link to={'/'}>
+        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
+                      <div className="h-8 mb-4"><SymbolEE/></div>
+                      <div className="flex  text-xs font-medium max-w-[70px]  truncate text-center"> CEGRADEE</div>
+                      </DropdownMenuItem></Link>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+    
 
 
          

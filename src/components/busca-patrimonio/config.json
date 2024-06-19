@@ -1,0 +1,25 @@
+{
+    "inputStream": {
+      "type": "LiveStream",
+      "constraints": {
+        "width": { "max": 450 },
+        "height": { "max": 300 },
+        "facingMode": "environment",
+        "aspectRatio": { "min": 1, "max": 2 }
+      }
+    },
+    "locator": {
+      "patchSize": "large",
+      "halfSample": false
+    },
+    "numOfWorkers": 4,
+    "frequency": 20,
+    "decoder": {
+      "readers": [
+        "code_128_reader"
+
+      ]
+    },
+    "locate": true
+  }
+  

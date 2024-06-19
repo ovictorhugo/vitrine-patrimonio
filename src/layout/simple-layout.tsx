@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, SearchCheck, X } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -77,22 +77,16 @@ export default function SearchLayout({
             isCollapsed={isCollapsed}
             links={[
               {
-                title: "Páginas inicial",
-                label: "",
-                icon: Home,
-                link: "/",
-              },
-              {
-                title: "Pesquisar",
-                label: "",
-                icon: SearchCheck,
-                link: "/buscar-patrimonio",
-              },
-              {
-                title: "PDashboard",
+                title: "Dashboard",
                 label: "",
                 icon: LayoutDashboard,
                 link: "/dashboard",
+              },
+              {
+                title: "Lista de patrimônios",
+                label: "",
+                icon: Package,
+                link: "/todos-os-patrimonios",
               },
             
             ]}
@@ -105,11 +99,17 @@ export default function SearchLayout({
             isCollapsed={isCollapsed}
             links={[
               {
-                title: "Pós-graduação",
+                title: "Visão da sala",
                 label: "",
-                icon: GraduationCap,
-                link: "/pos-graduacao",
+                icon: ListTodo,
+                link: "/visao-sala",
               },
+              {
+                title: "Novo item",
+                label: "",
+                icon: Plus,
+                link: "/novo-item",
+              }
      
              
             ]}
@@ -145,12 +145,9 @@ export default function SearchLayout({
             {/* Assuming Header is another component */}
             <Header />
           
-            <ScrollArea className="flex flex-1 testetetse">
-       
-           
-           {children}
-        
-            </ScrollArea>
+            <div className="h-full overflow-y-auto flex flex-1">
+            {children}
+            </div>
 
           
           </main>

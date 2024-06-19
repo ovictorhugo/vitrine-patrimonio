@@ -26,7 +26,7 @@ function App() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mode, setMode] = useState('user')
 
-  const [urlGeral, setUrlGeral] = useState('http://192.168.141.69:5000/');
+  const [urlGeral, setUrlGeral] = useState('http://127.0.0.1:5000/');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -71,6 +71,11 @@ function App() {
       <Routes>
         <Route path='/' element={<Home/>}/>
         <Route path='/buscar-patrimonio' element={<Home/>}/>
+        <Route path='/dashboard' element={<Admin/>}/>
+        <Route path='/todos-os-patrimonios' element={<Admin/>}/>
+        <Route path='/novo-item' element={<Admin/>}/>
+        <Route path='/visao-sala' element={<Admin/>}/>
+
 
         <Route path='/doacao/:pagina?' element={<Donation/>}/>
         <Route path='/doacao/pagamento/:pagina?' element={<Donation/>}/>
@@ -92,10 +97,7 @@ function App() {
           element={(user.state == 'admin' || user.state == 'colaborator' || user.state == 'master')  ? <Admin/> : <Navigate to='/' />}
         />
 
-<Route
-          path='/dashboard/:pagina?'
-          element={loggedIn == true  ? <Admin/> : <Navigate to='/' />}
-        />
+
         
       </Routes>
       </DefaultLayout>

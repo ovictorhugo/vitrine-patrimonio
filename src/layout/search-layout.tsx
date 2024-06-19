@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, SearchCheck, X } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, Package, SearchCheck, X } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -89,11 +89,12 @@ export default function SearchLayout({
                 link: "/buscar-patrimonio",
               },
               {
-                title: "PDashboard",
+                title: "Dashboard",
                 label: "",
                 icon: LayoutDashboard,
                 link: "/dashboard",
               },
+              
             
             ]}
           />
@@ -145,12 +146,9 @@ export default function SearchLayout({
             {/* Assuming Header is another component */}
             <Header />
           
-            <ScrollArea className="flex flex-1 testetetse">
-       
-           
-           {children}
-        
-            </ScrollArea>
+            <div className="h-full overflow-y-auto flex flex-1">
+            {children}
+            </div>
 
           
           </main>
