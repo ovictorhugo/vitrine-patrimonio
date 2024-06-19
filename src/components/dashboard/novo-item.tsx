@@ -16,7 +16,7 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User } from "phosphor-react";
+import { Checks, Check, Warning, Wrench  } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign, Upload } from "lucide-react";
@@ -65,49 +65,9 @@ interface TotalPatrimonios {
   total_patrimonio_morto:string
 }
 
+
 import { toast } from "sonner"
 
-type Categoria = 'eletronicos' | 'moveis' | 'ferramentas';
-type Subcategoria = 
-  'monitores' | 'computadores' | 'televisores' | 'impressoras' | 'cameras' | 'smartphones' | 'tablets' |
-  'poltronas' | 'mesas' | 'cadeiras' | 'sofas' | 'estantes' | 'camas' | 'armarios' |
-  'chaves' | 'martelos' | 'furadeiras' | 'serras' | 'alicates' | 'parafusadeiras' | 'lixadeiras';
-
-const categorias: Record<Categoria, string> = {
-  eletronicos: 'Eletrônicos',
-  moveis: 'Móveis',
-  ferramentas: 'Ferramentas',
-};
-
-const subcategorias: Record<Categoria, Subcategoria[]> = {
-  eletronicos: ['monitores', 'computadores', 'televisores', 'impressoras', 'cameras', 'smartphones', 'tablets'],
-  moveis: ['poltronas', 'mesas', 'cadeiras', 'sofas', 'estantes', 'camas', 'armarios'],
-  ferramentas: ['chaves', 'martelos', 'furadeiras', 'serras', 'alicates', 'parafusadeiras', 'lixadeiras'],
-};
-
-const subcategoriaLabels: Record<Subcategoria, string> = {
-  monitores: 'Monitores de Vídeo',
-  computadores: 'Computadores',
-  televisores: 'Televisores',
-  impressoras: 'Impressoras',
-  cameras: 'Câmeras',
-  smartphones: 'Smartphones',
-  tablets: 'Tablets',
-  poltronas: 'Poltronas',
-  mesas: 'Mesas',
-  cadeiras: 'Cadeiras',
-  sofas: 'Sofás',
-  estantes: 'Estantes',
-  camas: 'Camas',
-  armarios: 'Armários',
-  chaves: 'Chaves',
-  martelos: 'Martelos',
-  furadeiras: 'Furadeiras',
-  serras: 'Serras',
-  alicates: 'Alicates',
-  parafusadeiras: 'Parafusadeiras',
-  lixadeiras: 'Lixadeiras',
-};
 
 
 export function NovoItem() {
@@ -198,19 +158,7 @@ console.log(patrimonio)
 
 
 //
-const [selectedCategoria, setSelectedCategoria] = useState<Categoria | 'none'>('none');
-const [selectedSubcategoria, setSelectedSubcategoria] = useState<Subcategoria | 'none'>('none');
 
-const handleCategoriaChange = (event: any) => {
-  const categoria = event
-  setSelectedCategoria(categoria);
-  setSelectedSubcategoria('none');
-};
-
-const handleSubcategoriaChange = (event: any) => {
-  const subcategoria = event
-  setSelectedSubcategoria(subcategoria);
-};
 
     return(
         <>
@@ -236,7 +184,7 @@ const handleSubcategoriaChange = (event: any) => {
                 <Button variant="outline" size="sm">
                   Discard
                 </Button>
-                <Button size="sm">Publicar item</Button>
+                <Button size="sm"><Check size={16} />Publicar item</Button>
               </div>
             </div>
 
@@ -364,74 +312,127 @@ const handleSubcategoriaChange = (event: any) => {
 
                   <Alert>
                   <CardHeader>
-                    <CardTitle>Categoria do item</CardTitle>
+                    <CardTitle>Informações de contato</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-6 sm:grid-cols-3">
-                      <div className="grid gap-3">
-                        <Label htmlFor="category">Categoria</Label>
-                        <Select  value={selectedCategoria} onValueChange={(value) => handleCategoriaChange(value)}>
-                          <SelectTrigger
-                            id="category"
-                            aria-label="Select category"
-                          >
-                            <SelectValue placeholder="Selecionar categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(categorias).map(([key, label]) => (
-                          <SelectItem value={key}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                          </SelectContent>
-                        </Select>
+                  <div className="flex gap-6 w-full">
+                     <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Email corporativo</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          
+                        />
                       </div>
-                      <div className="grid gap-3">
-                        <Label htmlFor="subcategory">
-                          Subcategoria
-                        </Label>
-                        <Select value={selectedSubcategoria} onValueChange={(value) => handleSubcategoriaChange(value)}>
-                          <SelectTrigger
-                            id="subcategory"
-                            aria-label="Select subcategory"
-                          >
-                            <SelectValue placeholder="Select subcategory" />
-                          </SelectTrigger>
-                          <SelectContent>
-                          {selectedCategoria !== 'none' &&
-              subcategorias[selectedCategoria].map((subcategoria) => (
-                <SelectItem  value={subcategoria}>
-                  {subcategoriaLabels[subcategoria]}
-                </SelectItem>
-              ))}
-                          </SelectContent>
-                        </Select>
+
+                     
+
+                     
+                     </div>
+
+                     <div className="flex gap-6 mt-6">
+                     <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Telefone</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                        
+                        />
                       </div>
-                    </div>
-                  </CardContent>
-                  </Alert>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Ramal</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                         
+                        />
+                      </div>
+                     </div>
+                    </CardContent>
+                    </Alert>
                </div>
 
                <div className="  flex flex-col md:gap-8 gap-4"  >
                 <Alert className="p-0">
                 <CardHeader>
-                    <CardTitle>Product Status</CardTitle>
+                    <CardTitle>Condição do bem</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-6">
-                      <div className="grid gap-3">
-                        <Label htmlFor="status">Status</Label>
-                        <Select>
-                          <SelectTrigger id="status" aria-label="Select status">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="published">Active</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="">
+                    <Select className={'w-auto'}>
+                      <SelectTrigger
+                        id="model"
+                        className="items-start [&_[data-description]]:hidden"
+                      >
+                        <SelectValue placeholder="Selecione a condição do bem" className={'whitespace-nowrap'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                      <SelectItem value="quantum">
+                          <div className="flex items-start gap-3 text-muted-foreground ">
+                            <Checks className="size-5" />
+                            <div className="grid gap-0.5 ">
+                              <p>
+                                Em boas condições
+                              </p>
+                              <p className="text-xs" data-description>
+                                Não necessita de qualquer tipo de reparo
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="genesis">
+                          <div className="flex items-start gap-3 text-muted-foreground">
+                            <Check className="size-5" />
+                            <div className="grid gap-0.5">
+                              <p>
+                              Semi novo ou em excelente estado 
+
+                              </p>
+                              <p className="text-xs" data-description>
+                              possui todos acessórios necessários para uso (se tiver ou não )
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="explorer">
+                          <div className="flex items-start gap-3 text-muted-foreground">
+                            <Warning className="size-5" />
+                            <div className="grid gap-0.5">
+                              <p>
+                              Semi novo
+                              </p>
+                              <p className="text-xs" data-description>
+                                mas e necessário algum acessório para o completo uso
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="3">
+                          <div className="flex items-start gap-3 text-muted-foreground">
+                            <Wrench className="size-5" />
+                            <div className="grid gap-0.5">
+                              <p>
+                                Necessita de pequenos reparos
+                              </p>
+                              <p className="text-xs" data-description>
+                                The most powerful model for complex
+                                computations.
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     </div>
                   </CardContent>
                 </Alert>

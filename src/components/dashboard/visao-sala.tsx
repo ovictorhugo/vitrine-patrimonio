@@ -97,6 +97,13 @@ interface unique_values {
   set_nom:string
 }
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../components/ui/accordion"
+import logo_eng from '../../assets/logo_eng.png';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 
 export function VisaoSala() {
@@ -181,6 +188,7 @@ console.log(urlPatrimonioInsert)
         updatedPatrimonio[index].toggleGroupValue = value;
         return updatedPatrimonio;
       });
+      
     };
 
     const isValidCsvCod = (value:any) => ["OC", "QB", "NE", "SP"].includes(value);
@@ -192,7 +200,7 @@ console.log(urlPatrimonioInsert)
       bem_dsc_com: item.bem_dsc_com,
       tre_cod: item.tre_cod,
       bem_val: item.bem_val,
-      csv_cod: isValidCsvCod(item.csv_cod.trim()) ? item.csv_cod : item.toggleGroupValue, // Verificação de csv_cod
+      csv_cod: isValidCsvCod(item.csv_cod.trim()) ? item.csv_cod.trim() : item.toggleGroupValue, // Verificação de csv_cod
 
     }));
 
@@ -263,263 +271,80 @@ console.log(urlPatrimonioInsert)
     return(
         <>
         {isModalOpen && (
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-              <div className="  gap-4">
-            <div className="flex items-center gap-4">
-           <Link to={'/'}>
-           <Button variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar</span>
-              </Button>
-              </Link>
-              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                {sala}
-              </h1>
-            
-                <Badge variant="outline" className="ml-auto sm:ml-0">
-                
-              </Badge>
-            
-              <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                <Button variant="outline" size="sm">
-                  Discard
-                </Button>
-                <Button size="sm">Publicar item</Button>
+            <main className="flex flex-1 flex-col p-8 bg-white">
+             <div className="h-32 border w-full border-black flex justify-between">
+              <div className="border-r border-black h-full w-32 flex items-center justify-center"> <img src={logo_eng} alt="" className="h-20" /></div>
+              <div className="py-1 w-full flex flex-col flex-1 items-center justify-center">
+                <p className="font-bold">UNIVERSIDADE FEDERAL DE MINAS GERAIS</p>
+                <p className="font-bold">SICTPAT - Sistema de Controle Patrimonial</p>
+                <p className="font-bold">153280 - ESCOLA DE ENGENHARIA</p>
+                <p className="font-bold">Relação de Bens para Inventário do Exercício de </p>
               </div>
-            </div>
-
-            </div>
-
-              {total.map((props) => {
-                  return(
-                    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                    <Alert className="p-0 md:col-span-3"  >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Informações
-                    </CardTitle>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                 {props.unique_values.map((item) => {
-                  return(
-                    <CardContent className="flex gap-6">
-                    <div>
-                    <p className="text-xs flex gap-1 mb-2 items-center">
-                        <MapPin size={12}/> Órgão: {item.org_cod} - {item.org_nom}
-                       </p>
-   
-                       <p className="text-xs flex gap-1 mb-2 items-center">
-                        <MapPin size={12}/> Local: {item.loc_cod} - {item.loc_nom}
-                       </p>
-                    </div>
-                    <div>
-                    <p className="text-xs flex gap-1 mb-2 items-center">
-                        <MapPin size={12}/> Setor: {item.set_cod} - {item.set_nom}
-                       </p>
-   
-                       <p className="text-xs flex gap-1 mb-2 items-center">
-                        <User size={12}/> Responsável: {item.pes_cod} - {item.pes_nome}
-                       </p>
-                    </div>
-                     </CardContent>
-                  )
-                 })}
-                  </Alert>
-
-                  <Alert className="p-0">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total de patrimônios
-                    </CardTitle>
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{props.total_patrimonio}</div>
-                    <p className="text-xs text-muted-foreground">
-                      bens registrados
-                    </p>
-                  </CardContent>
-                  </Alert>
-
-                  <Alert className="p-0">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Dados da assinatura
-                    </CardTitle>
-                    <CursorText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent className="flex gap-6">
-                  <div>
-                  <p className="text-xs flex gap-1 mb-2 items-center">
-                        <Calendar size={12}/> Verificado em:
-                       </p>
-   
-                       <p className="text-xs flex gap-1 mb-2 items-center">
-                        <MapPin size={12}/> Nome:
-                       </p>
-                 
-                  </div>
-
-                  </CardContent>
-                  </Alert>
-
-                  <Alert className="p-0">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Legendas
-                    </CardTitle>
-                    <CursorText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent className="flex gap-6">
-                  <div>
-                  <p className="text-xs flex gap-1 mb-2 items-center">OC - Ocioso </p>
-                  <p className="text-xs flex gap-1 mb-2 items-center">QB - Quebrado </p>
-                 
-                  </div>
-                  <div>
-    
-                  <p className="text-xs flex gap-1 mb-2 items-center">NE - Não encontrado </p>
-                  <p className="text-xs flex gap-1 mb-2 items-center">SP - Sem Plaqueta </p>
-                  </div>
-                  </CardContent>
-                  </Alert>
-                    </div>
-                  )
-                })}
-
-              
-                <Alert  className=" p-0 mb-4 md:mb-8" x-chunk="dashboard-01-chunk-4 " >
-                <CardHeader className="flex flex-row items-center">
-              <div className="grid gap-2">
-                <CardTitle>Relação de bens para inventário</CardTitle>
-                <CardDescription>
-                  Exercício de 
-                </CardDescription>
-              </div>
-             <div className="ml-auto flex gap-3">
-             <Button onClick={() => onOpen('import-csv')}  size="sm" variant={'ghost'} className="ml-auto gap-1">
-              <FilePdf className="h-4 w-4" />
-                  Baixar arquivo .pdf
-                  
-               
-              </Button>
-              <Button onClick={() => onOpen('import-csv')}  size="sm" variant={'ghost'}  className="ml-auto gap-1">
-              <FileCsv className="h-4 w-4" />
-                  Baixar arquivo .csv
-                  
-               
-              </Button>
-
-              <Button onClick={() => handleButtonClick()}  size="sm" className="ml-auto gap-1">
-              <Check className="h-4 w-4" />
-                  Salvar alterações
-                  
-               
-              </Button>
+              <div className="border-l border-black h-full w-32 flex items-center justify-center"> </div>
              </div>
-            </CardHeader>
-            <CardContent>
-           <ScrollArea>
-           <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[150px] whitespace-nowrap">N° patrimônio</TableHead>
-                          <TableHead className="w-[150px] whitespace-nowrap">Número ATM</TableHead>
-                          <TableHead className="w-full flex-1">Descrição do item</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">TR</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">Conservação</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">Valor bem</TableHead>
-                          <TableHead className="whitespace-nowrap">Condição do bem</TableHead>
-                        </TableRow>
-                      </TableHeader>
 
-                      <TableBody>
-                {patrimonio.map((props, index) => {
-                  return(
-                    <TableRow>
-                      <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                            {props.bem_cod}-{props.bem_dgv}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                            {props.bem_num_atm || ''}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-full flex-1">
-                            {props.bem_dsc_com}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                            {props.tre_cod}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                          {props.csv_cod.trim() == "BM" ? 'Bom': props.csv_cod.trim() == 'AE' ? 'Anti-Econômico': props.csv_cod.trim() == 'IR' ? 'Irrecuperável': props.csv_cod.trim() == 'OC' ? 'Ocioso': props.csv_cod.trim() == 'BX' ? 'Baixado': props.csv_cod.trim() == 'RE' ? 'Recuperável': ''}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                          {props.bem_val.trim() === '' ? '0.00' : parseFloat(props.bem_val).toFixed(2)}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px]">
-                          <ToggleGroup
-                              type="single"
-                              defaultValue={props.csv_cod.trim()}
-                         
-                              onValueChange={(value) => handleToggleChange(value, index)}
-                              variant="outline"
-                            >
-                               <ToggleGroupItem value="OC">OC</ToggleGroupItem>
-                              <ToggleGroupItem value="QB">QB</ToggleGroupItem>
-                              <ToggleGroupItem value="NE">NE</ToggleGroupItem>
-                              <ToggleGroupItem  value="SP">SP</ToggleGroupItem>
-                             
-                            </ToggleGroup>
-                          </TableCell>
-                    </TableRow>
-                  )
+            <div className="flex h-32 items-end w-full gap-4">
+            {total.map((props, index) => {
+            return (
+              <div key={index} className="w-full flex flex-1">
+                {props.unique_values.map((item, subIndex) => {
+                  return (
+                    <div key={subIndex} className="flex flex-col gap-1 p-2 w-full flex-1">
+                      <p className="text-sm"><strong>Órgão:</strong> {item.org_cod} - {item.org_nom}</p>
+                      <p  className="text-sm"><strong>Setor:</strong> {item.set_cod} - {item.set_nom}</p>
+                      <p  className="text-sm"><strong>Local:</strong> {item.loc_cod} - {item.loc_nom}</p>
+                      <p  className="text-sm"><strong>Pessoa:</strong> {item.pes_cod} - {item.pes_nome}</p>
+                    </div>
+                  );
                 })}
-              </TableBody>
-              </Table>
-           </ScrollArea>
+              </div>
+            );
+          })}
 
-              
-            </CardContent>
-                </Alert>
+          <div className="border  border-black p-2 ">
+          <p className="text-sm"><strong>Verificado em:</strong> </p>
+          <p className="text-sm"><strong>Nome:</strong> </p>
+          <p className="text-sm"><strong>Assinatura:</strong> </p>
+          </div>
 
-                <Dialog open={isModalOpenItensOciosos} onOpenChange={onClose}> 
-        <DialogContent className="min-w-[40vw] ">
-        <DialogHeader className="pt-8 px-6 flex flex-col items-center">
-                 <DialogTitle className="text-2xl text-center font-medium">
-               {validData.length ==1 ? (
-                ' Você possui 1 item ocioso, deseja divulgar no Vitrine Patrimônio?'
-               ):(
-                `  Você possui ${validData.length} itens ociosos, deseja divulgar no Vitrine Patrimônio?`
-               )}
-                 </DialogTitle>
-                 <DialogDescription className="text-center text-zinc-500 max-w-[350px]">
-                 Atualize os itens do {typeModal == 'import-csv' ? ('patrimônio'):('patrimônio baixado')} na Vitrine com a planilha .xls gerada no SICPAT
-                 </DialogDescription>
-               </DialogHeader>
+          <div  className="flex flex-col  px-2">
+          <p className="text-xs">Legenda:</p>
+                      <p className="text-xs">OC - Ocioso</p>
+                      <p  className="text-xs"> QB - Quebrado</p>
+                      <p  className="text-xs"> NE - Não encontrado</p>
+                      <p  className="text-xs">SP - Sem plaqueta</p>
+                    </div>
+            </div>
 
-               <div className="mb-4">
-               
-               </div>
+            <div className="w-full">
+            <table className="w-full mt-2">
+            <tr className="border border-black px-2">
+              <th className="w-fit text-xs">N° Patrim.</th>
+              <th className="text-xs">Número ATM</th>
+              <th className="w-full flex flex-1 text-xs">Descrição do Item</th>
+              <th className="text-xs">TR</th>
+              <th className="text-xs">Conservação</th>
+              <th className="text-xs">Valor do bem</th>
+              <th className="text-xs">OC</th>
+              <th className="text-xs">QB</th>
+              <th className="text-xs">NE</th>
+              <th className="text-xs">SP</th>
+            </tr>
+           {patrimonio.map((props) => {
+            return(
+              <tr>
+              <td className="text-xs">{props.bem_cod}-{props.bem_dgv}</td>
+              <td className="text-xs">{props.bem_num_atm}</td>
+              <td className="text-xs">{props.bem_dsc_com}</td> 
+              <td className="text-xs">{props.tre_cod}</td>
+              <td className="text-xs">{props.csv_cod.trim() == "BM" ? 'Bom': props.csv_cod.trim() == 'AE' ? 'Anti-Econômico': props.csv_cod.trim() == 'IR' ? 'Irrecuperável': props.csv_cod.trim() == 'OC' ? 'Ocioso': props.csv_cod.trim() == 'BX' ? 'Baixado': props.csv_cod.trim() == 'RE' ? 'Recuperável': ''}</td>
+            </tr>
+            )
+           })}
+           
+          </table>
+            </div>
 
-
-               <DialogFooter>
-                <Button onClick={() => onClose()} variant={'ghost'}><ArrowUUpLeft size={16} className="" />Cancelar</Button>
-                <Button   ><Check size={16} className="" />Atualizar dados</Button>
-
-                </DialogFooter>
-
-                <div>
-              
-               </div>
-
-               </DialogContent>
-               
-               </Dialog>
             </main>
         )}
         </>

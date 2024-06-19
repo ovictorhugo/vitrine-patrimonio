@@ -60,6 +60,7 @@ interface Patrimonio {
 }
 
 import { useLocation,useNavigate } from 'react-router-dom';
+import { PatrimonioItem } from "./patrimonio-item.js";
 
 const useQuery = () => {
   return new URLSearchParams(useLocation().search);
@@ -116,7 +117,7 @@ export function BuscaPatrimonio() {
        bemCod = parseInt(input.split('-')[0], 10).toString();
        bemDgv = input.split('-')[1];
       let urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bemCod}&bem_dgv=${bemDgv}`;
-
+          console.log(urlPatrimonio)
       const fetchData = async () => {
         try {
          
@@ -152,7 +153,7 @@ export function BuscaPatrimonio() {
 
     
     const onClickBuscaPatrimonio = () => {
-      fetchData
+      fetchData()
      if (bemCod && bemDgv) {
       query.set('bem_cod', bemCod);
       query.set('bem_dgv', bemDgv);
@@ -178,12 +179,7 @@ export function BuscaPatrimonio() {
   }
     }, [result]);
 
-    useEffect(() => {
-      if (bem_dgv?.length !== 0 && bem_cod?.length !== 0) {
-        setInput(`${bem_cod}-${bem_dgv}`);
-        onClickBuscaPatrimonio();
-      }
-    }, [bem_cod, bem_dgv]);
+ 
 
     const qualisColor = {
       'BM': 'bg-green-500', // exemplo de classe de cor para "BM"
@@ -212,7 +208,7 @@ export function BuscaPatrimonio() {
 <div className="h-full  justify-center  items-center w-full flex flex-col   ">
 
 <div className="bg-cover h-full bg-no-repeat px-8 bg-right w-full flex gap-3 items-center" style={{ backgroundImage: `url(${bg_vitrine})` }} >
-<div className=" w-full  mx-auto flex flex-col  gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
+<div className=" w-full  mx-auto flex flex-col flex-1 gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
 <Link to={''}  className="inline-flex w-fit items-center rounded-lg  bg-gray-200 dark:bg-neutral-800  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12}/><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba como utilizar a plataforma<ArrowRight size={12}/></Link>
 <h1 className="z-[2] text-left max-w-[600px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]  md:block mb-4 ">
              
@@ -257,49 +253,41 @@ export function BuscaPatrimonio() {
             </Alert>
 </div>
 
-{patrimonio.map((props) => {
-  return(
-    <div className="flex w-full gap-3 flex-1 flex-col">
-    <div className="w-[350px] p-4 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800  flex gap-3 items-center">
-    <img src={logo_eng} alt="" className="h-20" />
-    <div>
-   
-    </div>
-    </div>
+{patrimonio.map((props) => (
+  <div className="w-[350px] flex ">
+    <PatrimonioItem
+    bem_cod={props.bem_cod}
+    bem_dgv={props.bem_dgv}
+    bem_num_atm={props.bem_num_atm}
+    csv_cod={props.csv_cod}
+    bem_serie={props.bem_serie}
+    bem_sta={props.bem_sta}
+    bem_val={props.bem_val}
+    tre_cod={props.tre_cod}
+    bem_dsc_com={props.bem_dsc_com}
+    uge_cod={props.uge_cod}
+    uge_nom={props.uge_nom}
+    org_cod={props.org_cod}
+    uge_siaf={props.uge_siaf}
+    org_nom={props.org_nom}
+    set_cod={props.set_cod}
+    set_nom={props.set_nom}
+    loc_cod={props.loc_cod}
+    loc_nom={props.loc_nom}
+    ite_mar={props.ite_mar}
+    ite_mod={props.ite_mod}
+    tgr_cod={props.tgr_cod}
+    grp_cod={props.grp_cod}
+    ele_cod={props.ele_cod}
+    sbe_cod={props.sbe_cod}
+    mat_cod={props.mat_cod}
+    mat_nom={props.mat_nom}
+    pes_cod={props.pes_cod}
+    pes_nome={props.pes_nome}
+  />
+  </div>
+))}
 
-    <div className=" flex flex-1">
-               
-               <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border min-h-[250px]  border-neutral-200 border-r-0 ${qualisColor[props.csv_cod.trim() as keyof typeof qualisColor]} min-h-full relative `}></div>
-                
-            <Alert className="flex flex-col flex-1 gap-4 rounded-l-none p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {props.bem_cod}-{props.bem_dgv}
-              </CardTitle>
-              <Barcode className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex flex-col justify-between h-full">
-              <div>
-              <div className="text-2xl font-bold">{props.mat_nom}</div>
-              <p className="text-xs text-muted-foreground">
-                {props.bem_dsc_com} {props.ite_mar !== "" && (`| ${props.ite_mar}`)}
-              </p>
-              </div>
-
-              <div className="flex mt-8 flex-wrap gap-4">
-                <div className="flex gap-2 items-center text-xs font-medium"><User size={12}/>{props.pes_nome}</div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase"><div className={`w-4 h-4 rounded-md ${qualisColor[props.csv_cod.trim() as keyof typeof qualisColor]}`}></div>  {props.csv_cod.trim() == "BM" ? 'Bom': props.csv_cod.trim() == 'AE' ? 'Anti-Econômico': props.csv_cod.trim() == 'IR' ? 'Irrecuperável': props.csv_cod.trim() == 'OC' ? 'Ocioso': props.csv_cod.trim() == 'BX' ? 'Baixado': props.csv_cod.trim() == 'RE' ? 'Recuperável': ''}</div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">{props.bem_sta.trim() == "NO" ? (<Check size={12}/>):(<X size={12}/>)}{props.bem_sta.trim() == "NO" ? ('Normal'):('Não encontrado no local de guarda')}</div>
-                <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12}/>{props.loc_nom}</div>
-              </div>
-
-              
-            </CardContent>
-            </Alert>
-            </div>
-</div>
-  )
-})}
 
 
 </div>

@@ -13,10 +13,10 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
   } from "../../components/ui/breadcrumb"
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User } from "phosphor-react";
+import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, DollarSign } from "lucide-react";
@@ -60,6 +60,10 @@ interface TotalPatrimonios {
   total_patrimonio_morto:string
 }
 
+import { toast } from "sonner"
+import { Input } from "../ui/input";
+import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
+
 export function VisaoGeralUser() {
     const { isOpen, type} = useModalDashboard();
     const {user, urlGeral} = useContext(UserContext)
@@ -97,6 +101,54 @@ export function VisaoGeralUser() {
   
      
     }, [urlPatrimonioInsert]);
+
+    const [input, setInput] = useState("");
+    const [patrimonio, setPatrimonio] = useState<Patrimonio[]>([])
+
+    let urlPatrimonio = `${urlGeral}searchByBemNumAtm?bem_num_atm=${input}`;
+
+      const fetchData = async () => {
+        try {
+         
+          const response = await fetch( urlPatrimonio, {
+            mode: "cors",
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Max-Age": "3600",
+              "Content-Type": "text/plain",
+            },
+          });
+          const data = await response.json();
+          if (data) {
+            setPatrimonio(data);
+            setInput('')
+         
+          } else {
+            toast("Erro: Nenhum patrimônio encontrado", {
+              description: "Revise o número",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Fechar"),
+              },
+            });
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      };
+
+      const onClickBuscaPatrimonio = () => {
+        fetchData()
+ 
+      }
+
+      const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+          onClickBuscaPatrimonio();
+        }
+      }, [onClickBuscaPatrimonio]);
 
 
     return(
@@ -173,14 +225,14 @@ export function VisaoGeralUser() {
                 <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
                 <CardHeader className="flex flex-row items-center">
               <div className="grid gap-2">
-                <CardTitle>Transactions</CardTitle>
+              <CardTitle>Administradores</CardTitle>
                 <CardDescription>
                   Recent transactions from your store.
                 </CardDescription>
               </div>
-              <Button onClick={() => onOpen('import-csv')}  size="sm" className="ml-auto gap-1">
-              <FileXls className="h-4 w-4" />
-                  Importar arquivo .xls
+              <Button   size="sm" className="ml-auto gap-1">
+              <Plus className="h-4 w-4" />
+                  Adicionar administrador
                   
                
               </Button>
@@ -193,15 +245,65 @@ export function VisaoGeralUser() {
                 <Alert   x-chunk="dashboard-01-chunk-5">
                 <CardHeader className="flex flex-row items-center">
               <div className="grid gap-2">
-                <CardTitle>Administradores</CardTitle>
+                <CardTitle>Busca por código ATM</CardTitle>
                 <CardDescription>
-                  Recent transactions from your store.
+                Digite o código ATM para realizar a consulta patrimonial
+
                 </CardDescription>
               </div>
              
             </CardHeader>
             <CardContent>
+            <Alert  className="h-14 p-2 max-w-[500px] flex items-center justify-between">
+            <div className="flex items-center gap-2 w-full flex-1">
+            <MagnifyingGlass size={16} className=" whitespace-nowrap w-10" />
+            <Input placeholder="Digite o código ATM do patrimônio"  onKeyDown={handleKeyDown} onChange={(e) => setInput(e.target.value)} value={input}  type="text" className="border-0 w-full flex flex-1 "/>
+                </div>
+                <div className="w-fit gap-2 flex">
+                
+                <Button  size={'icon'} onClick={() =>  onClickBuscaPatrimonio()}>
+       <Funnel size={16} className="" /> 
+       
+        </Button>
+            </div>
+            </Alert>
 
+            <div>
+            {patrimonio.map((props) => (
+  <div className="mt-3 ">
+    <PatrimonioItem
+    bem_cod={props.bem_cod}
+    bem_dgv={props.bem_dgv}
+    bem_num_atm={props.bem_num_atm}
+    csv_cod={props.csv_cod}
+    bem_serie={props.bem_serie}
+    bem_sta={props.bem_sta}
+    bem_val={props.bem_val}
+    tre_cod={props.tre_cod}
+    bem_dsc_com={props.bem_dsc_com}
+    uge_cod={props.uge_cod}
+    uge_nom={props.uge_nom}
+    org_cod={props.org_cod}
+    uge_siaf={props.uge_siaf}
+    org_nom={props.org_nom}
+    set_cod={props.set_cod}
+    set_nom={props.set_nom}
+    loc_cod={props.loc_cod}
+    loc_nom={props.loc_nom}
+    ite_mar={props.ite_mar}
+    ite_mod={props.ite_mod}
+    tgr_cod={props.tgr_cod}
+    grp_cod={props.grp_cod}
+    ele_cod={props.ele_cod}
+    sbe_cod={props.sbe_cod}
+    mat_cod={props.mat_cod}
+    mat_nom={props.mat_nom}
+    pes_cod={props.pes_cod}
+    pes_nome={props.pes_nome}
+  />
+  </div>
+))}
+            </div>
             </CardContent>
                 </Alert>
 
