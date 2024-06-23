@@ -63,6 +63,7 @@ interface TotalPatrimonios {
 import { toast } from "sonner"
 import { Input } from "../ui/input";
 import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 export function VisaoGeralUser() {
     const { isOpen, type} = useModalDashboard();
@@ -221,21 +222,35 @@ export function VisaoGeralUser() {
                   )
                 })}
 
-              <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                 <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
-                <CardHeader className="flex flex-row items-center">
-              <div className="grid gap-2">
-              <CardTitle>Administradores</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between">
+              <div className="grid gap-2 ">
+              <CardTitle>Condição dos bens</CardTitle>
                 <CardDescription>
-                  Recent transactions from your store.
+                  Exercício de 
                 </CardDescription>
               </div>
-              <Button   size="sm" className="ml-auto gap-1">
-              <Plus className="h-4 w-4" />
-                  Adicionar administrador
+             <div className="flex gap-3">
+             <Select>
+  <SelectTrigger defaultValue={'OC'} className="w-[180px]">
+    <SelectValue placeholder="Theme" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="OC">OC</SelectItem>
+    <SelectItem value="dark">Dark</SelectItem>
+    <SelectItem value="system">System</SelectItem>
+  </SelectContent>
+</Select>
+
+
+             <Button   size="sm" className="ml-auto gap-1">
+              <FileCsv className="h-4 w-4" />
+              Baixar arquivo .csv
                   
                
               </Button>
+             </div>
             </CardHeader>
             <CardContent>
       

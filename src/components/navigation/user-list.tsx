@@ -43,11 +43,11 @@ export function AccountSwitcher({
   return (
     <DropdownMenu>
         <div className="w-full  gap-3 flex items-center">
-        <DropdownMenuTrigger className="w-full flex-1 items-center flex justify-center">
+        <DropdownMenuTrigger className="w-full flex-1 items-center flex justify-center   ">
             <div className={cn(
-          "flex items-center w-full gap-2 ",
+          "flex items-center h-10 w-full gap-2 pr-4 border rounded-md",
           isCollapsed &&
-            "flex h-9 w-9 shrink-0 items-center justify-center p-0 "
+            "flex h-10 w-10 shrink-0 items-center justify-center p-0 "
         )}> 
         
      <div className="flex  w-[36px] items-center justify-center">
@@ -71,7 +71,7 @@ export function AccountSwitcher({
         </DropdownMenuTrigger>
 
        {!isCollapsed && (
-         <Button onClick={() => setIsCollapsed(true)} variant="ghost" size="icon" >
+         <Button onClick={() => setIsCollapsed(true)} variant='outline' size="icon" >
          <PanelLeftDashed className="h-4 w-4" />
          <span className="sr-only">Menu de ações rápidas</span>
        </Button>

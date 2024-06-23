@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -109,6 +109,24 @@ export default function SearchLayout({
                 label: "",
                 icon: Plus,
                 link: "/novo-item",
+              },
+              {
+                title: "Desfazimento de bem",
+                label: "",
+                icon: Trash,
+                link: "/desfazimento-bem",
+              },
+              {
+                title: "Itens do Vitrine",
+                label: "",
+                icon: WalletCards,
+                link: "/itens-vitrine",
+              },
+              {
+                title: "Empenhos",
+                label: "",
+                icon: Stamp,
+                link: "/empenhos",
               }
      
              

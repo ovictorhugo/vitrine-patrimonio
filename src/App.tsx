@@ -24,6 +24,8 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState<User>({  photoURL: '', cpf_aluno: '', datnsc_aluno: '', state: '' ,...{} } as User);
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [navCollapsedSize, setNavCollapsedSize] = useState(0)
+  const [defaultLayout, setDefaultLayout] = useState([0,440,655])
   const [mode, setMode] = useState('user')
 
   const [urlGeral, setUrlGeral] = useState('http://127.0.0.1:5000/');
@@ -64,7 +66,9 @@ function App() {
       logout, // Passar a função de logout para o contexto do usuário
       isCollapsed, setIsCollapsed,
       mode, setMode,
-      urlGeral, setUrlGeral
+      urlGeral, setUrlGeral,
+      navCollapsedSize, setNavCollapsedSize,
+      defaultLayout, setDefaultLayout
     }}
     >
       <DefaultLayout>
@@ -75,6 +79,8 @@ function App() {
         <Route path='/todos-os-patrimonios' element={<Admin/>}/>
         <Route path='/novo-item' element={<Admin/>}/>
         <Route path='/visao-sala' element={<Admin/>}/>
+        <Route path='/itens-vitrine' element={<Admin/>}/>
+        <Route path='/empenhos' element={<Admin/>}/>
 
 
         <Route path='/doacao/:pagina?' element={<Donation/>}/>

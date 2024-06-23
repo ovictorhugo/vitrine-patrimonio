@@ -14,7 +14,7 @@ import { UserContext } from "../context/context";
 export function Admin() {
     const { onOpen } = useModalDashboard();
     const { onClose} = useModalBackground();
-    const {isCollapsed} = useContext(UserContext)
+    const {isCollapsed, navCollapsedSize, defaultLayout} = useContext(UserContext)
 
     const location = useLocation();
 
@@ -28,7 +28,12 @@ export function Admin() {
             onOpen('visao-sala')
         } else if (location.pathname == '/novo-item') {
             onOpen('novo-item')
+        } else if (location.pathname == '/itens-vitrine') {
+            onOpen('itens-vitrine')
+        } else if (location.pathname == '/empenhos') {
+            onOpen('empenhos')
         }
+
 
     }, [location]);
   
@@ -36,9 +41,9 @@ export function Admin() {
     return(
         <>
         <SimpleLayout
-         defaultLayout={[0,2, 0]}
+         defaultLayout={defaultLayout}
          defaultCollapsed={isCollapsed}
-         navCollapsedSize={0}
+         navCollapsedSize={navCollapsedSize}
         >
            <DashboardProvider/>
 

@@ -10,7 +10,7 @@ import { useModalBackground } from "../components/hooks/use-modal-background";
 export function Home() {
     const { onOpen } = useModalHomepage();
     const { onOpen:onOpenBg } = useModalBackground();
-    const {isCollapsed} = useContext(UserContext)
+    const {isCollapsed, navCollapsedSize, defaultLayout} = useContext(UserContext)
 
     const location = useLocation();
 
@@ -33,9 +33,9 @@ export function Home() {
     return(
         <>
         <SearchLayout
-         defaultLayout={[0,2, 0]}
+         defaultLayout={defaultLayout}
          defaultCollapsed={isCollapsed}
-         navCollapsedSize={0}
+         navCollapsedSize={navCollapsedSize}
         >
             <GeralProvider/>
 

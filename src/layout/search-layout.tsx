@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, Package, SearchCheck, X } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, Package, SearchCheck, X, MapPin } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -106,10 +106,10 @@ export default function SearchLayout({
             isCollapsed={isCollapsed}
             links={[
               {
-                title: "Pós-graduação",
+                title: "Mapa da escola",
                 label: "",
-                icon: GraduationCap,
-                link: "/pos-graduacao",
+                icon: MapPin,
+                link: "/mapa-escola",
               },
      
              
@@ -117,7 +117,7 @@ export default function SearchLayout({
           />
 </div>
 
-          <div className="">
+          <div className="flex flex-col ">
           <NavigationSidebar
             isCollapsed={isCollapsed}
             links={[

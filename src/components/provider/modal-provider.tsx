@@ -5,6 +5,7 @@ import { AddBackground } from "../modal/add-background";
 import { DeleteAcconunt } from "../modal/delete-account";
 import { ImportCsv } from "../modal/import-csv";
 import { ItensOciosos } from "../modal/itens-ociosos";
+import { AdicionarEmpenho } from "../modal/adicionar-empenho";
 
 
 
@@ -25,6 +26,7 @@ export const ModalProvider = () => {
     <DeleteAcconunt/>
 
     <ImportCsv/>
+    <AdicionarEmpenho/>
     
     </>
   )

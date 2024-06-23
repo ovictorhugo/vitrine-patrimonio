@@ -17,9 +17,49 @@ import { Pix } from "../donation/pix";
 import { LoginDonation } from "../donation/login-donation";
 import { CriarContaDonation } from "../donation/criar-conta-donation";
 import { BuscaPatrimonio } from "../busca-patrimonio/busca-patrimonio";
+import { useModalHomepage } from "../hooks/use-modal-homepage";
 
 
+const ModalContent = () => {
+  const { type } = useModalHomepage();
 
+  switch (type) {
+    case "initial-home":
+      return <HomeInicial />;
+    case "busca-patrimonio":
+      return <BuscaPatrimonio />;
+    case "home-authentication":
+      return <HomeAuthentication />;
+    case "home-payment":
+      return <HomePayment />;
+    case "escolher-valores":
+      return <EscolherValores />;
+    case "escolher-assinatura":
+      return <EscolherAssinatura />;
+    case "atualizar-cadastro":
+      return <AtualizarCadastro />;
+    case "pagamento":
+      return <Pagamento />;
+    case "cartao":
+      return <Cartao />;
+    case "pix":
+      return <Pix />;
+    case "login-donation":
+      return <LoginDonation />;
+    case "criar-conta-donation":
+      return <CriarContaDonation />;
+    case "verificar-situacao-fumpista":
+      return <VerificarSituacaoFumpista />;
+    case "criar-conta-fumpista":
+      return <CriarContaFumpista />;
+    case "login-fumpista":
+      return <LoginFumpista />;
+    case "nao-encontrado-fumpista":
+      return <NaoEncontradoFumpista />;
+    default:
+      return null;
+  }
+};
 
 export const GeralProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -32,28 +72,5 @@ export const GeralProvider = () => {
     return null;
   }
 
-  return (
-    <>
-<HomeInicial/>
-<BuscaPatrimonio/>
-
-
-
-<HomeAuthentication/>
-<HomePayment/>
-<EscolherValores/>
-<EscolherAssinatura/>
-<AtualizarCadastro/>
-<Pagamento/>
-<Cartao/>
-<Pix/>
-<LoginDonation/>
-<CriarContaDonation/>
-
-<VerificarSituacaoFumpista/>
-<CriarContaFumpista/>
-<LoginFumpista/>
-<NaoEncontradoFumpista/>
-    </>
-  )
-}
+  return <ModalContent />;
+};

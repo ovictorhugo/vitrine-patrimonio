@@ -16,10 +16,10 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { Checks, Check, Warning, Wrench  } from "phosphor-react";
-import { Alert } from "../ui/alert";
+import { Checks, Check, Warning, Wrench, X, Trash  } from "phosphor-react";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ArrowUpRight, ChevronLeft, DollarSign, Upload } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown } from "lucide-react";
 import { useModal } from "../hooks/use-modal-store";
 import { TabelaPatrimonio } from "./components/tabela-patrimonios";
 import { ScrollArea } from "../ui/scroll-area";
@@ -28,6 +28,7 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { cn } from "../../lib"
 
 interface Patrimonio {
   bem_cod:string
@@ -65,9 +66,41 @@ interface TotalPatrimonios {
   total_patrimonio_morto:string
 }
 
+interface loc_nom {
+  loc_nom:string
+ 
+}
+
+const useQuery = () => {
+  return new URLSearchParams(useLocation().search);
+}
+
 
 import { toast } from "sonner"
 
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../../components/ui/command"
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../components/ui/popover"
+
+import { useLocation,useNavigate } from 'react-router-dom';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../components/ui/accordion"
 
 
 export function NovoItem() {
@@ -80,9 +113,77 @@ export function NovoItem() {
 
     const [total, setTotal] = useState<TotalPatrimonios[]>([]);
 
+    const [locNomLista, setLocNomLista] = useState<loc_nom[]>([]);
+  const[locState, setLocState] = useState(true)
+
+    let urlLocNom = `${urlGeral}AllLocNom`;
+
+    //retorna url
+    const query = useQuery();
+     const navigate = useNavigate();
+  const bem_cod = query.get('bem_cod');
+  const bem_dgv = query.get('bem_dgv');
+  const type_cod = query.get('type_cod');
+  const bem_num_atm = query.get('bem_num_atm');
+  const [typeCod, setTypeCod] = useState(type_cod ?? 'cod')
+
+  let bemCod = bem_cod ?? '';  // Default value if bem_cod is null
+  let bemDgv = bem_dgv ?? '';  // Default value if bem_dgv is null
+
+  const [input, setInput] = useState("");
+  const [inputATM, setInputATM] = useState("");
+
+  useEffect(() => {   
+    query.set('type_cod', typeCod);
+    navigate({
+      pathname: '/novo-item',
+      search: query.toString(),
+    });
+
+    setPatrimonio([])
+    setInputATM('')
+    setInput('')
+  
+      }, [typeCod]);
+
+
+    useEffect(() => {   
+    const fetchDataLocNom = async () => {
+      try {
+       
+        const response = await fetch( urlLocNom, {
+          mode: "cors",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "3600",
+            "Content-Type": "text/plain",
+          },
+        });
+        const data = await response.json();
+        if (data) {
+          setLocNomLista(data);
+       
+        } else {
+          toast("Erro: Nenhum patrimônio encontrado", {
+            description: "Revise o número",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+          });
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchDataLocNom()
+  }, []);
     ///
 
-    const [input, setInput] = useState("");
+   
 
     const handleChange = (value:any) => {
 
@@ -106,9 +207,20 @@ export function NovoItem() {
       }
         }, [type]);
 
-    const bemCod = parseInt(input.split('-')[0], 10).toString();
-    const bemDgv = input.split('-')[1];
-    let urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bemCod}&bem_dgv=${bemDgv}`;
+        useEffect(() => {   
+          handleChange(`${bem_cod}${bem_dgv}`)
+          setInputATM(bem_num_atm|| '')
+            }, []);
+
+    bemCod = parseInt(input.split('-')[0], 10).toString();
+    bemDgv = input.split('-')[1];
+    let urlPatrimonio = ``;
+
+    if(typeCod == 'cod') {
+       urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bemCod}&bem_dgv=${bemDgv}`
+    } else if (typeCod == 'atm') {
+      urlPatrimonio = `${urlGeral}searchByBemNumAtm?bem_num_atm=${inputATM}`
+    }
 
     const fetchData = async () => {
       try {
@@ -144,6 +256,29 @@ export function NovoItem() {
 
     const onClickBuscaPatrimonio = () => {
       fetchData();
+      if(typeCod == 'cod') {
+
+          query.set('bem_cod', bemCod);
+          query.set('bem_dgv', bemDgv);
+          query.set('type_cod', typeCod);
+          query.set('bem_num_atm', '');
+        
+          navigate({
+            pathname: '/novo-item',
+            search: query.toString(),
+          });
+        
+      } else if (typeCod == 'atm') {
+        query.set('bem_cod', '');
+        query.set('bem_dgv', '');
+          query.set('type_cod', typeCod);
+          query.set('bem_num_atm', inputATM);
+          navigate({
+            pathname: '/novo-item',
+            search: query.toString(),
+          });
+        
+      } 
     }
 
 
@@ -156,9 +291,26 @@ export function NovoItem() {
 
 console.log(patrimonio)
 
+const [openPopo, setOpenPopo] = useState(false)
+  const [localizacao, setLocalizacao] = useState("")
+
+  const handleRemoveImage = (index: number) => {
+    setImages(prevImages => prevImages.filter((_, i) => i !== index));
+  };
 
 //
+console.log('loc', locNomLista)
 
+//images
+const [images, setImages] = useState<string[]>([]);
+
+const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const files = event.target.files;
+  if (files) {
+    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+    setImages(prevImages => [...prevImages, ...newImages]);
+  }
+};
 
     return(
         <>
@@ -192,6 +344,16 @@ console.log(patrimonio)
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
+               {typeCod == 'scod' && (
+                <Alert className={'border-yellow-500 bg-yellow-50'}>
+                  <Warning className="h-4 w-4" />
+                  <AlertTitle>Atenção!</AlertTitle>
+                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  </AlertDescription>
+                </Alert>
+               )}
+
+
                <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
                 <CardHeader>
                     <CardTitle>Detalhes do item</CardTitle>
@@ -201,17 +363,46 @@ console.log(patrimonio)
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col gap-6">
-                     <div className="flex gap-6 w-full">
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Número do patrimônio</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} 
-                          value={patrimonio.length > 0 ? (`${patrimonio[0].bem_cod.trim()} - ${patrimonio[0].bem_dgv.trim() }`) : input}
-                        />
+                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 ${typeCod == 'scod' ? ('md:grid-cols-3'):('md:grid-cols-4')}`}>
+                     <div className="grid gap-3 w-full ">
+                        <Label htmlFor="name">Tipo do código</Label>
+                        <Select defaultValue={typeCod} value={typeCod} onValueChange={(value) => setTypeCod(value)}>
+                            <SelectTrigger className="">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value={'atm'}>Código ATM</SelectItem>
+                            <SelectItem value={'cod'}>Número de patrimônio</SelectItem>
+                            <SelectItem value={'scod'}>Sem código</SelectItem>
+                            </SelectContent>
+                          </Select>
                       </div>
+
+                     {typeCod == 'cod' && (
+                      <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Número do patrimônio</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        className="w-full"
+                        onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} 
+                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_cod.trim()}-${patrimonio[0].bem_dgv.trim() }`) : input}
+                      />
+                    </div>
+                     )}
+
+                  {typeCod == 'atm' && (
+                      <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Código ATM</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        className="w-full"
+                        onKeyDown={handleKeyDown} onChange={(e) => setInputATM(e.target.value)} 
+                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_num_atm.trim()}`) : inputATM}
+                      />
+                    </div>
+                     )}
 
                       <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Material</Label>
@@ -219,7 +410,7 @@ console.log(patrimonio)
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
                         />
                       </div>
@@ -230,7 +421,7 @@ console.log(patrimonio)
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? (patrimonio[0].csv_cod.trim() == "BM" ? 'Bom': patrimonio[0].csv_cod.trim() == 'AE' ? 'Anti-Econômico': patrimonio[0].csv_cod.trim() == 'IR' ? 'Irrecuperável': patrimonio[0].csv_cod.trim() == 'OC' ? 'Ocioso': patrimonio[0].csv_cod.trim() == 'BX' ? 'Baixado': patrimonio[0].csv_cod.trim() == 'RE' ? 'Recuperável': ''):''}
                         />
                       </div>
@@ -246,7 +437,7 @@ console.log(patrimonio)
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? parseFloat(patrimonio[0].bem_val) : ''}
                         />
                       </div>
@@ -259,31 +450,96 @@ console.log(patrimonio)
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? patrimonio[0].pes_nome : ''}
                         />
                       </div>
 
-                      <div className="grid gap-3 w-full">
+                     </div>
+
+                     <div className="flex gap-6">
+                     <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Situação</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? (patrimonio[0].bem_sta.trim() == "NO" ? ('Normal'):('Não encontrado no local de guarda')):''}
                         />
                       </div>
 
                       <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Localização</Label>
-                        <Input
+                        <div className="flex gap-3">
+                        {locState ? (
+                          <Input
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
+                          disabled={typeCod != 'scod'}
                           value={patrimonio.length > 0 ? patrimonio[0].loc_nom : ''}
                         />
+                        ):(
+                          <Popover open={openPopo} onOpenChange={setOpenPopo}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openPopo}
+                              className="w-full justify-between"
+                            >
+                              {localizacao
+                                ? locNomLista.find((framework) => framework.loc_nom === localizacao)?.loc_nom
+                                : "Selecione um local"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent className=" p-0">
+                            <Command>
+                              <CommandInput placeholder="Pesquise uma sala..." />
+                              <CommandEmpty>Sem resultados</CommandEmpty>
+                              <ScrollArea className={'h-64'}>
+                              <CommandGroup>
+                                {locNomLista && locNomLista.map((framework) => (
+                                  // Verifica se framework não é undefined antes de renderizar
+                                  framework && (
+                                    <CommandItem
+                                      key={framework.loc_nom}
+                                      value={framework.loc_nom}
+                                      onSelect={(currentValue) => {
+                                        setLocalizacao(currentValue === localizacao ? "" : currentValue);
+                                        setOpenPopo(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          localizacao === framework.loc_nom ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {framework.loc_nom}
+                                    </CommandItem>
+                                  )
+                                ))}
+                              </CommandGroup>
+                              </ScrollArea>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+
+                        )}
+
+                        {typeCod != 'scod' && (
+                           <div className="flex gap-3">
+                           <Button onClick={() => setLocState(false)} variant="outline" size={'icon'}><X size={16} /></Button>
+                             <Button onClick={() => setLocState(true)}  size={'icon'}><Check size={16} /></Button>
+                             </div>
+                        )}
+                       
+                        </div>
                       </div>
                      </div>
 
@@ -293,8 +549,8 @@ console.log(patrimonio)
                           id="name"
                           type="text"
                           className="w-full"
-                          disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].bem_dsc_com : ''}
+                          disabled={typeCod != 'scod'}
+                          value={patrimonio.length > 0 ? (localizacao.length > 0 ? localizacao : patrimonio[0].bem_dsc_com) : ''}
                         />
                       </div>
                       <div className="grid gap-3">
@@ -309,6 +565,42 @@ console.log(patrimonio)
                     
                   </CardContent>
                   </Alert>
+
+                  <Alert>
+                  <CardHeader>
+                    <CardTitle>Informações pessoais</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                  <div className="flex gap-6 w-full">
+                     <div className="grid gap-3 w-2/3">
+                        <Label htmlFor="name">Nome Completo</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-1/3">
+                        <Label htmlFor="name">Matrícula</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                        
+                        />
+                      </div>
+
+                     
+                     </div>
+
+                    
+                    </CardContent>
+                    </Alert>
 
                   <Alert>
                   <CardHeader>
@@ -438,48 +730,94 @@ console.log(patrimonio)
                 </Alert>
 
                 <Alert className="p-0">
-                <CardHeader>
-                    <CardTitle>Product Images</CardTitle>
-                    <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-2">
-                      <img
-                        alt="Product image"
-                        className="aspect-square w-full rounded-md object-cover"
-                        height="300"
-                        src="/placeholder.svg"
-                        width="300"
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        <button>
-                          <img
-                            alt="Product image"
-                            className="aspect-square w-full rounded-md object-cover"
-                            height="84"
-                            src="/placeholder.svg"
-                            width="84"
-                          />
-                        </button>
-                        <button>
-                          <img
-                            alt="Product image"
-                            className="aspect-square w-full rounded-md object-cover"
-                            height="84"
-                            src="/placeholder.svg"
-                            width="84"
-                          />
-                        </button>
-                        <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
-                          <Upload className="h-4 w-4 text-muted-foreground" />
-                          <span className="sr-only">Upload</span>
-                        </button>
-                      </div>
-                    </div>
-                  </CardContent>
+      <CardHeader>
+        <CardTitle>Imagens do item</CardTitle>
+        <CardDescription>
+        <Accordion type="single" collapsible>
+  <AccordionItem value="item-1" className="border-none">
+    <AccordionTrigger className="border-none">Instruções</AccordionTrigger>
+    <AccordionContent>
+    <Alert className="p-0 pl-4 border-none my-4">
+                  <Warning className="h-4 w-4" />
+                  <AlertTitle>Passo 1</AlertTitle>
+                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  </AlertDescription>
                 </Alert>
+
+                <Alert className="p-0 pl-4 border-none my-4">
+                  <Warning className="h-4 w-4" />
+                  <AlertTitle>Passo 2</AlertTitle>
+                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  </AlertDescription>
+                </Alert>
+
+                <Alert className="p-0 pl-4 border-none my-4">
+                  <Warning className="h-4 w-4" />
+                  <AlertTitle>Passo 3</AlertTitle>
+                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  </AlertDescription>
+                </Alert>
+    </AccordionContent>
+  </AccordionItem>
+</Accordion>
+       
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-2">
+         <div>
+        {images.length == 0 ? (
+          <div className="aspect-square w-full rounded-md object-cover border " >
+
+          </div>
+        ):(
+          <div className="flex items-center justify-center group">
+          <img
+           
+          className="aspect-square w-full rounded-md object-cover"
+          height="300"
+          src={images[0] || "/placeholder.svg"}
+          width="300"
+        />
+        <Button onClick={() => handleRemoveImage(0)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
+          </div>
+        )}
+         </div>
+          <div className="grid grid-cols-3 gap-2">
+            {images.slice(1, 4).map((image, index) => (
+              <button key={index}>
+              <div className="flex items-center justify-center group">
+               <img
+                
+                className="aspect-square w-full rounded-md object-cover"
+                height="84"
+                src={image}
+                width="84"
+              />
+                <Button onClick={() => handleRemoveImage(index+1)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
+               </div>
+             
+              </button>
+            ))}
+            {images.length < 4 && (
+              <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="upload"
+                />
+                <label htmlFor="upload" className="cursor-pointer w-full h-full flex items-center justify-center">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="sr-only">Upload</span>
+                </label>
+              </button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Alert>
                </div>
               </div>
            </main>

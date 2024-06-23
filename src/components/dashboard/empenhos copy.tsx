@@ -17,7 +17,8 @@ import { useContext, useState } from "react";
 import { UserContext } from "../../context/context";
 import { ItensListVitrine } from "./components/itens-list-vitrine";
 import { DisplayItemPatrimonio } from "./components/display-item-patrimonio";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { DisplayItemEmpenho } from "./components/display-item-empenho";
 
 interface Patrimonio {
   bem_cod:string
@@ -50,13 +51,13 @@ interface Patrimonio {
   pes_nome:string
 }
 
-export function ListaPatrimonios() {
+export function Empenhos() {
   const { isOpen, type} = useModalDashboard();
   const {user, urlGeral, defaultLayout} = useContext(UserContext)
   const {onOpen} = useModal();
 
 
-  const isModalOpen = isOpen && type === 'lista-patrimonio';
+  const isModalOpen = isOpen && type === 'empenhos';
 
   const [total, setTotal] = useState<Patrimonio | null>(null);
 
@@ -67,7 +68,8 @@ export function ListaPatrimonios() {
 
     console.log(total)
     const [search, setSearch] = useState('')
-    const [tab, setTab] = useState('all')
+
+    
 
   return(
       <>
@@ -79,38 +81,25 @@ export function ListaPatrimonios() {
           className="h-full  items-stretch"
           >
                <ResizablePanel defaultSize={40} minSize={40}>
-               <Tabs defaultValue={tab} value={tab}>
+               <Tabs defaultValue="all">
           <div className="flex items-center px-4 py-2">
-            <h1 className="text-lg font-bold">Patrimônios</h1>
+            <h1 className="text-lg font-bold">Empenhos</h1>
             <TabsList className="ml-auto">
-              <TabsTrigger onClick={() => setTab('all')} value="all" className="text-zinc-600 dark:text-zinc-200">Ativos</TabsTrigger>
-              <TabsTrigger  onClick={() => setTab('unread')} value="unread" className="text-zinc-600 dark:text-zinc-200">Baixados</TabsTrigger>
+              <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Recebidos</TabsTrigger>
+              <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Tombamento</TabsTrigger>
+              <TabsTrigger value="projetos" className="text-zinc-600 dark:text-zinc-200">Projetos</TabsTrigger>
+              <TabsTrigger value="agendamento" className="text-zinc-600 dark:text-zinc-200">Agendamentos</TabsTrigger>
             </TabsList>
           </div>
          <div className="w-full border-b border-neutral-200 dark:border-neutral-800 "></div>
 
           <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center gap-3">
-            {tab == 'all' ? (
-              <Button onClick={() => onOpen('import-csv')}  size="sm" className="ml-auto gap-1">
-              <FileXls className="h-4 w-4" />
-                  Atualizar dados
-                  
-               
-              </Button>
-            ):(
-              <Button onClick={() => onOpen('import-csv-morto')}  size="sm" className="ml-auto gap-1">
-              <FileXls className="h-4 w-4" />
-                  Atualizar dados
-                  
-               
-              </Button>
-            )}
-
-              <div className="relative w-full bg-white h-10 flex gap-2 items-center border pl-4 border-neutral-200 dark:border-neutral-800 rounded-md dark:bg-neutral-950">
+            <div>
+              <div className="relative bg-white flex gap-3 items-center border px-4 border-neutral-200 dark:border-neutral-800 rounded-md dark:bg-neutral-950">
                 <Search size={16} />
-                <Input placeholder="Filtrar pelo número do patrimônio..." className="border-none h-8" value={search}  onChange={(e) => setSearch(e.target.value)}/>
+                <Input placeholder="Filtrar pelo número do patrimônio..." className="border-none" value={search}  onChange={(e) => setSearch(e.target.value)}/>
               </div>
+              <Button variant={'outline'}  className="w-full mt-4 h-[100px]" ><Plus size={16} />Adicionar empenho</Button>
             </div>
           </div>
           <TabsContent value="all" className="m-0">
@@ -134,7 +123,7 @@ export function ListaPatrimonios() {
                <ResizablePanel defaultSize={defaultLayout[2]} minSize={50}>
      
                {total && (
-      <DisplayItemPatrimonio
+      <DisplayItemEmpenho
         bem_cod={total.bem_cod}
         bem_dgv={total.bem_dgv}
         bem_num_atm={total.bem_num_atm}

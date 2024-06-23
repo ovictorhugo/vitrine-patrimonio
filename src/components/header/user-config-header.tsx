@@ -51,19 +51,19 @@ export function UserConfigHeader() {
       <div className="w-full  gap-3 flex items-center ">
       <DropdownMenuTrigger className="w-full flex-1 items-center flex justify-center">
           <div className={cn(
-        "flex items-center w-full gap-2 px-2 ",
+        "flex items-center w-full gap-2 px-2 pb-2",
         isCollapsed &&
-          "flex h-9 w-9 shrink-0 items-center justify-center p-0 "
+          "flex h-9 w-9  shrink-0 items-center justify-center p-0 "
       )}> 
       
-      <Avatar className="cursor-pointer rounded-md w-fit">
+      <Avatar className="cursor-pointer rounded-md  h-[36px] w-[36px]">
       <AvatarImage  className={'rounded-md h-[36px] w-[36px]'} src={`${user.photoURL != null ? (user.photoURL):(user.img_url)}`} />
       <AvatarFallback className="flex items-center justify-center"></AvatarFallback>
   </Avatar>
 
          
               {!isCollapsed && (
-              <div className="flex gap-3 items-center text-sm font-medium ">
+              <div className="flex gap-3 w-full h-10 flex-1 items-center text-sm font-medium ">
                   
                   <p className="text-sm font-medium w-full text-left">{user.displayName}</p>
        
@@ -82,13 +82,26 @@ export function UserConfigHeader() {
 
       </div>
 
-      <DropdownMenuContent>
-  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-  <DropdownMenuSeparator />
+      <DropdownMenuContent className="p-6 min-w-[300px] m-4">
+        <div className="flex items-center gap-3 ">
+        <Avatar className="cursor-pointer rounded-md w-fit">
+      <AvatarImage  className={'rounded-md h-10 w-10'} src={`${user.photoURL != null ? (user.photoURL):(user.img_url)}`} />
+      <AvatarFallback className="flex items-center justify-center"></AvatarFallback>
+      </Avatar>
+
+      <div>
+      <div className="font-medium text-sm">{user.displayName}</div>
+      <div className="text-gray-500 text-sm">{user.email}</div>
+      </div>
+        </div>
+  
+        <DropdownMenuSeparator className="my-4" />
   <DropdownMenuItem>Profile</DropdownMenuItem>
   <DropdownMenuItem>Billing</DropdownMenuItem>
   <DropdownMenuItem>Team</DropdownMenuItem>
   <DropdownMenuItem>Subscription</DropdownMenuItem>
+  <DropdownMenuSeparator className="my-4" />
+  <DropdownMenuItem>Sair da sessão</DropdownMenuItem>
 </DropdownMenuContent>
 
 

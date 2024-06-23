@@ -9,8 +9,40 @@ import { ConfiguracoesDashboard } from "../dashboard/configuracoes";
 import { ListaPatrimonios } from "../dashboard/lista-patrimonios";
 import { NovoItem } from "../dashboard/novo-item";
 import { VisaoSala } from "../dashboard/visao-sala";
+import { ItensVitrine } from "../dashboard/itens-vitrine";
+import { useModalDashboard } from "../hooks/use-modal-dashboard";
+import { Empenhos } from "../dashboard/empenhos";
 
 
+
+const ModalContent = () => {
+  const { type } = useModalDashboard();
+
+  switch (type) {
+    case "visao-geral-user":
+      return <VisaoGeralUser />;
+    case "lista-patrimonio":
+      return <ListaPatrimonios />;
+    case "novo-item":
+      return <NovoItem />;
+    case "visao-sala":
+      return <VisaoSala />;
+    case "itens-vitrine":
+      return <ItensVitrine />;
+    case "general":
+      return <GeralDashboard />;
+    case "atualizar-dados":
+      return <AtualizarDados />;
+    case "gerenciar-usuarios":
+      return <GerenciarUsuarios />;
+    case "configuracoes":
+      return <ConfiguracoesDashboard />;
+      case "empenhos":
+      return <Empenhos />;
+    default:
+      return null;
+  }
+};
 
 export const DashboardProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -23,18 +55,5 @@ export const DashboardProvider = () => {
     return null;
   }
 
-  return (
-    <>
-    <VisaoGeralUser/>
-    <ListaPatrimonios/>
-    <NovoItem/>
-    <VisaoSala/>
-
-   <GeralDashboard/>
-   
-   <AtualizarDados/>
-   <GerenciarUsuarios/>
-   <ConfiguracoesDashboard/>
-    </>
-  )
-}
+  return <ModalContent />;
+};
