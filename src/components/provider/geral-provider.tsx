@@ -18,6 +18,7 @@ import { LoginDonation } from "../donation/login-donation";
 import { CriarContaDonation } from "../donation/criar-conta-donation";
 import { BuscaPatrimonio } from "../busca-patrimonio/busca-patrimonio";
 import { useModalHomepage } from "../hooks/use-modal-homepage";
+import { Join } from "../invite-join/join";
 
 
 const ModalContent = () => {
@@ -56,6 +57,8 @@ const ModalContent = () => {
       return <LoginFumpista />;
     case "nao-encontrado-fumpista":
       return <NaoEncontradoFumpista />;
+      case "join-sala":
+      return <Join />;
     default:
       return null;
   }

@@ -133,7 +133,7 @@ export function ListaPatrimonios() {
 
                <ResizablePanel defaultSize={defaultLayout[2]} minSize={50}>
      
-               {total && (
+               {total ? (
       <DisplayItemPatrimonio
         bem_cod={total.bem_cod}
         bem_dgv={total.bem_dgv}
@@ -164,6 +164,11 @@ export function ListaPatrimonios() {
         pes_cod={total.pes_cod}
         pes_nome={total.pes_nome}
       />
+    ):(
+      <div className="w-full h-full flex flex-col items-center justify-center">
+       <p className="text-9xl  text-[#719CB8]  font-bold mb-16 animate-pulse">; )</p>
+        <p className="font-medium text-lg">Nenhum patrimônio selecionado</p>
+      </div>
     )}
       
       </ResizablePanel>

@@ -13,7 +13,7 @@ import { TabelaPatrimonioMorto } from "./components/tabela-patrimonios-morto";
 import { Input } from "../ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable";
 import { TooltipProvider } from "../ui/tooltip";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { ItensListVitrine } from "./components/itens-list-vitrine";
 import { DisplayItemPatrimonio } from "./components/display-item-patrimonio";
@@ -56,11 +56,65 @@ interface Patrimonio {
   pes_nome:string
 }
 
+import axios from 'axios';
+interface Empenho {
+    id: string;
+    status_tomb: string;
+    data_tombamento: string;
+    data_aviso: string;
+    prazo_teste: string;
+    atestado: string;
+    solicitante: string;
+    n_termo_processo: string;
+    origem: string;
+    cnpj: string;
+    valor_termo: string;
+    n_projeto: string;
+    data_tomb_sei: string;
+    nome: string;
+    email: string;
+    telefone: string;
+    nf_enviada: string;
+    loc_tom: string;
+    des_nom: string;
+    observacoes: string;
+    pdf_empenho: string | null;
+    pdf_nf: string | null;
+    pdf_resumo: string | null;
+    created_at: string;
+    type_emp: string;
+  }
+
 export function Empenhos() {
   const { isOpen, type} = useModalDashboard();
   const {user, urlGeral, defaultLayout} = useContext(UserContext)
   const {onOpen} = useModal();
 
+  const [empenhos, setEmpenhos] = useState<Empenho[]>([]);
+
+  useEffect(() => {
+    const fetchEmpenhos = async () => {
+      try {
+        const response = await axios.get(`${urlGeral}AllEmpenhos`);
+        setEmpenhos(response.data);
+      } catch (error) {
+        console.error('Error fetching empenhos', error);
+      }
+    };
+
+    fetchEmpenhos();
+  }, []);
+
+  const downloadPDF = (base64String: string, filename: string) => {
+    const linkSource = `data:application/pdf;base64,${base64String}`;
+    const downloadLink = document.createElement('a');
+    const fileName = filename;
+    downloadLink.href = linkSource;
+    downloadLink.download = fileName;
+    downloadLink.click();
+  };
+
+  console.log(empenhos)
 
   const isModalOpen = isOpen && type === 'empenhos';
 

@@ -90,13 +90,14 @@ export function DisplayItemPatrimonio(props:Patrimonio) {
         <div className="w-full border-b border-neutral-200 dark:border-neutral-800 "></div>
 
         <div >
+        <div className={`w-full h-2 ${qualisColor[props.csv_cod.trim() as keyof typeof qualisColor]}`}></div>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {props.bem_cod}-{props.bem_dgv}
               </CardTitle>
               <Barcode className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="flex flex-col justify-between h-full">
+            <CardContent className="flex flex-col  h-full">
               <div>
                 <div className="text-2xl font-bold">{props.mat_nom}</div>
                 <p className="text-xs text-muted-foreground">
@@ -104,8 +105,8 @@ export function DisplayItemPatrimonio(props:Patrimonio) {
                 </p>
               </div>
   
-              <div className="flex mt-8 flex-wrap gap-4">
-                <div className="flex gap-2 items-center text-xs font-medium"><User size={12} />{props.pes_nome}</div>
+              <div className="flex flex-wrap mt-6 gap-4">
+                <div className="flex gap-2 items-center text-xs font-medium"><User size={12} />{props.pes_cod} - {props.pes_nome}</div>
                 <div className="flex gap-2 items-center text-xs font-medium uppercase">
                   <div className={`w-4 h-4 rounded-md ${qualisColor[props.csv_cod.trim() as keyof typeof qualisColor]}`}></div>
                   {csvCodToText[props.csv_cod.trim() as keyof typeof csvCodToText]}
@@ -114,7 +115,7 @@ export function DisplayItemPatrimonio(props:Patrimonio) {
                   {props.bem_sta.trim() === "NO" ? (<Check size={12} />) : (<X size={12} />)}
                   {props.bem_sta.trim() === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
                 </div>
-                <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_nom}</div>
+                <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_cod} - {props.loc_nom}</div>
               </div>
             </CardContent>
         </div>

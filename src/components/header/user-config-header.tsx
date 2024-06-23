@@ -82,7 +82,7 @@ export function UserConfigHeader() {
 
       </div>
 
-      <DropdownMenuContent className="p-6 min-w-[300px] m-4">
+      <DropdownMenuContent className="p-4 min-w-[300px] m-4">
         <div className="flex items-center gap-3 ">
         <Avatar className="cursor-pointer rounded-md w-fit">
       <AvatarImage  className={'rounded-md h-10 w-10'} src={`${user.photoURL != null ? (user.photoURL):(user.img_url)}`} />

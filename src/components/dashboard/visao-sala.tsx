@@ -317,6 +317,12 @@ const data = patrimonio.map((item) => {
       }
     }
 
+    const history = useNavigate();
+
+    const handleVoltar = () => {
+      history(-1);
+    }
+
     return(
         <>
         {isModalOpen && (
@@ -326,12 +332,12 @@ const data = patrimonio.map((item) => {
                 
                 <div className="w-full  gap-4">
             <div className="flex items-center gap-4">
-           <Link to={'/'}>
-            <Button variant="outline" size="icon" className="h-7 w-7">
+          
+            <Button onClick={handleVoltar } variant="outline" size="icon" className="h-7 w-7">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar</span>
               </Button>
-              </Link>
+          
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 {sala}
               </h1>
@@ -703,10 +709,11 @@ const data = patrimonio.map((item) => {
             </main>
             ):(
               <main className="flex items-center justify-center flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                <div className="h-40  animate-pulse"  >{(theme ==  'dark' ) ? (<SymbolEEWhite />):(<SymbolEE />)}</div>
-               <div className="font-medium max-w-[300px] text-lg text-center">
-               Ei, parece que você está tentando acessar uma página que não existe 
-               </div>
+           
+               <div className="w-full h-full flex flex-col items-center justify-center">
+       <p className="text-9xl  text-[#719CB8]  font-bold mb-16 animate-pulse">{'>_<'}</p>
+        <p className="font-medium text-lg max-w-[300px] text-center"> Ei, parece que você está tentando acessar uma página que não existe </p>
+      </div>
               </main>
             )
         )}

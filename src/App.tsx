@@ -11,6 +11,7 @@ import { Admin } from './pages/Admin';
 import { Donation } from './pages/Donation';
 import { Fumpista } from './pages/Fumpista';
 import { useModalBackground } from './components/hooks/use-modal-background';
+import { Notification } from './pages/notification';
 
 
 interface User extends FirebaseAuthUser {
@@ -75,6 +76,8 @@ function App() {
       <Routes>
         <Route path='/' element={<Home/>}/>
         <Route path='/buscar-patrimonio' element={<Home/>}/>
+        <Route path='/join-room' element={<Notification/>}/>
+
         <Route path='/dashboard' element={<Admin/>}/>
         <Route path='/todos-os-patrimonios' element={<Admin/>}/>
         <Route path='/novo-item' element={<Admin/>}/>

@@ -108,6 +108,13 @@ export function NovoItem() {
     const {user, urlGeral} = useContext(UserContext)
     const {onOpen} = useModal();
 
+    const history = useNavigate();
+
+    const handleVoltar = () => {
+      history(-3);
+    };
+
+
 
     const isModalOpen = isOpen && type === "novo-item";
 
@@ -318,12 +325,12 @@ const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="  gap-4">
             <div className="flex items-center gap-4">
-           <Link to={'/'}>
-           <Button variant="outline" size="icon" className="h-7 w-7">
+         
+           <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar</span>
               </Button>
-              </Link>
+          
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 Adicionar novo item
               </h1>
@@ -363,7 +370,7 @@ const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col gap-6">
-                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 ${typeCod == 'scod' ? ('md:grid-cols-3'):('md:grid-cols-4')}`}>
+                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 ${typeCod == 'scod' ? ('md:grid-cols-3'):('')}`}>
                      <div className="grid gap-3 w-full ">
                         <Label htmlFor="name">Tipo do código</Label>
                         <Select defaultValue={typeCod} value={typeCod} onValueChange={(value) => setTypeCod(value)}>
