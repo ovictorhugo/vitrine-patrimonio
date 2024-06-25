@@ -32,7 +32,10 @@ export function Admin() {
             onOpen('itens-vitrine')
         } else if (location.pathname == '/empenhos') {
             onOpen('empenhos')
+        } else if (location.pathname == '/criar-etiqueta') {
+            onOpen('create-bar-bode')
         }
+
 
 
     }, [location]);

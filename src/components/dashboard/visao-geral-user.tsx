@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 
 import { LogoUfmg } from "../svg/logo-ufmg";
@@ -16,10 +16,10 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel } from "phosphor-react";
+import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel, Check } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ArrowUpRight, DollarSign } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, DollarSign } from "lucide-react";
 import { useModal } from "../hooks/use-modal-store";
 import { TabelaPatrimonio } from "./components/tabela-patrimonios";
 import { ScrollArea } from "../ui/scroll-area";
@@ -64,6 +64,9 @@ import { toast } from "sonner"
 import { Input } from "../ui/input";
 import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { TabsContent } from "@radix-ui/react-tabs";
+import { Checkbox } from "../ui/checkbox";
 
 export function VisaoGeralUser() {
     const { isOpen, type} = useModalDashboard();
@@ -151,12 +154,51 @@ export function VisaoGeralUser() {
         }
       }, [onClickBuscaPatrimonio]);
 
+      const history = useNavigate();
+
+      const handleVoltar = () => {
+        history(-1);
+      }
+
 
     return(
         <>
         {isModalOpen && (
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-              {total.map((props) => {
+               <Tabs defaultValue={'all'} className="h-full" >
+                
+                <div className="w-full  gap-4">
+            <div className="flex items-center gap-4">
+          
+            <Button onClick={handleVoltar } variant="outline" size="icon" className="h-7 w-7">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
+          
+              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+                Dashboard
+              </h1>
+             
+
+                
+            
+              <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <TabsList >
+                
+              <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
+              <TabsTrigger value="condicao" className="text-zinc-600 dark:text-zinc-200">Condição dos bens</TabsTrigger>
+                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Configurações</TabsTrigger>
+               
+                </TabsList>
+               
+          
+                <Button size="sm"><Check size={16}/>Button</Button>
+              </div>
+            </div>
+
+            </div>
+            <TabsContent value="all" className="h-auto flex flex-col gap-6 mt-2">
+            {total.map((props) => {
                   return(
                     <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
                     <Alert className="p-0">
@@ -224,7 +266,7 @@ export function VisaoGeralUser() {
 
               <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                 <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col md:flex-row items-center justify-between">
               <div className="grid gap-2 ">
               <CardTitle>Condição dos bens</CardTitle>
                 <CardDescription>
@@ -253,7 +295,7 @@ export function VisaoGeralUser() {
              </div>
             </CardHeader>
             <CardContent>
-      
+     
             </CardContent>
                 </Alert>
 
@@ -324,6 +366,77 @@ export function VisaoGeralUser() {
 
                 
               </div>
+            </TabsContent>
+
+            <TabsContent value="unread" className="flex flex-col gap-4 md:gap-8">
+              <Alert>
+              <CardHeader>
+                <CardTitle>Diretório dos plugins</CardTitle>
+                <CardDescription>
+                  The directory within your project, in which your plugins are
+                  located.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="flex flex-col gap-4">
+                  <Input
+                    placeholder="Project Name"
+                    defaultValue="/content/plugins"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="include" defaultChecked />
+                    <label
+                      htmlFor="include"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Allow administrators to change the directory.
+                    </label>
+                  </div>
+                </form>
+              </CardContent>
+              </Alert>
+            </TabsContent>
+
+            <TabsContent value="condicao">
+            <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
+                <CardHeader className="flex flex-col md:flex-row items-center justify-between">
+              <div className="grid gap-2 ">
+              <CardTitle>Condição dos bens</CardTitle>
+                <CardDescription>
+                  Exercício de 
+                </CardDescription>
+              </div>
+             <div className="flex gap-3">
+             <Select>
+  <SelectTrigger defaultValue={'OC'} className="w-[180px]">
+    <SelectValue placeholder="Theme" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="OC">OC</SelectItem>
+    <SelectItem value="QB">BM</SelectItem>
+    <SelectItem value="NE">NE</SelectItem>
+    <SelectItem value="SP">SP</SelectItem>
+  </SelectContent>
+</Select>
+
+
+             <Button   size="sm" className="ml-auto gap-1">
+              <FileCsv className="h-4 w-4" />
+              Baixar arquivo .csv
+                  
+               
+              </Button>
+             </div>
+            </CardHeader>
+            <CardContent>
+      <TabelaPatrimonio
+      filter={'OC'}
+      />
+            </CardContent>
+                </Alert>
+            </TabsContent>
+          </Tabs>
+             
             </main>
         )}
         </>

@@ -12,6 +12,7 @@ import { VisaoSala } from "../dashboard/visao-sala";
 import { ItensVitrine } from "../dashboard/itens-vitrine";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Empenhos } from "../dashboard/empenhos";
+import { CreateBarCode } from "../dashboard/create-bar-code";
 
 
 
@@ -37,8 +38,10 @@ const ModalContent = () => {
       return <GerenciarUsuarios />;
     case "configuracoes":
       return <ConfiguracoesDashboard />;
-      case "empenhos":
+    case "empenhos":
       return <Empenhos />;
+      case "create-bar-bode":
+      return <CreateBarCode />;
     default:
       return null;
   }

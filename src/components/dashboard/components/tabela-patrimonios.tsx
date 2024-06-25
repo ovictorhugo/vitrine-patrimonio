@@ -34,12 +34,16 @@ interface Patrimonio {
     pes_nome:string
   }
 
-export function TabelaPatrimonio() {
+  interface Props {
+    filter:string
+  }
+
+export function TabelaPatrimonio(props:Props) {
     const [total, setTotal] = useState<Patrimonio[]>([]);
     const {urlGeral} = useContext(UserContext)
     
 
-    const urlPatrimonioInsert = `${urlGeral}allPatrimonio?loc_nom=`;
+    const urlPatrimonioInsert = `${urlGeral}/filterByCsvCod?csv_cod=${props.filter}`;
 
     useEffect(() => {
       const fetchData = async () => {

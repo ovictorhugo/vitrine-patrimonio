@@ -163,7 +163,6 @@ export function BuscaPatrimonio() {
       });
     }
       
-
     }
 
     const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {

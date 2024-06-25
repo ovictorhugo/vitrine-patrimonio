@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
-import { FileXls } from "phosphor-react";
+import { FileCsv, FileXls } from "phosphor-react";
 import { TabelaPatrimonio } from "./components/tabela-patrimonios";
 import { ScrollArea } from "../ui/scroll-area";
 import { useModal } from "../hooks/use-modal-store";
@@ -17,9 +17,9 @@ import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { ItensListVitrine } from "./components/itens-list-vitrine";
 import { DisplayItemPatrimonio } from "./components/display-item-patrimonio";
-import { ChevronLeft, Plus, Search } from "lucide-react";
+import { Bird, ChevronLeft, Plus, Rabbit, Search, Turtle } from "lucide-react";
 import { DisplayItemEmpenho } from "./components/display-item-empenho";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -57,6 +57,9 @@ interface Patrimonio {
 }
 
 import axios from 'axios';
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 interface Empenho {
     id: string;
     status_tomb: string;
@@ -131,40 +134,64 @@ export function Empenhos() {
 
     const [columns, setColumns] = useState([
         { id: 1, title: 'Recebidos', items: ['Item 1', 'Item 2'] },
-        { id: 2, title: 'Tombamento', items: [] },
-        { id: 3, title: 'Projetos', items: [] },
+        { id: 2, title: 'Projetos', items: [] },
+        { id: 3, title: 'Tombamento', items: [] },
+       
         { id: 4, title: 'Agendamento', items: [] },
         { id: 5, title: 'Concluídos', items: [] },
  
       ]);
 
+      const history = useNavigate();
+
+    const handleVoltar = () => {
+      history(-1);
+    }
+
+
   return(
       <>
       {isModalOpen && (
           <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-<div className="  gap-4">
+             <Tabs defaultValue={'all'} className="h-full" >
+                
+                <div className="w-full  gap-4">
             <div className="flex items-center gap-4">
-           <Link to={'/'}>
-           <Button variant="outline" size="icon" className="h-7 w-7">
+          
+            <Button onClick={handleVoltar } variant="outline" size="icon" className="h-7 w-7">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar</span>
               </Button>
-              </Link>
+          
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 Empenhos
               </h1>
+             
+
+                
             
               <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <TabsList >
+              <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
+                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Fornecedores</TabsTrigger>
+                </TabsList>
+               
+          
+                <div className="hidden items-center gap-2 md:ml-auto md:flex">
                 <Button variant="outline" size="sm">
-                  Gerar relatório
+                 <FileCsv size={16}/> Gerar relatório
                 </Button>
                 <Button onClick={() => onOpen('adicionar-empenho')} size="sm"><Plus size={16}/>Adicionar empenho</Button>
+              </div>
               </div>
             </div>
 
             </div>
 
-            <div className="h-full elementBarra w-full flex gap-3 overflow-x-auto md:max-w-[calc(100vw-115px)] max-w-[calc(100vw-83px)]">
+                
+
+                <TabsContent value="all" className="h-auto">
+                <div className="h-full elementBarra w-full flex gap-3 overflow-x-auto md:max-w-[calc(100vw-115px)] max-w-[calc(100vw-83px)]">
             <DndProvider backend={HTML5Backend}>
       <div className="flex gap-6">
         {columns.map(column => (
@@ -173,6 +200,73 @@ export function Empenhos() {
       </div>
     </DndProvider>
             </div>
+                </TabsContent>
+
+                <TabsContent value="unread" className="h-auto">
+                <div className="grid w-full items-start gap-6 overflow-auto ">
+                <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
+                  <legend className="-ml-1 px-1 text-sm font-medium">
+                    Adicionar novo fornecedor
+                  </legend>
+                 <div className="flex w-full gap-6">
+                 <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">Nome da empresa</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                  <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">Sigla</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                  <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">CNPJ</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                 </div>
+
+                  <div className="grid gap-3">
+                    <Label htmlFor="temperature">Endereço</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+
+                  <div className="flex w-full gap-6">
+                 <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">CEP</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                  <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">Cidade</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                  <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">Telefone</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+
+                  <div className="grid gap-3 w-full">
+                    <Label htmlFor="model">Email</Label>
+                    <Input id="temperature" type="text" className="flex flex-1" />
+                  </div>
+                 </div>
+
+            
+
+                 <div className="grid gap-3">
+                    <Label htmlFor="content">Observação</Label>
+                    <Textarea id="content" placeholder="You are a..." />
+                  </div>
+                 
+                </fieldset>
+                <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
+                  <legend className="-ml-1 px-1 text-sm font-medium">
+                    Todos os fornecedores
+                  </legend>
+                  
+                </fieldset>
+              </div>
+                </TabsContent>
+                </Tabs>
+
+           
           </main>
       )}
       </>
