@@ -38,7 +38,7 @@ interface Patrimonio {
     pes_cod:string
     pes_nome:string
 }
-
+import logo_eng from '../../assets/logo_eng.png';
 import { toast } from "sonner"
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
@@ -248,16 +248,16 @@ export function CreateBarCode() {
                {patrimonio.map((props) => {
                 return(
                     <div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between mb-4">
                <div>
                <p className="text-xs">{props.bem_cod}-{props.bem_dgv}</p>
-                                <p className="font-medium">{props.mat_nom}</p>
+                                <p className="font-bold text-xl">{props.mat_nom}</p>
 
                                 
                                 
                             </div>
 
-                            <Button></Button>
+                            <Button size={'sm'}>Baixar informações</Button>
                </div>
 
                <p className="text-xs text-muted-foreground">
@@ -270,7 +270,7 @@ export function CreateBarCode() {
                 </div>
 
                 <div>
-                <Alert className="border-t-0 rounded-xl rounded-t-none">
+                <Alert className="border-t-0 p-6 rounded-xl rounded-t-none">
                 {patrimonio.map((props) => {
                 return(
                    <div>
@@ -288,6 +288,13 @@ export function CreateBarCode() {
                 </div>
                 <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_nom}</div>
               </div>
+
+
+              <div className=" p-4 mt-6 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800 justify-center flex gap-3 items-center">
+          <img src={logo_eng} alt="" className="h-20" />
+          {/* Outros elementos aqui */}
+          <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod}${props.bem_dgv}`} alt="" className="h-20 mix-blend-multiply" />
+        </div>
                    </div>
                 )
                })}
@@ -318,13 +325,10 @@ export function CreateBarCode() {
                             <Rabbit className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                                Neural{" "}
-                                <span className="font-medium text-foreground">
-                                  Genesis
-                                </span>
+                               Grande
                               </p>
                               <p className="text-xs" data-description>
-                                Our fastest model for general use cases.
+                                Para armários e itens maiores que 1 metro
                               </p>
                             </div>
                           </div>
@@ -334,10 +338,7 @@ export function CreateBarCode() {
                             <Bird className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                                Neural{" "}
-                                <span className="font-medium text-foreground">
-                                  Explorer
-                                </span>
+                               Médio
                               </p>
                               <p className="text-xs" data-description>
                                 Performance and speed for efficiency.
@@ -350,14 +351,10 @@ export function CreateBarCode() {
                             <Turtle className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                                Neural{" "}
-                                <span className="font-medium text-foreground">
-                                  Quantum
-                                </span>
+                                Pequeno
                               </p>
                               <p className="text-xs" data-description>
-                                The most powerful model for complex
-                                computations.
+                                Para itens 
                               </p>
                             </div>
                           </div>
