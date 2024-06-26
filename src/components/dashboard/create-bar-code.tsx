@@ -201,11 +201,11 @@ export function CreateBarCode() {
 
                 <TabsContent value="all" className="h-auto">
                 <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Alert className="border-none bg-transparent p-0" >
-                    <div className="">
+                <Alert className="border-none bg-transparent p-0 h-full" >
+                    <div className="h-full">
                 <div className=" rounded-xl ">
                     <div className="flex justify-between w-full">
-                        <div className="flex gap-3 bg-[#719CB8] rounded-tl-xl w-full items-center text-white p-4">
+                        <div className="flex gap-3 bg-[#719CB8]  rounded-tl-xl w-full items-center text-white p-4">
                             <Tag size={20}/>
                             <div>
                                 <p className="font-medium">Informações da etiqueta</p>
@@ -219,7 +219,7 @@ export function CreateBarCode() {
                             </div>
                             <div className="flex flex-col h-full">
                             <div className="flex">
-                                <div className="bg-[#719CB8] absolute top-0 w-[44px]  h-full"></div>
+                                <div className="bg-[#719CB8] absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
                             <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-800 p-2 flex gap-3 rounded-bl-xl ">
                         <Button variant="outline" size="icon" className="h-7 w-7">
                 <ChevronLeft className="h-4 w-4" />
@@ -232,7 +232,7 @@ export function CreateBarCode() {
                         </div>
                             </div>
                         <div className="h-full">
-                            <div className="min-h-[44px] h-full w-full bg-[#719CB8] rounded-tr-xl "></div>
+                            <div className="min-h-[44px] h-full max-h-[80px] w-full bg-[#719CB8] rounded-tr-xl "></div>
                             </div>
                             </div>
                         </div>
@@ -269,8 +269,8 @@ export function CreateBarCode() {
                 </Alert>
                 </div>
 
-                <div>
-                <Alert className="border-t-0 p-6 rounded-xl rounded-t-none">
+                <div className="">
+                <Alert className="border-t-0 p-6 rounded-xl rounded-t-none h-full">
                 {patrimonio.map((props) => {
                 return(
                    <div>

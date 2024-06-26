@@ -121,10 +121,11 @@ export function ItensListVitrine(props:Props) {
 
       const search = props.search
 
-      const filteredTotal = total.filter(item => {
+      const filteredTotal = Array.isArray(total) ? total.filter(item => {
         const searchString = `${item.bem_cod}-${item.bem_dgv}`;
         return searchString.toLowerCase().includes(search.toLowerCase());
-      });
+      }) : [];
+      
       
 
   return (

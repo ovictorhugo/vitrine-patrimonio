@@ -72,7 +72,7 @@ export function PatrimonioItem(props: Patrimonio) {
         <div className=" p-4 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800  flex gap-3 items-center">
           <img src={logo_eng} alt="" className="h-20" />
           {/* Outros elementos aqui */}
-          <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod}${props.bem_dgv}`} alt="" className="h-20 mix-blend-multiply" />
+          <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod.trim()}-${props.bem_dgv.trim()}`} alt="" className="h-20 mix-blend-multiply" />
         </div>
   
         <div className="flex flex-1">

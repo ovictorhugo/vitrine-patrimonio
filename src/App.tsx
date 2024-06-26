@@ -29,7 +29,7 @@ function App() {
   const [defaultLayout, setDefaultLayout] = useState([0,440,655])
   const [mode, setMode] = useState('user')
 
-  const [urlGeral, setUrlGeral] = useState('http://127.0.0.1:5000/');
+  const [urlGeral, setUrlGeral] = useState('http://150.164.32.238:8484/');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
