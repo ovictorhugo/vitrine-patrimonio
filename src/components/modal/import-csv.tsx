@@ -181,11 +181,6 @@ export function ImportCsv() {
           return;
         }
     
-        const chunkSize = 1000; // Divida os dados em lotes de 1000 registros
-        const chunks = [];
-        for (let i = 0; i < data.length; i += chunkSize) {
-          chunks.push(data.slice(i, i + chunkSize));
-        }
     
         let urlPatrimonioInsert = ``;
 

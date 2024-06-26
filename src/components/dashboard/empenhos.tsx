@@ -55,11 +55,14 @@ interface Patrimonio {
   pes_cod:string
   pes_nome:string
 }
+import { toast } from "sonner"
 
 import axios from 'axios';
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { DataTable } from "./data-table";
+import { columnsFornecedores } from "./components/columns-fornecedores";
 interface Empenho {
     id: string;
     status_tomb: string;
@@ -88,12 +91,25 @@ interface Empenho {
     type_emp: string;
   }
 
+  interface Fornecedores {
+    sigla: string;
+      nome: string;
+      endereco: string;
+      cep: string;
+      cidade: string;
+      cnpj: string;
+      telefone: string;
+      email: string;
+      observacoes: string;
+  }
+
 export function Empenhos() {
   const { isOpen, type} = useModalDashboard();
   const {user, urlGeral, defaultLayout} = useContext(UserContext)
   const {onOpen} = useModal();
 
   const [empenhos, setEmpenhos] = useState<Empenho[]>([]);
+  const [fornecedores, setFornecedores] = useState<Fornecedores[]>([]);
 
   useEffect(() => {
     const fetchEmpenhos = async () => {
@@ -147,6 +163,115 @@ export function Empenhos() {
     const handleVoltar = () => {
       history(-1);
     }
+
+
+    const [formData, setFormData] = useState({
+      sigla: '',
+      nome: '',
+      endereco: '',
+      cep: '',
+      cidade:'',
+      cnpj:'',
+      telefone:'',
+      email:'',
+      observacoes:''
+    })
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    const handleSubmitPatrimonio = async () => {
+      try {
+    
+    
+        let urlPatrimonioInsert = `${urlGeral}insertFornecedor`;
+
+
+        
+          const response = await fetch(urlPatrimonioInsert, {
+            mode: 'cors',
+            method: 'POST',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Max-Age': '3600',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData),
+          });
+
+          if (response.ok) {
+            toast("Dados enviados com sucesso", {
+              description: "Todos os dados foram enviados.",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Fechar"),
+              },
+            });
+          }
+
+        setFormData(
+          {sigla: '',
+          nome: '',
+          endereco: '',
+          cep: '',
+          cidade:'',
+          cnpj:'',
+          telefone:'',
+          email:'',
+          observacoes:''}
+        )
+
+    
+      } catch (error) {
+        console.error('Erro ao processar a requisição:', error);
+        toast("Erro ao processar a requisição", {
+          description: "Tente novamente mais tarde.",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
+      }
+    }
+
+
+    //todos os fornecedores
+
+    
+    const urlPatrimonioInsert = `${urlGeral}getFornecedores`;
+
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(urlPatrimonioInsert , {
+            mode: "cors",
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Max-Age": "3600",
+              "Content-Type": "text/plain",
+            },
+          });
+          const data = await response.json();
+          if (data) {
+              setFornecedores(data)
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      };
+      fetchData()
+  
+     
+    }, [urlPatrimonioInsert]);
+  
 
 
   return(
@@ -203,48 +328,65 @@ export function Empenhos() {
                 </TabsContent>
 
                 <TabsContent value="unread" className="h-auto">
-                <div className="grid w-full items-start gap-6 overflow-auto ">
+                <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+
+                <fieldset className="grid xl:col-span-2 gap-6 rounded-lg border p-4 bg-white">
+                  <legend className="-ml-1 px-1 text-sm font-medium">
+                    Todos os fornecedores
+                  </legend>
+
+                  <DataTable columns={columnsFornecedores} data={fornecedores}></DataTable>
+                  
+                </fieldset>
+
                 <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Adicionar novo fornecedor
                   </legend>
-                 <div className="flex w-full gap-6">
-                 <div className="grid gap-3 w-full">
+
+                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Nome da empresa</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="nome" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
+
+                 <div className="flex w-full gap-6">
+     
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Sigla</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="sigla" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CNPJ</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cnpj" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                  </div>
 
                   <div className="grid gap-3">
                     <Label htmlFor="temperature">Endereço</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="endereco" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
-                  <div className="flex w-full gap-6">
+                  <div className="flex w-full gap-6 ">
                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CEP</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cep" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Cidade</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cidade" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
-                  <div className="grid gap-3 w-full">
+                  
+                 </div>
+
+                 <div className="flex w-full gap-6 ">
+                 <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Telefone</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="telefone" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Email</Label>
-                    <Input id="temperature" type="text" className="flex flex-1" />
+                    <Input name="email" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                  </div>
 
@@ -252,18 +394,13 @@ export function Empenhos() {
 
                  <div className="grid gap-3">
                     <Label htmlFor="content">Observação</Label>
-                    <Textarea id="content" placeholder="You are a..." />
+                    <Textarea name="observacoes" onChange={(e) => handleChange(e)} id="content" placeholder="You are a..." />
                   </div>
 
-                  <Button><Plus size={16}/> Adicionar </Button>
+                  <Button onClick={() => handleSubmitPatrimonio()} className="ml-auto w-fit"><Plus size={16}/> Adicionar </Button>
                  
                 </fieldset>
-                <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Todos os fornecedores
-                  </legend>
-                  
-                </fieldset>
+             
               </div>
                 </TabsContent>
                 </Tabs>
