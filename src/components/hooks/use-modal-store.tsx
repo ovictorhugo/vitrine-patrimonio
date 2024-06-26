@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho'
+export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho' | 'confirm-delete-fornecedor'
 
 interface ModalData {
   id?: string,
@@ -23,6 +23,8 @@ interface ModalData {
   lattes_10_id?: string,
   researcher_id?: string
   magazine?:string
+
+  cnpj?:string
  
 }
 

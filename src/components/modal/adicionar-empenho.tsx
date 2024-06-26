@@ -8,6 +8,9 @@ import { UserContext } from "../../context/context";
 import * as XLSX from 'xlsx';
 import {useDropzone} from 'react-dropzone'
 import axios from 'axios';
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Label } from "../ui/label";
 
 interface Patrimonio {
     bem_cod:string
@@ -40,6 +43,8 @@ interface Patrimonio {
     pes_nome:string
 }
 
+import { v4 as uuidv4 } from 'uuid';
+
 export function AdicionarEmpenho() {
     const { onClose, isOpen, type: typeModal } = useModal();
     
@@ -48,29 +53,7 @@ export function AdicionarEmpenho() {
     const {urlGeral} = useContext(UserContext)
 
 
-    const [formData, setFormData] = useState({
-      id: 'TESTE',
-      status_tomb: '',
-      data_tombamento: '',
-      data_aviso: '',
-      prazo_teste: '',
-      atestado: '',
-      solicitante: '',
-      n_termo_processo: '',
-      origem: '',
-      cnpj: '',
-      valor_termo: '',
-      n_projeto: '',
-      data_tomb_sei: '',
-      nome: '',
-      email: '',
-      telefone: '',
-      nf_enviada: '',
-      loc_tom: '',
-      des_nom: '',
-      observacoes: '',
-      type_emp: ''
-    });
+   
   
     const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>({
       name: '',
@@ -87,12 +70,6 @@ export function AdicionarEmpenho() {
       pdf_resumo: null
     });
   
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value
-      });
-    };
   
     const handleFileUpload = (files: any) => {
       const uploadedFile = files[0];
@@ -105,6 +82,8 @@ export function AdicionarEmpenho() {
           name: uploadedFile.name,
           size: uploadedFile.size
         });
+
+        setNome(uploadedFile.name)
       }
     };
   
@@ -114,6 +93,44 @@ export function AdicionarEmpenho() {
   
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
       onDrop
+    });
+
+    const uuid = uuidv4();
+  
+    // Extract numbers from the UUID and join them into a single string
+    const id = uuid.replace(/\D/g, '').slice(0, 10);
+    const [cb, setCb] = useState('recebidos')
+    const [nome, setNome] = useState('')
+
+    const data = {
+      id:id,
+      coluna:cb,
+      emp_nom:nome
+    }
+    const [formData, setFormData] = useState({
+      id: id,
+    coluna: cb,
+    emp_nom: nome,
+    status_tomb: '',
+    data_tombamento: '',
+    data_aviso: '',
+    prazo_teste: '',
+    atestado: '',
+    solicitante: '',
+    n_termo_processo: '',
+    origem: '',
+    cnpj: '',
+    valor_termo: '',
+    n_projeto: '',
+    data_tomb_sei: '',
+    nome: '',
+    email: '',
+    telefone: '',
+    nf_enviada: '',
+    loc_tom: '',
+    des_nom: '',
+    observacoes: '',
+    type_emp: ''
     });
   
     const handleSubmitPatrimonio = async () => {
@@ -154,26 +171,28 @@ export function AdicionarEmpenho() {
   
           setFormData({
             id: '',
-            status_tomb: '',
-            data_tombamento: '',
-            data_aviso: '',
-            prazo_teste: '',
-            atestado: '',
-            solicitante: '',
-            n_termo_processo: '',
-            origem: '',
-            cnpj: '',
-            valor_termo: '',
-            n_projeto: '',
-            data_tomb_sei: '',
-            nome: '',
-            email: '',
-            telefone: '',
-            nf_enviada: '',
-            loc_tom: '',
-            des_nom: '',
-            observacoes: '',
-            type_emp: ''
+          coluna: '',
+          emp_nom: '',
+          status_tomb: '',
+          data_tombamento: '',
+          data_aviso: '',
+          prazo_teste: '',
+          atestado: '',
+          solicitante: '',
+          n_termo_processo: '',
+          origem: '',
+          cnpj: '',
+          valor_termo: '',
+          n_projeto: '',
+          data_tomb_sei: '',
+          nome: '',
+          email: '',
+          telefone: '',
+          nf_enviada: '',
+          loc_tom: '',
+          des_nom: '',
+          observacoes: '',
+          type_emp: ''
           });
           setFileInfo({
             name: '',
@@ -197,7 +216,7 @@ export function AdicionarEmpenho() {
       }
     };
 
-
+    
 
     return(
         <Dialog open={isModalOpen} onOpenChange={onClose}> 
@@ -206,12 +225,39 @@ export function AdicionarEmpenho() {
                  <DialogTitle className="text-2xl text-center font-medium">
                 Adicionar nota de empenho
                  </DialogTitle>
-                 <DialogDescription className="text-center text-zinc-500 max-w-[350px]">
-                 Atualize os itens do {typeModal == 'import-csv' ? ('patrimônio'):('patrimônio baixado')} na Vitrine com a planilha .xls gerada no SICPAT
+                 <DialogDescription className="text-center text-zinc-500 max-w-[400px]">
+                 Prrencha o formulário e adicione o arquivo .pdf do empenho, todos os processos serão feitos na plataforma.
                  </DialogDescription>
                </DialogHeader>
 
                <div className="mb-4">
+                <div className="flex  gap-6 my-6 items-end w-full">
+                <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Nome do empenho</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        className="w-full"
+                       value={nome}
+                       onChange={(e) => setNome(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-3 ">
+                      <Label htmlFor="name">Coluna</Label>
+                <Select value={cb} onValueChange={(value) => setCb(value)} >
+  <SelectTrigger   className="w-[180px]">
+    <SelectValue  />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="recebidos">Recebidos</SelectItem>
+    <SelectItem value="projetos">Projetos</SelectItem>
+    <SelectItem value="tombamento">Tombamento</SelectItem>
+    <SelectItem value="agendamento">Agendamento</SelectItem>
+    <SelectItem value="concluido">Concluído</SelectItem>
+  </SelectContent>
+</Select>
+</div>
+                </div>
                <div {...getRootProps()} className="border-dashed mb-6 flex-col border-2 border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 mt-4">
           <input {...getInputProps()} />
           <div className="p-4  border rounded-md">

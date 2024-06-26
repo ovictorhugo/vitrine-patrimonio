@@ -63,6 +63,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea";
 import { DataTable } from "./data-table";
 import { columnsFornecedores } from "./components/columns-fornecedores";
+import { Solicitantes } from "./components/solicitantes";
 interface Empenho {
     id: string;
     status_tomb: string;
@@ -216,6 +217,8 @@ export function Empenhos() {
                 onClick: () => console.log("Fechar"),
               },
             });
+
+            fetchDataP()
           }
 
         setFormData(
@@ -248,29 +251,29 @@ export function Empenhos() {
 
     
     const urlPatrimonioInsert = `${urlGeral}getFornecedores`;
-
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await fetch(urlPatrimonioInsert , {
-            mode: "cors",
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET",
-              "Access-Control-Allow-Headers": "Content-Type",
-              "Access-Control-Max-Age": "3600",
-              "Content-Type": "text/plain",
-            },
-          });
-          const data = await response.json();
-          if (data) {
-              setFornecedores(data)
-          }
-        } catch (err) {
-          console.log(err);
+    const fetchDataP = async () => {
+      try {
+        const response = await fetch(urlPatrimonioInsert , {
+          mode: "cors",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "3600",
+            "Content-Type": "text/plain",
+          },
+        });
+        const data = await response.json();
+        if (data) {
+            setFornecedores(data)
         }
-      };
-      fetchData()
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    useEffect(() => {  
+      fetchDataP()
   
      
     }, [urlPatrimonioInsert]);
@@ -346,6 +349,7 @@ const handlePhoneChange = (index:any, e:any) => {
               <TabsList >
               <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
                 <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Fornecedores</TabsTrigger>
+                <TabsTrigger value="solicitantes" className="text-zinc-600 dark:text-zinc-200">Solicitantes</TabsTrigger>
                 </TabsList>
                
           
@@ -377,7 +381,7 @@ const handlePhoneChange = (index:any, e:any) => {
                 <TabsContent value="unread" className="h-auto md:pb-8 ob-4">
                 <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
 
-                <fieldset className="grid xl:col-span-2 gap-6 rounded-lg border p-4 bg-white">
+                <fieldset className="grid xl:col-span-2 gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Todos os fornecedores
                   </legend>
@@ -386,7 +390,7 @@ const handlePhoneChange = (index:any, e:any) => {
                   
                 </fieldset>
 
-                <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
+                <fieldset className="grid gap-6 rounded-lg  p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Adicionar novo fornecedor
                   </legend>
@@ -478,6 +482,10 @@ const handlePhoneChange = (index:any, e:any) => {
                 </fieldset>
              
               </div>
+                </TabsContent>
+
+                <TabsContent value="solicitantes" className="h-auto">
+                  <Solicitantes/>
                 </TabsContent>
                 </Tabs>
 

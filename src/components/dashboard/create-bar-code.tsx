@@ -220,7 +220,7 @@ export function CreateBarCode() {
                             <div className="flex flex-col h-full">
                             <div className="flex">
                                 <div className="bg-[#719CB8] absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
-                            <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-800 p-2 flex gap-3 rounded-bl-xl ">
+                            <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-900 p-2 flex gap-3 rounded-bl-xl ">
                         <Button variant="outline" size="icon" className="h-7 w-7">
                 <ChevronLeft className="h-4 w-4" />
 
@@ -306,7 +306,7 @@ export function CreateBarCode() {
 
                     <div  className="xl:col-span-2 p-0">
                     <div className="grid w-full items-start gap-6 overflow-auto ">
-                <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
+                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Configurações
                   </legend>
@@ -374,9 +374,9 @@ export function CreateBarCode() {
                   </div>
                  
                 </fieldset>
-                <fieldset className="grid gap-6 rounded-lg border p-4">
+                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
-                    Messages
+                    Gerar etiqueta
                   </legend>
                   <div className="grid gap-3">
                     <Label htmlFor="role">Role</Label>

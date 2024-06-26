@@ -43,9 +43,9 @@ export function AccountSwitcher({
   return (
     <DropdownMenu>
         <div className="w-full  gap-3 flex items-center">
-        <DropdownMenuTrigger className="w-full flex-1 items-center flex justify-center   ">
+        <DropdownMenuTrigger className="w-full flex-1  items-center flex justify-center   ">
             <div className={cn(
-          "flex items-center h-10 w-full gap-2 pr-4 border rounded-md",
+          "flex items-center h-10 w-full dark:border-neutral-800 gap-2 pr-4 border rounded-md",
           isCollapsed &&
             "flex h-10 w-10 shrink-0 items-center justify-center p-0 "
         )}> 
