@@ -179,12 +179,13 @@ export function Empenhos() {
       }
     ]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value
-      });
-    };
+    // Função para atualizar um item específico no formData
+  const updateItem = (index:any, field:any, value:any) => {
+    const newFormData = formData.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    );
+    setFormData(newFormData);
+  };
 
     const handleSubmitPatrimonio = async () => {
       try {
@@ -345,37 +346,44 @@ console.log(formData)
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Adicionar novo fornecedor
                   </legend>
-
-                  <div className="grid gap-3 w-full">
+                  {formData.map((item, index) => (
+                  <div>
+                    <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Nome da empresa</Label>
-                    <Input name="nome" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="nome" value={item.nome} 
+                    onChange={(e) => updateItem(index, 'nome', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
                  <div className="flex w-full gap-6">
      
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Sigla</Label>
-                    <Input name="sigla" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="sigla" value={item.sigla}
+                    onChange={(e) => updateItem(index, 'sigla', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CNPJ</Label>
-                    <Input name="cnpj" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cnpj" value={item.cnpj}
+                    onChange={(e) => updateItem(index, 'cnpj', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                  </div>
 
                   <div className="grid gap-3">
                     <Label htmlFor="temperature">Endereço</Label>
-                    <Input name="endereco" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="endereco" value={item.endereco}
+                    onChange={(e) => updateItem(index, 'endereco', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
                   <div className="flex w-full gap-6 ">
                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CEP</Label>
-                    <Input name="cep" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cep" value={item.cep}
+                    onChange={(e) => updateItem(index, 'cep', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Cidade</Label>
-                    <Input name="cidade" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="cidade" value={item.cidade}
+                    onChange={(e) => updateItem(index, 'cidade', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                   
                  </div>
@@ -383,12 +391,14 @@ console.log(formData)
                  <div className="flex w-full gap-6 ">
                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Telefone</Label>
-                    <Input name="telefone" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="telefone" value={item.endereco}
+                    onChange={(e) => updateItem(index, 'telefone', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Email</Label>
-                    <Input name="email" onChange={(e) => handleChange(e)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="email" value={item.email}
+                    onChange={(e) => updateItem(index, 'email', e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
                  </div>
 
@@ -396,11 +406,13 @@ console.log(formData)
 
                  <div className="grid gap-3">
                     <Label htmlFor="content">Observação</Label>
-                    <Textarea name="observacoes" onChange={(e) => handleChange(e)} id="content" placeholder="You are a..." />
+                    <Textarea name="observacoes" value={item.observacoes}
+                    onChange={(e) => updateItem(index, 'observacoes', e.target.value)} id="content" placeholder="You are a..." />
                   </div>
 
                   <Button onClick={() => handleSubmitPatrimonio()} className="ml-auto w-fit"><Plus size={16}/> Adicionar </Button>
-                 
+                  </div>
+                ))}
                 </fieldset>
              
               </div>
