@@ -269,8 +269,12 @@ export function CreateBarCode() {
                 </Alert>
                 </div>
 
+<<<<<<< Updated upstream
                 <div className="">
                 <Alert className="border-t-0 p-6 rounded-xl rounded-t-none h-full">
+                <div>
+                <Alert className="border-t-0 p-6 rounded-xl rounded-t-none ">
+>>>>>>> Stashed changes
                 {patrimonio.map((props) => {
                 return(
                    <div>

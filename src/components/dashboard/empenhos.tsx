@@ -254,6 +254,8 @@ export function Empenhos() {
                     <Label htmlFor="content">Observação</Label>
                     <Textarea id="content" placeholder="You are a..." />
                   </div>
+
+                  <Button><Plus size={16}/> Adicionar </Button>
                  
                 </fieldset>
                 <fieldset className="grid gap-6 rounded-lg border p-4 bg-white">
