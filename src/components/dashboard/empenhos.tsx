@@ -277,6 +277,50 @@ export function Empenhos() {
   
 
 console.log(formData)
+
+const formatCep = (value:any) => {
+  // Remove todos os caracteres que não são dígitos
+  value = value.replace(/\D/g, '');
+  // Aplica a máscara
+  value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+  // Limita a 9 caracteres
+  return value.slice(0, 9);
+};
+
+// Função para lidar com a mudança no input do CEP
+const handleCepChange = (index:any, e:any) => {
+  const formattedCep = formatCep(e.target.value);
+  updateItem(index, 'cep', formattedCep);
+};
+
+
+const formatCnpj = (value:any) => {
+  value = value.replace(/\D/g, '');
+  value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+  value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+  value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+  value = value.replace(/(\d{4})(\d)/, '$1-$2');
+  return value.slice(0, 18);
+};
+
+const handleCnpjChange = (index:any, e:any) => {
+  const formattedCnpj = formatCnpj(e.target.value);
+  updateItem(index, 'cnpj', formattedCnpj);
+};
+
+const formatPhone = (value:any) => {
+  value = value.replace(/\D/g, ''); // Remove todos os caracteres que não são dígitos
+  value = value.replace(/^(\d{2})(\d)/, '($1) $2'); // Adiciona parênteses em torno dos dois primeiros dígitos
+  value = value.replace(/(\d{1})(\d{4})(\d{4})/, '$1 $2-$3'); // Formata o restante como x xxxx-xxxx
+  return value.slice(0, 16); // Limita a 15 caracteres
+};
+
+const handlePhoneChange = (index:any, e:any) => {
+  const formattedPhone = formatPhone(e.target.value);
+  updateItem(index, 'telefone', formattedPhone);
+};
+
+
   return(
       <>
       {isModalOpen && (
@@ -347,7 +391,7 @@ console.log(formData)
                     Adicionar novo fornecedor
                   </legend>
                   {formData.map((item, index) => (
-                  <div>
+                  <div className="flex flex-col gap-6">
                     <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Nome da empresa</Label>
                     <Input name="nome" value={item.nome} 
@@ -363,8 +407,14 @@ console.log(formData)
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CNPJ</Label>
-                    <Input name="cnpj" value={item.cnpj}
-                    onChange={(e) => updateItem(index, 'cnpj', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+                    <Input
+              name="cnpj"
+              value={item.cnpj}
+              onChange={(e) => handleCnpjChange(index, e)}
+              id="cnpj"
+              type="text"
+              className="flex flex-1"
+            />
                   </div>
                  </div>
 
@@ -377,8 +427,14 @@ console.log(formData)
                   <div className="flex w-full gap-6 ">
                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">CEP</Label>
-                    <Input name="cep" value={item.cep}
-                    onChange={(e) => updateItem(index, 'cep', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+                    <Input
+                    name="cep"
+                    value={item.cep}
+                    onChange={(e) => handleCepChange(index, e)}
+                    id="cep"
+                    type="text"
+                    className="flex flex-1"
+                  />
                   </div>
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Cidade</Label>
@@ -391,8 +447,14 @@ console.log(formData)
                  <div className="flex w-full gap-6 ">
                  <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Telefone</Label>
-                    <Input name="telefone" value={item.endereco}
-                    onChange={(e) => updateItem(index, 'telefone', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+                    <Input
+              name="telefone"
+              value={item.telefone}
+              onChange={(e) => handlePhoneChange(index, e)}
+              id="telefone"
+              type="text"
+              className="flex flex-1"
+            />
                   </div>
 
                   <div className="grid gap-3 w-full">
