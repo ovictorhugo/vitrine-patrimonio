@@ -165,17 +165,19 @@ export function Empenhos() {
     }
 
 
-    const [formData, setFormData] = useState({
-      sigla: '',
-      nome: '',
-      endereco: '',
-      cep: '',
-      cidade:'',
-      cnpj:'',
-      telefone:'',
-      email:'',
-      observacoes:''
-    })
+    const [formData, setFormData] = useState([
+      {
+        sigla: '',
+        nome: '',
+        endereco: '',
+        cep: '',
+        cidade: '',
+        cnpj: '',
+        telefone: '',
+        email: '',
+        observacoes: ''
+      }
+    ]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormData({
@@ -216,7 +218,7 @@ export function Empenhos() {
           }
 
         setFormData(
-          {sigla: '',
+          [{sigla: '',
           nome: '',
           endereco: '',
           cep: '',
@@ -224,7 +226,7 @@ export function Empenhos() {
           cnpj:'',
           telefone:'',
           email:'',
-          observacoes:''}
+          observacoes:''}]
         )
 
     
@@ -273,7 +275,7 @@ export function Empenhos() {
     }, [urlPatrimonioInsert]);
   
 
-
+console.log(formData)
   return(
       <>
       {isModalOpen && (
