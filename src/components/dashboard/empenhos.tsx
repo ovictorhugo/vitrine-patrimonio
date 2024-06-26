@@ -374,7 +374,7 @@ const handlePhoneChange = (index:any, e:any) => {
             </div>
                 </TabsContent>
 
-                <TabsContent value="unread" className="h-auto">
+                <TabsContent value="unread" className="h-auto md:pb-8 ob-4">
                 <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
 
                 <fieldset className="grid xl:col-span-2 gap-6 rounded-lg border p-4 bg-white">
@@ -469,10 +469,10 @@ const handlePhoneChange = (index:any, e:any) => {
                  <div className="grid gap-3">
                     <Label htmlFor="content">Observação</Label>
                     <Textarea name="observacoes" value={item.observacoes}
-                    onChange={(e) => updateItem(index, 'observacoes', e.target.value)} id="content" placeholder="You are a..." />
+                    onChange={(e) => updateItem(index, 'observacoes', e.target.value)} id="content"/>
                   </div>
 
-                  <Button onClick={() => handleSubmitPatrimonio()} className="ml-auto w-fit"><Plus size={16}/> Adicionar </Button>
+                  <Button onClick={() => handleSubmitPatrimonio()} ><Plus size={16}/> Adicionar </Button>
                   </div>
                 ))}
                 </fieldset>

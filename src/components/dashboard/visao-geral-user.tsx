@@ -148,6 +148,57 @@ export function VisaoGeralUser() {
  
       }
 
+      const deletarCondicaoBem = () => {
+        let urlPatrimonio = `${urlGeral}clearCondicaoBem`;
+
+        const fetchDataP = async () => {
+          try {
+            const response = await fetch(urlPatrimonio, {
+              method: "POST",
+              mode: "cors",
+              headers: {
+                "Content-Type": "application/json", // Enviar como JSON
+                "Access-Control-Allow-Origin": "*", // Headers CORS
+                "Access-Control-Allow-Methods": "POST",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Max-Age": "3600"
+              },
+            });
+        
+            if (response.ok) {
+              toast("Dados excluídos da tabela", {
+                description: "Dados na condição de origem",
+                action: {
+                  label: "Fechar",
+                  onClick: () => console.log("Fechar"),
+                },
+              });
+            } else {
+              toast("Erro: Não foi possível resetar a tabela", {
+                description: "Tente novamente",
+                action: {
+                  label: "Fechar",
+                  onClick: () => console.log("Fechar"),
+                },
+              });
+            }
+          } catch (err) {
+            console.error("Erro ao processar a requisição:", err);
+            toast("Erro ao processar a requisição", {
+              description: "Verifique o console para mais detalhes",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Fechar"),
+              },
+            });
+          }
+        };
+        
+        fetchDataP();
+        
+ 
+      }
+
       const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
           onClickBuscaPatrimonio();
@@ -160,6 +211,8 @@ export function VisaoGeralUser() {
         history(-1);
       }
 
+
+      const [cb, setCb] = useState('OC')
 
     return(
         <>
@@ -275,7 +328,7 @@ export function VisaoGeralUser() {
               </div>
              <div className="flex gap-3">
              <Select>
-  <SelectTrigger defaultValue={'OC'} className="w-[180px]">
+  <SelectTrigger defaultValue={'OC'}  className="w-[180px]">
     <SelectValue placeholder="Theme" />
   </SelectTrigger>
   <SelectContent>
@@ -407,8 +460,8 @@ export function VisaoGeralUser() {
                 </CardDescription>
               </div>
              <div className="flex gap-3">
-             <Select>
-  <SelectTrigger defaultValue={'OC'} className="w-[180px]">
+             <Select  defaultValue={'OC'} value={cb} onValueChange={(value) => setCb(value)} >
+  <SelectTrigger className="w-[180px]">
     <SelectValue placeholder="Theme" />
   </SelectTrigger>
   <SelectContent>
@@ -420,17 +473,16 @@ export function VisaoGeralUser() {
 </Select>
 
 
-             <Button   size="sm" className="ml-auto gap-1">
-              <FileCsv className="h-4 w-4" />
-              Baixar arquivo .csv
-                  
+             <Button variant={'destructive'} onClick={() => {deletarCondicaoBem()}}   size="sm" className="ml-auto gap-1">
+              <Trash className="h-4 w-4" />
+              Resetar tabela
                
               </Button>
              </div>
             </CardHeader>
             <CardContent>
       <TabelaPatrimonio
-      filter={'OC'}
+      filter={cb}
       />
             </CardContent>
                 </Alert>
