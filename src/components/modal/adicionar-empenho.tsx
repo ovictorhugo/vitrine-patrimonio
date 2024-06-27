@@ -2,7 +2,7 @@ import { ArrowUUpLeft, FileCsv, FilePdf, FileXls, Plus, Upload } from "phosphor-
 import { useModal } from "../hooks/use-modal-store";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "sonner"
 import { UserContext } from "../../context/context";
 import * as XLSX from 'xlsx';
@@ -53,7 +53,7 @@ export function AdicionarEmpenho() {
     const {urlGeral} = useContext(UserContext)
 
 
-   
+    const [nome, setNome] = useState('')
   
     const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>({
       name: '',
@@ -100,38 +100,82 @@ export function AdicionarEmpenho() {
     // Extract numbers from the UUID and join them into a single string
     const id = uuid.replace(/\D/g, '').slice(0, 10);
     const [cb, setCb] = useState('recebidos')
-    const [nome, setNome] = useState('')
+    
 
-    const data = {
+    const [formData, setFormData] = useState({
       id:id,
       coluna:cb,
-      emp_nom:nome
-    }
-    const [formData, setFormData] = useState({
-      id: id,
-    coluna: cb,
+      emp_nom: nome,
+      status_tomb: '',
+      tipo_emp: '',
+      pdf_empenho: '',
+      data_fornecedor: '',
+      prazo_entrega: '',
+      status_recebimento:'',
+      loc_entrega:'',
+      loc_entrega_confirmado:'',
+      cnpj:'',
+      loc_nom:'',
+      des_nom:'',
+      status_tombamento:'',
+      data_tombamento:'',
+      data_aviso:'',
+      prazo_teste:'',
+      atestado:'',
+      loc_tom:'',
+      status_nf:'',
+      observacoes:'',
+      data_agendamento:'',
+      n_termo_processo:'',
+      origem:'',
+      valor_termo:'',
+      n_projeto:'',
+      data_tomb_sei:'',
+      pdf_nf:'',
+      pdf_resumo:'',
+      created_at:'',
+    });
+
+    
+  useEffect(() => {
+setFormData({
+    id:id,
+    coluna:cb,
     emp_nom: nome,
     status_tomb: '',
-    data_tombamento: '',
-    data_aviso: '',
-    prazo_teste: '',
-    atestado: '',
-    solicitante: '',
-    n_termo_processo: '',
-    origem: '',
-    cnpj: '',
-    valor_termo: '',
-    n_projeto: '',
-    data_tomb_sei: '',
-    nome: '',
-    email: '',
-    telefone: '',
-    nf_enviada: '',
-    loc_tom: '',
-    des_nom: '',
-    observacoes: '',
-    type_emp: ''
-    });
+    tipo_emp: '',
+    pdf_empenho: '',
+    data_fornecedor: '',
+    prazo_entrega: '',
+    status_recebimento:'',
+    loc_entrega:'',
+    loc_entrega_confirmado:'',
+    cnpj:'',
+    loc_nom:'',
+    des_nom:'',
+    status_tombamento:'',
+    data_tombamento:'',
+    data_aviso:'',
+    prazo_teste:'',
+    atestado:'',
+    loc_tom:'',
+    status_nf:'',
+    observacoes:'',
+    data_agendamento:'',
+    n_termo_processo:'',
+    origem:'',
+    valor_termo:'',
+    n_projeto:'',
+    data_tomb_sei:'',
+    pdf_nf:'',
+    pdf_resumo:'',
+    created_at:'',
+  
+})
+  }, [nome]);
+
+    console.log(formData)
+    console.log(nome)
   
     const handleSubmitPatrimonio = async () => {
       try {
@@ -157,42 +201,52 @@ export function AdicionarEmpenho() {
         const response = await axios.post(urlPatrimonioInsert, data, {
           headers: {
             'Content-Type': 'multipart/form-data',
+         
           }
         });
   
-        if (response.status === 201) {
+        if ((response.status === 201) || (response.status === 200)) {
           toast("Dados enviados com sucesso", {
             description: "Todos os dados foram enviados.",
             action: {
               label: "Fechar",
               onClick: () => console.log("Fechar"),
             },
-          });
+          })
+
   
           setFormData({
-            id: '',
-          coluna: '',
-          emp_nom: '',
-          status_tomb: '',
-          data_tombamento: '',
-          data_aviso: '',
-          prazo_teste: '',
-          atestado: '',
-          solicitante: '',
-          n_termo_processo: '',
-          origem: '',
-          cnpj: '',
-          valor_termo: '',
-          n_projeto: '',
-          data_tomb_sei: '',
-          nome: '',
-          email: '',
-          telefone: '',
-          nf_enviada: '',
-          loc_tom: '',
-          des_nom: '',
-          observacoes: '',
-          type_emp: ''
+            id:'',
+            coluna:'',
+            emp_nom: '',
+            status_tomb: '',
+            tipo_emp: '',
+            pdf_empenho: '',
+            data_fornecedor: '',
+            prazo_entrega: '',
+            status_recebimento:'',
+            loc_entrega:'',
+            loc_entrega_confirmado:'',
+            cnpj:'',
+            loc_nom:'',
+            des_nom:'',
+            status_tombamento:'',
+            data_tombamento:'',
+            data_aviso:'',
+            prazo_teste:'',
+            atestado:'',
+            loc_tom:'',
+            status_nf:'',
+            observacoes:'',
+            data_agendamento:'',
+            n_termo_processo:'',
+            origem:'',
+            valor_termo:'',
+            n_projeto:'',
+            data_tomb_sei:'',
+            pdf_nf:'',
+            pdf_resumo:'',
+            created_at:'',
           });
           setFileInfo({
             name: '',
@@ -203,7 +257,9 @@ export function AdicionarEmpenho() {
             pdf_nf: null,
             pdf_resumo: null
           });
-        }
+
+          onClose()
+        } 
       } catch (error) {
         console.error('Erro ao processar a requisição:', error);
         toast("Erro ao processar a requisição", {

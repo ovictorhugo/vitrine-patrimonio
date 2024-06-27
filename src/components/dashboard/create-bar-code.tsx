@@ -1,4 +1,4 @@
-import { Bird, Check, ChevronLeft, MapPin, Rabbit, Tag, Turtle, User, X } from "lucide-react";
+import { Bird, Check, ChevronLeft, MapPin, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -73,6 +73,9 @@ export function CreateBarCode() {
     let bemDgv = bem_dgv ?? '';  // Default value if bem_dgv is null
 
     const [input, setInput] = useState("");
+
+    
+
 
     const handleChange = (value:any) => {
 
@@ -166,8 +169,8 @@ export function CreateBarCode() {
     return(
         <>
         {isModalOpen && (
-             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                 <Tabs defaultValue={'all'} className="h-full" >
+             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-2 md:p-8">
+            
                 
                 <div className="w-full  gap-4">
             <div className="flex items-center gap-4">
@@ -185,10 +188,7 @@ export function CreateBarCode() {
                 
             
               <div className="hidden items-center gap-2 md:ml-auto md:flex">
-              <TabsList >
-              <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
-                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Todos os itens</TabsTrigger>
-                </TabsList>
+         
                
           
                 <Button size="sm">Atualizar condição dos bens 2024</Button>
@@ -199,9 +199,8 @@ export function CreateBarCode() {
 
                 
 
-                <TabsContent value="all" className="h-auto">
-                <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Alert className="border-none bg-transparent p-0 h-full" >
+            <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+                <Alert className="border-none bg-transparent p-0 h-full " >
                     <div className="h-full">
                 <div className=" rounded-xl ">
                     <div className="flex justify-between w-full">
@@ -372,35 +371,15 @@ export function CreateBarCode() {
                             </Button>
                     </div>
                   </div>
+
+                  <Button disabled={patrimonio.length == 0} ><Ticket size={16}/>Gerar etiqueta</Button>
                  
                 </fieldset>
-                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Gerar etiqueta
-                  </legend>
-                  <div className="grid gap-3">
-                    <Label htmlFor="role">Role</Label>
-                    <Select defaultValue="system">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="system">System</SelectItem>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="assistant">Assistant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="content">Content</Label>
-                    <Textarea id="content" placeholder="You are a..." />
-                  </div>
-                </fieldset>
+               
               </div>
                     </div>
                 </div>
-                </TabsContent>
-                </Tabs>
+               
              </main>
         )}
         </>

@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho' | 'confirm-delete-fornecedor'
+export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho' | 'confirm-delete-fornecedor' | 'informacoes-empenhos'
 
 interface ModalData {
   id?: string,
@@ -24,7 +24,37 @@ interface ModalData {
   researcher_id?: string
   magazine?:string
 
+
+  coluna?:string
+  emp_nom?:string
+  status_tomb?:string
+  tipo_emp?:string
+  pdf_empenho?:string
+  data_fornecedor?:string
+  prazo_entrega?:string
+  status_recebimento?:string
+  loc_entrega?:string
+  loc_entrega_confirmado?:string
   cnpj?:string
+  loc_nom?:string
+  des_nom?:string
+  status_tombamento?:string
+  data_tombamento?:string
+  data_aviso?:string
+  prazo_teste?:string
+  atestado?:string
+  loc_tom?:string
+  status_nf?:string
+  observacoes?:string
+  data_agendamento?:string
+  n_termo_processo?:string
+  origem?:string
+  valor_termo?:string
+  n_projeto?:string
+  data_tomb_sei?:string
+  pdf_nf?:string
+  pdf_resumo?:string
+  created_at?:string
  
 }
 

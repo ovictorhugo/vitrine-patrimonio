@@ -64,32 +64,40 @@ import { Textarea } from "../ui/textarea";
 import { DataTable } from "./data-table";
 import { columnsFornecedores } from "./components/columns-fornecedores";
 import { Solicitantes } from "./components/solicitantes";
+import { Skeleton } from "../ui/skeleton";
+
 interface Empenho {
-    id: string;
-    status_tomb: string;
-    data_tombamento: string;
-    data_aviso: string;
-    prazo_teste: string;
-    atestado: string;
-    solicitante: string;
-    n_termo_processo: string;
-    origem: string;
-    cnpj: string;
-    valor_termo: string;
-    n_projeto: string;
-    data_tomb_sei: string;
-    nome: string;
-    email: string;
-    telefone: string;
-    nf_enviada: string;
-    loc_tom: string;
-    des_nom: string;
-    observacoes: string;
-    pdf_empenho: string | null;
-    pdf_nf: string | null;
-    pdf_resumo: string | null;
-    created_at: string;
-    type_emp: string;
+  id:string
+  coluna:string
+  emp_nom:string
+  status_tomb:string
+  tipo_emp:string
+  pdf_empenho:string
+  data_fornecedor:string
+  prazo_entrega:string
+  status_recebimento:string
+  loc_entrega:string
+  loc_entrega_confirmado:string
+  cnpj:string
+  loc_nom:string
+  des_nom:string
+  status_tombamento:string
+  data_tombamento:string
+  data_aviso :string
+  prazo_teste:string
+  atestado:string
+  loc_tom:string
+  status_nf:string
+  observacoes:string
+  data_agendamento:string
+  n_termo_processo:string
+  origem:string
+  valor_termo:string
+  n_projeto:string
+  data_tomb_sei:string
+  pdf_nf:string
+  pdf_resumo:string
+  created_at:string
   }
 
   interface Fornecedores {
@@ -113,16 +121,29 @@ export function Empenhos() {
   const [fornecedores, setFornecedores] = useState<Fornecedores[]>([]);
 
   useEffect(() => {
-    const fetchEmpenhos = async () => {
+    let urlEmpenhos = `${urlGeral}AllEmpenhos`;
+    const fetchDataP = async () => {
       try {
-        const response = await axios.get(`${urlGeral}AllEmpenhos`);
-        setEmpenhos(response.data);
-      } catch (error) {
-        console.error('Error fetching empenhos', error);
+        const response = await fetch(urlEmpenhos , {
+          mode: "cors",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "3600",
+            "Content-Type": "text/plain",
+          },
+        });
+        const data = await response.json();
+        if (data) {
+            setEmpenhos(data)
+        }
+      } catch (err) {
+        console.log(err);
       }
-    };
+    }
 
-    fetchEmpenhos();
+    fetchDataP();
   }, []);
 
   const downloadPDF = (base64String: string, filename: string) => {
@@ -145,19 +166,27 @@ export function Empenhos() {
       setTotal(newResearcherData);
     };
 
-    console.log(total)
+
     const [search, setSearch] = useState('')
 
 
     const [columns, setColumns] = useState([
-        { id: 1, title: 'Recebidos', items: ['Item 1', 'Item 2'] },
-        { id: 2, title: 'Projetos', items: [] },
-        { id: 3, title: 'Tombamento', items: [] },
-       
-        { id: 4, title: 'Agendamento', items: [] },
-        { id: 5, title: 'Concluídos', items: [] },
- 
-      ]);
+      { id: 1, title: 'Recebidos', items: [] as Empenho[] },
+      { id: 2, title: 'Projetos', items: [] as Empenho[] },
+      { id: 3, title: 'Tombamento', items: [] as Empenho[] },
+      { id: 4, title: 'Agendamento', items: [] as Empenho[] },
+      { id: 5, title: 'Concluídos', items: [] as Empenho[] },
+    ]);
+    const [isLoading, setIsLoading] = useState(false);
+    console.log(columns)
+  
+    useEffect(() => {
+      const updatedColumns = columns.map((column) => ({
+        ...column,
+        items: empenhos.filter((empenho) => empenho.coluna.trim() === column.title.toLowerCase()),
+      }));
+      setColumns(updatedColumns);
+    }, [empenhos]);
 
       const history = useNavigate();
 
@@ -249,10 +278,12 @@ export function Empenhos() {
 
     //todos os fornecedores
 
-    
+   
     const urlPatrimonioInsert = `${urlGeral}getFornecedores`;
+   
     const fetchDataP = async () => {
       try {
+        setIsLoading(true)
         const response = await fetch(urlPatrimonioInsert , {
           mode: "cors",
           headers: {
@@ -266,6 +297,7 @@ export function Empenhos() {
         const data = await response.json();
         if (data) {
             setFornecedores(data)
+            setIsLoading(false)
         }
       } catch (err) {
         console.log(err);
@@ -279,7 +311,6 @@ export function Empenhos() {
     }, [urlPatrimonioInsert]);
   
 
-console.log(formData)
 
 const formatCep = (value:any) => {
   // Remove todos os caracteres que não são dígitos
@@ -368,13 +399,23 @@ const handlePhoneChange = (index:any, e:any) => {
 
                 <TabsContent value="all" className="h-auto">
                 <div className="h-full elementBarra w-full flex gap-3 overflow-x-auto md:max-w-[calc(100vw-115px)] max-w-[calc(100vw-83px)]">
-            <DndProvider backend={HTML5Backend}>
-      <div className="flex gap-6">
-        {columns.map(column => (
-          <Column key={column.id} column={column} setColumns={setColumns} columns={columns} />
-        ))}
-      </div>
-    </DndProvider>
+                {isLoading ? (
+                  <div className="flex gap-6">
+                    <Skeleton className="w-[320px] rounded-md h-64"/>
+                    <Skeleton className="w-[320px] rounded-md h-[400px]"/>
+                    <Skeleton className="w-[320px] rounded-md h-[300px]"/>
+                    <Skeleton className="w-[320px] rounded-md h-[100px]"/>
+                    <Skeleton className="w-[320px] rounded-md h-[400px]"/>
+                  </div>
+                ):(
+                  <DndProvider backend={HTML5Backend}>
+                  <div className="flex gap-6">
+                    {columns.map((column) => (
+                      <Column key={column.id} column={column} setColumns={setColumns} columns={columns} />
+                    ))}
+                  </div>
+                </DndProvider>
+                )}
             </div>
                 </TabsContent>
 
