@@ -61,10 +61,11 @@ import axios from 'axios';
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { DataTable } from "./data-table";
+
 import { columnsFornecedores } from "./components/columns-fornecedores";
 import { Solicitantes } from "./components/solicitantes";
 import { Skeleton } from "../ui/skeleton";
+import { DataTable } from "./components/data-table-fornecedores";
 
 interface Empenho {
   id:string

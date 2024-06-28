@@ -4,7 +4,13 @@ import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { LogoUfmg } from "../svg/logo-ufmg";
 import { Logo } from "../svg/logo";
 import { Navbar } from "./navbar";
-
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../components/ui/dialog"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -16,7 +22,7 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { Checks, Check, Warning, Wrench, X, Trash  } from "phosphor-react";
+import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass  } from "phosphor-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown } from "lucide-react";
@@ -101,6 +107,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../components/ui/accordion"
+import { Dialog } from "../ui/dialog";
 
 
 export function NovoItem() {
@@ -319,6 +326,20 @@ const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 
+
+const [searchTerm, setSearchTerm] = useState('');
+
+const normalizeString = (str:any) => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+};
+
+const filteredList = locNomLista.filter((framework) =>
+  normalizeString(framework.loc_nom).includes(normalizeString(searchTerm))
+);
+
     return(
         <>
         {isModalOpen && (
@@ -485,12 +506,12 @@ const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                           type="text"
                           className="w-full"
                           disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].loc_nom : ''}
+                          value={patrimonio.length > 0 ? patrimonio[0].loc_nom : localizacao}
                         />
                         ):(
-                          <Popover open={openPopo} onOpenChange={setOpenPopo}>
-                          <PopoverTrigger asChild>
-                            <Button
+                          <Dialog open={openPopo} onOpenChange={setOpenPopo}>
+                        <DialogTrigger className="w-full">
+                        <Button
                               variant="outline"
                               role="combobox"
                               aria-expanded={openPopo}
@@ -498,46 +519,59 @@ const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
                             >
                               {localizacao
                                 ? locNomLista.find((framework) => framework.loc_nom === localizacao)?.loc_nom
-                                : "Selecione um local"}
+                                : 'Selecione um local'}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
-                          </PopoverTrigger>
+                        </DialogTrigger>
+                        <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Escolher localização</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. This will permanently delete your account
+        and remove your data from our servers.
+      </DialogDescription>
+    </DialogHeader>
 
-                          <PopoverContent className=" p-0">
-                            <Command>
-                              <CommandInput placeholder="Pesquise uma sala..." />
-                              <CommandEmpty>Sem resultados</CommandEmpty>
-                              <ScrollArea className={'h-64'}>
-                              <CommandGroup>
-                                {locNomLista && locNomLista.map((framework) => (
-                                  // Verifica se framework não é undefined antes de renderizar
-                                  framework && (
-                                    <CommandItem
-                                      key={framework.loc_nom}
-                                      value={framework.loc_nom}
-                                      onSelect={(currentValue) => {
-                                        setLocalizacao(currentValue === localizacao ? "" : currentValue);
-                                        setOpenPopo(false);
+    <div className="border rounded-md px-6 h-12 flex items-center gap-1 border-neutral-200 dark:border-neutral-800">
+                                <MagnifyingGlass size={16} />
+                                <Input
+                                  className="border-0"
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  placeholder="Buscar localização"
+                                />
+                              </div>
+
+                              <div className={'max-h-[350px] overflow-y-auto elementBarra'}>
+                              
+                              <div className="flex flex-col gap-1 p-2">
+                                {filteredList.length > 0 ? (
+                                  filteredList.map((props, index) => (
+                                    <Button
+                                      variant={'ghost'}
+                                      key={index}
+                                      className="text-left justify-start"
+                                      onClick={() => {
+                                        setLocalizacao(props.loc_nom);
+                                        setLocState(true);
+                                        setOpenPopo(false); // Fechar o popover após a seleção
                                       }}
                                     >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          localizacao === framework.loc_nom ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      {framework.loc_nom}
-                                    </CommandItem>
-                                  )
-                                ))}
-                              </CommandGroup>
-                              </ScrollArea>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                                      {props.loc_nom}
+                                    </Button>
+                                  ))
+                                ) : (
+                                  <div>Nenhuma sala encontrada</div>
+                                )}
+                              </div>
+                            </div>
+  </DialogContent>
 
+                        </Dialog>
 
                         )}
+
+                       
 
                         {typeCod != 'scod' && (
                            <div className="flex gap-3">

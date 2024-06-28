@@ -1,4 +1,4 @@
-import { Bird, Check, ChevronLeft, MapPin, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
+import { Bird, Check, ChevronLeft, Download, MapPin, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -256,7 +256,7 @@ export function CreateBarCode() {
                                 
                             </div>
 
-                            <Button size={'sm'}>Baixar informações</Button>
+                            <Button size={'sm'}><Download size={16}/>Baixar informações</Button>
                </div>
 
                <p className="text-xs text-muted-foreground">
@@ -275,7 +275,7 @@ export function CreateBarCode() {
                    <div>
                    
 
-                <div className="flex mt-8 flex-wrap gap-4">
+                <div className="flex  flex-wrap gap-4">
                 <div className="flex gap-2 items-center text-xs font-medium"><User size={12} />{props.pes_nome}</div>
                 <div className="flex gap-2 items-center text-xs font-medium uppercase">
                   <div className={`w-4 h-4 rounded-md ${qualisColor[props.csv_cod.trim()as keyof typeof qualisColor]}`}></div>
@@ -289,7 +289,7 @@ export function CreateBarCode() {
               </div>
 
 
-              <div className=" p-4 mt-6 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800 justify-center flex gap-3 items-center">
+              <div className=" p-4 mt-6 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800 justify-center flex gap-6 items-center">
           <img src={logo_eng} alt="" className="h-20" />
           {/* Outros elementos aqui */}
           <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod}${props.bem_dgv}`} alt="" className="h-20 mix-blend-multiply" />
@@ -375,6 +375,12 @@ export function CreateBarCode() {
                   <Button disabled={patrimonio.length == 0} ><Ticket size={16}/>Gerar etiqueta</Button>
                  
                 </fieldset>
+
+                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
+                  <legend className="-ml-1 px-1 text-sm font-medium">
+                    Plaquetas geradas
+                  </legend>
+                  </fieldset>
                
               </div>
                     </div>
