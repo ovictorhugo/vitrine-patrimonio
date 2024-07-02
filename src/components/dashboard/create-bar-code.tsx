@@ -191,7 +191,7 @@ export function CreateBarCode() {
          
                
           
-                <Button size="sm">Atualizar condição dos bens 2024</Button>
+                <Button size="sm">Gerar plaquetas para bens SQ</Button>
               </div>
             </div>
 

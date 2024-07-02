@@ -47,6 +47,8 @@ import { cn } from "../../lib";
 import { ScrollArea } from "../ui/scroll-area";
 import PdfViewer from "../dashboard/components/PdfViewer";
 import { UserContext } from "../../context/context";
+import { Textarea } from "../ui/textarea";
+import { string } from "prop-types";
 
 interface Fornecedores {
     sigla: string;
@@ -68,12 +70,24 @@ interface loc_nom {
   }
 
 export function InformacoesEmpenhos() {
+    const {urlGeral} = useContext(UserContext)
     const { onClose, isOpen, type: typeModal, data } = useModal();
     
     const isModalOpen = (isOpen && typeModal === 'informacoes-empenhos')
+    const [nomeEmp, setNomeEmp] = useState('');
+    const [desc, setDesc] = useState('');
+    const [localEnterga, setLocalEntrega] = useState('');
+    const [confEntrega, setConfEntrega] = useState('');
+    const [localizacao, setLocalizacao] = useState("")
+const [fornecedor, setFornecedor] = useState("")
+const [coluna, setColuna] = useState("")
 
-    
     const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>({
+        name: '',
+        size: 0
+      });
+    
+      const [fileInfo2, setFileInfo2] = useState<{ name: string; size: number }>({
         name: '',
         size: 0
       });
@@ -88,19 +102,31 @@ export function InformacoesEmpenhos() {
         pdf_resumo: null
       });
     
-    
       const handleFileUpload = (files: any) => {
         const uploadedFile = files[0];
         if (uploadedFile) {
           setPdfs((prevState) => ({
             ...prevState,
-            pdf_empenho: uploadedFile // Assume that this handler is for pdf_empenho; update as needed for other files
+            pdf_nf: uploadedFile
           }));
           setFileInfo({
             name: uploadedFile.name,
             size: uploadedFile.size
           });
-
+        }
+      };
+    
+      const handleFileUploadResumo = (files: any) => {
+        const uploadedFile = files[0];
+        if (uploadedFile) {
+          setPdfs((prevState) => ({
+            ...prevState,
+            pdf_resumo: uploadedFile
+          }));
+          setFileInfo2({
+            name: uploadedFile.name,
+            size: uploadedFile.size
+          });
         }
       };
     
@@ -108,193 +134,48 @@ export function InformacoesEmpenhos() {
         handleFileUpload(acceptedFiles);
       }, []);
     
-      const { getRootProps, getInputProps, isDragActive } = useDropzone({
+      const onDropResumo = useCallback((acceptedFiles: any) => {
+        handleFileUploadResumo(acceptedFiles);
+      }, []);
+    
+      const { getRootProps: getRootPropsNf, getInputProps: getInputPropsNf, isDragActive: isDragActiveNf } = useDropzone({
         onDrop
       });
+    
+      const { getRootProps: getRootPropsResumo, getInputProps: getInputPropsResumo, isDragActive: isDragActiveResumo } = useDropzone({
+        onDrop: onDropResumo
+      });
+    
 
-
-
+      
 
   const [status, setStatus] = useState('Aguardando entrega')
   const [recebido, setRecebido] = useState('Não')
   const [date, setDate] = useState<Date | undefined>(new Date())
+  const [prazo, setPrazo] = useState<Date | undefined>(new Date())
 
 
-  //fetch enviar
-  const [formData, setFormData] = useState({
-    id:data.id,
-    coluna:data.coluna,
-    emp_nom:'',
-    status_tomb: '',
-    tipo_emp: '',
-    pdf_empenho: '',
-    data_fornecedor: '',
-    prazo_entrega: '',
-    status_recebimento:'',
-    loc_entrega:'',
-    loc_entrega_confirmado:'',
-    cnpj:'',
-    loc_nom:'',
-    des_nom:'',
-    status_tombamento:'',
-    data_tombamento:'',
-    data_aviso:'',
-    prazo_teste:'',
-    atestado:'',
-    loc_tom:'',
-    status_nf:'',
-    observacoes:'',
-    data_agendamento:'',
-    n_termo_processo:'',
-    origem:'',
-    valor_termo:'',
-    n_projeto:'',
-    data_tomb_sei:'',
-    pdf_nf:'',
-    pdf_resumo:'',
-    created_at:'',
-  });
-
-  
-useEffect(() => {
-setFormData({
-  id:data.id,
-  coluna:data.coluna,
-  emp_nom: '',
-  status_tomb: '',
-  tipo_emp: '',
-  pdf_empenho: '',
-  data_fornecedor: '',
-  prazo_entrega: '',
-  status_recebimento:'',
-  loc_entrega:'',
-  loc_entrega_confirmado:'',
-  cnpj:'',
-  loc_nom:'',
-  des_nom:'',
-  status_tombamento:'',
-  data_tombamento:'',
-  data_aviso:'',
-  prazo_teste:'',
-  atestado:'',
-  loc_tom:'',
-  status_nf:'',
-  observacoes:'',
-  data_agendamento:'',
-  n_termo_processo:'',
-  origem:'',
-  valor_termo:'',
-  n_projeto:'',
-  data_tomb_sei:'',
-  pdf_nf:'',
-  pdf_resumo:'',
-  created_at:'',
-
-})
-}, []);
-
-const {urlGeral} = useContext(UserContext)
-
-const handleSubmitPatrimonio = async () => {
-    try {
-      if (!pdfs.pdf_empenho) {
-        toast("Erro: Nenhum arquivo selecionado", {
-          description: "Por favor, selecione um arquivo PDF para enviar.",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
-        });
-        return;
-      }
-
-      const urlPatrimonioInsert = urlGeral + `empenho`; // Atualize a URL conforme necessário
-
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value);
-      });
-      data.append('pdf_empenho', pdfs.pdf_empenho);
-
-      const response = await axios.post(urlPatrimonioInsert, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-       
-        }
-      });
-
-      if ((response.status === 201) || (response.status === 200)) {
-        toast("Dados enviados com sucesso", {
-          description: "Todos os dados foram enviados.",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
-        })
-
-
-        setFormData({
-          id:'',
-          coluna:'',
-          emp_nom: '',
-          status_tomb: '',
-          tipo_emp: '',
-          pdf_empenho: '',
-          data_fornecedor: '',
-          prazo_entrega: '',
-          status_recebimento:'',
-          loc_entrega:'',
-          loc_entrega_confirmado:'',
-          cnpj:'',
-          loc_nom:'',
-          des_nom:'',
-          status_tombamento:'',
-          data_tombamento:'',
-          data_aviso:'',
-          prazo_teste:'',
-          atestado:'',
-          loc_tom:'',
-          status_nf:'',
-          observacoes:'',
-          data_agendamento:'',
-          n_termo_processo:'',
-          origem:'',
-          valor_termo:'',
-          n_projeto:'',
-          data_tomb_sei:'',
-          pdf_nf:'',
-          pdf_resumo:'',
-          created_at:'',
-        });
-        setFileInfo({
-          name: '',
-          size: 0
-        });
-        setPdfs({
-          pdf_empenho: null,
-          pdf_nf: null,
-          pdf_resumo: null
-        });
-
-        onClose()
-      } 
-    } catch (error) {
-      console.error('Erro ao processar a requisição:', error);
-      toast("Erro ao processar a requisição", {
-        description: "Tente novamente mais tarde.",
-        action: {
-          label: "Fechar",
-          onClick: () => console.log("Fechar"),
-        },
-      });
-    }
-  };
 
   const [openPopo, setOpenPopo] = useState(false)
   const [openPopo2, setOpenPopo2] = useState(false)
   const [openPopo3, setOpenPopo3] = useState(false)
+  const [openPopo4, setOpenPopo4] = useState(false)
 
   //
+
+  useEffect(() => {
+    if (data) {
+        setNomeEmp(data.emp_nom?.trim() || '');
+        setStatus(data.status_tomb?.trim() || '');
+        setRecebido(data.status_recebimento?.trim() || '');
+        setLocalEntrega(data.loc_entrega?.trim() || '');
+        setConfEntrega(data.loc_entrega_confirmado?.trim() || '');
+        setLocalizacao(data.loc_nom?.trim() || '');
+        setDesc(data.des_nom?.trim() || '');
+    }
+}, [data]);
+
+
 
   let urlLocNom = `${urlGeral}AllLocNom`;
   const [locNomLista, setLocNomLista] = useState<loc_nom[]>([]);
@@ -334,6 +215,8 @@ const handleSubmitPatrimonio = async () => {
     fetchDataLocNom()
   }, []);
 
+ 
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const [searchTermFornecedores, setSearchTermFornecedores] = useState('');
@@ -356,8 +239,7 @@ const filteredList3 = fornecedores.filter((framework) =>
     normalizeString(framework.nome).includes(normalizeString(searchTermFornecedores))
   );
 
-const [localizacao, setLocalizacao] = useState("")
-const [fornecedor, setFornecedor] = useState("")
+
 const filteredList2 = locNomLista.filter((item: loc_nom) => item.loc_nom === localizacao);
 
 const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedor);
@@ -390,10 +272,134 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
      
     }, [urlPatrimonioInsert]);
 
+   //fetch enviar
+   const [formData, setFormData] = useState({
+    id: '',
+    coluna: '',
+    emp_nom: '',
+    status_tomb: '',
+    pdf_empenho:data.pdf_empenho,
+    tipo_emp: '',
+    data_fornecedor: '',
+    prazo_entrega: '',
+    status_recebimento: '',
+    loc_entrega: '',
+    loc_entrega_confirmado: '',
+    cnpj: '',
+    loc_nom: '',
+    des_nom: '',
+    status_tombamento: '',
+    data_tombamento: '',
+    data_aviso: '',
+    prazo_teste: '',
+    atestado: '',
+    loc_tom: '',
+    status_nf: '',
+    observacoes: '',
+    data_agendamento: '',
+    n_termo_processo: '',
+    origem: '',
+    valor_termo: '',
+    n_projeto: '',
+    data_tomb_sei: '',
+    pdf_nf: '',
+    pdf_resumo: ''
+  });
+
+  useEffect(() => {
+    setFormData({
+      id: data.id,
+      coluna: data.coluna,
+      emp_nom: nomeEmp,
+      status_tomb: status,
+      pdf_empenho:data.pdf_empenho,
+      tipo_emp: '',
+      data_fornecedor: String(date),
+      prazo_entrega: String(prazo),
+      status_recebimento: recebido,
+      loc_entrega: localEnterga,
+      loc_entrega_confirmado: confEntrega,
+      cnpj: filteredList4.length > 0 ? filteredList4[0].cnpj.trim() : '',
+      loc_nom: filteredList2.length > 0 ? filteredList2[0].loc_nom.trim() : '',
+      des_nom: desc,
+      status_tombamento: '',
+      data_tombamento: '',
+      data_aviso: '',
+      prazo_teste: '',
+      atestado: '',
+      loc_tom: '',
+      status_nf: '',
+      observacoes: '',
+      data_agendamento: '',
+      n_termo_processo: '',
+      origem: '',
+      valor_termo: '',
+      n_projeto: '',
+      data_tomb_sei: '',
+      pdf_nf: '',
+      pdf_resumo: ''
+    });
+  }, [data, nomeEmp, status, date, prazo, recebido, localEnterga, confEntrega, filteredList4, filteredList2, desc]);
+
+
+
+
+const handleSubmitPatrimonio = async () => {
+    try {
+      const urlPatrimonioInsert = `${urlGeral}empenho`; // Atualize a URL conforme necessário
+
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+      if (pdfs.pdf_nf) {
+        formDataToSend.append('pdf_nf', pdfs.pdf_nf);
+      }
+      if (pdfs.pdf_resumo) {
+        formDataToSend.append('pdf_resumo', pdfs.pdf_resumo);
+      }
+
+      const response = await axios.post(urlPatrimonioInsert, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        toast("Dados enviados com sucesso", {
+          description: "Todos os dados foram enviados.",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
+
+        setFileInfo({ name: '', size: 0 });
+        setFileInfo2({ name: '', size: 0 });
+        setPdfs({ pdf_empenho: null, pdf_nf: null, pdf_resumo: null });
+
+        onClose();
+      }
+    } catch (error) {
+      console.error('Erro ao processar a requisição:', error);
+      toast("Erro ao processar a requisição", {
+        description: "Tente novamente mais tarde.",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Fechar"),
+        },
+      });
+    }
+  };
+
+  console.log(formData)
+
+
     return(
         <Sheet open={isModalOpen} onOpenChange={onClose}> 
         <SheetContent className="min-w-[60vw] ">
         <SheetHeader className="pt-8 px-6 flex flex-col ">
+        <div className={`rounded-md h-1 w-10 ${(data.coluna != undefined && data.coluna.trim()) === 'recebidos' ? 'bg-blue-500' : ''} ${(data.coluna != undefined && data.coluna.trim()) === 'projetos' ? 'bg-pink-500' : ''}`}></div>
                  <DialogTitle className="text-2xl text-left font-medium">
                 Atualizar informações do empenho {data.emp_nom}
                  </DialogTitle>
@@ -426,7 +432,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
                 <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Nome do empenho</Label>
                     <Input name="sigla" 
-                   id="temperature" type="text" className="flex flex-1" />
+                   id="temperature" type="text" className="flex flex-1" value={nomeEmp} onChange={(e) => setNomeEmp(e.target.value)} />
                   </div>
 
                   <div className="grid gap-3 ">
@@ -462,11 +468,11 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
           {date ? format(date, "dd/MM/yyyy") : <span>Pick a date</span>}
         </Button>
       </SelectTrigger>
-      <SelectContent className=" p-4 flex items-center justify-center">
+      <SelectContent className=" p-4 flex h-auto items-center justify-center">
     
         <Calendar
           mode="single"
-          className="p-0 m-0 "
+          className=" "
           selected={date}
           onSelect={(newDate) => {
             setDate(newDate);
@@ -485,8 +491,69 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
 
                   <div className="grid gap-3 w-full">
                     <Label htmlFor="model">Prazo de entrega</Label>
-                    <Input name="sigla" 
-                   id="temperature" type="text" className="flex flex-1" />
+                    <Select open={openPopo4} onOpenChange={setOpenPopo4}>
+      <SelectTrigger className="pl-0">
+        <Button
+          variant={"ghost"}
+          className={cn(
+            "justify-start text-left font-normal w-full hover:bg-transparent",
+            !prazo && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {prazo ? format(prazo, "dd/MM/yyyy") : <span>Pick a date</span>}
+        </Button>
+      </SelectTrigger>
+      <SelectContent className=" p-4 flex h-auto items-center justify-center">
+    
+        <Calendar
+          mode="single"
+          className=" "
+          selected={prazo}
+          onSelect={(newDate) => {
+            setPrazo(newDate);
+           
+          }}
+          locale={ptBR}
+          initialFocus
+        />
+    
+      </SelectContent>
+    </Select>
+                  </div>
+
+                
+                </div>
+
+                <div className="flex w-full gap-6">
+                <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Local de entrega</Label>
+
+                        <Select value={localEnterga} onValueChange={(value) => setLocalEntrega(value)} >
+  <SelectTrigger  className="w-full">
+    <SelectValue  />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="1605 SECAO DE PATRIMONIO">1605 SECAO DE PATRIMONIO</SelectItem>
+    <SelectItem value="DIRETAMENTE NO SOLICITANTE">DIRETAMENTE NO SOLICITANTE</SelectItem>
+   
+  </SelectContent>
+</Select>
+                  </div>
+
+                  <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Confirmação do local de entrega</Label>
+
+                        <Select value={confEntrega} onValueChange={(value) => setConfEntrega(value)} >
+  <SelectTrigger  className="">
+    <SelectValue  />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="Sim">Sim</SelectItem>
+    <SelectItem value="Não">Não</SelectItem>
+   
+  </SelectContent>
+</Select>
                   </div>
 
                   <div className="grid gap-3 ">
@@ -503,9 +570,17 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
 </Select>
 </div>
                 </div>
+
+                <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Descrição</Label>
+
+                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)}/>
+                  </div>
                  </div>
                 
                 </fieldset>
+
+             
 
                 <fieldset className="grid xl:col-span-2 gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
@@ -568,7 +643,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
                                     </Button>
                                   ))
                                 ) : (
-                                  <div>Nenhuma sala encontrada</div>
+                            <div className="text-center w-full text-sm">Nenhuma sala encontrada</div>
                                 )}
                               </div>
                             </div>
@@ -666,8 +741,8 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
                               <div className={'max-h-[350px] overflow-y-auto elementBarra'}>
                               
                               <div className="flex flex-col gap-1 p-2">
-                                {fornecedores.length > 0 ? (
-                                  fornecedores.map((props, index) => (
+                                {filteredList3.length > 0 ? (
+                                  filteredList3.map((props, index) => (
                                     <Button
                                       variant={'ghost'}
                                       key={index}
@@ -682,7 +757,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
                                     </Button>
                                   ))
                                 ) : (
-                                  <div>Nenhum fornecedor encontrado</div>
+                                  <div className="text-center w-full text-sm">Nenhum fornecedor encontrado</div>
                                 )}
                               </div>
                             </div>
@@ -734,62 +809,73 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
                    );
                 })}
                   </fieldset>
+
+                 
     </AccordionContent>
   </AccordionItem>
 
   <AccordionItem value="item-2">
     <AccordionTrigger>Nota fiscal</AccordionTrigger>
     <AccordionContent>
-    <fieldset className="grid xl:col-span-2 gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Todos os fornecedores
-                  </legend>
-                  <div {...getRootProps()} className="border-dashed  flex-col border-2 border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 ">
-          <input {...getInputProps()} />
-          <div className="p-4  border rounded-md">
-            <FilePdf size={24} className=" whitespace-nowrap" />
+        <div {...getRootPropsNf()} className="border-dashed flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 w-full flex items-center justify-center hover:bg-neutral-100">
+          <input {...getInputPropsNf()} />
+          <div className="p-4 border rounded-md">
+            <FilePdf size={24} className="whitespace-nowrap" />
           </div>
-          {isDragActive ? (
+          {isDragActiveNf ? (
             <p>Solte os arquivos aqui ...</p>
           ) : (
             <p>Arraste e solte o arquivo .pdf aqui ou clique para selecionar o arquivo</p>
           )}
         </div>
-                 
-                  
-                </fieldset>
-    </AccordionContent>
+
+        <div>
+          {fileInfo.name && (
+            <div className="justify-center mt-6 mb-2 flex items-center gap-3">
+              <FilePdf size={16} />
+              <p className="text-center text-zinc-500 text-sm">
+                Arquivo selecionado: <strong>{fileInfo.name}</strong> ({(fileInfo.size / 1024).toFixed(2)} KB)
+              </p>
+            </div>
+          )}
+        </div>
+      </AccordionContent>
   </AccordionItem>
 
   <AccordionItem value="item-3">
     <AccordionTrigger>Resumo da nota fiscal</AccordionTrigger>
-    <AccordionContent>
-    <fieldset className="grid xl:col-span-2 gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Todos os fornecedores
-                  </legend>
-                  <div {...getRootProps()} className="border-dashed  flex-col border-2 border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 ">
-          <input {...getInputProps()} />
-          <div className="p-4  border rounded-md">
-            <FilePdf size={24} className=" whitespace-nowrap" />
+     <AccordionContent>
+        <div {...getRootPropsResumo()} className="border-dashed flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 w-full flex items-center justify-center hover:bg-neutral-100">
+          <input {...getInputPropsResumo()} />
+          <div className="p-4 border rounded-md">
+            <FilePdf size={24} className="whitespace-nowrap" />
           </div>
-          {isDragActive ? (
+          {isDragActiveResumo ? (
             <p>Solte os arquivos aqui ...</p>
           ) : (
             <p>Arraste e solte o arquivo .pdf aqui ou clique para selecionar o arquivo</p>
           )}
         </div>
-                 
-                  
-                </fieldset>
-    </AccordionContent>
+
+        <div>
+          {fileInfo2.name && (
+            <div className="justify-center mt-6 mb-2 flex items-center gap-3">
+              <FilePdf size={16} />
+              <p className="text-center text-zinc-500 text-sm">
+                Arquivo selecionado: <strong>{fileInfo2.name}</strong> ({(fileInfo2.size / 1024).toFixed(2)} KB)
+              </p>
+            </div>
+          )}
+        </div>
+      </AccordionContent>
   </AccordionItem>
+ 
 </Accordion>
 </div>
 
 <div className="w-full mt-4 mb-8 flex gap-3 justify-end">
 <Button variant={'ghost'} onClick={() => onClose()} className=""><Check size={16}/>Cancelar</Button>
-    <Button className=""><Check size={16}/>Salvar alterações</Button></div>
+    <Button className="" onClick={() => handleSubmitPatrimonio()}><Check size={16}/>Salvar alterações</Button></div>
   </TabsContent>
 
   <TabsContent value="password">
@@ -808,7 +894,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
     <AccordionTrigger>Nota fiscal</AccordionTrigger>
     <AccordionContent>
           <div>
-          <PdfViewer pdfBase64={data.pdf_empenho ? data.pdf_empenho : ''} />
+          <PdfViewer pdfBase64={data.pdf_nf ? data.pdf_nf : ''} />
           </div>
     </AccordionContent>
   </AccordionItem>
@@ -817,7 +903,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
     <AccordionTrigger>Resumo da nota fiscal</AccordionTrigger>
     <AccordionContent>
           <div>
-          <PdfViewer pdfBase64={data.pdf_empenho ? data.pdf_empenho : ''} />
+          <PdfViewer pdfBase64={data.pdf_resumo ? data.pdf_resumo : ''} />
           </div>
     </AccordionContent>
   </AccordionItem>
@@ -826,7 +912,7 @@ const filteredList4 = fornecedores.filter((item: any) => item.nome === fornecedo
     <AccordionTrigger>Termo de responsabilidade</AccordionTrigger>
     <AccordionContent>
           <div>
-          <PdfViewer pdfBase64={data.pdf_empenho ? data.pdf_empenho : ''} />
+          <PdfViewer pdfBase64={data.pdf_nf ? data.pdf_nf : ''} />
           </div>
     </AccordionContent>
   </AccordionItem>

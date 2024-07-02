@@ -86,7 +86,7 @@ export function Solicitantes() {
   const [openPopo2, setOpenPopo2] = useState(false)
 
 
-  const filteredList2 = locNomLista.filter((item: loc_nom) => item.loc_nom === localizacao);
+
 
   const normalizeString = (str:any) => {
     return str
@@ -100,6 +100,29 @@ export function Solicitantes() {
   );
 
   const handleSubmitPatrimonio = async () => {
+    if(localizacao.length == 0) {
+        toast("Revise os dados", {
+            description: "Selecione a localização",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+        })
+            return
+    }
+
+    else if(telefone.length == 0 && email.length ==0) {
+        toast("Revise os dados", {
+            description: "Prrencha pelo menos o telefone ou email",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+        })
+            return
+    }
+
+   
     try {
 
         const formData = [{
@@ -134,6 +157,8 @@ export function Solicitantes() {
             setLocalizacao('')
             setTelefone('')
             setEmail('')
+            setFilteredList2([])
+
             fetchDataLocNom()
           }
 
@@ -148,7 +173,26 @@ export function Solicitantes() {
     }
  }
 
+ const [filteredList2, setFilteredList2] = useState<loc_nom[]>([]);
  console.log(filteredList2)
+ const [initialized, setInitialized] = useState(false);
+
+ useEffect(() => {
+    if (localizacao) {
+      const filtered = locNomLista.filter((item) => item.loc_nom === localizacao);
+      setFilteredList2(filtered);
+      if (filtered.length > 0) {
+        setTelefone(filtered[0].telefone);
+        setEmail(filtered[0].email);
+      }
+    }
+  }, [localizacao]);
+
+  const handleClickFornecedor = (props:any) => {
+    setLocalizacao(props);
+    setOpenPopo2(false);
+  };
+
 
     return(
         <div className="flex flex-col gap-6">
@@ -206,9 +250,7 @@ export function Solicitantes() {
                                       key={index}
                                       className="text-left justify-start"
                                       onClick={() => {
-                                        setLocalizacao(props.loc_nom);
-                                  
-                                        setOpenPopo2(false); // Fechar o popover após a seleção
+                                        handleClickFornecedor(props.loc_nom)
                                       }}
                                     >
                                       {props.loc_nom}
@@ -241,17 +283,17 @@ export function Solicitantes() {
 
         <div className="grid gap-3 w-full">
                     <Label >Telefone</Label>
-                    <Input name="nome" defaultValue={filteredList2.length > 0 ? filteredList2[0].telefone.trim() : telefone}
-                    onChange={(e) => handlePhoneChange( e.target.value)} id="temperature" type="text" className="flex flex-1" />
+                    <Input name="nome" value={telefone}
+                    onChange={(e) => handlePhoneChange(e.target.value)} id="temperature" type="text" className="flex flex-1" />
                   </div>
 
                   <div className="grid gap-3 w-full">
                     <Label >Email</Label>
-                    <Input name="nome" defaultValue={filteredList2.length > 0 ? filteredList2[0].email.trim() : email}
-                    onChange={(e) => setEmail( e.target.value)} id="temperature" type="email" className="flex flex-1" />
+                    <Input name="nome" value={email}
+                    onChange={(e) => setEmail(e.target.value)} id="temperature" type="email" className="flex flex-1" />
                   </div>
 
-                  <Button onClick={() => handleSubmitPatrimonio()}>Adicionar contato</Button>
+                  <Button onClick={() => handleSubmitPatrimonio()}>Atualizar contato</Button>
         </div>
         </fieldset>
 

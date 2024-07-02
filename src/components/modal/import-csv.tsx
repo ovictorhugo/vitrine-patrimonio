@@ -250,7 +250,7 @@ export function ImportCsv() {
                </DialogHeader>
 
                <div className="mb-4">
-               <div {...getRootProps()} className="border-dashed mb-6 flex-col border-2 border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 mt-4">
+               <div {...getRootProps()} className="border-dashed mb-6 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 mt-4">
       <input {...getInputProps()} />
       <div className="p-4  border rounded-md">
       <FileXls size={24} className=" whitespace-nowrap" />

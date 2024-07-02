@@ -6,7 +6,7 @@ import { useModal } from '../../hooks/use-modal-store';
 
 import * as pdfjsLib from 'pdfjs-dist';
 import 'pdfjs-dist/build/pdf.worker.entry';
-
+import { format } from "date-fns"
 
 interface CardProps {
   id: string;
@@ -120,7 +120,37 @@ const Card: React.FC<CardProps> = ({
 
   const [, drag] = useDrag({
     type: 'CARD',
-    item: { id, columnId, index, pdf_empenho:pdf_empenho },
+    item: { id, columnId, index, id,
+      coluna,
+      emp_nom,
+      status_tomb,
+      tipo_emp,
+      pdf_empenho,
+      data_fornecedor,
+      prazo_entrega,
+      status_recebimento,
+      loc_entrega,
+      loc_entrega_confirmado,
+      cnpj,
+      loc_nom,
+      des_nom,
+      status_tombamento,
+      data_tombamento,
+      data_aviso,
+      prazo_teste,
+      atestado,
+      loc_tom,
+      status_nf,
+      observacoes,
+      data_agendamento,
+      n_termo_processo,
+      origem,
+      valor_termo,
+      n_projeto,
+      data_tomb_sei,
+      pdf_nf,
+      pdf_resumo,
+      created_at},
   });
 
   const [, drop] = useDrop({
@@ -192,12 +222,12 @@ const Card: React.FC<CardProps> = ({
         <div className='mb-2'>
           <div className={`rounded-md h-1 w-10 ${coluna.trim() === 'recebidos' ? 'bg-blue-500' : ''} ${coluna.trim() === 'projetos' ? 'bg-pink-500' : ''}`}></div>
         </div>
-        <h2>{emp_nom}</h2>
+        <h2 className='font-medium '>{emp_nom}</h2>
         <div className='flex items-center justify-between'>
-          <div>
-            {data_fornecedor && (
-              <div className='flex items-center gap-2'>
-                <Calendar size={12} /> {data_fornecedor}
+          <div className='mt-2'>
+            {data_fornecedor.trim() != '' && (
+              <div className='flex items-center gap-2 text-sm text-gray-500 '>
+                <Calendar size={12} /> {format(data_fornecedor, "dd/MM/yyyy")} 
               </div>
             )}
           </div>

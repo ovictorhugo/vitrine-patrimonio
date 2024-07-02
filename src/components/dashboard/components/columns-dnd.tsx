@@ -98,7 +98,8 @@ const Column: React.FC<ColumnProps> = ({ column, columns, setColumns }) => {
       <div className='flex items-center mb-4 justify-between'>
         <CardTitle className='text-xl text-medium'>{column.title}</CardTitle>
       </div>
-      {column.items.map((item, index) => (
+    <div className='flex flex-col gap-3 overflow-y-auto max-h-[300px]'>
+    {column.items.map((item, index) => (
   <Card
     key={index}
     id={item.id}
@@ -137,6 +138,7 @@ const Column: React.FC<ColumnProps> = ({ column, columns, setColumns }) => {
     moveCard={moveCard}
   />
 ))}
+    </div>
     </Alert>
   );
 };

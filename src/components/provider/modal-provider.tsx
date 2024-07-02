@@ -8,8 +8,26 @@ import { ItensOciosos } from "../modal/itens-ociosos";
 import { AdicionarEmpenho } from "../modal/adicionar-empenho";
 import { ConfirmDeleteFornecedor } from "../modal/confirm-delete-fornecedor";
 import { InformacoesEmpenhos } from "../modal/informacoes-empenho";
+import { useModal } from "../hooks/use-modal-store";
 
+const ModalContent = () => {
+  const { type } = useModal();
+  switch (type) {
+    case 'confirm-delete-fornecedor':
+      return <ConfirmDeleteFornecedor/>
+    case 'informacoes-empenhos':
+      return <InformacoesEmpenhos/>
+    case 'import-csv':
+      return <ImportCsv/>
+    case 'import-csv-morto':
+      return <ImportCsv/>
+    case 'adicionar-empenho':
+      return <AdicionarEmpenho/>
+    default:
+      return null
+  }
 
+}
 
 export const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -22,16 +40,5 @@ export const ModalProvider = () => {
     return null;
   }
 
-  return (
-    <>
-    <AddBackground/>
-    <DeleteAcconunt/>
-    <ConfirmDeleteFornecedor/>
-    <InformacoesEmpenhos/>
-
-    <ImportCsv/>
-    <AdicionarEmpenho/>
-    
-    </>
-  )
+  return <ModalContent/>
 }

@@ -219,6 +219,41 @@ export function Empenhos() {
   };
 
     const handleSubmitPatrimonio = async () => {
+
+      if(formData[0].cnpj.length == 0) {
+        toast("Revise os dados", {
+            description: "Adicione o CNPJ",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+        })
+            return
+    }
+
+    if(formData[0].nome.length == 0) {
+      toast("Revise os dados", {
+          description: "Adicione o Nome da empresa",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+      })
+          return
+  }
+
+    else if(formData[0].telefone.length == 0 && formData[0].email.length ==0) {
+        toast("Revise os dados", {
+            description: "Preencha pelo menos o telefone ou email",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+        })
+            return
+    }
+
+
       try {
     
     

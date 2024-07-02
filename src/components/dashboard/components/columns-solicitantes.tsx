@@ -21,12 +21,13 @@ export const columnsSolicitantes: ColumnDef<Patrimonio>[] = [
     header: "Nome",
   },
   {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
     accessorKey: "telefone",
     header: "Telefone",
   },
+  {
+    accessorKey: "email",
+    header: "Email",
+  },
+  
 
 ]

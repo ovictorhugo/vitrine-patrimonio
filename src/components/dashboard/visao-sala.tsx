@@ -113,6 +113,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { MovimentacaoBrns } from "./components/movimentacao-bens";
 
 export function VisaoSala() {
     const { isOpen, type} = useModalDashboard();
@@ -357,6 +358,7 @@ const data = patrimonio.map((item) => {
               <TabsList >
               <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
                 <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Todos os itens</TabsTrigger>
+                <TabsTrigger value="movimentacao-bens" className="text-zinc-600 dark:text-zinc-200">Movimentação de bens</TabsTrigger>
                 </TabsList>
                
           
@@ -704,6 +706,10 @@ const data = patrimonio.map((item) => {
                </DialogContent>
                
                </Dialog>
+                </TabsContent>
+
+                <TabsContent value="movimentacao-bens">
+                  <MovimentacaoBrns/>
                 </TabsContent>
               </Tabs>
             </main>

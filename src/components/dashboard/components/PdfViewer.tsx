@@ -26,8 +26,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ pdfBase64 }) => {
       <Button onClick={downloadPdf}><Download size={16}/>Download PDF</Button>
       </div>
       <Worker workerUrl={`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`}>
-        <div >
-          <Viewer fileUrl={pdfData} />
+        <div className='h-auto overflow-y-hidden'>
+          <Viewer fileUrl={pdfData}  className='h-auto overflow-y-hidden'/>
+
         </div>
       </Worker>
     </div>
