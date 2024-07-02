@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useState } from "react"
 import { UserContext } from "../../../context/context"
 import { Alert } from "../../ui/alert"
-import { CardContent, CardHeader, CardTitle } from "../../ui/card"
-import { Info, Plus } from "lucide-react"
+import { CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card"
+import { Info, MapPin, Plus, User } from "lucide-react"
 import { useLocation } from "react-router-dom"
 import { Input } from "../../ui/input"
 import { Label } from "../../ui/label"
@@ -16,6 +16,10 @@ interface TotalPatrimonios {
     total_patrimonio_morto:string
     unique_values:unique_values
   }
+
+  import { Checkbox } from "../../../components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
+
   
   interface unique_values {
     loc_cod:string
@@ -177,11 +181,30 @@ console.log(urlPatrimonioInsert)
 
     const handleAddItem = () => {
       if (patrimonio.length > 0) {
-        setPatrimonioSelecionado((prev) => [...prev, patrimonio[0]]);
-        setPatrimonio([])
+        const { bem_cod, bem_dgv } = patrimonio[0];
+    
+        const itemExiste = patrimonioSelecionado.some(
+          (item) => item.bem_cod === bem_cod && item.bem_dgv === bem_dgv
+        );
+    
+        if (!itemExiste) {
+          setPatrimonioSelecionado((prev) => [...prev, patrimonio[0]]);
+          setPatrimonio([]);
+        } else {
+          toast("Patrimônio já adicionado", {
+            description: "Adicione outro bem ou finalize o formulário",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+          });
+
+          setPatrimonio([]);
+        }
       }
     };
-
+    
+const [motivo, setMotivo] = useState('')
 
     return(
         <div className="flex flex-col w-full gap-6">
@@ -215,6 +238,125 @@ console.log(urlPatrimonioInsert)
 
                {onOpen && (
                   <div className="flex flex-col gap-6">
+
+                    <Alert>
+                    <CardHeader className="flex p-2 flex-row items-center">
+                    <div className="grid gap-2">
+                   
+                <CardTitle>Nota de movimentação de material permanente</CardTitle>
+                <CardDescription>
+                SEÇÃO DE PATRIMÔNIO DA ESCOLA DE ENGENHARIA DA UFMG
+                </CardDescription>
+              </div>
+              </CardHeader>
+                       <div>
+                       <div className="w-full flex gap-6 items-end p-2">
+
+                       <div className="grid gap-3 w-full ">
+                        <Label htmlFor="name">Motivo de saída</Label>
+                        <Select defaultValue={motivo} value={motivo} onValueChange={(value) => setMotivo(value)}>
+                            <SelectTrigger className="">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value={'Empréstimo'}>Empréstimo</SelectItem>
+                            <SelectItem value={'Manutenção'}>Manutenção</SelectItem>
+                         
+                            </SelectContent>
+                          </Select>
+                      </div>
+
+                    <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Data prevista de devolução</Label>
+                        <Input
+                        id="name"
+                        type="text"
+                        className="w-full"
+                        
+                      />
+                      </div>
+                      </div>
+                       </div>
+                    </Alert>
+
+                  {total.map((props) => {
+                    return props.unique_values.map((item) => {
+                      return (
+                        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4" key={item.org_cod}>
+                          <Alert className="p-0 md:col-span-2">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm font-medium">
+                                Local de origem do(s) bem(ns)
+                              </CardTitle>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                            <div className="gap-6 flex items-center mt-6 w-full">
+                        <Label htmlFor="name">Unidade</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+
+                      <div className="gap-6 flex items-center mt-6 w-full">
+                        <Label htmlFor="name">Depto/setor</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+
+                      <div className="gap-6 flex items-center mt-6 w-full">
+                        <Label htmlFor="name">Sala</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+
+                      <div className="gap-6 flex items-center mt-6 w-full">
+                        <Label htmlFor="name">Telefone </Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+
+                      <div className="gap-6 flex items-center mt-6 w-full">
+                        <Label htmlFor="name">Ema </Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+                             
+                            </CardContent>
+                          </Alert>
+                        </div>
+                      );
+                    });
+                  })}
+
+                                        <Alert>
+
+</Alert>
+
                   <Alert className="  min-h-[150px] p-0 flex items-center gap-3">
                     <div className="min-w-8 min-h-12 left-[-1px] relative border border-l-0 bg-neutral-50 dark:bg-neutral-900 rounded-r-full"></div>
                     <div className="w-full flex gap-6 items-end px-6">
@@ -257,53 +399,65 @@ console.log(urlPatrimonioInsert)
                     <div className="min-w-8 min-h-12 right-[-1px] relative border border-r-0 bg-neutral-50 dark:bg-neutral-900 rounded-l-full"></div>
                   </Alert>
 
-                  <Alert>
-                  <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[150px] whitespace-nowrap">N° patrimônio</TableHead>
-                         
-                          <TableHead className="w-full flex-1">Descrição do item</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">TR</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">Conservação</TableHead>
-                          <TableHead className="w-[100px] whitespace-nowrap">Valor bem</TableHead>
-                        
-                        </TableRow>
+                 {patrimonioSelecionado.length > 0 && (
+                   <Alert className="w-full flex">
+                   <Table>
+                       <TableHeader>
+                         <TableRow>
+                           <TableHead className="w-[150px] whitespace-nowrap">N° patrimônio</TableHead>
+                           <TableHead className="w-full flex-1">Descrição do item</TableHead>
+                           <TableHead className="w-[100px] whitespace-nowrap">TR</TableHead>
+                           <TableHead className="w-[100px] whitespace-nowrap">Conservação</TableHead>
+                           <TableHead className="w-[100px] whitespace-nowrap">Valor bem</TableHead>
+                         </TableRow>
+ 
+                       
+                       </TableHeader>
 
-                        <TableBody className="w-full">
-                        {patrimonioSelecionado.map((props, index) => {
-                  return(
-                    <TableRow>
-                      <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                            {props.bem_cod}-{props.bem_dgv}
-                          </TableCell>
+                       <TableBody className="">
+                         {patrimonioSelecionado.map((props) => {
+                   return(
+                     <TableRow className="w-full">
+                       <TableCell className=" text-sm w-[150px] whitespace-nowrap">
+                             {props.bem_cod}-{props.bem_dgv}
+                           </TableCell>
+ 
+      
+ 
+                           <TableCell className=" text-sm w-full flex-1 flex ">
+                             {props.bem_dsc_com}
+                           </TableCell>
+ 
+                           <TableCell className=" text-sm w-[150px] whitespace-nowrap">
+                             {props.tre_cod}
+                           </TableCell>
+ 
+                           <TableCell className=" text-sm w-[150px] whitespace-nowrap">
+                           {props.csv_cod.trim() == "BM" ? 'Bom': props.csv_cod.trim() == 'AE' ? 'Anti-Econômico': props.csv_cod.trim() == 'IR' ? 'Irrecuperável': props.csv_cod.trim() == 'OC' ? 'Ocioso': props.csv_cod.trim() == 'BX' ? 'Baixado': props.csv_cod.trim() == 'RE' ? 'Recuperável': ''}
+                           </TableCell>
+ 
+                           <TableCell className=" text-sm w-[150px] whitespace-nowrap">
+                           {props.bem_val.trim() === '' ? '0.00' : parseFloat(props.bem_val).toFixed(2)}
+                           </TableCell>
+ 
+                           
+                     </TableRow>
+                   )
+                 })}
+                         </TableBody>
+                     </Table>
+                   </Alert>
 
-     
+                  
+                 )}
 
-                          <TableCell className=" text-sm w-full flex-1">
-                            {props.bem_dsc_com}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                            {props.tre_cod}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                          {props.csv_cod.trim() == "BM" ? 'Bom': props.csv_cod.trim() == 'AE' ? 'Anti-Econômico': props.csv_cod.trim() == 'IR' ? 'Irrecuperável': props.csv_cod.trim() == 'OC' ? 'Ocioso': props.csv_cod.trim() == 'BX' ? 'Baixado': props.csv_cod.trim() == 'RE' ? 'Recuperável': ''}
-                          </TableCell>
-
-                          <TableCell className=" text-sm w-[150px] whitespace-nowrap">
-                          {props.bem_val.trim() === '' ? '0.00' : parseFloat(props.bem_val).toFixed(2)}
-                          </TableCell>
-
-                          
-                    </TableRow>
-                  )
-                })}
-                        </TableBody>
-                      </TableHeader>
-                    </Table>
-                  </Alert>
+                 <Alert className="flex gap-3 items-center p-6">
+                  <Checkbox/>
+                  <div>
+                    <p className="font-medium text-sm">Termo de responsabilidade</p>
+                  <p className="text-sm text-justify">Declaro ter ciência que em caso de perecimento ou lesão ao patrimônio público, estarei sujeito às sanções e penalidades administrativas, cíveis e penais impostas pela legislação, sem prejuízo do ressarcimento ao erário, conforme o art. 5º da lei 8429/92</p>
+                  </div>
+                 </Alert>
                  </div>
                )}
         </div>
