@@ -108,6 +108,7 @@ import {
   AccordionTrigger,
 } from "../../components/ui/accordion"
 import { Dialog } from "../ui/dialog";
+import { LinhaTempo } from "./components/linha-tempo";
 
 
 export function NovoItem() {
@@ -369,6 +370,24 @@ const filteredList = locNomLista.filter((framework) =>
             </div>
 
             </div>
+
+            <LinhaTempo
+                    links={[
+                        {
+                          title:'Cadastro do patrimônio',
+                          selected:true
+                        },
+                        {
+                          title:'Verificação',
+                        },
+                        {
+                          title:'Publicação',
+                        },
+                        {
+                          title:'Publicação',
+                        }
+                    ]}
+                    />
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >

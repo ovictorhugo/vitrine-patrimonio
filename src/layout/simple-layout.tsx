@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp, Barcode, ArrowLeftRight } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp, Barcode, ArrowLeftRight, LayoutPanelLeft } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -104,6 +104,19 @@ export default function SearchLayout({
                 icon: ListTodo,
                 link: "/visao-sala",
               },
+
+              {
+                title: "Painel do usuário",
+                label: "",
+                icon: LayoutPanelLeft,
+                link: "/painel",
+              },
+              {
+                title: "Administrativo",
+                label: "",
+                icon: LayoutPanelLeft,
+                link: "/administrativo",
+              },
               {
                 title: "Novo item",
                 label: "",
@@ -140,6 +153,9 @@ export default function SearchLayout({
                 icon: ArrowLeftRight,
                 link: "/controles-saidas",
               },
+
+
+
 
              
             ]}

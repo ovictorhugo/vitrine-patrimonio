@@ -1,5 +1,5 @@
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
-
+import bg_popup from '../../assets/bg_popup.png';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 
 import { Alert } from "../ui/alert";
@@ -17,7 +17,7 @@ import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { ItensListVitrine } from "./components/itens-list-vitrine";
 import { DisplayItemPatrimonio } from "./components/display-item-patrimonio";
-import { Bird, ChevronLeft, Plus, Rabbit, Search, Turtle } from "lucide-react";
+import { Bird, ChevronLeft, Plus, Rabbit, Search, Store, Turtle } from "lucide-react";
 import { DisplayItemEmpenho } from "./components/display-item-empenho";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -390,6 +390,7 @@ const handlePhoneChange = (index:any, e:any) => {
   updateItem(index, 'telefone', formattedPhone);
 };
 
+const [onOpenAdd, setIsOpenAdd] = useState(false)
 
   return(
       <>
@@ -456,8 +457,139 @@ const handlePhoneChange = (index:any, e:any) => {
                 </TabsContent>
 
                 <TabsContent value="unread" className="h-auto md:pb-8 ob-4">
-                <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col w-full gap-4 md:gap-8">
 
+                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+     <Alert className="p-0 bg-cover bg-no-repeat bg-center lg:col-span-3"  style={{ backgroundImage: `url(${bg_popup})` }}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total de fornecedores
+                    </CardTitle>
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{fornecedores.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      registrados
+                    </p>
+                  </CardContent>
+                  </Alert>
+
+                  <Alert onClick={() => setIsOpenAdd(!onOpenAdd)} className="p-0 hover:bg-[#274B5E] bg-[#719CB8] text-white transition-all cursor-pointer "  >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      
+                    </CardTitle>
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+
+                  <CardContent>
+                    <h2 className="font-medium text-xl">Adicionar <br/> fornecedor</h2>
+                  </CardContent>
+                  </Alert>
+     </div>
+
+                {onOpenAdd && (
+                  <fieldset className="grid gap-6 rounded-lg  p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
+                  <legend className="-ml-1 px-1 text-sm font-medium">
+                    Adicionar novo fornecedor
+                  </legend>
+                  {formData.map((item, index) => (
+                  <div className="flex  gap-6 md:flex-row flex-col">
+                   
+                      <div className="flex flex-col gap-6 w-full">
+                        
+                 <div className="flex w-full gap-6">
+
+<div className="grid gap-3 w-full">
+   <Label htmlFor="model">Nome da empresa</Label>
+   <Input name="nome" value={item.nome} 
+   onChange={(e) => updateItem(index, 'nome', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+ </div>
+
+ <div className="grid gap-3 w-full">
+   <Label htmlFor="model">Sigla</Label>
+   <Input name="sigla" value={item.sigla}
+   onChange={(e) => updateItem(index, 'sigla', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+ </div>
+ <div className="grid gap-3 w-full">
+   <Label htmlFor="model">CNPJ</Label>
+   <Input
+name="cnpj"
+value={item.cnpj}
+onChange={(e) => handleCnpjChange(index, e)}
+id="cnpj"
+type="text"
+className="flex flex-1"
+/>
+ </div>
+</div>
+
+
+
+ <div className="flex w-full gap-6 ">
+ <div className="grid gap-3 w-full">
+   <Label htmlFor="temperature">Endereço</Label>
+   <Input name="endereco" value={item.endereco}
+   onChange={(e) => updateItem(index, 'endereco', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+ </div>
+
+<div className="grid gap-3 w-full">
+   <Label htmlFor="model">CEP</Label>
+   <Input
+   name="cep"
+   value={item.cep}
+   onChange={(e) => handleCepChange(index, e)}
+   id="cep"
+   type="text"
+   className="flex flex-1"
+ />
+ </div>
+ <div className="grid gap-3 w-full">
+   <Label htmlFor="model">Cidade</Label>
+   <Input name="cidade" value={item.cidade}
+   onChange={(e) => updateItem(index, 'cidade', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+ </div>
+ 
+</div>
+
+<div className="flex w-full gap-6 ">
+<div className="grid gap-3 w-full">
+   <Label htmlFor="model">Telefone</Label>
+   <Input
+name="telefone"
+value={item.telefone}
+onChange={(e) => handlePhoneChange(index, e)}
+id="telefone"
+type="text"
+className="flex flex-1"
+/>
+ </div>
+
+ <div className="grid gap-3 w-full">
+   <Label htmlFor="model">Email</Label>
+   <Input name="email" value={item.email}
+   onChange={(e) => updateItem(index, 'email', e.target.value)} id="temperature" type="text" className="flex flex-1" />
+ </div>
+</div>
+                      </div>
+
+            
+
+                 <div className="flex flex-col gap-3 w-full">
+                    <Label htmlFor="content" className="h-fit">Observação</Label>
+                    <Textarea name="observacoes" className="h-full" value={item.observacoes}
+                    onChange={(e) => updateItem(index, 'observacoes', e.target.value)} id="content"/>
+                  </div>
+
+                  
+                  </div>
+                ))}
+
+<Button onClick={() => handleSubmitPatrimonio()} ><Plus size={16}/> Adicionar </Button>
+                </fieldset>
+
+                )}
                 <fieldset className="grid xl:col-span-2 gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">
                     Todos os fornecedores
@@ -467,96 +599,7 @@ const handlePhoneChange = (index:any, e:any) => {
                   
                 </fieldset>
 
-                <fieldset className="grid gap-6 rounded-lg  p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Adicionar novo fornecedor
-                  </legend>
-                  {formData.map((item, index) => (
-                  <div className="flex flex-col gap-6">
-                    <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">Nome da empresa</Label>
-                    <Input name="nome" value={item.nome} 
-                    onChange={(e) => updateItem(index, 'nome', e.target.value)} id="temperature" type="text" className="flex flex-1" />
-                  </div>
-
-                 <div className="flex w-full gap-6">
-     
-                  <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">Sigla</Label>
-                    <Input name="sigla" value={item.sigla}
-                    onChange={(e) => updateItem(index, 'sigla', e.target.value)} id="temperature" type="text" className="flex flex-1" />
-                  </div>
-                  <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">CNPJ</Label>
-                    <Input
-              name="cnpj"
-              value={item.cnpj}
-              onChange={(e) => handleCnpjChange(index, e)}
-              id="cnpj"
-              type="text"
-              className="flex flex-1"
-            />
-                  </div>
-                 </div>
-
-                  <div className="grid gap-3">
-                    <Label htmlFor="temperature">Endereço</Label>
-                    <Input name="endereco" value={item.endereco}
-                    onChange={(e) => updateItem(index, 'endereco', e.target.value)} id="temperature" type="text" className="flex flex-1" />
-                  </div>
-
-                  <div className="flex w-full gap-6 ">
-                 <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">CEP</Label>
-                    <Input
-                    name="cep"
-                    value={item.cep}
-                    onChange={(e) => handleCepChange(index, e)}
-                    id="cep"
-                    type="text"
-                    className="flex flex-1"
-                  />
-                  </div>
-                  <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">Cidade</Label>
-                    <Input name="cidade" value={item.cidade}
-                    onChange={(e) => updateItem(index, 'cidade', e.target.value)} id="temperature" type="text" className="flex flex-1" />
-                  </div>
-                  
-                 </div>
-
-                 <div className="flex w-full gap-6 ">
-                 <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">Telefone</Label>
-                    <Input
-              name="telefone"
-              value={item.telefone}
-              onChange={(e) => handlePhoneChange(index, e)}
-              id="telefone"
-              type="text"
-              className="flex flex-1"
-            />
-                  </div>
-
-                  <div className="grid gap-3 w-full">
-                    <Label htmlFor="model">Email</Label>
-                    <Input name="email" value={item.email}
-                    onChange={(e) => updateItem(index, 'email', e.target.value)} id="temperature" type="text" className="flex flex-1" />
-                  </div>
-                 </div>
-
-            
-
-                 <div className="grid gap-3">
-                    <Label htmlFor="content">Observação</Label>
-                    <Textarea name="observacoes" value={item.observacoes}
-                    onChange={(e) => updateItem(index, 'observacoes', e.target.value)} id="content"/>
-                  </div>
-
-                  <Button onClick={() => handleSubmitPatrimonio()} ><Plus size={16}/> Adicionar </Button>
-                  </div>
-                ))}
-                </fieldset>
+               
              
               </div>
                 </TabsContent>

@@ -85,6 +85,7 @@ function App() {
         <Route path='/itens-vitrine' element={<Admin/>}/>
         <Route path='/empenhos' element={<Admin/>}/>
         <Route path='/criar-etiqueta' element={<Admin/>}/>
+        <Route path='/painel' element={<Admin/>}/>
 
 
         <Route path='/doacao/:pagina?' element={<Donation/>}/>

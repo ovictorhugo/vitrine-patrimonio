@@ -120,7 +120,7 @@ const Card: React.FC<CardProps> = ({
 
   const [, drag] = useDrag({
     type: 'CARD',
-    item: { id, columnId, index, id,
+    item: { id, columnId, index,
       coluna,
       emp_nom,
       status_tomb,

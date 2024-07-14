@@ -34,6 +34,8 @@ export function Admin() {
             onOpen('empenhos')
         } else if (location.pathname == '/criar-etiqueta') {
             onOpen('create-bar-bode')
+        } else if (location.pathname == '/painel') {
+            onOpen('painel')
         }
 
 

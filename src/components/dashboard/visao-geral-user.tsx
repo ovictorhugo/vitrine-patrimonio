@@ -422,7 +422,7 @@ export function VisaoGeralUser() {
             </TabsContent>
 
             <TabsContent value="unread" className="flex flex-col gap-4 md:gap-8">
-              <Alert>
+              <Alert className="p-0">
               <CardHeader>
                 <CardTitle>Diretório dos plugins</CardTitle>
                 <CardDescription>

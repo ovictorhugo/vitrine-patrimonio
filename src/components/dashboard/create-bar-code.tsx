@@ -1,4 +1,4 @@
-import { Bird, Check, ChevronLeft, Download, MapPin, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
+import { Bird, Check, ChevronDown, ChevronLeft, ChevronUp, Download, ListTodo, MapPin, Plus, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -7,6 +7,11 @@ import { Alert } from "../ui/alert";
 import QRCode from "react-qr-code";
 import { useCallback, useContext, useState } from "react";
 import { UserContext } from "../../context/context";
+import React, {  useMemo } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Upload } from 'lucide-react';
+import Draggable from 'react-draggable';
+import PdfViewer from './PdfViewer';  // Certifique-se de que o caminho está correto
 
 interface Patrimonio {
     bem_cod:string
@@ -58,6 +63,7 @@ export function CreateBarCode() {
     const [patrimonio, setPatrimonio] = useState<Patrimonio[]>([])
 
     const history = useNavigate();
+    
 
     const handleVoltar = () => {
       history(-1);
@@ -165,6 +171,7 @@ export function CreateBarCode() {
       }, [onClickBuscaPatrimonio]);
 
 
+const [onOpenBar, setOnOpenBar] = useState(false)
 
     return(
         <>
@@ -191,7 +198,7 @@ export function CreateBarCode() {
          
                
           
-                <Button size="sm">Gerar plaquetas para bens SQ</Button>
+                <Button size="sm"><ListTodo size={16}/> Gerar plaquetas para todos os bens SQ</Button>
               </div>
             </div>
 
@@ -199,8 +206,9 @@ export function CreateBarCode() {
 
                 
 
-            <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Alert className="border-none bg-transparent p-0 h-full " >
+            <div className="flex gap-4 h-full md:gap-8 ">
+               <div className={` w-[375px] max-w-[375x] fixed bottom-0 ${!onOpenBar && (' ')}`}>
+               <Alert className="border-none bg-transparent p-0 h-full " >
                     <div className="h-full">
                 <div className=" rounded-xl ">
                     <div className="flex justify-between w-full">
@@ -221,12 +229,16 @@ export function CreateBarCode() {
                                 <div className="bg-[#719CB8] absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
                             <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-900 p-2 flex gap-3 rounded-bl-xl ">
                         <Button variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
+                <Download className="h-4 w-4" />
 
               </Button>
 
-              <Button variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
+              <Button variant="outline" onClick={() => setOnOpenBar(!onOpenBar)} size="icon" className="h-7 w-7">
+                {onOpenBar ? (
+                  <ChevronDown className="h-4 w-4" />
+                ):(
+                  <ChevronUp className="h-4 w-4" />
+                )}
               </Button>
                         </div>
                             </div>
@@ -238,72 +250,49 @@ export function CreateBarCode() {
                     </div>
                 </div>
 
-                <div className="bg-[#719CB8] flex items-center flex-col ">
-               <div className="p-6">
-               <QRCode size={200} className={'bg-transparent'} value={``} bgColor={'#719CB8'} fgColor={'#ffffff'}/>
-               </div>
+               {onOpenBar && (
+                 <div className="bg-[#719CB8] flex items-center flex-col ">
+                 <div className="p-6">
+                 <QRCode size={200} className={'bg-transparent'} value={``} bgColor={'#719CB8'} fgColor={'#ffffff'}/>
+                 </div>
+  
+                  <Alert className="border-b-0 rounded-xl rounded-b-none p-6">
+                 {patrimonio.map((props) => {
+                  return(
+                      <div>
+                          <div className="flex justify-between mb-4">
+                 <div>
+                 <p className="text-xs">{props.bem_cod}-{props.bem_dgv}</p>
+                                  <p className="font-bold text-xl">{props.mat_nom}</p>
+  
+                                  
+                                  
+                              </div>
+  
+                              <Button size={'sm'}><Plus size={16}/>Adicionar</Button>
+                 </div>
+  
+                 <p className="text-xs text-muted-foreground">
+                    {props.bem_dsc_com} {props.ite_mar !== "" && (`| ${props.ite_mar}`)}
+                  </p>
+                      </div>
+                  )
+                 })}
+                  </Alert>
+                  </div>
+               )}
 
-                <Alert className="border-b-0 rounded-xl rounded-b-none p-6">
-               {patrimonio.map((props) => {
-                return(
-                    <div>
-                        <div className="flex justify-between mb-4">
-               <div>
-               <p className="text-xs">{props.bem_cod}-{props.bem_dgv}</p>
-                                <p className="font-bold text-xl">{props.mat_nom}</p>
-
-                                
-                                
-                            </div>
-
-                            <Button size={'sm'}><Download size={16}/>Baixar informações</Button>
-               </div>
-
-               <p className="text-xs text-muted-foreground">
-                  {props.bem_dsc_com} {props.ite_mar !== "" && (`| ${props.ite_mar}`)}
-                </p>
-                    </div>
-                )
-               })}
-                </Alert>
-                </div>
-
-                <div className="">
-                <Alert className="border-t-0 p-6 rounded-xl rounded-t-none h-full">
-                {patrimonio.map((props) => {
-                return(
-                   <div>
-                   
-
-                <div className="flex  flex-wrap gap-4">
-                <div className="flex gap-2 items-center text-xs font-medium"><User size={12} />{props.pes_nome}</div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">
-                  <div className={`w-4 h-4 rounded-md ${qualisColor[props.csv_cod.trim()as keyof typeof qualisColor]}`}></div>
-                  {csvCodToText[props.csv_cod.trim() as keyof typeof csvCodToText]}
-                </div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">
-                  {props.bem_sta.trim()=== "NO" ? (<Check size={12} />) : (<X size={12} />)}
-                  {props.bem_sta.trim() === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
-                </div>
-                <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_nom}</div>
-              </div>
-
-
-              <div className=" p-4 mt-6 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800 justify-center flex gap-6 items-center">
-          <img src={logo_eng} alt="" className="h-20" />
-          {/* Outros elementos aqui */}
-          <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod}${props.bem_dgv}`} alt="" className="h-20 mix-blend-multiply" />
-        </div>
-                   </div>
-                )
-               })}
-                </Alert>
-                </div>
+               
                     </div>
                     </Alert>
+               </div>
+
+              {onOpenBar && (
+                 <div className="w-[375px]"></div>
+              )}
                
 
-                    <div  className="xl:col-span-2 p-0">
+                    <div  className="w-full p-0 flex flex-col flex-1">
                     <div className="grid w-full items-start gap-6 overflow-auto ">
                 <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
                   <legend className="-ml-1 px-1 text-sm font-medium">

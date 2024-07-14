@@ -469,7 +469,7 @@ const data = patrimonio.map((item) => {
                     </CardTitle>
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                 {props.unique_values.map((item) => {
+                 {Array(props.unique_values).map((item) => {
                   return(
                     <CardContent className="flex gap-6">
                     <div>

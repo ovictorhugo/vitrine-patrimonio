@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react"
 import { UserContext } from "../../../context/context"
 import { Alert } from "../../ui/alert"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card"
-import { Info, MapPin, Plus, User } from "lucide-react"
+import { ArrowLeftRight, Check, Info, MapPin, Plus, Save, User } from "lucide-react"
 import { useLocation } from "react-router-dom"
 import { Input } from "../../ui/input"
 import { Label } from "../../ui/label"
@@ -19,6 +19,7 @@ interface TotalPatrimonios {
 
   import { Checkbox } from "../../../components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
+import { LinhaTempo } from "./linha-tempo"
 
   
   interface unique_values {
@@ -207,7 +208,7 @@ console.log(urlPatrimonioInsert)
 const [motivo, setMotivo] = useState('')
 
     return(
-        <div className="flex flex-col w-full gap-6">
+        <div className="flex flex-col w-full md:gap-8 gap-4">
             {total.map((props) => {
                   return(
                     <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -218,6 +219,21 @@ const [motivo, setMotivo] = useState('')
                     </CardTitle>
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
+                  </Alert>
+
+                  <Alert className="p-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total de movimentações
+                    </CardTitle>
+                    <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold"></div>
+                    <p className="text-xs text-muted-foreground">
+                      solicitações registradas
+                    </p>
+                  </CardContent>
                   </Alert>
 
                   <Alert onClick={() => setIsOpen(!onOpen)} className="p-0 hover:bg-[#274B5E] bg-[#719CB8] text-white transition-all cursor-pointer "  >
@@ -237,7 +253,22 @@ const [motivo, setMotivo] = useState('')
                  })}
 
                {onOpen && (
-                  <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-8">
+
+                    <LinhaTempo
+                    links={[
+                        {
+                          title:'Preencher movimentação',
+                          selected:true
+                        },
+                        {
+                          title:'Assinaturas',
+                        },
+                        {
+                          title:'Protocolação',
+                        }
+                    ]}
+                    />
 
                     <Alert>
                     <CardHeader className="flex p-2 flex-row items-center">
@@ -279,11 +310,13 @@ const [motivo, setMotivo] = useState('')
                        </div>
                     </Alert>
 
+
+                    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-2" >
                   {total.map((props) => {
                     return props.unique_values.map((item) => {
                       return (
-                        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4" key={item.org_cod}>
-                          <Alert className="p-0 md:col-span-2">
+                       
+                          <Alert className="p-0 ">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                               <CardTitle className="text-sm font-medium">
                                 Local de origem do(s) bem(ns)
@@ -291,71 +324,247 @@ const [motivo, setMotivo] = useState('')
                               <Info className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                            <div className="gap-6 flex items-center mt-6 w-full">
-                        <Label htmlFor="name">Unidade</Label>
+                            <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Unidade</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
                           disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                         
                         />
                       </div>
 
-                      <div className="gap-6 flex items-center mt-6 w-full">
-                        <Label htmlFor="name">Depto/setor</Label>
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Depto/setor</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
                           disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                          
+                        />
+                      </div>
+                      </div>
+
+                      <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Sala</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                         
                         />
                       </div>
 
-                      <div className="gap-6 flex items-center mt-6 w-full">
-                        <Label htmlFor="name">Sala</Label>
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Telefone</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
                           disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                          
+                        />
+                      </div>
+                      </div>
+
+                      <div className="grid gap-3 mt-6 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Email</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                         
                         />
                       </div>
 
-                      <div className="gap-6 flex items-center mt-6 w-full">
-                        <Label htmlFor="name">Telefone </Label>
+                      <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Responsável</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
                           disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                         
                         />
                       </div>
 
-                      <div className="gap-6 flex items-center mt-6 w-full">
-                        <Label htmlFor="name">Ema </Label>
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Data</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
                           disabled
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                          
                         />
                       </div>
-                             
+
+                     
+                      </div>
+                     
+                    
                             </CardContent>
                           </Alert>
-                        </div>
+                        
                       );
                     });
                   })}
 
-                                        <Alert>
 
-</Alert>
+                 
+                          <Alert className="p-0 ">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm font-medium">
+                                Local de destino
+                              </CardTitle>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                            <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Empresa/local</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                         
+                         
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Logradouro</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                        
+                          
+                        />
+                      </div>
+                      </div>
+
+                      <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Bairro</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                        
+                         
+                        />
+                      </div>
+
+                     <div className="flex gap-6">
+                     <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Cidade</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                         
+                          
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">UF</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                       
+                          
+                        />
+                      </div>
+                     </div>
+                      </div>
+
+                      <div className="grid gap-3 mt-6 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Email</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                         
+                         
+                        />
+                      </div>
+
+                      <div className="w-full flex gap-6 items-end mt-6">
+                            <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Responsável</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                      
+                         
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name" className="w-[150px]">Data</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                       
+                          
+                        />
+                      </div>
+                      </div>
+                     
+                             
+                            </CardContent>
+                          </Alert>
+                          </div>
+                     
+
+                                        <Alert className="p-0">
+
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm font-medium">
+                                De acordo da chefia do Depto/setor
+                              </CardTitle>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <div className="w-full flex gap-6 p-6  items-end px-6">
+                    <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Nome do chefe</Label>
+                        <Input
+                        id="name"
+                        type="text"
+                        className="w-full"
+                        onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} 
+                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_cod.trim()}-${patrimonio[0].bem_dgv.trim() }`) : input}
+                      />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Material</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
+                        />
+                      </div>
+
+                      <Button  ><Plus size={16}/>Solicitar assinatura</Button>
+
+                    </div>        
+
+                          </Alert>
 
                   <Alert className="  min-h-[150px] p-0 flex items-center gap-3">
                     <div className="min-w-8 min-h-12 left-[-1px] relative border border-l-0 bg-neutral-50 dark:bg-neutral-900 rounded-r-full"></div>
@@ -458,6 +667,12 @@ const [motivo, setMotivo] = useState('')
                   <p className="text-sm text-justify">Declaro ter ciência que em caso de perecimento ou lesão ao patrimônio público, estarei sujeito às sanções e penalidades administrativas, cíveis e penais impostas pela legislação, sem prejuízo do ressarcimento ao erário, conforme o art. 5º da lei 8429/92</p>
                   </div>
                  </Alert>
+
+
+                 <div className="flex gap-3 justify-end mb-8">
+                  <Button variant={'ghost'}><Save size={16}/>Salvar alterações</Button>
+                  <Button><Check size={16}/> Finalizar e solicitar assinaturas</Button>
+                 </div>
                  </div>
                )}
         </div>

@@ -13,6 +13,8 @@ import { ItensVitrine } from "../dashboard/itens-vitrine";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Empenhos } from "../dashboard/empenhos";
 import { CreateBarCode } from "../dashboard/create-bar-code";
+import {  PainelGeral } from "../dashboard/painel";
+
 
 
 
@@ -42,6 +44,8 @@ const ModalContent = () => {
       return <Empenhos />;
       case "create-bar-bode":
       return <CreateBarCode />;
+      case "painel":
+      return <PainelGeral />;
     default:
       return null;
   }

@@ -3,6 +3,7 @@ import { Button } from "../../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { FileCsv } from "phosphor-react";
+import { Alert } from "../../ui/alert";
 
 interface Patrimonio {
     bem_cod:string
@@ -91,7 +92,10 @@ export function DisplayItemPatrimonio(props:Patrimonio) {
 
         <div >
         <div className={`w-full h-2 ${qualisColor[props.csv_cod.trim() as keyof typeof qualisColor]}`}></div>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+       
+      <div className="p-6">
+      <Alert>
+       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {props.bem_cod}-{props.bem_dgv}
               </CardTitle>
@@ -118,6 +122,8 @@ export function DisplayItemPatrimonio(props:Patrimonio) {
                 <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_cod} - {props.loc_nom}</div>
               </div>
             </CardContent>
+       </Alert>
+      </div>
         </div>
         </div>
     )

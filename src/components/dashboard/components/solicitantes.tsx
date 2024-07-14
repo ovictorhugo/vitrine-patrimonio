@@ -21,7 +21,7 @@ interface loc_nom {
     DialogTitle,
     DialogTrigger,
   } from "../../../components/ui/dialog"
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, RefreshCcw } from "lucide-react";
 import { MagnifyingGlass } from "phosphor-react";
 
 import { columnsSolicitantes } from "./columns-solicitantes";
@@ -293,7 +293,7 @@ export function Solicitantes() {
                     onChange={(e) => setEmail(e.target.value)} id="temperature" type="email" className="flex flex-1" />
                   </div>
 
-                  <Button onClick={() => handleSubmitPatrimonio()}>Atualizar contato</Button>
+                  <Button onClick={() => handleSubmitPatrimonio()}><RefreshCcw size={16}/> Atualizar contato</Button>
         </div>
         </fieldset>
 
