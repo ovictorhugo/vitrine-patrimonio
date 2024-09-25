@@ -48,6 +48,8 @@ function App() {
     localStorage.setItem('user', JSON.stringify(user)); // Armazenar informações do usuário no localStorage
   };
 
+
+  
   // Função para fazer logout
   const logout = () => {
     setUser({ photoURL: '', cpf_aluno: '', datnsc_aluno: '', state: '' } as User);
