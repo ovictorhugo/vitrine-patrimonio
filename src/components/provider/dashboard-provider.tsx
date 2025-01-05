@@ -14,6 +14,7 @@ import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Empenhos } from "../dashboard/empenhos";
 import { CreateBarCode } from "../dashboard/create-bar-code";
 import {  PainelGeral } from "../dashboard/painel";
+import { Assinaturee } from "../dashboard/assinaturee";
 
 
 
@@ -44,8 +45,10 @@ const ModalContent = () => {
       return <Empenhos />;
       case "create-bar-bode":
       return <CreateBarCode />;
-      case "painel":
+    case "painel":
       return <PainelGeral />;
+    case 'assinar-documento':
+      return <Assinaturee/>
     default:
       return null;
   }

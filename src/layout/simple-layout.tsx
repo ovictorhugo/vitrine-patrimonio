@@ -11,7 +11,7 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 import { AccountSwitcher } from "../components/navigation/user-list";
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp, Barcode, ArrowLeftRight, LayoutPanelLeft } from "lucide-react";
+import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp, Barcode, ArrowLeftRight, LayoutPanelLeft, FilePenLine } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
@@ -86,7 +86,7 @@ export default function SearchLayout({
                 title: "Lista de patrimônios",
                 label: "",
                 icon: Package,
-                link: "/todos-os-patrimonios",
+                link: "/dashboard/todos-os-patrimonios",
               },
             
             ]}
@@ -102,59 +102,64 @@ export default function SearchLayout({
                 title: "Visão da sala",
                 label: "",
                 icon: ListTodo,
-                link: "/visao-sala",
+                link: "/dashboard/visao-sala",
               },
 
               {
                 title: "Painel do usuário",
                 label: "",
                 icon: LayoutPanelLeft,
-                link: "/painel",
+                link: "/dashboard/painel",
               },
               {
                 title: "Administrativo",
                 label: "",
                 icon: LayoutPanelLeft,
-                link: "/administrativo",
+                link: "/dashboard/administrativo",
               },
               {
                 title: "Novo item",
                 label: "",
                 icon: Plus,
-                link: "/novo-item",
+                link: "/dashboard/novo-item",
               },
               {
                 title: "Desfazimento de bem",
                 label: "",
                 icon: Trash,
-                link: "/desfazimento-bem",
+                link: "/dashboard/desfazimento-bem",
               },
               {
                 title: "Itens do Vitrine",
                 label: "",
                 icon: WalletCards,
-                link: "/itens-vitrine",
+                link: "/dashboard/itens-vitrine",
               },
               {
                 title: "Empenhos",
                 label: "",
                 icon: Stamp,
-                link: "/empenhos",
+                link: "/dashboard/empenhos",
               },
               {
                 title: "Criar etiqueta",
                 label: "",
                 icon: Barcode,
-                link: "/criar-etiqueta",
+                link: "/dashboard/criar-etiqueta",
               },
               {
                 title: "Controles de saída",
                 label: "",
                 icon: ArrowLeftRight,
-                link: "/controles-saidas",
+                link: "/dashboard/controles-saidas",
               },
 
-
+              {
+                title: "AssinaturEE",
+                label: "",
+                icon: FilePenLine,
+                link: "/dashboard/assinaturee",
+              },
 
 
              

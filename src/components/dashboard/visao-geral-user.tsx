@@ -16,7 +16,7 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel, Check } from "phosphor-react";
+import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel, Check, ChartBar } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign } from "lucide-react";
@@ -70,7 +70,7 @@ import { Checkbox } from "../ui/checkbox";
 
 export function VisaoGeralUser() {
     const { isOpen, type} = useModalDashboard();
-    const {user, urlGeral} = useContext(UserContext)
+    const {user, urlGeral, permission} = useContext(UserContext)
     const {onOpen} = useModal();
 
 
@@ -214,6 +214,31 @@ export function VisaoGeralUser() {
 
       const [cb, setCb] = useState('OC')
 
+      
+const [tab, setTab] = useState('all')
+
+
+//permissoes
+ 
+const has_editar_cargos_permissoes = permission.some(
+  (perm) => perm.permission === 'editar_cargos_permissoes'
+);
+
+const has_editar_cargos_usuarios = permission.some(
+  (perm) => perm.permission === 'editar_cargos_usuarios'
+);
+
+const has_editar_informacoes_usuarios = permission.some(
+  (perm) => perm.permission === 'editar_informacoes_usuarios'
+);
+
+const has_editar_configuracoes_plataforma = permission.some(
+  (perm) => perm.permission === 'editar_configuracoes_plataforma'
+);
+
+
+
+
     return(
         <>
         {isModalOpen && (
@@ -229,7 +254,7 @@ export function VisaoGeralUser() {
               </Button>
           
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                Dashboard
+                Módulo administrativo
               </h1>
              
 
@@ -238,21 +263,21 @@ export function VisaoGeralUser() {
               <div className="hidden items-center gap-2 md:ml-auto md:flex">
               <TabsList >
                 
-              <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
-              <TabsTrigger value="condicao" className="text-zinc-600 dark:text-zinc-200">Condição dos bens</TabsTrigger>
-                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Configurações</TabsTrigger>
+              <TabsTrigger value="all" onClick={() => setTab('all')} className="text-zinc-600 dark:text-zinc-200">Visão geral</TabsTrigger>
+              <TabsTrigger value="condicao" onClick={() => setTab('condicao')} className="text-zinc-600 dark:text-zinc-200">Condição dos bens</TabsTrigger>
+              <TabsTrigger value="cargos" disabled={!has_editar_cargos_permissoes && !has_editar_cargos_usuarios && !has_editar_informacoes_usuarios} onClick={() => setTab('cargos')} className="text-zinc-600 dark:text-zinc-200">Cargos e permissões</TabsTrigger>
+                <TabsTrigger value="unread" onClick={() => setTab('unread')}  className="text-zinc-600 dark:text-zinc-200">Configurações</TabsTrigger>
                
                 </TabsList>
                
           
-                <Button size="sm"><Check size={16}/>Button</Button>
+              
               </div>
             </div>
 
             </div>
-            <TabsContent value="all" className="h-auto flex flex-col gap-6 mt-2">
-            {total.map((props) => {
-                  return(
+            <TabsContent value="all" className="h-auto flex flex-col gap-4 md:gap-8 mt-2">
+       
                     <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
                     <Alert className="p-0">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -262,7 +287,7 @@ export function VisaoGeralUser() {
                     <Package className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{props.total_patrimonio}</div>
+                    <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio)}</div>
                     <p className="text-xs text-muted-foreground">
                       bens registrados
                     </p>
@@ -277,7 +302,7 @@ export function VisaoGeralUser() {
                     <Trash className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{props.total_patrimonio_morto}</div>
+                    <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio_morto)}</div>
                     <p className="text-xs text-muted-foreground">
                       bens desfeitos
                     </p>
@@ -292,7 +317,7 @@ export function VisaoGeralUser() {
                     <Trash className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{props.total_patrimonio_morto}</div>
+                    <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio)}</div>
                     <p className="text-xs text-muted-foreground">
                       bens em exposição
                     </p>
@@ -307,50 +332,35 @@ export function VisaoGeralUser() {
                     <Trash className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{props.total_patrimonio_morto}</div>
+                    <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio)}</div>
                     <p className="text-xs text-muted-foreground">
                       bens trocados
                     </p>
                   </CardContent>
                   </Alert>
                     </div>
-                  )
-                })}
+               
 
               <div className="grid gap-4 h-full md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
-                <CardHeader className="flex flex-col md:flex-row items-center justify-between">
+              <Alert  className="xl:col-span-2 p-0" x-chunk="dashboard-01-chunk-4" >
+                <CardHeader className="flex gap-6 flex-col md:flex-row  justify-between">
               <div className="grid gap-2 ">
-              <CardTitle>Condição dos bens</CardTitle>
+              <CardTitle>Usuários ativos por dia</CardTitle>
                 <CardDescription>
-                  Exercício de 
+                Dados do Google Analytics dos últimos 30 dias
                 </CardDescription>
-              </div>
-             <div className="flex gap-3">
-             <Select>
-  <SelectTrigger defaultValue={'OC'}  className="w-[180px]">
-    <SelectValue placeholder="Theme" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="OC">OC</SelectItem>
-    <SelectItem value="dark">Dark</SelectItem>
-    <SelectItem value="system">System</SelectItem>
-  </SelectContent>
-</Select>
+                </div>
 
+                <div className="flex gap-3">
+                  <ChartBar size={16}/>
+                </div>
+               </CardHeader>
 
-             <Button   size="sm" className="ml-auto gap-1">
-              <FileCsv className="h-4 w-4" />
-              Baixar arquivo .csv
-                  
-               
-              </Button>
-             </div>
-            </CardHeader>
-            <CardContent>
-     
-            </CardContent>
-                </Alert>
+               <CardContent>
+              
+               </CardContent>
+
+               </Alert>
 
                 <Alert   x-chunk="dashboard-01-chunk-5">
                 <CardHeader className="flex flex-row items-center">

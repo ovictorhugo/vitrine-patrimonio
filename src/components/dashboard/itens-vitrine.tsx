@@ -44,10 +44,11 @@ interface Patrimonio {
 export function ItensVitrine() {
     const { isOpen, type} = useModalDashboard();
     const {user, urlGeral, defaultLayout} = useContext(UserContext)
-    const {onOpen} = useModal();
+    const {onOpen} = useModal;
 
 
     const isModalOpen = isOpen && type === "itens-vitrine";
+
 
     const [total, setTotal] = useState<Patrimonio | null>(null);
 
@@ -138,9 +139,9 @@ export function ItensVitrine() {
           pes_cod={total.pes_cod}
           pes_nome={total.pes_nome}
         />
-      ):(
+      ):( 
         <div className="w-full h-full flex flex-col items-center justify-center">
-        <p className="text-9xl  text-[#719CB8]  font-bold mb-16 animate-pulse">^_~</p>
+        <p className="text-9xl  text-eng-blue  font-bold mb-16 animate-pulse">^_~</p>
          <p className="font-medium text-lg">Nenhum patrimônio selecionado</p>
        </div>
       )}

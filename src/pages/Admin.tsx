@@ -22,20 +22,22 @@ export function Admin() {
         if(location.pathname == '/dashboard') {
             onOpen('visao-geral-user')
   
-        } else if (location.pathname == '/todos-os-patrimonios') {
+        } else if (location.pathname == '/dashboard/todos-os-patrimonios') {
             onOpen('lista-patrimonio')
-        } else if (location.pathname == '/visao-sala') {
+        } else if (location.pathname == '/dashboard/visao-sala') {
             onOpen('visao-sala')
-        } else if (location.pathname == '/novo-item') {
+        } else if (location.pathname == '/dashboard/novo-item') {
             onOpen('novo-item')
-        } else if (location.pathname == '/itens-vitrine') {
+        } else if (location.pathname == '/dashboard/itens-vitrine') {
             onOpen('itens-vitrine')
-        } else if (location.pathname == '/empenhos') {
+        } else if (location.pathname == '/dashboard/empenhos') {
             onOpen('empenhos')
-        } else if (location.pathname == '/criar-etiqueta') {
+        } else if (location.pathname == '/dashboard/criar-etiqueta') {
             onOpen('create-bar-bode')
-        } else if (location.pathname == '/painel') {
+        } else if (location.pathname == '/dashboard/painel') {
             onOpen('painel')
+        }  else if (location.pathname == '/dashboard/assinaturee') {
+            onOpen('assinar-documento')
         }
 
 

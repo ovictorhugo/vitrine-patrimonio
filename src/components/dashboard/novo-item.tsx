@@ -148,10 +148,14 @@ export function NovoItem() {
   const [input, setInput] = useState("");
   const [inputATM, setInputATM] = useState("");
 
+  const [condicao, setCondicao] = useState("");
+  const [descricao, setDescricao] = useState("");
+ 
+
   useEffect(() => {   
     query.set('type_cod', typeCod);
     navigate({
-      pathname: '/novo-item',
+      pathname: '/dashboard/novo-item',
       search: query.toString(),
     });
 
@@ -279,7 +283,7 @@ export function NovoItem() {
           query.set('bem_num_atm', '');
         
           navigate({
-            pathname: '/novo-item',
+            pathname: '/dashboard/novo-item',
             search: query.toString(),
           });
         
@@ -289,7 +293,7 @@ export function NovoItem() {
           query.set('type_cod', typeCod);
           query.set('bem_num_atm', inputATM);
           navigate({
-            pathname: '/novo-item',
+            pathname: '/dashboard/novo-item',
             search: query.toString(),
           });
         
@@ -371,28 +375,12 @@ const filteredList = locNomLista.filter((framework) =>
 
             </div>
 
-            <LinhaTempo
-                    links={[
-                        {
-                          title:'Cadastro do patrimônio',
-                          selected:true
-                        },
-                        {
-                          title:'Verificação',
-                        },
-                        {
-                          title:'Publicação',
-                        },
-                        {
-                          title:'Publicação',
-                        }
-                    ]}
-                    />
+          
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
                {typeCod == 'scod' && (
-                <Alert className={'border-yellow-500 bg-yellow-50'}>
+                <Alert variant={'destructive'}>
                   <Warning className="h-4 w-4" />
                   <AlertTitle>Atenção!</AlertTitle>
                   <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
@@ -641,6 +629,8 @@ const filteredList = locNomLista.filter((framework) =>
                           id="name"
                           type="text"
                           className="w-full"
+                          value={user?.display_name}
+                          disabled={true}
                           
                         />
                       </div>
@@ -670,7 +660,18 @@ const filteredList = locNomLista.filter((framework) =>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                  <div className="grid gap-3 w-full mb-6">
+                        <Label htmlFor="name">Email principal</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          value={user?.email}
+                          disabled={true}
+                        />
+                      </div>
                   <div className="flex gap-6 w-full">
+                    
                      <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Email corporativo</Label>
                         <Input
@@ -721,7 +722,7 @@ const filteredList = locNomLista.filter((framework) =>
                   </CardHeader>
                   <CardContent>
                     <div className="">
-                    <Select className={'w-auto'}>
+                    <Select>
                       <SelectTrigger
                         id="model"
                         className="items-start [&_[data-description]]:hidden"

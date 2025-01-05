@@ -8,22 +8,38 @@ import {User as FirebaseAuthUser} from 'firebase/auth'
 import DefaultLayout from './layout/default-layout';
 import { Authentication } from './pages/Authentication';
 import { Admin } from './pages/Admin';
-import { Donation } from './pages/Donation';
-import { Fumpista } from './pages/Fumpista';
-import { useModalBackground } from './components/hooks/use-modal-background';
+
+
 import { Notification } from './pages/notification';
+import LoadingWrapper from './components/loading';
 
 
-interface User extends FirebaseAuthUser {
-  photoURL:string
-  cpf_aluno: string
-  datnsc_aluno:string
-  state: string
+interface User {
+  user_id:string
+  display_name:string
+  email:string 
+  uid:string
+  photo_url:string
+  roles:Roles[]
+  linkedin:string
+  phone:string
+  shib_id:string
+  provider:string
+}
+
+interface Roles {
+  id:string
+  role_id:string
+}
+
+interface Permission {
+  permission:string
+  id:string
 }
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [user, setUser] = useState<User>({  photoURL: '', cpf_aluno: '', datnsc_aluno: '', state: '' ,...{} } as User);
+  const [user, setUser] = useState<User| null>(null);;
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [navCollapsedSize, setNavCollapsedSize] = useState(0)
   const [defaultLayout, setDefaultLayout] = useState([0,440,655])
@@ -31,29 +47,18 @@ function App() {
 
   const [urlGeral, setUrlGeral] = useState('http://150.164.32.238:8484/');
 
+  const [role, setRole] = useState('')
+  const [permission , setPermission] = useState<Permission[]>([])
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem('permission');
 
     if (storedUser) {
       // Se as informações do usuário forem encontradas no armazenamento local, defina o usuário e marque como autenticado
-      setUser(JSON.parse(storedUser));
-      setLoggedIn(true);
+      setPermission(JSON.parse(storedUser));
+
     }
   }, []);
-
-  // Função para fazer login
-  const login = (user: User) => {
-    setUser(user);
-    setLoggedIn(true);
-    localStorage.setItem('user', JSON.stringify(user)); // Armazenar informações do usuário no localStorage
-  };
-
-  // Função para fazer logout
-  const logout = () => {
-    setUser({ photoURL: '', cpf_aluno: '', datnsc_aluno: '', state: '' } as User);
-    setLoggedIn(false);
-    localStorage.removeItem('user'); // Remover informações do usuário do localStorage ao fazer logout
-  };
 
 
   return (
@@ -63,35 +68,34 @@ function App() {
     value={{
       loggedIn, setLoggedIn,
       user, setUser,
-      login, // Passar a função de login para o contexto do usuário
-      logout, // Passar a função de logout para o contexto do usuário
       isCollapsed, setIsCollapsed,
       mode, setMode,
       urlGeral, setUrlGeral,
       navCollapsedSize, setNavCollapsedSize,
-      defaultLayout, setDefaultLayout
+      defaultLayout, setDefaultLayout,
+      role, setRole,
+      permission , setPermission
     }}
     >
       <DefaultLayout>
+      <LoadingWrapper>
       <Routes>
         <Route path='/' element={<Home/>}/>
         <Route path='/buscar-patrimonio' element={<Home/>}/>
         <Route path='/join-room' element={<Notification/>}/>
-
         <Route path='/dashboard' element={<Admin/>}/>
-        <Route path='/todos-os-patrimonios' element={<Admin/>}/>
-        <Route path='/novo-item' element={<Admin/>}/>
-        <Route path='/visao-sala' element={<Admin/>}/>
-        <Route path='/itens-vitrine' element={<Admin/>}/>
-        <Route path='/empenhos' element={<Admin/>}/>
-        <Route path='/criar-etiqueta' element={<Admin/>}/>
-        <Route path='/painel' element={<Admin/>}/>
+        <Route path='/dashboard/administrativo' element={<Admin/>}/>
+        <Route path='/dashboard/todos-os-patrimonios' element={<Admin/>}/>
+        <Route path='/dashboard/novo-item' element={<Admin/>}/>
+        <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
+        <Route path='/dashboard/visao-sala' element={<Admin/>}/>
+        <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
+        <Route path='/dashboard/empenhos' element={<Admin/>}/>
+        <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
+        <Route path='/dashboard/painel' element={<Admin/>}/>
+        <Route path='/dashboard/assinaturee' element={<Admin/>}/>
 
 
-        <Route path='/doacao/:pagina?' element={<Donation/>}/>
-        <Route path='/doacao/pagamento/:pagina?' element={<Donation/>}/>
-
-        <Route path='/fumpista/:pagina?' element={<Fumpista/>}/>
 
         <Route
         path='/signIn'
@@ -103,14 +107,11 @@ function App() {
          element={loggedIn == false ? <Authentication/> : <Navigate to='/' />}
         />
 
-    <Route
-          path='/admin/:pagina?'
-          element={(user.state == 'admin' || user.state == 'colaborator' || user.state == 'master')  ? <Admin/> : <Navigate to='/' />}
-        />
 
 
         
       </Routes>
+      </LoadingWrapper>
       </DefaultLayout>
     </UserContext.Provider>
     </Router>

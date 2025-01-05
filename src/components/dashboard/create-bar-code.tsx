@@ -80,8 +80,6 @@ export function CreateBarCode() {
 
     const [input, setInput] = useState("");
 
-    
-
 
     const handleChange = (value:any) => {
 
@@ -208,11 +206,11 @@ const [onOpenBar, setOnOpenBar] = useState(false)
 
             <div className="flex gap-4 h-full md:gap-8 ">
                <div className={` w-[375px] max-w-[375x] fixed bottom-0 ${!onOpenBar && (' ')}`}>
-               <Alert className="border-none bg-transparent p-0 h-full " >
+               <Alert className="border-none bg-transparent p-0 h-full ">
                     <div className="h-full">
                 <div className=" rounded-xl ">
                     <div className="flex justify-between w-full">
-                        <div className="flex gap-3 bg-[#719CB8]  rounded-tl-xl w-full items-center text-white p-4">
+                        <div className="flex gap-3 bg-eng-blue  rounded-tl-xl w-full items-center text-white p-4">
                             <Tag size={20}/>
                             <div>
                                 <p className="font-medium">Informações da etiqueta</p>
@@ -222,11 +220,11 @@ const [onOpenBar, setOnOpenBar] = useState(false)
 
                         <div className="flex">
                             <div>
-                            <div className="h-full w-[44px] bg-[#719CB8] rounded-tr-xl "></div>
+                            <div className="h-full w-[44px] bg-eng-blue rounded-tr-xl "></div>
                             </div>
                             <div className="flex flex-col h-full">
                             <div className="flex">
-                                <div className="bg-[#719CB8] absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
+                                <div className="bg-eng-blue absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
                             <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-900 p-2 flex gap-3 rounded-bl-xl ">
                         <Button variant="outline" size="icon" className="h-7 w-7">
                 <Download className="h-4 w-4" />
@@ -243,7 +241,7 @@ const [onOpenBar, setOnOpenBar] = useState(false)
                         </div>
                             </div>
                         <div className="h-full">
-                            <div className="min-h-[44px] h-full max-h-[80px] w-full bg-[#719CB8] rounded-tr-xl "></div>
+                            <div className="min-h-[44px] h-full max-h-[80px] w-full bg-eng-blue rounded-tr-xl "></div>
                             </div>
                             </div>
                         </div>
@@ -251,9 +249,9 @@ const [onOpenBar, setOnOpenBar] = useState(false)
                 </div>
 
                {onOpenBar && (
-                 <div className="bg-[#719CB8] flex items-center flex-col ">
+                 <div className="bg-eng-blue flex items-center flex-col ">
                  <div className="p-6">
-                 <QRCode size={200} className={'bg-transparent'} value={``} bgColor={'#719CB8'} fgColor={'#ffffff'}/>
+                 <QRCode size={200} className={'bg-transparent'} value={``} bgColor={'#559FB8'} fgColor={'#ffffff'}/>
                  </div>
   
                   <Alert className="border-b-0 rounded-xl rounded-b-none p-6">
@@ -266,7 +264,7 @@ const [onOpenBar, setOnOpenBar] = useState(false)
                                   <p className="font-bold text-xl">{props.mat_nom}</p>
   
                                   
-                                  
+  
                               </div>
   
                               <Button size={'sm'}><Plus size={16}/>Adicionar</Button>
@@ -282,7 +280,7 @@ const [onOpenBar, setOnOpenBar] = useState(false)
                   </div>
                )}
 
-               
+                   
                     </div>
                     </Alert>
                </div>
@@ -363,6 +361,7 @@ const [onOpenBar, setOnOpenBar] = useState(false)
 
                   <Button disabled={patrimonio.length == 0} ><Ticket size={16}/>Gerar etiqueta</Button>
                  
+
                 </fieldset>
 
                 <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">

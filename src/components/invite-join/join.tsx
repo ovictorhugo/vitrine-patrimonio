@@ -83,7 +83,7 @@ console.log(urlPatrimonioInsert)
         {isModalOpen && (
              <main className="flex flex-1 flex-col h-full gap-4 p-4 md:gap-8 md:p-8 items-center justify-center bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${img15})` }}>
                 <Alert className="max-w-[450px] p-0 ">
-                    <Link to={'/'} className="bg-[#719CB8] cursor-pointer gap-2 h-24 rounded-t-md flex items-center justify-center">
+                    <Link to={'/'} className="bg-eng-blue cursor-pointer gap-2 h-24 rounded-t-md flex items-center justify-center">
                     <div className="h-6"><SymbolEEWhite/></div> <div className="h-4"><LogoVitrineWhite/></div>
                     </Link>
                     <CardHeader>

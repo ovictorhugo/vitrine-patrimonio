@@ -9,7 +9,7 @@ interface PdfViewerProps {
   pdfBase64: string;
 }
 
-const PdfViewer: React.FC<PdfViewerProps> = ({ pdfBase64 }) => {
+const PdfViewer2: React.FC<PdfViewerProps> = ({ pdfBase64 }) => {
   const pdfData = pdfBase64.startsWith('data:application/pdf;base64,') ? pdfBase64 : `data:application/pdf;base64,${pdfBase64}`;
 
   const downloadPdf = () => {
@@ -21,11 +21,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ pdfBase64 }) => {
 
   return (
     <div>
-      <div className='mb-6 flex justify-end gap-3'>
-        <Button onClick={downloadPdf} variant={'ghost'}>
-          <Download size={16} />Download PDF
-        </Button>
-      </div>
+    
       <Worker workerUrl={`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`}>
         <div className='h-auto overflow-y-hidden'>
           <Viewer fileUrl={pdfData} className='h-auto overflow-y-hidden' />
@@ -35,5 +31,5 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ pdfBase64 }) => {
   );
 };
 
-export default PdfViewer;
+export default PdfViewer2;
 

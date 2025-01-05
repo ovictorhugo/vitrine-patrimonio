@@ -26,8 +26,8 @@ import {
 
 
   
-import { ChartLine, Gear, GraduationCap, GridFour, ListDashes, SignIn, Textbox, UserPlus } from "phosphor-react";
-import { DotSquare, GitBranch, Grip, Laptop, LogIn, Moon, Search, Sun, User } from "lucide-react";
+import { CaretLeft, ChartLine, Funnel, Gear, GraduationCap, GridFour, ListDashes, MagnifyingGlass, SignIn, Textbox, UserPlus } from "phosphor-react";
+import { DotSquare, GitBranch, Grip, Laptop, LayoutDashboard, LogIn, Moon, Search, Sun, User } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
 import { UserConfigHeader } from "./user-config-header";
@@ -44,15 +44,18 @@ import { useTheme } from "next-themes"
 import { useModalHomepage } from "../hooks/use-modal-homepage";
 import { LogoVitrineWhite } from "../svg/LogoVitrineWhite";
 import { LogoVitrine } from "../svg/LogoVitrine";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { Input } from "../ui/input";
 import { SymbolEE } from "../svg/SymbolEE";
+import { useModal } from "../hooks/use-modal-store";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
-  const {loggedIn, user} = useContext(UserContext)
+  const {loggedIn, user, permission} = useContext(UserContext)
 
   const { theme, setTheme } = useTheme()
   const { onOpen } = useModalHomepage();
+  const { onOpen:onOpenModal } = useModal();
   const location = useLocation();
   const [versao, setVersao] = React.useState(true)
   
@@ -103,12 +106,19 @@ export function Header() {
 
             <div className="flex gap-2 items-center justify-center">
 
-            {isVisible && (
-        <div className="flex gap-3 h-8 border border-neutral-200 dark:border-neutral-800 px-4 rounded-md items-center">
-          <Search size={16} />
-          <Input className="border-0 h-full dark:bg-transparent" />
+         
+
+
+        <div onClick={() => onOpenModal('search')} className="flex  h-8 border border-neutral-200 dark:border-neutral-800 px-1 bg-white dark:bg-neutral-950 rounded-md items-center">
+          <MagnifyingGlass size={16} className="w-8" />
+          <Input className="border-0 h-full flex flex-1 dark:bg-transparent" placeholder="Buscar patrimônio..." />
+<p className="bg-neutral-100 rounded-md text-[10px] mr-1  dark:bg-neutral-800 h-6 flex items-center justify-center px-2">Ctrl + Q</p>
+          <Button  className={` h-6 w-6  text-white border-0 `} size={'icon'}>
+       <Funnel size={10} className="" /> 
+       
+        </Button>
         </div>
-      )}
+  
 
 {!loggedIn && (
   <Link to={'/signIn'}>
@@ -122,9 +132,17 @@ export function Header() {
 {!loggedIn && (
  <Link to={'/signUp'}>
  <Button  size="sm" >
-                 <LogIn className="h-4 w-4" />
+                 <UserPlus className="h-4 w-4" />
                  Criar conta
                </Button></Link>
+)}  
+
+{(loggedIn && permission.length > 0) && (
+  <Link to={'/dashboard'}>
+  <Button variant="ghost" size="sm" className="h-10" >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Console
+                </Button></Link>
 )}
              
 
@@ -183,6 +201,23 @@ export function Header() {
     </DropdownMenu>
     
 
+    {loggedIn && (
+  
+  <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+    <Button  onClick={() => onOpenModal('minha-area')}  variant={'ghost'} className="px-2" >
+    <CaretLeft size={16}/>
+    <Avatar className="cursor-pointer rounded-md  h-6 w-6">
+      <AvatarImage  className={'rounded-md h-6 w-6'} src={`${user?.photo_url}`} />
+      <AvatarFallback className="flex items-center justify-center"><User size={16}/></AvatarFallback>
+  </Avatar>
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent> Minha área</TooltipContent>
+  </Tooltip>
+  </TooltipProvider>
+)}
 
          
 

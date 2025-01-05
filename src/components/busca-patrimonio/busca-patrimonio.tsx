@@ -17,7 +17,6 @@ import { Barcode, Locate, User } from "lucide-react";
 
 import Scanner from "../busca-patrimonio/Scanner.jsx"
 
-import { useBarcode } from '@createnextapp/react-barcode';
 
 import {
   Dialog,
@@ -208,10 +207,10 @@ export function BuscaPatrimonio() {
 
 <div className="bg-cover h-full bg-no-repeat px-8 bg-right w-full flex gap-3 items-center" style={{ backgroundImage: `url(${bg_vitrine})` }} >
 <div className=" w-full  mx-auto flex flex-col flex-1 gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
-<Link to={''}  className="inline-flex w-fit items-center rounded-lg  bg-gray-200 dark:bg-neutral-800  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12}/><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba como utilizar a plataforma<ArrowRight size={12}/></Link>
-<h1 className="z-[2] text-left max-w-[600px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]  md:block mb-4 ">
+<Link to={'/informacoes'}  className="inline-flex w-fit z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12}/><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba como utilizar a plataforma<ArrowRight size={12}/></Link>
+<h1 className="z-[2] text-left max-w-[670px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]  md:block mb-4 ">
              
-              <strong className="bg-[#709CB6]  rounded-md px-3 pb-2 text-white font-medium">
+              <strong className="bg-eng-blue  rounded-md px-3 pb-2 text-white font-medium">
                 {" "}
                 Digite o código
               </strong>{" "}

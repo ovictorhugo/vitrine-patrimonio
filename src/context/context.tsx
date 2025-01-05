@@ -1,20 +1,41 @@
 import { createContext } from "react";
-import { User as FirebaseAuthUser } from 'firebase/auth';
 
-interface User extends FirebaseAuthUser {
-  photoURL:string
-  cpf_aluno: string
-  datnsc_aluno:string
-  state: string
+interface User {
+  user_id:string
+  display_name:string
+  email:string 
+  uid:string
+  photo_url:string
+  roles:Roles[]
+  linkedin:string
+  phone:string
+  shib_id:string
+  provider:string
 }
+
+interface Roles {
+  id:string
+  role_id:string
+}
+
+interface Permission {
+  permission:string
+  id:string
+}
+
 
 interface UserContextType {
   loggedIn: boolean;
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  user: User;
-  setUser: React.Dispatch<React.SetStateAction<User>>;
-  login: (user: User) => void; // Função de login
-  logout: () => void; // Função de logout
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+ 
+
+  role:string, 
+  setRole:React.Dispatch<React.SetStateAction<string>>;
+
+  permission: Permission[] , 
+  setPermission: React.Dispatch<React.SetStateAction<Permission[]>>,
 
   urlGeral: string,
   setUrlGeral: React.Dispatch<React.SetStateAction<string>>;
@@ -38,8 +59,6 @@ export const UserContext = createContext<UserContextType>({
   setLoggedIn: () => {},
   user: {} as User,
   setUser: () => {},
-  login: () => {}, // Definindo uma função vazia como padrão
-  logout: () => {}, // Definindo uma função vazia como padrão
 
   navCollapsedSize:0, 
   setNavCollapsedSize:() => {},
@@ -52,6 +71,14 @@ export const UserContext = createContext<UserContextType>({
 
   urlGeral: "",
 setUrlGeral: () => {},
+
+
+role:"", 
+setRole:() => {},
+
+permission:[] , 
+setPermission: () => {},
+
 
       mode:"", 
       setMode:() => {},

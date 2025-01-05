@@ -66,8 +66,8 @@ export default function SearchLayout({
         >
 
 <div>
-<div className={cn("flex h-[50px] items-center justify-center border-b border-b-neutral-200 dark:border-b-neutral-800", isCollapsed ? 'h-[50px]': 'px-2')}>
-<AccountSwitcher isCollapsed={isCollapsed}  />
+        <div className={cn("flex h-[50px] items-center justify-center border-b border-b-neutral-200 dark:border-b-neutral-800", isCollapsed ? 'h-[50px]': 'px-2')}>
+        <AccountSwitcher isCollapsed={isCollapsed}  />
           </div>
 
           
