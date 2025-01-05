@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
+import { v4 as uuidv4 } from 'uuid';
 
-import { LogoUfmg } from "../svg/logo-ufmg";
-import { Logo } from "../svg/logo";
-import { Navbar } from "./navbar";
 import {
   DialogContent,
   DialogDescription,
@@ -11,24 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog"
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-  } from "../../components/ui/breadcrumb"
+
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass  } from "phosphor-react";
+import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel  } from "phosphor-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown } from "lucide-react";
 import { useModal } from "../hooks/use-modal-store";
-import { TabelaPatrimonio } from "./components/tabela-patrimonios";
-import { ScrollArea } from "../ui/scroll-area";
+
 import { Badge } from "../ui/badge";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -84,20 +74,7 @@ const useQuery = () => {
 
 import { toast } from "sonner"
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../../components/ui/command"
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../components/ui/popover"
 
 import { useLocation,useNavigate } from 'react-router-dom';
 
@@ -109,7 +86,24 @@ import {
 } from "../../components/ui/accordion"
 import { Dialog } from "../ui/dialog";
 import { LinhaTempo } from "./components/linha-tempo";
+import { Switch } from "../ui/switch";
 
+interface NovoItem {
+  patrimonio_id:string
+  num_patrimonio:string
+  loc:string
+  observacao:string
+  user_id:string
+  vitrine:string
+  condicao:string
+  imagens:string
+  desfazimento:boolean
+  verificado:boolean
+  num_verificacao:string
+  codigo_atm:string
+  situacao:string
+  material:string
+}
 
 export function NovoItem() {
     const { isOpen, type} = useModalDashboard();
@@ -121,8 +115,6 @@ export function NovoItem() {
     const handleVoltar = () => {
       history(-3);
     };
-
-
 
     const isModalOpen = isOpen && type === "novo-item";
 
@@ -144,13 +136,14 @@ export function NovoItem() {
 
   let bemCod = bem_cod ?? '';  // Default value if bem_cod is null
   let bemDgv = bem_dgv ?? '';  // Default value if bem_dgv is null
+  let BemNumatm = bem_num_atm ?? ''
 
   const [input, setInput] = useState("");
   const [inputATM, setInputATM] = useState("");
-
   const [condicao, setCondicao] = useState("");
   const [descricao, setDescricao] = useState("");
- 
+  const [relevance, setRelevance] = useState(false);
+  const [desfazimento, setDesfazimento] = useState(false);
 
   useEffect(() => {   
     query.set('type_cod', typeCod);
@@ -257,10 +250,10 @@ export function NovoItem() {
         const data = await response.json();
         if (data) {
           setPatrimonio(data);
-          setInput('')
+          setLocalizacao(patrimonio[0].loc_nom)
        
         } else {
-          toast("Erro: Nenhum patrimônio encontrado", {
+          toast("Nenhum patrimônio encontrado", {
             description: "Revise o número",
             action: {
               label: "Fechar",
@@ -313,6 +306,12 @@ console.log(patrimonio)
 const [openPopo, setOpenPopo] = useState(false)
   const [localizacao, setLocalizacao] = useState("")
 
+  useEffect(() => {   
+   if(localizacao.length == 0 && patrimonio.length > 0) {
+    setLocalizacao(patrimonio[0].loc_nom)
+   }
+      }, [patrimonio]);
+
   const handleRemoveImage = (index: number) => {
     setImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
@@ -345,9 +344,191 @@ const filteredList = locNomLista.filter((framework) =>
   normalizeString(framework.loc_nom).includes(normalizeString(searchTerm))
 );
 
+
+
+//enviar 
+const newImageNames: string[] = [];
+
+const handleSubmit = async () => {
+
+  const docId = uuidv4();
+
+  try {
+    const data = [
+      {
+        num_patrimonio:patrimonio[0].bem_cod,
+        loc: localizacao ,
+        observacao:descricao,
+        user_id:user?.uid,
+        vitrine:relevance,
+        condicao:condicao,
+        imagens:newImageNames,
+        desfazimento:desfazimento,
+        verificado:false,
+        num_verificacao:patrimonio[0].bem_dgv,
+        codigo_atm:BemNumatm,
+        situacao:'',
+        material:''
+      
+      }
+    ]
+
+    console.log(data)
+
+    let urlProgram = urlGeral + '/formulario'
+
+
+    const fetchData = async () => {
+    
+     if (condicao == '') {
+      toast("Campo 'Nome do programa' vazio", {
+        description: "Preencha o campo",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Undo"),
+        },
+      })
+     } else if (images.length === 0) {
+        toast("Nenhuma imagem selecionada!", {
+          description: "Por favor, selecione ao menos uma imagem antes de enviar.",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
+        return;
+      }
+     
+     else  {
+      try {
+        handleFileUpload()
+        const response = await fetch(urlProgram, {
+          mode: 'cors',
+          method: 'POST',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+         
+          toast("Dados enviados com sucesso", {
+              description: "Item adicionado ao Vitrine",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+
+           
+         
+        } else {
+          console.error('Erro ao enviar dados para o servidor.');
+          toast("Tente novamente!", {
+              description: "Tente novamente",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+        }
+        
+      } catch (err) {
+        console.log(err);
+      } 
+     }
+    };
+    fetchData();
+
+
+  } catch (error) {
+      toast("Erro ao processar requisição", {
+          description: "Tente novamente",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Undo"),
+          },
+        })
+  }
+}
+
+ // Constante para armazenar os nomes gerados
+//imagemns
+
+const handleFileUpload = async () => {
+  if (images.length === 0) {
+    toast("Nenhuma imagem selecionada!", {
+      description: "Por favor, selecione ao menos uma imagem antes de enviar.",
+      action: {
+        label: "Fechar",
+        onClick: () => console.log("Fechar"),
+      },
+    });
+    return;
+  }
+
+  try {
+    const uploadPromises = images.slice(0, 4).map((image, index) => {
+      const formData = new FormData();
+      const fileName = `${uuidv4()}_${index}.png`; // Nome único para a imagem
+      newImageNames.push(fileName); // Armazena o nome gerado
+
+      // Converter a URL de imagem para Blob
+      return fetch(image)
+        .then((res) => res.blob())
+        .then((blob) => {
+          formData.append("file", blob, fileName);
+
+          const urlUpload = `${urlGeral}imagem/${fileName}`;
+
+          return fetch(urlUpload, {
+            method: "POST",
+            body: formData,
+          });
+        });
+    });
+
+    const responses = await Promise.all(uploadPromises);
+
+    const allSuccessful = responses.every((response) => response.ok);
+
+    if (allSuccessful) {
+      toast("Upload realizado com sucesso!", {
+        description: "As imagens foram enviadas com sucesso!",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Fechar"),
+        },
+      });
+
+      console.log("Novos nomes das imagens:", newImageNames); // Exibe os nomes gerados no console
+      setImages([]); // Resetar o estado das imagens após o envio
+    } else {
+      throw new Error("Nem todas as imagens foram enviadas com sucesso.");
+    }
+  } catch (error) {
+    console.error("Erro ao enviar imagens:", error);
+    toast("Erro no envio", {
+      description: "Não foi possível enviar as imagens. Tente novamente.",
+      action: {
+        label: "Fechar",
+        onClick: () => console.log("Fechar"),
+      },
+    });
+  }
+};
+
+
+
+
+
     return(
-        <>
-        {isModalOpen && (
+ 
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="  gap-4">
             <div className="flex items-center gap-4">
@@ -362,14 +543,14 @@ const filteredList = locNomLista.filter((framework) =>
               </h1>
               {patrimonio.length > 0 && (
                 <Badge variant="outline" className="ml-auto sm:ml-0">
-                {`${patrimonio[0].bem_cod.trim()} - ${patrimonio[0].bem_dgv.trim() }`}
+                {`${patrimonio[0].bem_cod} - ${patrimonio[0].bem_dgv }`}
               </Badge>
               )}
               <div className="hidden items-center gap-2 md:ml-auto md:flex">
                 <Button variant="outline" size="sm">
                   Discard
                 </Button>
-                <Button size="sm"><Check size={16} />Publicar item</Button>
+                <Button onClick={handleSubmit} size="sm"><Check size={16} />Publicar item</Button>
               </div>
             </div>
 
@@ -416,26 +597,33 @@ const filteredList = locNomLista.filter((framework) =>
                      {typeCod == 'cod' && (
                       <div className="grid gap-3 w-full">
                       <Label htmlFor="name">Número do patrimônio</Label>
-                      <Input
+                     <div className="flex items-center gap-3">
+                     <Input
                         id="name"
                         type="text"
-                        className="w-full"
+                        className="w-ful"
                         onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} 
-                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_cod.trim()}-${patrimonio[0].bem_dgv.trim() }`) : input}
+                        value={input}
                       />
+
+                      <Button className="min-w-10" size={'icon'} onClick={onClickBuscaPatrimonio}><Funnel size={16}/></Button>
+                     </div>
                     </div>
                      )}
 
                   {typeCod == 'atm' && (
                       <div className="grid gap-3 w-full">
                       <Label htmlFor="name">Código ATM</Label>
-                      <Input
+                      <div className="flex items-center gap-3">
+                     <Input
                         id="name"
                         type="text"
                         className="w-full"
                         onKeyDown={handleKeyDown} onChange={(e) => setInputATM(e.target.value)} 
-                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_num_atm.trim()}`) : inputATM}
+                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_num_atm}`) : inputATM}
                       />
+                        <Button className="min-w-10" size={'icon'} onClick={onClickBuscaPatrimonio}><Funnel size={16}/></Button>
+                     </div>
                     </div>
                      )}
 
@@ -457,7 +645,7 @@ const filteredList = locNomLista.filter((framework) =>
                           type="text"
                           className="w-full"
                           disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].csv_cod.trim() == "BM" ? 'Bom': patrimonio[0].csv_cod.trim() == 'AE' ? 'Anti-Econômico': patrimonio[0].csv_cod.trim() == 'IR' ? 'Irrecuperável': patrimonio[0].csv_cod.trim() == 'OC' ? 'Ocioso': patrimonio[0].csv_cod.trim() == 'BX' ? 'Baixado': patrimonio[0].csv_cod.trim() == 'RE' ? 'Recuperável': ''):''}
+                          value={patrimonio.length > 0 ? (patrimonio[0].csv_cod == "BM" ? 'Bom': patrimonio[0].csv_cod == 'AE' ? 'Anti-Econômico': patrimonio[0].csv_cod == 'IR' ? 'Irrecuperável': patrimonio[0].csv_cod == 'OC' ? 'Ocioso': patrimonio[0].csv_cod == 'BX' ? 'Baixado': patrimonio[0].csv_cod == 'RE' ? 'Recuperável': ''):''}
                         />
                       </div>
 
@@ -465,7 +653,7 @@ const filteredList = locNomLista.filter((framework) =>
                      </div>
 
                      <div className="flex gap-6">
-                      {(patrimonio.length > 0 && patrimonio[0].bem_val.trim().length > 0) && (
+                      {(patrimonio.length > 0 && patrimonio[0].bem_val.length > 0) && (
                         <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Valor</Label>
                         <Input
@@ -500,7 +688,7 @@ const filteredList = locNomLista.filter((framework) =>
                           type="text"
                           className="w-full"
                           disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].bem_sta.trim() == "NO" ? ('Normal'):('Não encontrado no local de guarda')):''}
+                          value={patrimonio.length > 0 ? (patrimonio[0].bem_sta == "NO" ? ('Normal'):('Não encontrado no local de guarda')):''}
                         />
                       </div>
 
@@ -509,11 +697,11 @@ const filteredList = locNomLista.filter((framework) =>
                         <div className="flex gap-3">
                         {locState ? (
                           <Input
-                          id="name"
+                         
                           type="text"
                           className="w-full"
                           disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].loc_nom : localizacao}
+                          value={localizacao}
                         />
                         ):(
                           <Dialog open={openPopo} onOpenChange={setOpenPopo}>
@@ -605,7 +793,7 @@ const filteredList = locNomLista.filter((framework) =>
                         <Label htmlFor="description">Observações</Label>
                         <Textarea
                           id="description"
-                          
+                          value={descricao} onChange={(e) => setDescricao(e.target.value)}
                           className="min-h-32"
                         />
                       </div>
@@ -641,7 +829,7 @@ const filteredList = locNomLista.filter((framework) =>
                           id="name"
                           type="text"
                           className="w-full"
-                        
+                        disabled
                         />
                       </div>
 
@@ -678,7 +866,7 @@ const filteredList = locNomLista.filter((framework) =>
                           id="name"
                           type="text"
                           className="w-full"
-                          
+                          disabled
                         />
                       </div>
 
@@ -694,7 +882,7 @@ const filteredList = locNomLista.filter((framework) =>
                           id="name"
                           type="text"
                           className="w-full"
-                        
+                        disabled
                         />
                       </div>
 
@@ -704,7 +892,7 @@ const filteredList = locNomLista.filter((framework) =>
                           id="name"
                           type="text"
                           className="w-full"
-                         
+                         disabled
                         />
                       </div>
                      </div>
@@ -722,7 +910,7 @@ const filteredList = locNomLista.filter((framework) =>
                   </CardHeader>
                   <CardContent>
                     <div className="">
-                    <Select>
+                    <Select value={condicao} onValueChange={(value) => setCondicao(value)}>
                       <SelectTrigger
                         id="model"
                         className="items-start [&_[data-description]]:hidden"
@@ -730,7 +918,7 @@ const filteredList = locNomLista.filter((framework) =>
                         <SelectValue placeholder="Selecione a condição do bem" className={'whitespace-nowrap'} />
                       </SelectTrigger>
                       <SelectContent>
-                      <SelectItem value="quantum">
+                      <SelectItem value="Em boas condições">
                           <div className="flex items-start gap-3 text-muted-foreground ">
                             <Checks className="size-5" />
                             <div className="grid gap-0.5 ">
@@ -743,12 +931,12 @@ const filteredList = locNomLista.filter((framework) =>
                             </div>
                           </div>
                         </SelectItem>
-                        <SelectItem value="genesis">
+                        <SelectItem value="Semi-novo ou em excelente estado ">
                           <div className="flex items-start gap-3 text-muted-foreground">
                             <Check className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                              Semi novo ou em excelente estado 
+                              Semi-novo ou em excelente estado 
 
                               </p>
                               <p className="text-xs" data-description>
@@ -757,12 +945,12 @@ const filteredList = locNomLista.filter((framework) =>
                             </div>
                           </div>
                         </SelectItem>
-                        <SelectItem value="explorer">
+                        <SelectItem value="Semi-novo">
                           <div className="flex items-start gap-3 text-muted-foreground">
                             <Warning className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                              Semi novo
+                              Semi-novo
                               </p>
                               <p className="text-xs" data-description>
                                 mas e necessário algum acessório para o completo uso
@@ -770,7 +958,7 @@ const filteredList = locNomLista.filter((framework) =>
                             </div>
                           </div>
                         </SelectItem>
-                        <SelectItem value="3">
+                        <SelectItem value="Necessita de pequenos reparos">
                           <div className="flex items-start gap-3 text-muted-foreground">
                             <Wrench className="size-5" />
                             <div className="grid gap-0.5">
@@ -784,8 +972,64 @@ const filteredList = locNomLista.filter((framework) =>
                             </div>
                           </div>
                         </SelectItem>
+
+                        <SelectItem value="Sem condição de uso">
+                          <div className="flex items-start gap-3 text-muted-foreground">
+                            <X className="size-5" />
+                            <div className="grid gap-0.5">
+                              <p>
+                               Sem condição de uso
+                              </p>
+                              <p className="text-xs" data-description>
+                                The most powerful model for complex
+                                computations.
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    </div>
+                  </CardContent>
+                </Alert>
+
+                <Alert className="p-0">
+                <CardHeader>
+                    <CardTitle>Destinação do item</CardTitle>
+                    <CardDescription>
+                     jsdfgsdfgsdfg
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4">
+                    <div className="">
+                    <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Alocação no Vitrine (sala 40)</Label>
+                        <CardDescription>
+                      Caso haja a disponibilidade, gostaria que o item seja guardado na sala física do Vitrine?
+                    </CardDescription>
+                        <div className="flex gap-2 items-center ">
+            <Switch checked={relevance} onCheckedChange={(e) => {
+              setRelevance(e)
+              setDesfazimento(false)
+            }} />
+            <p className="text-sm">{relevance ? "Sim, preciso da alocação" : "Não, não preciso"} </p>
+          </div>
+                      </div>
+                    
+                    </div>
+
+                    <div className="">
+                    <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Desfazimento</Label>
+                        <CardDescription>
+                    Este é um item elegível para o desfazimento?
+                    </CardDescription>
+                        <div className="flex gap-2 items-center ">
+            <Switch disabled={relevance} checked={desfazimento} onCheckedChange={(e) => setDesfazimento(e)} />
+            <p className="text-sm">{desfazimento ? "Não, não preciso" : "Sim, preciso da alocação"} </p>
+          </div>
+                      </div>
+                    
                     </div>
                   </CardContent>
                 </Alert>
@@ -882,7 +1126,6 @@ const filteredList = locNomLista.filter((framework) =>
                </div>
               </div>
            </main>
-        )}
-        </>
+      
     )
 }

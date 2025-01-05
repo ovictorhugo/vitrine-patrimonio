@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { UserContext } from "../../context/context";
 import { useModal } from "../hooks/use-modal-store";
@@ -6,9 +6,12 @@ import { TooltipProvider } from "../ui/tooltip";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "../ui/input";
-import { Search } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import { ItensListVitrine } from "./components/itens-list-vitrine";
 import { DisplayItemVitrine } from "./components/display-item-vitrine";
+import { Button } from "../ui/button";
+import { useNavigate } from "react-router-dom";
+import { ItemPatrimonio } from "../homepage/components/item-patrimonio";
 
 interface Patrimonio {
     bem_cod:string
@@ -41,13 +44,32 @@ interface Patrimonio {
     pes_nome:string
   }
 
+interface Item {
+  codigo_atm: string
+  condicao: string
+  desfazimento: boolean
+  email: string
+  imagens: string[]
+  loc: string
+  material: string
+  matricula: string
+  num_patrimonio:number
+  num_verificacao:number
+  observacao: string
+  patrimonio_id: string
+  phone: string
+  situacao: string
+  u_matricula: string
+  user_id: string
+  verificado: boolean,
+  vitrine:boolean
+  mat_nom:string
+}
+
 export function ItensVitrine() {
     const { isOpen, type} = useModalDashboard();
     const {user, urlGeral, defaultLayout} = useContext(UserContext)
-    const {onOpen} = useModal;
-
-
-    const isModalOpen = isOpen && type === "itens-vitrine";
+ const [value, setValue] = useState('1')
 
 
     const [total, setTotal] = useState<Patrimonio | null>(null);
@@ -60,97 +82,144 @@ export function ItensVitrine() {
       console.log(total)
   
       const [search, setSearch] = useState('')
+
+        const history = useNavigate();
+      
+          const handleVoltar = () => {
+            history(-3);
+          };
+
+          ///////////////////////
+          const [bens, setBens] = useState<Item[]>([]); 
+          const [loading, isLoading] = useState(false)
+         
+          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}`
+
+          useEffect(() => {
+            const fetchData = async () => {
+                try {
+                  isLoading(true)
+                  const response = await fetch(urlBens, {
+                    mode: "cors",
+                    headers: {
+                      "Access-Control-Allow-Origin": "*",
+                      "Access-Control-Allow-Methods": "GET",
+                      "Access-Control-Allow-Headers": "Content-Type",
+                      "Access-Control-Max-Age": "3600",
+                      "Content-Type": "text/plain",
+                    },
+                  });
+                  
+                  const data = await response.json();
+                  if (data) {
+                    setBens(data);
+                    isLoading(false)
+                  } 
+                  
+              } catch (err) {
+                console.log(err);
+              }
+            }
+
+              fetchData();
+            }, [urlBens])
+
+
     return(
-        <>
-        {isModalOpen && (
-            <TooltipProvider delayDuration={0}>
-                <ResizablePanelGroup
-            direction="horizontal"
-            onLayout={() => defaultLayout}
-            className="h-full  items-stretch"
-            >
-                 <ResizablePanel defaultSize={40} minSize={40}>
-                 <Tabs defaultValue="all">
-            <div className="flex items-center px-4 py-2">
-              <h1 className="text-lg font-bold">Itens do Vitrine</h1>
-              <TabsList className="ml-auto">
-                <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">Aprovação</TabsTrigger>
-                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">Publicados</TabsTrigger>
-              </TabsList>
-            </div>
-           <div className="w-full border-b border-neutral-200 dark:border-neutral-800 "></div>
-
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <form>
-              <div className="relative bg-white flex gap-3 items-center border px-4 border-neutral-200 dark:border-neutral-800 rounded-md dark:bg-neutral-950">
-                <Search size={16} />
-                <Input placeholder="Filtrar pelo número do patrimônio..." className="border-none" value={search}  onChange={(e) => setSearch(e.target.value)}/>
-              </div>
-              </form>
-            </div>
-            <TabsContent value="all" className="m-0">
-             <ItensListVitrine
-             onResearcherUpdate={handleResearcherUpdate}
-             url={`${urlGeral}allPatrimonio?loc_nom=1506B ASSESSORIA DE RECURSOS HUMANOS`}
-             search={search}
-             />
-            </TabsContent>
-            <TabsContent value="unread" className="m-0">
-            <ItensListVitrine
-             onResearcherUpdate={handleResearcherUpdate}
-             url={`${urlGeral}allPatrimonio?loc_nom=1506B ASSESSORIA DE RECURSOS HUMANOS`}
-             search={search}
-             />
-            </TabsContent>
-          </Tabs>
-                 </ResizablePanel>
-                 <ResizableHandle withHandle />
-
-                 <ResizablePanel defaultSize={defaultLayout[2]} minSize={50}>
-       
-                 {total ? (
-        <DisplayItemVitrine
-          bem_cod={total.bem_cod}
-          bem_dgv={total.bem_dgv}
-          bem_num_atm={total.bem_num_atm}
-          csv_cod={total.csv_cod}
-          bem_serie={total.bem_serie}
-          bem_sta={total.bem_sta}
-          bem_val={total.bem_val}
-          tre_cod={total.tre_cod}
-          bem_dsc_com={total.bem_dsc_com}
-          uge_cod={total.uge_cod}
-          uge_nom={total.uge_nom}
-          org_cod={total.org_cod}
-          uge_siaf={total.uge_siaf}
-          org_nom={total.org_nom}
-          set_cod={total.set_cod}
-          set_nom={total.set_nom}
-          loc_cod={total.loc_cod}
-          loc_nom={total.loc_nom}
-          ite_mar={total.ite_mar}
-          ite_mod={total.ite_mod}
-          tgr_cod={total.tgr_cod}
-          grp_cod={total.grp_cod}
-          ele_cod={total.ele_cod}
-          sbe_cod={total.sbe_cod}
-          mat_cod={total.mat_cod}
-          mat_nom={total.mat_nom}
-          pes_cod={total.pes_cod}
-          pes_nome={total.pes_nome}
-        />
-      ):( 
-        <div className="w-full h-full flex flex-col items-center justify-center">
-        <p className="text-9xl  text-eng-blue  font-bold mb-16 animate-pulse">^_~</p>
-         <p className="font-medium text-lg">Nenhum patrimônio selecionado</p>
-       </div>
-      )}
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         
-        </ResizablePanel>
+        <Tabs defaultValue={value} className="">
+         <div className="  gap-4">
+            <div className="flex items-center gap-4">
+         
+           <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
+          
+              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+                Itens do vitrine
+              </h1>
+            
+              <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <TabsList>
+    <TabsTrigger value="1" onClick={() => setValue('1')}>Esperando aprovação</TabsTrigger>
+    <TabsTrigger value="2" onClick={() => setValue('2')}>Anunciados</TabsTrigger>
+  </TabsList>
 
-</ResizablePanelGroup>
-            </TooltipProvider>
-        )}
-        </>
+              <Button variant={'outline'}  size="sm">
+                  Filtros
+                </Button>
+                <Button  size="sm">
+                  Discard
+                </Button>
+              
+              </div>
+            </div>
+
+            </div>
+
+  
+  <TabsContent value="1">
+    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+    {bens.map((item) => {
+  return (
+    <ItemPatrimonio
+      codigo_atm={item.codigo_atm}
+      condicao={item.condicao}
+      desfazimento={item.desfazimento}
+      email={item.email}
+      imagens={item.imagens}
+      loc={item.loc}
+      material={item.material}
+      matricula={item.matricula}
+      num_patrimonio={item.num_patrimonio}
+      num_verificacao={item.num_verificacao}
+      observacao={item.observacao}
+      patrimonio_id={item.patrimonio_id}
+      phone={item.phone}
+      situacao={item.situacao}
+      u_matricula={item.u_matricula}
+      user_id={item.user_id}
+      verificado={item.verificado}
+      vitrine={item.vitrine}
+      mat_nom={item.mat_nom}
+    />
+  );
+})}
+    </div>
+    </TabsContent>
+  <TabsContent value="2">
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+    {bens.map((item) => {
+  return (
+    <ItemPatrimonio
+      codigo_atm={item.codigo_atm}
+      condicao={item.condicao}
+      desfazimento={item.desfazimento}
+      email={item.email}
+      imagens={item.imagens}
+      loc={item.loc}
+      material={item.material}
+      matricula={item.matricula}
+      num_patrimonio={item.num_patrimonio}
+      num_verificacao={item.num_verificacao}
+      observacao={item.observacao}
+      patrimonio_id={item.patrimonio_id}
+      phone={item.phone}
+      situacao={item.situacao}
+      u_matricula={item.u_matricula}
+      user_id={item.user_id}
+      verificado={item.verificado}
+      vitrine={item.vitrine}
+      mat_nom={item.mat_nom}
+    />
+  );
+})}
+    </div>
+    </TabsContent>
+</Tabs>
+
+       </main>
     )
 }

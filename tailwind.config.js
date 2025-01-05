@@ -14,25 +14,25 @@ module.exports = {
   ],
   prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
-    screens: {
-      sm: '640px',
-      md: '768px',
-      lg: '1024px',
-      xl: '1280px',
-      "2xl": '1920px',
-    },
-    fontFamily: {
-      sans: 'Lexend, sans-serif',
-    },
-    extend: {
-      keyframes: {
+  	container: {
+  		center: true,
+  		padding: '2rem',
+  		screens: {
+  			'2xl': '1400px'
+  		}
+  	},
+  	screens: {
+  		sm: '640px',
+  		md: '768px',
+  		lg: '1024px',
+  		xl: '1280px',
+  		'2xl': '1920px'
+  	},
+  	fontFamily: {
+  		sans: 'Lexend, sans-serif'
+  	},
+  	extend: {
+  		keyframes: {
   			'accordion-down': {
   				from: {
   					height: '0'
@@ -55,16 +55,26 @@ module.exports = {
   				}
   			}
   		},
-      animation: {
+  		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			scroll: 'scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite'
   		},
-      colors: {
-        'eng-blue': '#559FB8',
-        'eng-dark-blue': '#024A60',
-      },
-    },
+  		colors: {
+  			'eng-blue': '#559FB8',
+  			'eng-dark-blue': '#024A60',
+  			sidebar: {
+  				DEFAULT: 'hsl(var(--sidebar-background))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
+  			}
+  		}
+  	}
   },
   plugins: [
     // Plugin to add Tailwind colors as global CSS variables

@@ -1,20 +1,24 @@
 import { Toaster } from "sonner";
 import { Header } from "../components/header/Header";
 import { NavigationSidebar } from "../components/navigation/navigation-sidebar";
-
+import React, { useContext, useEffect, useState} from "react";
 import { useModalHomepage } from "../components/hooks/use-modal-homepage";
 import { TooltipProvider } from "../components/ui/tooltip"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../components/ui/resizable"
 import { cn } from "../lib"
-import { Link} from "react-router-dom";
+import { Link, useLocation} from "react-router-dom";
 
-import { useContext, useState } from "react";
+
 import { UserContext } from "../context/context";
-import { AccountSwitcher } from "../components/navigation/user-list";
+
 import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, Package, SearchCheck, X, MapPin } from "lucide-react";
 
 import { ScrollArea } from "../components/ui/scroll-area";
 import { UserConfigHeader } from "../components/header/user-config-header";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "../components/ui/sidebar";
+import { AppSidebar } from "../components/app-sidebar";
+import { Separator } from "../components/ui/separator";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -36,115 +40,66 @@ export default function SearchLayout({
   const isModalOpen = isOpenHomepage && typeHomepage === "initial-home";
   
   
+  const router = useLocation();
+  const pathSegments = router.pathname.split('/').filter(Boolean); // Divide a URL em segmentos e remove a primeira parte vazia
+
+   // Se a URL estiver vazia, mostramos "Página Inicial"
+   const breadcrumbItems = pathSegments.length === 0 ? ['Página inicial'] : ['Página inicial', ...pathSegments];
+
+
     return (
     <div>
       
-        <TooltipProvider delayDuration={0}>
+         
+      <SidebarProvider className="    " defaultOpen={true} open={isCollapsed} onOpenChange={() => setIsCollapsed((prev) => !prev)} >
+
+<AppSidebar />
 
        
 
-<ResizablePanelGroup
+<SidebarInset className=" ">
+      <main className="h-full flex flex-col flex-1 ">
+      <div className="flex p-8 pt-8 pb-2 h-[68px] items-center justify-between top-0 sticky z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur ">
+           <div className="flex  pb-0 items-center gap-2">
+      <SidebarTrigger className="" />
+      <Separator orientation="vertical" className="mr-2 h-4" />
+      
 
-        direction="horizontal"
-        onLayout={() => defaultLayout}
-        className="h-full  items-stretch"
-      >
+      <Breadcrumb>
+  <BreadcrumbList>
+    {breadcrumbItems.map((segment, index) => {
+      const isLastItem = index === breadcrumbItems.length - 1;
 
-<ResizablePanel
-          defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
-          maxSize={20}
-          onCollapse={() => { // Função sem parâmetros
-            setIsCollapsed(true);
-          }}
-          onExpand={() => { // Função para expandir também sem parâmetros
-            setIsCollapsed(false);
-          }}
-          className={cn('flex flex-col justify-between', isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out ")}
-        >
+      // Construir o caminho parcial para cada segmento
+      const href = index === 0 
+        ? '/' // O primeiro item sempre vai para a página inicial
+        : `/${pathSegments.slice(0, index + 1).join('/')}`;
 
-<div>
-        <div className={cn("flex h-[50px] items-center justify-center border-b border-b-neutral-200 dark:border-b-neutral-800", isCollapsed ? 'h-[50px]': 'px-2')}>
-        <AccountSwitcher isCollapsed={isCollapsed}  />
-          </div>
+      return (
+        <React.Fragment key={index}>
+          <BreadcrumbItem className="hidden md:block capitalize">
+            {/* Se for o último item, não criamos um link, é apenas texto */}
+            {isLastItem ? (
+              <span>{segment}</span>
+            ) : (
+              <BreadcrumbLink href={href} className="capitalize">
+                {segment}
+              </BreadcrumbLink>
+            )}
+          </BreadcrumbItem>
+          {!isLastItem && <BreadcrumbSeparator className="hidden md:block" />}
+        </React.Fragment>
+      );
+    })}
+  </BreadcrumbList>
+</Breadcrumb>
+    </div>
 
-          
+    <div className="flex items-center gap-2">
+   
 
-
-          <NavigationSidebar
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Páginas inicial",
-                label: "",
-                icon: Home,
-                link: "/",
-              },
-              {
-                title: "Pesquisar",
-                label: "",
-                icon: SearchCheck,
-                link: "/buscar-patrimonio",
-              },
-              {
-                title: "Dashboard",
-                label: "",
-                icon: LayoutDashboard,
-                link: "/dashboard",
-              },
-              
-            
-            ]}
-          />
-
-          <div className="w-full h-[0.5px] bg-neutral-200 dark:bg-neutral-800"></div>
-  
-
-          <NavigationSidebar
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Mapa da escola",
-                label: "",
-                icon: MapPin,
-                link: "/mapa-escola",
-              },
-     
-             
-            ]}
-          />
-</div>
-
-          <div className="flex flex-col ">
-          <NavigationSidebar
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Informações",
-                label: "",
-                icon: Info,
-                link: "/informacoes",
-              },
-           
-             
-            ]}
-          />
-
-           {loggedIn && (
-             <UserConfigHeader/>
-           )}
-          </div>
-          
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          <ResizablePanel defaultSize={defaultLayout[1]} minSize={30} className="h-screen">
-            <main className="flex-1  flex flex-col h-full">
-            {/* Assuming Header is another component */}
-            <Header />
+    </div>
+           </div>
           
             <div className="h-full overflow-y-auto flex flex-1">
             {children}
@@ -153,13 +108,12 @@ export default function SearchLayout({
           
           </main>
 
-          </ResizablePanel>
+          </SidebarInset >
 
         
 
         <Toaster/>
-        </ResizablePanelGroup>
-      </TooltipProvider >
+        </SidebarProvider>
     </div>
     );
   };

@@ -1,17 +1,17 @@
-import { Bird, Check, ChevronDown, ChevronLeft, ChevronUp, Download, ListTodo, MapPin, Plus, Rabbit, Tag, Ticket, Turtle, User, X } from "lucide-react";
+import { Barcode, Bird, Check, ChevronDown, ChevronLeft, ChevronUp, Download, ListTodo, MapPin, Plus, Rabbit, SquareArrowOutUpRight, Tag, Ticket, Turtle, User, X } from "lucide-react";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Alert } from "../ui/alert";
-import QRCode from "react-qr-code";
-import { useCallback, useContext, useState } from "react";
+import html2pdf from 'html2pdf.js';
+import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import React, {  useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
 import Draggable from 'react-draggable';
-import PdfViewer from './PdfViewer';  // Certifique-se de que o caminho está correto
+import QRCode from "react-qr-code";
 
 interface Patrimonio {
     bem_cod:string
@@ -50,6 +50,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Funnel } from "phosphor-react";
+import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 
 const useQuery = () => {
     return new URLSearchParams(useLocation().search);
@@ -61,9 +62,9 @@ export function CreateBarCode() {
     const isModalOpen = isOpen && type === 'create-bar-bode';
     const {loggedIn, urlGeral} = useContext(UserContext)
     const [patrimonio, setPatrimonio] = useState<Patrimonio[]>([])
-
+    const [selectedValue, setSelectedValue] = useState('a');
     const history = useNavigate();
-    
+    const [semRegistro, setSemRegistro] = useState(false)
 
     const handleVoltar = () => {
       history(-1);
@@ -79,6 +80,8 @@ export function CreateBarCode() {
     let bemDgv = bem_dgv ?? '';  // Default value if bem_dgv is null
 
     const [input, setInput] = useState("");
+    const [responsavel, setResponsavel] = useState("");
+    const [gerado, setGerado] = useState(false);
 
 
     const handleChange = (value:any) => {
@@ -97,9 +100,9 @@ export function CreateBarCode() {
        bemCod = parseInt(input.split('-')[0], 10).toString();
             bemDgv = input.split('-')[1];
 
-     let urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bemCod}&bem_dgv=${bemDgv}`;
+     let urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bem_cod}&bem_dgv=${bem_dgv}`;
      console.log(urlPatrimonio)
-         
+     let urlPatrimonioBusca = `vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${bem_cod}&bem_dgv=${bem_dgv}`; 
      const fetchData = async () => {
 
        try {
@@ -115,16 +118,22 @@ export function CreateBarCode() {
          });
          const data = await response.json();
          if (data) {
+          if (bemCod && bemDgv) {
+            query.set('bem_cod', bemCod);
+            query.set('bem_dgv', bemDgv);
+            navigate({
+              pathname: '/dashboard/criar-etiqueta',
+              search: query.toString(),
+            });
+          }
+          setResponsavel('')
            setPatrimonio(data);
+
+          
          
          } else {
-           toast("Erro: Nenhum patrimônio encontrado", {
-             description: "Revise o número",
-             action: {
-               label: "Fechar",
-               onClick: () => console.log("Fechar"),
-             },
-           });
+         
+          
          }
        } catch (err) {
          console.log(err);
@@ -151,13 +160,16 @@ export function CreateBarCode() {
 
       const onClickBuscaPatrimonio = () => {
         fetchData()
+       
        if (bemCod && bemDgv) {
         query.set('bem_cod', bemCod);
         query.set('bem_dgv', bemDgv);
         navigate({
-          pathname: '/criar-etiqueta',
+          pathname: '/dashboard/criar-etiqueta',
           search: query.toString(),
         });
+
+    
       }
         
       }
@@ -171,211 +183,183 @@ export function CreateBarCode() {
 
 const [onOpenBar, setOnOpenBar] = useState(false)
 
+useEffect(() => {
+  fetchData()
+
+  
+}, []);
+
+const handleDownload = () => {
+  const element = document.getElementById('content-to-pdf');
+  if (element) {
+    const options = {
+      filename: 'patrimonio.pdf',
+      html2canvas: { 
+        scale: 2, // Melhora a qualidade da renderização do PDF
+        useCORS: true, // Para permitir que as imagens externas sejam carregadas
+        logging: true // Ativa o log para depuração
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Espera o carregamento das imagens antes de criar o PDF
+    html2pdf().from(element).set(options).save();
+  }
+};
+
+
+const currentYear = new Date().getFullYear();
+
     return(
-        <>
-        {isModalOpen && (
-             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-2 md:p-8">
-            
-                
-                <div className="w-full  gap-4">
-            <div className="flex items-center gap-4">
-          
-            <Button onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar</span>
-              </Button>
-          
-              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                Criar código da plaqueta
-              </h1>
-             
-
-                
-            
-              <div className="hidden items-center gap-2 md:ml-auto md:flex">
+   <div className="p-4  md:p-8 gap-8 flex flex-col  h-full">
+       <div className="flex items-center gap-4">
          
+         <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Voltar</span>
+            </Button>
+        
+            <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+              Criar etiqueta
+            </h1>
+            
+            <div className="hidden items-center gap-2 md:ml-auto md:flex">
+            <Button variant={'outline'} size="sm"><SquareArrowOutUpRight size={16} />Procurar sala</Button>
+              <Button size="sm"><SquareArrowOutUpRight size={16} />Visualizar todos os patrimônios</Button>
+            </div>
+          </div>
+                <main className="flex flex-1 h-full lg:flex-row flex-col-reverse  gap-8 ">
                
-          
-                <Button size="sm"><ListTodo size={16}/> Gerar plaquetas para todos os bens SQ</Button>
-              </div>
-            </div>
-
-            </div>
-
-                
-
-            <div className="flex gap-4 h-full md:gap-8 ">
-               <div className={` w-[375px] max-w-[375x] fixed bottom-0 ${!onOpenBar && (' ')}`}>
-               <Alert className="border-none bg-transparent p-0 h-full ">
-                    <div className="h-full">
-                <div className=" rounded-xl ">
-                    <div className="flex justify-between w-full">
-                        <div className="flex gap-3 bg-eng-blue  rounded-tl-xl w-full items-center text-white p-4">
-                            <Tag size={20}/>
-                            <div>
-                                <p className="font-medium">Informações da etiqueta</p>
-                                <p className="text-xs">Informações da etiqueta</p>
-                            </div>
-                        </div>
-
-                        <div className="flex">
-                            <div>
-                            <div className="h-full w-[44px] bg-eng-blue rounded-tr-xl "></div>
-                            </div>
-                            <div className="flex flex-col h-full">
-                            <div className="flex">
-                                <div className="bg-eng-blue absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
-                            <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-900 p-2 flex gap-3 rounded-bl-xl ">
-                        <Button variant="outline" size="icon" className="h-7 w-7">
-                <Download className="h-4 w-4" />
-
-              </Button>
-
-              <Button variant="outline" onClick={() => setOnOpenBar(!onOpenBar)} size="icon" className="h-7 w-7">
-                {onOpenBar ? (
-                  <ChevronDown className="h-4 w-4" />
-                ):(
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </Button>
-                        </div>
-                            </div>
-                        <div className="h-full">
-                            <div className="min-h-[44px] h-full max-h-[80px] w-full bg-eng-blue rounded-tr-xl "></div>
-                            </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-               {onOpenBar && (
-                 <div className="bg-eng-blue flex items-center flex-col ">
-                 <div className="p-6">
-                 <QRCode size={200} className={'bg-transparent'} value={``} bgColor={'#559FB8'} fgColor={'#ffffff'}/>
+   
+                 <Alert className={`h-full bg-neutral-100 dark:bg-black flex items-center justify-center `}>
+                 {!(patrimonio.length > 0 || responsavel.length > 0) && (
+                   <div className="w-full flex flex-col items-center justify-center h-full">
+                   <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">^_^</p>
+                   <p className="font-medium text-lg max-w-[350px] text-center">
+                    Adicione o número de patrimônio para gerar a etique temporária do bem
+                   </p>
                  </div>
-  
-                  <Alert className="border-b-0 rounded-xl rounded-b-none p-6">
-                 {patrimonio.map((props) => {
-                  return(
-                      <div>
-                          <div className="flex justify-between mb-4">
-                 <div>
-                 <p className="text-xs">{props.bem_cod}-{props.bem_dgv}</p>
-                                  <p className="font-bold text-xl">{props.mat_nom}</p>
-  
-                                  
-  
-                              </div>
-  
-                              <Button size={'sm'}><Plus size={16}/>Adicionar</Button>
-                 </div>
-  
-                 <p className="text-xs text-muted-foreground">
-                    {props.bem_dsc_com} {props.ite_mar !== "" && (`| ${props.ite_mar}`)}
-                  </p>
-                      </div>
-                  )
-                 })}
-                  </Alert>
-                  </div>
-               )}
-
+                 )}
+                 {(patrimonio.length > 0 || responsavel.length > 0) && (
+                   <div id="content-to-pdf" className={` flex dark:text-black ${selectedValue == 'b' ? ('w-[380px] '): selectedValue == 'c'? ('w-[440px] '):('w-[340px]  ')}`}>
+                   <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border-2  border-black border-r-0 bg-eng-blue min-h-full relative `}></div>
+                   <Alert className={`dark:bg-white border-2 border-l-0 border-black rounded-l-none items-center flex gap-4 ${selectedValue == 'b' ? ('p-4 py-2'): selectedValue == 'c'? ('p-4 py-2'):('p-0 px-1 pl-4')}`}>
+                   <div className="w-fit">
+                   <QRCode
+                    className={` w-fit  ${selectedValue == 'b' ? ('h-24'): selectedValue == 'c'? ('h-32'):('h-16')}`}
+                       value={urlPatrimonioBusca}
+                       
+                     />
+                   </div>
                    
-                    </div>
-                    </Alert>
-               </div>
-
-              {onOpenBar && (
-                 <div className="w-[375px]"></div>
-              )}
-               
-
-                    <div  className="w-full p-0 flex flex-col flex-1">
-                    <div className="grid w-full items-start gap-6 overflow-auto ">
-                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Configurações
-                  </legend>
-                  <div className="grid gap-3">
-                    <Label htmlFor="model">Modelo</Label>
-                    <Select>
-                      <SelectTrigger
-                        id="model"
-                        className="items-start [&_[data-description]]:hidden"
-                      >
-                        <SelectValue placeholder="Selecione um tamanho" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="genesis">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Rabbit className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                               Grande
-                              </p>
-                              <p className="text-xs" data-description>
-                                Para armários e itens maiores que 1 metro
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="explorer">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Bird className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                               Médio
-                              </p>
-                              <p className="text-xs" data-description>
-                                Performance and speed for efficiency.
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="quantum">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Turtle className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                                Pequeno
-                              </p>
-                              <p className="text-xs" data-description>
-                                Para itens 
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="temperature">Número de patrimônio</Label>
-                    <div className="flex gap-3">
-                    <Input id="temperature" type="text" onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} value={input} className="flex flex-1" />
-                    <Button  size={'icon'} onClick={() =>  onClickBuscaPatrimonio()}>
-                        <Funnel size={16} className="" /> 
-                        
-                            </Button>
-                    </div>
-                  </div>
-
-                  <Button disabled={patrimonio.length == 0} ><Ticket size={16}/>Gerar etiqueta</Button>
-                 
-
-                </fieldset>
-
-                <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950 ">
-                  <legend className="-ml-1 px-1 text-sm font-medium">
-                    Plaquetas geradas
-                  </legend>
-                  </fieldset>
-               
-              </div>
-                    </div>
-                </div>
-               
-             </main>
-        )}
-        </>
+                   <div className="flex flex-col h-full justify-center py-2">
+                                 <p className={`dark:text-black  font-semibold ${selectedValue == 'b' ? ('text-[14px]'): selectedValue == 'c'? ('text'):('text-[14px]')}`}>Escola de Engenharia da UFMG</p>
+                                 <p className={`text-muted-foreground dark:text-black  ${selectedValue == 'b' ? ('text-xs'): selectedValue == 'c'? ('text-xs'):('text-xs ')}`}>
+                                    Resp.: {patrimonio.length > 0 && patrimonio.slice(0, 1).map((props) => (props.pes_nome))}{responsavel}
+                                   </p>
+                   
+                                   <p className={`text-muted-foreground dark:text-black  ${selectedValue == 'b' ? ('text-xs'): selectedValue == 'c'? ('text-xs'):('text-xs ')}`}>
+                                    Ano: {currentYear}
+                                   </p>
+                   
+                   
+                                   <div className={` font-bold dark:text-black mb-2 ${selectedValue == 'b' ? ('text-2xl'): selectedValue == 'c'? ('text-2xl'):('text-xl')}`}>{bem_cod}-{bem_dgv}</div>
+                                 <div className="">
+                                 <div
+                     style={{
+                       backgroundImage: `url(https://barcode.orcascan.com/?type=code39&data=${bem_cod}-${bem_dgv}&fontsize=Fit&format=svg)`,
+                     }}
+                     className={`  mix-blend-multiply bg-cover bg-no-repeat ${selectedValue == 'b' ? ('h-10'): selectedValue == 'c'? ('h-14'):(' h-7')}`}
+                   ></div>
+                                 </div>
+                   
+                                 </div>
+                   
+                   
+                   
+                   
+                   </Alert>
+                   </div>
+                 )}
+                 </Alert>
+   
+                 <div className="lg:w-[400px] lg:min-w-[400px] w-full">
+                 <h2 className="text-2xl font-medium mb-8 ">Gerar etiqueta temporária de bem patrimoniado</h2>
+                 <div className="grid gap-4">
+                 <div className="grid gap-2">
+                                     <Label htmlFor="temperature">Número de patrimônio</Label>
+                                     <div className="flex gap-3">
+                                     <Input id="temperature" type="text" onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} value={input} className="flex flex-1" />
+                                     <Button  size={'icon'} onClick={() =>  onClickBuscaPatrimonio()}>
+                                         <Funnel size={16} className="" /> 
+                                         
+                                             </Button>
+                                     </div>
+                                   </div>
+   
+                                   <div className="grid gap-2">
+                                     <Label htmlFor="temperature">Tamanho da etiqueta</Label>
+                                     <div className="flex gap-3">
+                                     <ToggleGroup type="single" variant="outline" className="w-full gap-3" onValueChange={(e) => setSelectedValue(e)} value={selectedValue}>
+         <ToggleGroupItem className="w-full" value="a">Pequena</ToggleGroupItem>
+         <ToggleGroupItem className="w-full" value="b">Média</ToggleGroupItem>
+         <ToggleGroupItem className="w-full" value="c">Grande</ToggleGroupItem>
+       </ToggleGroup>
+   
+   
+   
+                                     </div>
+                                   </div>
+   
+   
+                                   {patrimonio.length > 0 && patrimonio.slice(0, 1).map((props) => (
+       <div className="grid gap-4">
+         <div className="grid gap-2">
+       <Label htmlFor="temperature">Material</Label>
+       <div className="flex gap-3">
+       <Input id="temperature" type="text" disabled  value={props.mat_nom} className="flex flex-1" />
+       
+       </div>
+     </div>
+   
+     <div className="grid gap-2">
+       <Label htmlFor="temperature">Descrição</Label>
+       <div className="flex gap-3">
+       <Input id="temperature" type="text" disabled  value={props.bem_dsc_com} className="flex flex-1" />
+       
+       </div>
+     </div>
+   
+     <div className="grid gap-2">
+       <Label htmlFor="temperature">Responsável</Label>
+       <div className="flex gap-3">
+       <Input id="temperature" type="text" disabled  value={props.pes_nome} className="flex flex-1" />
+       
+       </div>
+     </div>
+   
+     <div className="grid gap-2">
+       <Label htmlFor="temperature">Localização</Label>
+       <div className="flex gap-3">
+       <Input id="temperature" type="text" disabled  value={props.loc_nom} className="flex flex-1" />
+       
+       </div>
+     </div>
+   
+    
+       </div>
+       
+                                 ))}
+   
+                                
+   
+   
+                                 <Button className="" disabled={(patrimonio.length == 0 && responsavel.length == 0)} onClick={handleDownload}><Barcode size={16}/>Gerar plaqueta</Button>
+                 </div>
+                 </div>
+                  
+                </main>
+   </div>
+      
     )
 }

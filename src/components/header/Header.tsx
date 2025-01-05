@@ -49,6 +49,7 @@ import { Input } from "../ui/input";
 import { SymbolEE } from "../svg/SymbolEE";
 import { useModal } from "../hooks/use-modal-store";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { ModeToggle } from "../mode-toggle";
 
 export function Header() {
   const {loggedIn, user, permission} = useContext(UserContext)
@@ -81,7 +82,8 @@ export function Header() {
   
 
     return(
-        <header className={`h-[50px]  z-[3] flex justify-between border-b border-neutral-200 dark:border-neutral-800 px-4   items-center sticky top-0 `}>
+      <div className={'top-0  absolut w-full '}>
+         <header className={`h-[40px] mb-2  px-4  flex justify-between   dark:bg-black     items-center  `}>
             <div className="  flex items-center h-12 gap-4">
             <div className="flex gap-3 items-center h-full justify-center ">
             <Link to={"/"} className="h-[14px]  " onClick={() => handleClick()} >{(theme ==  'dark' ) ? (<LogoVitrineWhite />):(<LogoVitrine />)}</Link>
@@ -120,9 +122,9 @@ export function Header() {
         </div>
   
 
-{!loggedIn && (
+        {!loggedIn && (
   <Link to={'/signIn'}>
-  <Button variant="ghost" size="sm" >
+  <Button variant='ghost' size="sm" className="h-8 px-2" >
                   <LogIn className="h-4 w-4" />
                   Fazer login
                 </Button></Link>
@@ -131,7 +133,7 @@ export function Header() {
 
 {!loggedIn && (
  <Link to={'/signUp'}>
- <Button  size="sm" >
+ <Button  size="sm"  className="h-8 px-2">
                  <UserPlus className="h-4 w-4" />
                  Criar conta
                </Button></Link>
@@ -139,35 +141,16 @@ export function Header() {
 
 {(loggedIn && permission.length > 0) && (
   <Link to={'/dashboard'}>
-  <Button variant="ghost" size="sm" className="h-10" >
+  <Button variant='outline' size="sm"  className="h-8 px-2" >
                   <LayoutDashboard className="h-4 w-4" />
                   Console
                 </Button></Link>
 )}
+
+<ModeToggle/>      
+
+
              
-
-
-                <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-
-      <Button variant="ghost" size="icon" >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Menu de ações rápidas</span>
-              </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("light")}>
-        <Sun className="h-4 w-4" /> Modo Claro
-        </DropdownMenuItem>
-        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("dark")}>
-        <Moon className="h-4 w-4" />   Modo Escuro
-        </DropdownMenuItem>
-        <DropdownMenuItem className="flex items-center gap-3" onClick={() => setTheme("system")}>
-        <Laptop className="h-4 w-4" />  Padrão do sistema
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -224,6 +207,7 @@ export function Header() {
             </div>
 
         </header>
+        </div>
     )
 }
 

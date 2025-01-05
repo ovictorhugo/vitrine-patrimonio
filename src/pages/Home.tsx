@@ -21,6 +21,9 @@ export function Home() {
         } else if(location.pathname == '/buscar-patrimonio') {
             onOpen('busca-patrimonio')
       
+        } else if(location.pathname == '/item') {
+            onOpen('item-page')
+      
         } 
     }, [location]);
 

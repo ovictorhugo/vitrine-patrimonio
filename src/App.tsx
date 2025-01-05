@@ -82,6 +82,7 @@ function App() {
       <Routes>
         <Route path='/' element={<Home/>}/>
         <Route path='/buscar-patrimonio' element={<Home/>}/>
+        <Route path='/item' element={<Home/>}/>
         <Route path='/join-room' element={<Notification/>}/>
         <Route path='/dashboard' element={<Admin/>}/>
         <Route path='/dashboard/administrativo' element={<Admin/>}/>
