@@ -7,12 +7,12 @@ import { AtualizarDados } from "../dashboard/atualizar-dados";
 import { GerenciarUsuarios } from "../dashboard/gerenciar-usuarios";
 import { ConfiguracoesDashboard } from "../dashboard/configuracoes";
 import { ListaPatrimonios } from "../dashboard/lista-patrimonios";
-import { NovoItem } from "../dashboard/novo-item";
+import { NovoItem } from "../dashboard/novo-item/novo-item";
 import { VisaoSala } from "../dashboard/visao-sala";
-import { ItensVitrine } from "../dashboard/itens-vitrine";
+import { ItensVitrine } from "../dashboard/itens-vitrine/itens-vitrine";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Empenhos } from "../dashboard/empenhos";
-import { CreateBarCode } from "../dashboard/create-bar-code";
+import { CreateBarCode } from "../dashboard/create-etiqueta/create-bar-code";
 import {  PainelGeral } from "../dashboard/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
 

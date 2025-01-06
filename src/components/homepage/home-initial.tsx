@@ -34,6 +34,7 @@ import { Link } from "react-router-dom";
 import { Fan, Heart, Info, User } from "lucide-react";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { ItemPatrimonio } from "./components/item-patrimonio";
+import { Search } from "../search/search";
 
 export function HomeInicial() {
     const { isOpen, type, onOpen } = useModalHomepage();
@@ -42,93 +43,6 @@ export function HomeInicial() {
     const isModalOpen = isOpen && type === "initial-home";
     const {loggedIn} = useContext(UserContext)
 
-    const categorias = [
-      {
-        icon: Desktop,
-        value:'monitor-de-video',
-        name:'Monitor de Vídeo'
-      },
-      {
-        icon: ComputerTower,
-        value:'computador',
-        name:'Computador'
-      },
-      {
-        icon: Fan,
-        value:'ventilador',
-        name:'Ventilador'
-      },
-      {
-        icon: Television,
-        value:'televisor',
-        name:'Televisor'
-      },
-      {
-        icon: Laptop,
-        value:'notebook',
-        name:'Notebook'
-      },
-      {
-        icon: Printer,
-        value:'impressora',
-        name:'Impressora'
-      },
-      {
-        icon: Camera,
-        value:'camera',
-        name:'Câmera'
-      },
-      {
-        icon: Folder,
-        value:'arquivo',
-        name:'Arquivo'
-      },
-      {
-        icon: Armchair,
-        value:'poltrona',
-        name:'Poltrona'
-      },
-      {
-        icon: ProjectorScreen,
-        value:'tela-de-projecao',
-        name:'Tela de projeção'
-      },
-      {
-        icon: Timer,
-        value:'cronometro',
-        name:'Cronômetro'
-      },
-      {
-        icon: ChalkboardSimple,
-        value:'quadro',
-        name:'Quadro'
-      },
-      {
-        icon: Phone,
-        value:'telefone',
-        name:'Telefone'
-      },
-      {
-        icon: Wrench,
-        value:'ferramenta',
-        name:'Ferramenta'
-      },
-      {
-        icon: Ladder,
-        value:'escada',
-        name:'Escada'
-      },
-      {
-        icon: Scales,
-        value:'balanca',
-        name:'Balança'
-      },
-      {
-        icon: DotsThree,
-        value:'outros',
-        name:'Outros'
-      }
-    ]
 
    
   //stick search
@@ -145,12 +59,6 @@ export function HomeInicial() {
     }
   }
 
-  useEffect(() => {
-    window.addEventListener('scroll', handleScrollSearch);
-    return () => {
-      window.removeEventListener('scroll', handleScrollSearch);
-    };
-  }, []);
 
  ///////////////////////
  const {user, urlGeral, defaultLayout} = useContext(UserContext)
@@ -188,14 +96,17 @@ export function HomeInicial() {
               fetchData();
             }, [urlBens])
 
+            const uniqueMatNom = [...new Set(bens.map((item) => item.mat_nom))];
+
+
     return(
 
 
 <div className="items-center w-full flex flex-col h-[200vh] max-sm:ml-4">
 <div ref={ref} className="bg-cover bg-no-repeat bg-center w-full">
-  <div className="justify-center w-full mx-auto flex max-w-[980px] flex-col items-center gap-2 pt-8 md:pt-12 lg:pt-24 pb-4">
-    {!isSticky && (
-      <>
+<div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >      
+   
+     
          <Link to={'/informacoes'}  className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12}/><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba como utilizar a plataforma<ArrowRight size={12}/></Link>
 
         <h1 className="z-[2] text-center max-w-[850px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
@@ -206,20 +117,34 @@ export function HomeInicial() {
           </strong>{' '}
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
-      </>
-    )}
 
-    <Alert className="h-14 p-2 flex items-center justify-between max-w-[60vw]">
-      <div className="flex items-center gap-2 w-full flex-1">
-        <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
-      </div>
-    </Alert>
+        <div className="lg:max-w-[60vw] lg:w-[60vw] w-full ">
+          
+          <Search/>
+         </div>
+
+              <div className="flex flex-wrap gap-3 z-[3] w-full lg:w-[60vw]">
+                              {uniqueMatNom.slice(0, 10).map((word, index) => (
+                                  <div
+                                      key={index}
+                                      className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
+                                  onClick={() => {
+                                     
+                                  }}
+                                  >
+                                      {word}
+                                  </div>
+                              ))}
+                          </div>
+   
+
+  
   </div>
 </div>
 
 
 
-<div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+<div className="grid gap-8 w-full px-4 md:px-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
     {bens.map((item) => {
   return (
     <ItemPatrimonio

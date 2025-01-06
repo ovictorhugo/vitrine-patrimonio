@@ -11,6 +11,8 @@ import {
   } from "../../ui/carousel"
 import { CardContent } from "../../ui/card"
 import { Link, useNavigate } from "react-router-dom"
+import { useContext } from "react"
+import { UserContext } from "../../../context/context"
 
 interface Props {
     codigo_atm: string
@@ -37,16 +39,22 @@ interface Props {
 export function ItemPatrimonio(props:Props) {
      const history = useNavigate();
 
+     const {urlGeral, loggedIn} = useContext(UserContext)
+
     return(
 <div className="group">
     <div>
     <Carousel className="w-full flex items-center ">
       <CarouselContent>
-        {Array.from({ length: 5 }).map((_, index) => (
+        {props.imagens.map((item, index) => (
           <CarouselItem key={index}>
           <div className="p-1 relative flex justify-end">
-        <div className="absolute z-[9]  flex justify-end p-2">  <Button size={'icon'} variant={'ghost'} className=" bg-white/50  "><Heart size={16}/></Button></div>
-            <Alert>
+        <div className="absolute z-[9]  flex justify-end p-3">  
+          {loggedIn && (
+            <Button size={'icon'} variant={'ghost'} className=" bg-transparent h-8 w-8  "><Heart size={16}/></Button>
+          )}
+        </div>
+            <Alert className="bg-center bg-cover bg-no-repeat" style={{ backgroundImage: `url(${urlGeral}imagem/${item}` }}>
               <CardContent className="flex aspect-square  justify-end p-0">
             
               </CardContent>

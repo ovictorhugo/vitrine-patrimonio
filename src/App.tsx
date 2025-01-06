@@ -40,7 +40,16 @@ interface Permission {
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState<User| null>(null);;
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const storedIsCollapsed = localStorage.getItem("isCollapsed");
+  const [isCollapsed, setIsCollapsed] = useState(
+    storedIsCollapsed ? JSON.parse(storedIsCollapsed) : true
+  );
+  
+  useEffect(() => {
+    // Salva o estado de isCollapsed no localStorage sempre que ele mudar
+    localStorage.setItem("isCollapsed", JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
   const [navCollapsedSize, setNavCollapsedSize] = useState(0)
   const [defaultLayout, setDefaultLayout] = useState([0,440,655])
   const [mode, setMode] = useState('user')

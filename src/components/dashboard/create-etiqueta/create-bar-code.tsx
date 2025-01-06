@@ -1,12 +1,12 @@
 import { Barcode, Bird, Check, ChevronDown, ChevronLeft, ChevronUp, Download, ListTodo, MapPin, Plus, Rabbit, SquareArrowOutUpRight, Tag, Ticket, Turtle, User, X } from "lucide-react";
-import { useModalDashboard } from "../hooks/use-modal-dashboard";
-import { Button } from "../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { useModalDashboard } from "../../hooks/use-modal-dashboard";
+import { Button } from "../../ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Alert } from "../ui/alert";
+import { Alert } from "../../ui/alert";
 import html2pdf from 'html2pdf.js';
 import { useCallback, useContext, useEffect, useState } from "react";
-import { UserContext } from "../../context/context";
+import { UserContext } from "../../../context/context";
 import React, {  useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
@@ -45,12 +45,12 @@ interface Patrimonio {
 }
 import logo_eng from '../../assets/logo_eng.png';
 import { toast } from "sonner"
-import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
+import { Label } from "../../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import { Input } from "../../ui/input";
+import { Textarea } from "../../ui/textarea";
 import { Funnel } from "phosphor-react";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 
 const useQuery = () => {
     return new URLSearchParams(useLocation().search);
@@ -267,7 +267,7 @@ const currentYear = new Date().getFullYear();
                                  <div className="">
                                  <div
                      style={{
-                       backgroundImage: `url(https://barcode.orcascan.com/?type=code39&data=${bem_cod}-${bem_dgv}&fontsize=Fit&format=svg)`,
+                       backgroundImage: `url(https://barcode.orcascan.com/?type=code128&data=${bem_cod}-${bem_dgv}&fontsize=Fit&format=svg)`,
                      }}
                      className={`  mix-blend-multiply bg-cover bg-no-repeat ${selectedValue == 'b' ? ('h-10'): selectedValue == 'c'? ('h-14'):(' h-7')}`}
                    ></div>

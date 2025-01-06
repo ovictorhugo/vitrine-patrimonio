@@ -1,17 +1,17 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useModalDashboard } from "../hooks/use-modal-dashboard";
-import { UserContext } from "../../context/context";
-import { useModal } from "../hooks/use-modal-store";
-import { TooltipProvider } from "../ui/tooltip";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Input } from "../ui/input";
+import { useModalDashboard } from "../../hooks/use-modal-dashboard";
+import { UserContext } from "../../../context/context";
+import { useModal } from "../../hooks/use-modal-store";
+import { TooltipProvider } from "../../ui/tooltip";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../ui/resizable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Input } from "../../ui/input";
 import { ChevronLeft, Search } from "lucide-react";
-import { ItensListVitrine } from "./components/itens-list-vitrine";
-import { DisplayItemVitrine } from "./components/display-item-vitrine";
-import { Button } from "../ui/button";
+import { ItensListVitrine } from "../components/itens-list-vitrine";
+import { DisplayItemVitrine } from "../components/display-item-vitrine";
+import { Button } from "../../ui/button";
 import { useNavigate } from "react-router-dom";
-import { ItemPatrimonio } from "../homepage/components/item-patrimonio";
+import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 
 interface Patrimonio {
     bem_cod:string
@@ -161,7 +161,7 @@ export function ItensVitrine() {
 
   
   <TabsContent value="1">
-    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
     {bens.map((item) => {
   return (
     <ItemPatrimonio
@@ -190,7 +190,7 @@ export function ItensVitrine() {
     </div>
     </TabsContent>
   <TabsContent value="2">
-  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
     {bens.map((item) => {
   return (
     <ItemPatrimonio

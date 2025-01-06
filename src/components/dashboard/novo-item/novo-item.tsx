@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useModalDashboard } from "../hooks/use-modal-dashboard";
+import { useModalDashboard } from "../../hooks/use-modal-dashboard";
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -8,23 +8,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/ui/dialog"
+} from "../../ui/dialog"
 
 import { useCallback, useContext, useEffect, useState } from "react";
-import { UserContext } from "../../context/context";
-import { Button } from "../ui/button";
+import { UserContext } from "../../../context/context";
+import { Button } from "../../ui/button";
 import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel  } from "phosphor-react";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown } from "lucide-react";
-import { useModal } from "../hooks/use-modal-store";
+import { useModal } from "../../hooks/use-modal-store";
 
-import { Badge } from "../ui/badge";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { cn } from "../../lib"
+import { Badge } from "../../ui/badge";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import { Textarea } from "../../ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import { cn } from "../../../lib"
 
 interface Patrimonio {
   bem_cod:string
@@ -83,10 +83,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "../../components/ui/accordion"
-import { Dialog } from "../ui/dialog";
-import { LinhaTempo } from "./components/linha-tempo";
-import { Switch } from "../ui/switch";
+} from "../../ui/accordion"
+import { Dialog } from "../../ui/dialog";
+import { LinhaTempo } from "../components/linha-tempo";
+import { Switch } from "../../ui/switch";
 
 interface NovoItem {
   patrimonio_id:string
@@ -356,10 +356,11 @@ const handleSubmit = async () => {
   try {
     const data = [
       {
+        patrimonio_id:docId,
         num_patrimonio:patrimonio[0].bem_cod,
         loc: localizacao ,
         observacao:descricao,
-        user_id:user?.uid,
+        user_id:user?.user_id,
         vitrine:relevance,
         condicao:condicao,
         imagens:newImageNames,
@@ -401,7 +402,7 @@ const handleSubmit = async () => {
      
      else  {
       try {
-        handleFileUpload()
+        handleFileUpload(docId)
         const response = await fetch(urlProgram, {
           mode: 'cors',
           method: 'POST',
@@ -460,10 +461,10 @@ const handleSubmit = async () => {
  // Constante para armazenar os nomes gerados
 //imagemns
 
-const handleFileUpload = async () => {
-  if (images.length === 0) {
-    toast("Nenhuma imagem selecionada!", {
-      description: "Por favor, selecione ao menos uma imagem antes de enviar.",
+const handleFileUpload = async (id:string) => {
+  if (images.length < 0) {
+    toast("Você precisa submeter 4 imagens", {
+      description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
       action: {
         label: "Fechar",
         onClick: () => console.log("Fechar"),
@@ -475,7 +476,7 @@ const handleFileUpload = async () => {
   try {
     const uploadPromises = images.slice(0, 4).map((image, index) => {
       const formData = new FormData();
-      const fileName = `${uuidv4()}_${index}.png`; // Nome único para a imagem
+      const fileName = `${id}`; // Nome único para a imagem
       newImageNames.push(fileName); // Armazena o nome gerado
 
       // Converter a URL de imagem para Blob
@@ -522,9 +523,6 @@ const handleFileUpload = async () => {
     });
   }
 };
-
-
-
 
 
     return(
