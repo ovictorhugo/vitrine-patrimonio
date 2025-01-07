@@ -16,6 +16,7 @@ import {
   Home,
   Info,
   LayoutDashboard,
+  LayoutTemplate,
   Link2,
   List,
   Map,
@@ -90,6 +91,27 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
             url: "/dashboard/itens-vitrine",
             icon: WalletCards
           },
+          {
+            title: "Transferências",
+            url: "/dashboard/transferencias",
+            icon: WalletCards
+          },
+         
+        ],
+      },
+
+      {
+        title: "Desfazimento",
+        url: "/",
+        icon: DotsThree,
+        isActive: true,
+        items: [
+
+          {
+            title: "Itens do desfazimento",
+            url: "/dashboard/itens-desfazimento",
+            icon: WalletCards
+          },
          
         ],
       },
@@ -127,6 +149,12 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
         name: "Administrativo",
         url: "/dashboard/administrativo",
         icon: SlidersHorizontal,
+      },
+
+      {
+        name: "Painel do usuário",
+        url: "/dashboard/painel",
+        icon: LayoutTemplate,
       },
      
       

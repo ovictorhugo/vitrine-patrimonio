@@ -12,6 +12,8 @@ import { DisplayItemVitrine } from "../components/display-item-vitrine";
 import { Button } from "../../ui/button";
 import { useNavigate } from "react-router-dom";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import { BlockItem } from "./block-itens";
+import { Skeleton } from "../../ui/skeleton";
 
 interface Patrimonio {
     bem_cod:string
@@ -64,6 +66,7 @@ interface Item {
   verificado: boolean,
   vitrine:boolean
   mat_nom:string
+  qtd_de_favorito:string
 }
 
 export function ItensVitrine() {
@@ -94,7 +97,7 @@ export function ItensVitrine() {
           const [loading, isLoading] = useState(false)
          
           let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}`
-
+console.log(urlBens)
           useEffect(() => {
             const fetchData = async () => {
                 try {
@@ -124,12 +127,15 @@ export function ItensVitrine() {
               fetchData();
             }, [urlBens])
 
-
+            const items = Array.from({ length: 12 }, (_, index) => (
+              <Skeleton key={index} className="w-full rounded-md aspect-square" />
+            ));
+          
     return(
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         
         <Tabs defaultValue={value} className="">
-         <div className="  gap-4">
+         <div className="mb-8  gap-4">
             <div className="flex items-center gap-4">
          
            <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
@@ -161,62 +167,27 @@ export function ItensVitrine() {
 
   
   <TabsContent value="1">
-    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
-    {bens.map((item) => {
-  return (
-    <ItemPatrimonio
-      codigo_atm={item.codigo_atm}
-      condicao={item.condicao}
-      desfazimento={item.desfazimento}
-      email={item.email}
-      imagens={item.imagens}
-      loc={item.loc}
-      material={item.material}
-      matricula={item.matricula}
-      num_patrimonio={item.num_patrimonio}
-      num_verificacao={item.num_verificacao}
-      observacao={item.observacao}
-      patrimonio_id={item.patrimonio_id}
-      phone={item.phone}
-      situacao={item.situacao}
-      u_matricula={item.u_matricula}
-      user_id={item.user_id}
-      verificado={item.verificado}
-      vitrine={item.vitrine}
-      mat_nom={item.mat_nom}
-    />
-  );
-})}
-    </div>
+    {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <BlockItem bens={bens}/>
+    )}
     </TabsContent>
   <TabsContent value="2">
-  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
-    {bens.map((item) => {
-  return (
-    <ItemPatrimonio
-      codigo_atm={item.codigo_atm}
-      condicao={item.condicao}
-      desfazimento={item.desfazimento}
-      email={item.email}
-      imagens={item.imagens}
-      loc={item.loc}
-      material={item.material}
-      matricula={item.matricula}
-      num_patrimonio={item.num_patrimonio}
-      num_verificacao={item.num_verificacao}
-      observacao={item.observacao}
-      patrimonio_id={item.patrimonio_id}
-      phone={item.phone}
-      situacao={item.situacao}
-      u_matricula={item.u_matricula}
-      user_id={item.user_id}
-      verificado={item.verificado}
-      vitrine={item.vitrine}
-      mat_nom={item.mat_nom}
-    />
-  );
-})}
-    </div>
+  {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <BlockItem bens={bens}/>
+    )}
+    
     </TabsContent>
 </Tabs>
 

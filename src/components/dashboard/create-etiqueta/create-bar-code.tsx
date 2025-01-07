@@ -301,6 +301,7 @@ const currentYear = new Date().getFullYear();
                                      <Label htmlFor="temperature">Tamanho da etiqueta</Label>
                                      <div className="flex gap-3">
                                      <ToggleGroup type="single" variant="outline" className="w-full gap-3" onValueChange={(e) => setSelectedValue(e)} value={selectedValue}>
+                                     <ToggleGroupItem className="w-full" value="d">Mini</ToggleGroupItem>
          <ToggleGroupItem className="w-full" value="a">Pequena</ToggleGroupItem>
          <ToggleGroupItem className="w-full" value="b">Média</ToggleGroupItem>
          <ToggleGroupItem className="w-full" value="c">Grande</ToggleGroupItem>

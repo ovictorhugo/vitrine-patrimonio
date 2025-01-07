@@ -13,7 +13,7 @@ import { ItensVitrine } from "../dashboard/itens-vitrine/itens-vitrine";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 import { Empenhos } from "../dashboard/empenhos";
 import { CreateBarCode } from "../dashboard/create-etiqueta/create-bar-code";
-import {  PainelGeral } from "../dashboard/painel";
+import {  PainelGeral } from "../dashboard/painel-usuario/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
 
 

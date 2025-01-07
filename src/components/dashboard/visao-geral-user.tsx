@@ -12,7 +12,7 @@ import {
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator,
-  } from "../../components/ui/breadcrumb"
+  } from "../ui/breadcrumb"
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
