@@ -13,6 +13,7 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Switch } from "../ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { toast } from "sonner"
+import { ButtonTransference } from "./button-transference";
 
 export interface Item {
     codigo_atm: string
@@ -62,7 +63,9 @@ export interface Item {
     uge_cod:string
     uge_nom:string
     uge_siaf:string
-
+    qtd_de_favorito:string
+    estado_transferencia:string
+    created_at:string
   }
 
   const useQuery = () => {
@@ -449,7 +452,7 @@ export function ItemPage() {
                 {bens.slice(0, 1).map((props) => {
                 return(
                   <>
-                   <h2 className="text-2xl font-medium mb-2">Descrição do patrimônio</h2>
+                   <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">Descrição do patrimônio</h2>
                   <h2 className="mb-8 text-gray-500 ">{props.bem_dsc_com}</h2>
 
                   <div className="flex ">
@@ -493,7 +496,7 @@ export function ItemPage() {
                   <Separator className="my-8"/>
                 {props.observacao.length > 0 && (
                    <div>
-                   <h2 className="text-2xl font-medium mb-2">Observações do anunciante</h2>
+                   <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">Observações do anunciante</h2>
                    <h2 className="mb-8 text-gray-500 ">{props.observacao}</h2>
                    </div>
                 )}
@@ -540,11 +543,19 @@ export function ItemPage() {
                     </div>
                   </CardContent>
                 </Alert>
-                
-                <Alert >
-                <Button className="w-full">Solicitar transferência</Button>
+                {bens.slice(0, 1).map((props) => {
+              return(
+                <Alert className="p-0">
+                <CardHeader>
+                <h2 className="text-3xl font-semibold leading-none tracking-tight">Transferência</h2>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400"></p>
+                </CardHeader>
+              <CardContent>
+              <ButtonTransference ofertante={props.user_id} patrimonio_id={props.patrimonio_id} loc_ofertante={props.loc}/>
+              </CardContent>
                 </Alert>
-
+ )
+})}
 
                 {bens.slice(0, 1).map((props) => {
                    const urlPatrimonioBusca = `vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${props.bem_cod}&bem_dgv=${props.bem_dgv}`; 

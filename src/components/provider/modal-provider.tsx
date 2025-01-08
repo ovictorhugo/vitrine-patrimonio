@@ -10,6 +10,9 @@ import { InformacoesEmpenhos } from "../modal/informacoes-empenho";
 import { useModal } from "../hooks/use-modal-store";
 import { SearchModal } from "../modal/search-modal";
 import { MinhaArea } from "../minha-area/minha-area";
+import { SearchModalVitrine } from "../modal/search-modal-vitrine";
+import { EditAdminItem } from "../modal/edit-admin-item";
+import { EditItem } from "../modal/edit-item";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -28,6 +31,12 @@ const ModalContent = () => {
       return <SearchModal/>
     case 'minha-area':
       return <MinhaArea/>
+    case 'search-vitrine':
+      return <SearchModalVitrine/>
+    case 'edit-admin-item':
+      return <EditAdminItem/>
+    case 'edit-item':
+      return <EditItem/>
     default:
       return null
   }

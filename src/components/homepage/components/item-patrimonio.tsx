@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useContext } from "react"
 import { UserContext } from "../../../context/context"
 import { toast } from "sonner"
+import { Badge } from "../../ui/badge"
 
 
 interface Props {
@@ -39,6 +40,8 @@ interface Props {
     isFavorite: boolean;
   onToggleFavorite: (patrimonioId: string) => void;
   qtd_de_favorito:string
+  estado_transferencia:string
+  created_at:string
 }
 
 export function ItemPatrimonio(props:Props) {
@@ -48,6 +51,28 @@ export function ItemPatrimonio(props:Props) {
      const isFavorite = props.isFavorite
 
      console.log(isFavorite)
+
+
+     const calculateDifference = (createdAt: string) => {
+      const createdDate = new Date(createdAt);
+      const currentDate = new Date();
+  
+      const timeDiff = Math.abs(currentDate.getTime() - createdDate.getTime());
+      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  
+      // Calculando meses e dias
+      const months = Math.floor(daysDiff / 30); // Aproximado, considerando meses com 30 dias
+      const days = daysDiff % 30;
+  
+      let bgColor = '';
+      if (months < 3) bgColor = 'bg-green-500';
+      else if (months >= 3 && months < 6) bgColor = 'bg-yellow-500';
+      else bgColor = 'bg-red-500';
+  
+      return { months, days, bgColor };
+    };
+  
+    const { months, days, bgColor } = calculateDifference(props.created_at);
 
  
     return(
@@ -114,10 +139,16 @@ size={'icon'} variant={'ghost'}
      <p className="text-sm text-gray-500">{props.num_patrimonio} - {props.num_verificacao}</p>
      </div>
 
-     <div>
+     <div className="flex gap-2 items-center">
           <div className="text-xs text-gray-500 flex items-center gap-1">
             <Eye size={12}/> {props.qtd_de_favorito}
           </div>
+
+          <Badge className={` text-white text-[8px] ${bgColor}`}>
+      {months > 0
+        ? `${months} ${months === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`
+        : `${days} ${days === 1 ? 'dia' : 'dias'}`}
+    </Badge>
      </div>
     </div></Link>
   </div>

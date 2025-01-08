@@ -38,6 +38,8 @@ export function Admin() {
             onOpen('painel')
         }  else if (location.pathname == '/dashboard/assinaturee') {
             onOpen('assinar-documento')
+        }  else if (location.pathname == '/dashboard/itens-desfazimento') {
+            onOpen('itens-desfazimento')
         }
 
 

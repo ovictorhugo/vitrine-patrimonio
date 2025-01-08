@@ -154,7 +154,7 @@ export function Header() {
 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon" >
+      <Button variant='outline' size="icon" className="h-8 w-8">
                 <Grip className="h-4 w-4" />
                 <span className="sr-only">Menu de ações rápidas</span>
               </Button>
@@ -184,25 +184,6 @@ export function Header() {
     </DropdownMenu>
     
 
-    {loggedIn && (
-  
-  <TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger asChild>
-    <Button  onClick={() => onOpenModal('minha-area')}  variant={'ghost'} className="px-2" >
-    <CaretLeft size={16}/>
-    <Avatar className="cursor-pointer rounded-md  h-6 w-6">
-      <AvatarImage  className={'rounded-md h-6 w-6'} src={`${user?.photo_url}`} />
-      <AvatarFallback className="flex items-center justify-center"><User size={16}/></AvatarFallback>
-  </Avatar>
-      </Button>
-    </TooltipTrigger>
-    <TooltipContent> Minha área</TooltipContent>
-  </Tooltip>
-  </TooltipProvider>
-)}
-
-         
 
             </div>
 

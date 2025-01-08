@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { Item } from "../components/item-page/item-page";
 
 interface User {
   user_id:string
@@ -29,7 +30,11 @@ interface UserContextType {
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+
  
+  bens: Item[] , 
+  setBens: React.Dispatch<React.SetStateAction<Item[]>>,
+
 
   role:string, 
   setRole:React.Dispatch<React.SetStateAction<string>>;
@@ -79,6 +84,9 @@ setRole:() => {},
 permission:[] , 
 setPermission: () => {},
 
+
+bens:[] , 
+setBens: () => {},
 
       mode:"", 
       setMode:() => {},

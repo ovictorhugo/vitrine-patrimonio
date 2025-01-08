@@ -3,9 +3,14 @@ import { toast } from "sonner"
 import { UserContext } from "../../../context/context";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { Item } from "../../item-page/item-page";
+import { Link } from "react-router-dom";
+import { Alert } from "../../ui/alert";
+import { Plus } from "lucide-react";
+import { Button } from "../../ui/button";
 
 interface Props {
     bens: any[];
+    new_item?:boolean
 }
 
 export function BlockItem(props:Props) {
@@ -130,9 +135,24 @@ export function BlockItem(props:Props) {
             console.log(favoritos)
             }, [user?.user_id])
 
+            const [count, setCount] = useState(6)
+
     return(
-         <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
-            {props.bens.map((item) => {
+        <div>
+           <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+           
+           {props.new_item && (
+            <Link to={'/dashboard/novo-item'}>
+            <Alert  className="flex flex-col min-h-[200px] cursor-pointer text-eng-blue items-center justify-center hover:bg-neutral-100 transition-all dark:hover:bg-neutral-900">
+                           <div className="mb-4">
+                           <Plus size={32}/>
+                           </div>
+    
+                         <p className="font-semibold">  Criar item novo</p>
+                        </Alert>
+            </Link>
+           )}
+            {props.bens.slice(0, count).map((item) => {
           return (
             <ItemPatrimonio
               codigo_atm={item.codigo_atm}
@@ -157,10 +177,16 @@ export function BlockItem(props:Props) {
               isFavorite={favoritos.some((fav) => fav.patrimonio_id === item.patrimonio_id)}
             onToggleFavorite={handleToggleFavorite}
             qtd_de_favorito={item.qtd_de_favorito}
-
+            estado_transferencia={item.estado_transferencia}
+            created_at={item.created_at}
             />
           );
         })}
             </div>
+
+            {props.bens.length > count && (
+            <div className="w-full flex justify-center mt-8"><Button onClick={() => setCount(count + 24)}><Plus size={16} />Mostrar mais</Button></div>
+        )}
+        </div>
     )
 }

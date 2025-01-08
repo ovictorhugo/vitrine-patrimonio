@@ -1,5 +1,6 @@
 import * as React from "react"
 import {
+  ArrowLeftRight,
   AudioWaveform,
   BarChartBig,
   Barcode,
@@ -94,7 +95,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           {
             title: "Transferências",
             url: "/dashboard/transferencias",
-            icon: WalletCards
+            icon: ArrowLeftRight
           },
          
         ],

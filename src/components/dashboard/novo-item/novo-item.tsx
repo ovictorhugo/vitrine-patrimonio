@@ -402,7 +402,7 @@ const handleSubmit = async () => {
      
      else  {
       try {
-        handleFileUpload(docId)
+       
         const response = await fetch(urlProgram, {
           mode: 'cors',
           method: 'POST',
@@ -426,7 +426,7 @@ const handleSubmit = async () => {
               },
             })
 
-           
+            handleFileUpload(docId)
          
         } else {
           console.error('Erro ao enviar dados para o servidor.');
@@ -462,7 +462,7 @@ const handleSubmit = async () => {
 //imagemns
 
 const handleFileUpload = async (id:string) => {
-  if (images.length < 0) {
+  if (images.length < 4) {
     toast("Você precisa submeter 4 imagens", {
       description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
       action: {

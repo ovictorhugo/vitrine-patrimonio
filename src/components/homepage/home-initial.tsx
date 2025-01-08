@@ -7,27 +7,7 @@ import { Alert } from "../ui/alert";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Armchair, ArrowRight, Camera, ChalkboardSimple, ComputerTower, Desktop, DotsThree, Folder, Ladder, Laptop, MagnifyingGlass, Phone, Printer, ProjectorScreen, Scales, Television, Timer, Wrench } from "phosphor-react";
-interface Item {
-  codigo_atm: string
-  condicao: string
-  desfazimento: boolean
-  email: string
-  imagens: string[]
-  loc: string
-  material: string
-  matricula: string
-  num_patrimonio:number
-  num_verificacao:number
-  observacao: string
-  patrimonio_id: string
-  phone: string
-  situacao: string
-  u_matricula: string
-  user_id: string
-  verificado: boolean,
-  vitrine:boolean
-  mat_nom:string
-}
+
 
 import { Link } from "react-router-dom";
 
@@ -35,6 +15,8 @@ import { Fan, Heart, Info, User } from "lucide-react";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { ItemPatrimonio } from "./components/item-patrimonio";
 import { Search } from "../search/search";
+import { Item } from "../item-page/item-page";
+import { BlockItem } from "../dashboard/itens-vitrine/block-itens";
 
 export function HomeInicial() {
     const { isOpen, type, onOpen } = useModalHomepage();
@@ -61,11 +43,11 @@ export function HomeInicial() {
 
 
  ///////////////////////
- const {user, urlGeral, defaultLayout} = useContext(UserContext)
-          const [bens, setBens] = useState<Item[]>([]); 
+ const {user, urlGeral, defaultLayout, bens, setBens} = useContext(UserContext)
+         
           const [loading, isLoading] = useState(false)
          
-          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=true`
+          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=true&desfazimento=false&estado_transferencia=NÃO+VERIFICADO`
 
           useEffect(() => {
             const fetchData = async () => {
@@ -144,33 +126,7 @@ export function HomeInicial() {
 
 
 
-<div className="grid gap-8 w-full px-4 md:px-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
-    {bens.map((item) => {
-  return (
-    <ItemPatrimonio
-      codigo_atm={item.codigo_atm}
-      condicao={item.condicao}
-      desfazimento={item.desfazimento}
-      email={item.email}
-      imagens={item.imagens}
-      loc={item.loc}
-      material={item.material}
-      matricula={item.matricula}
-      num_patrimonio={item.num_patrimonio}
-      num_verificacao={item.num_verificacao}
-      observacao={item.observacao}
-      patrimonio_id={item.patrimonio_id}
-      phone={item.phone}
-      situacao={item.situacao}
-      u_matricula={item.u_matricula}
-      user_id={item.user_id}
-      verificado={item.verificado}
-      vitrine={item.vitrine}
-      mat_nom={item.mat_nom}
-    />
-  );
-})}
-    </div>
+<BlockItem bens={bens}/>
 </div>
 
     )

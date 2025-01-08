@@ -1,7 +1,7 @@
-import { ChevronLeft, File, Shapes, Store, Tag } from "lucide-react";
+import { Check, ChevronLeft, File, Heart, LoaderIcon, Plus, Shapes, Store, Tag, Trash } from "lucide-react";
 import { useModalDashboard } from "../../hooks/use-modal-dashboard";
 import { Button } from "../../ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
     Carousel,
@@ -16,6 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Alert } from "../../ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { AssinarDocumentos } from "../assinar-documento";
+import { Skeleton } from "../../ui/skeleton";
+import { useContext, useEffect, useState } from "react";
+import { Item } from "../../item-page/item-page";
+import { UserContext } from "../../../context/context";
+import { BlockItem } from "../itens-vitrine/block-itens";
 
 export function PainelGeral() {
     const { isOpen, type} = useModalDashboard();
@@ -26,6 +31,84 @@ export function PainelGeral() {
       history(-1);
     }
 
+    const {urlGeral, user} = useContext(UserContext)
+
+    const [bens, setBens] = useState<Item[]>([]); 
+    const [loading, isLoading] = useState(false)
+   
+    let urlBens = urlGeral +`formulario?user_id=${user?.user_id}&loc=&verificado=`
+
+    useEffect(() => {
+      const fetchData = async () => {
+          try {
+            isLoading(true)
+            const response = await fetch(urlBens, {
+              mode: "cors",
+              headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Max-Age": "3600",
+                "Content-Type": "text/plain",
+              },
+            });
+            
+            const data = await response.json();
+            if (data) {
+              setBens(data);
+              isLoading(false)
+            } 
+            
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+        fetchData();
+      }, [urlBens])
+
+      const items = Array.from({ length: 4 }, (_, index) => (
+        <Skeleton key={index} className="w-full rounded-md aspect-square" />
+      ));
+
+
+      ///
+
+
+      const [favoritos, setFavoritos] = useState<Item[]>([]); 
+
+ //get
+
+ const handleGetFavorites = async (tipo: string, userId: string) => {
+  const urlGetFavorites = `${urlGeral}favorito?tipo=${tipo}&user_id=${userId}`;
+console.log(urlGetFavorites)
+  try {
+    const response = await fetch(urlGetFavorites, {
+      mode: 'cors',
+      method: 'GET',
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '3600',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setFavoritos(data);
+    } else {
+     
+    }
+  } catch (err) {
+   
+  }
+};
+
+useEffect(() => {
+  handleGetFavorites('favorito', user?.user_id || '')
+  }, [user?.user_id])
 
    
     return(
@@ -59,7 +142,7 @@ export function PainelGeral() {
 
             </div>
 
-            <TabsContent value="all" className="h-auto flex flex-col gap-4 md:gap-8">
+            <TabsContent value="all" className="h-auto flex flex-col gap-8">
             <div>
                 <div className="flex items-center gap-3 mb-3">
                     <Shapes size={16}/>
@@ -125,16 +208,115 @@ export function PainelGeral() {
                 </div>
             </div>
 
+          {favoritos.length > 0 && (
+              <div>
+              <div className="flex items-center gap-3 mb-3">
+                  <Heart size={16}/>
+              <h3 className=" font-medium">Itens salvos</h3>
+              </div>
+
+              <div className="w-full">
+              {loading ? (
+    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+        {items.map((item, index) => (
+                        <div key={index}>{item}</div>
+                      ))}
+    </div>
+  ):(
+    <div>
+      <BlockItem bens={favoritos} />
+    </div>
+  )}
+              </div>
+          </div>
+          )}
+
             <div>
                 <div className="flex items-center gap-3 mb-3">
-                    <Store size={16}/>
+                    <LoaderIcon size={16}/>
                 <h3 className=" font-medium">Aguardando aprovação</h3>
                 </div>
 
                 <div className="w-full">
-               
+                {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <div>
+        <BlockItem bens={bens.filter(item => item.verificado === false)} new_item={true}/>
+      </div>
+    )}
                 </div>
             </div>
+
+            <div>
+                <div className="flex items-center gap-3 mb-3">
+                    <Store size={16}/>
+                <h3 className=" font-medium">Itens anunciados</h3>
+                </div>
+
+                <div className="w-full">
+                {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <div>
+        <BlockItem bens={bens.filter(item => item.verificado === true)} />
+      </div>
+    )}
+                </div>
+            </div>
+
+            <div>
+                <div className="flex items-center gap-3 mb-3">
+                    <Trash size={16}/>
+                <h3 className=" font-medium">Desfazimento</h3>
+                </div>
+
+                <div className="w-full">
+                {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <div>
+        <BlockItem bens={bens} />
+      </div>
+    )}
+                </div>
+            </div>
+
+            
+            <div>
+                <div className="flex items-center gap-3 mb-3">
+                    <Check size={16}/>
+                <h3 className=" font-medium">Transferidos</h3>
+                </div>
+
+                <div className="w-full">
+                {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <div>
+        <BlockItem bens={bens} />
+      </div>
+    )}
+                </div>
+            </div>
+
+
             </TabsContent>
             
 

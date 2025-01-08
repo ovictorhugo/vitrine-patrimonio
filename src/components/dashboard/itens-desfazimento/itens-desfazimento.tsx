@@ -12,8 +12,9 @@ import { DisplayItemVitrine } from "../components/display-item-vitrine";
 import { Button } from "../../ui/button";
 import { useNavigate } from "react-router-dom";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
-import { BlockItem } from "./block-itens";
+
 import { Skeleton } from "../../ui/skeleton";
+import { BlockItem } from "../itens-vitrine/block-itens";
 
 interface Patrimonio {
     bem_cod:string
@@ -69,7 +70,7 @@ interface Item {
   qtd_de_favorito:string
 }
 
-export function ItensVitrine() {
+export function ItensDesfazimento() {
     const { isOpen, type} = useModalDashboard();
     const {user, urlGeral, defaultLayout} = useContext(UserContext)
  const [value, setValue] = useState('1')
@@ -96,7 +97,7 @@ export function ItensVitrine() {
           const [bens, setBens] = useState<Item[]>([]); 
           const [loading, isLoading] = useState(false)
          
-          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=false&estado_transferencia=NÃO+VERIFICADO`
+          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=true`
 console.log(urlBens)
           useEffect(() => {
             const fetchData = async () => {
@@ -144,7 +145,7 @@ console.log(urlBens)
               </Button>
           
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                Itens do vitrine
+                Itens do desfazimento
               </h1>
             
               <div className="hidden items-center gap-2 md:ml-auto md:flex">
@@ -157,7 +158,7 @@ console.log(urlBens)
                   Filtros
                 </Button>
                 <Button  size="sm">
-                  Discard
+                 Adicionar comissão
                 </Button>
               
               </div>

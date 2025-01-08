@@ -15,6 +15,7 @@ import { Empenhos } from "../dashboard/empenhos";
 import { CreateBarCode } from "../dashboard/create-etiqueta/create-bar-code";
 import {  PainelGeral } from "../dashboard/painel-usuario/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
+import { ItensDesfazimento } from "../dashboard/itens-desfazimento/itens-desfazimento";
 
 
 
@@ -49,6 +50,8 @@ const ModalContent = () => {
       return <PainelGeral />;
     case 'assinar-documento':
       return <Assinaturee/>
+    case 'itens-desfazimento':
+      return <ItensDesfazimento/>
     default:
       return null;
   }

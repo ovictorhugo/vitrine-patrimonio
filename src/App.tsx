@@ -12,6 +12,7 @@ import { Admin } from './pages/Admin';
 
 import { Notification } from './pages/notification';
 import LoadingWrapper from './components/loading';
+import { Item } from './components/item-page/item-page';
 
 
 interface User {
@@ -55,7 +56,7 @@ function App() {
   const [mode, setMode] = useState('user')
 
   const [urlGeral, setUrlGeral] = useState('http://150.164.32.238:8484/');
-
+  const [bens, setBens] = useState<Item[]>([]); 
   const [role, setRole] = useState('')
   const [permission , setPermission] = useState<Permission[]>([])
 
@@ -83,7 +84,8 @@ function App() {
       navCollapsedSize, setNavCollapsedSize,
       defaultLayout, setDefaultLayout,
       role, setRole,
-      permission , setPermission
+      permission , setPermission,
+      bens, setBens
     }}
     >
       <DefaultLayout>
@@ -100,6 +102,7 @@ function App() {
         <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
         <Route path='/dashboard/visao-sala' element={<Admin/>}/>
         <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
+        <Route path='/dashboard/itens-desfazimento' element={<Admin/>}/>
         <Route path='/dashboard/empenhos' element={<Admin/>}/>
         <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
         <Route path='/dashboard/painel' element={<Admin/>}/>
