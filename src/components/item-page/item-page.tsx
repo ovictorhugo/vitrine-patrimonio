@@ -546,10 +546,13 @@ export function ItemPage() {
                 {bens.slice(0, 1).map((props) => {
               return(
                 <Alert className="p-0">
-                <CardHeader>
-                <h2 className="text-3xl font-semibold leading-none tracking-tight">Transferência</h2>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400"></p>
-                </CardHeader>
+                   <CardHeader>
+                    <CardTitle>Transferência</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
+                  </CardHeader>
+               
               <CardContent>
               <ButtonTransference ofertante={props.user_id} patrimonio_id={props.patrimonio_id} loc_ofertante={props.loc}/>
               </CardContent>

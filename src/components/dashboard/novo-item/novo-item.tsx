@@ -16,7 +16,7 @@ import { Button } from "../../ui/button";
 import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel  } from "phosphor-react";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
-import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown, ImageDown, Barcode } from "lucide-react";
 import { useModal } from "../../hooks/use-modal-store";
 
 import { Badge } from "../../ui/badge";
@@ -901,7 +901,7 @@ const handleFileUpload = async (id:string) => {
                <div className="  flex flex-col md:gap-8 gap-4"  >
                 <Alert className="p-0">
                 <CardHeader>
-                    <CardTitle>Condição do bem</CardTitle>
+                    <CardTitle>Condição do item</CardTitle>
                     <CardDescription>
                       Lipsum dolor sit amet, consectetur adipiscing elit
                     </CardDescription>
@@ -1001,7 +1001,7 @@ const handleFileUpload = async (id:string) => {
                   <CardContent className="flex flex-col gap-4">
                     <div className="">
                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Alocação no Vitrine (sala 40)</Label>
+                        <Label htmlFor="name">Alocação no Vitrine (sala 4301)</Label>
                         <CardDescription>
                       Caso haja a disponibilidade, gostaria que o item seja guardado na sala física do Vitrine?
                     </CardDescription>
@@ -1041,23 +1041,31 @@ const handleFileUpload = async (id:string) => {
     <AccordionTrigger className="border-none">Instruções</AccordionTrigger>
     <AccordionContent>
     <Alert className="p-0 pl-4 border-none my-4">
-                  <Warning className="h-4 w-4" />
+                  <ImageDown className="h-4 w-4" />
                   <AlertTitle>Passo 1</AlertTitle>
-                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  <AlertDescription>Imagem frontal do patrimônio
                   </AlertDescription>
                 </Alert>
 
                 <Alert className="p-0 pl-4 border-none my-4">
-                  <Warning className="h-4 w-4" />
+                  <Barcode className="h-4 w-4" />
                   <AlertTitle>Passo 2</AlertTitle>
-                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
-                  </AlertDescription>
+                  <AlertDescription>Imagem com a idetificação do item</AlertDescription>
                 </Alert>
 
                 <Alert className="p-0 pl-4 border-none my-4">
                   <Warning className="h-4 w-4" />
                   <AlertTitle>Passo 3</AlertTitle>
-                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
+                  <AlertDescription>
+                    Imagem lateral ou traseira
+                  </AlertDescription>
+                </Alert>
+
+                <Alert className="p-0 pl-4 border-none my-4">
+                  <Warning className="h-4 w-4" />
+                  <AlertTitle>Passo 4</AlertTitle>
+                  <AlertDescription>
+                    Imagem com detalhe da condição
                   </AlertDescription>
                 </Alert>
     </AccordionContent>

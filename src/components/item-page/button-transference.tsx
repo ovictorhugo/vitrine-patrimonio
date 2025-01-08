@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 
 import { toast } from "sonner"
 import { UserContext } from "../../context/context";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 interface Props {
     ofertante: string
     loc_ofertante: string
@@ -12,6 +13,7 @@ interface Props {
 export function ButtonTransference(props:Props) {
 
     const {user, urlGeral, loggedIn} = useContext(UserContext)
+
 
     const handleSubmit = async () => {
 
@@ -94,7 +96,17 @@ export function ButtonTransference(props:Props) {
       }
 
     return(
-       <div>
+       <div className="flex gap-4 flex-col">
+        <Select disabled={(props.ofertante == user?.user_id) || !loggedIn} >
+  <SelectTrigger >
+    <SelectValue placeholder="Selecione a sala de destino" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="light">Light</SelectItem>
+
+  </SelectContent>
+</Select>
+
          <Button disabled={(props.ofertante == user?.user_id) || !loggedIn} className="w-full">Solicitar transferência</Button>
        </div>
     )

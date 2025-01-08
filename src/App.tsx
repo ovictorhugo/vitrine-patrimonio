@@ -38,6 +38,11 @@ interface Permission {
   id:string
 }
 
+export interface ItemsSelecionados {
+  term:string
+}
+
+
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState<User| null>(null);;
@@ -59,6 +64,7 @@ function App() {
   const [bens, setBens] = useState<Item[]>([]); 
   const [role, setRole] = useState('')
   const [permission , setPermission] = useState<Permission[]>([])
+  const [itemsSelecionados , setItensSelecionados] = useState<ItemsSelecionados[]>([])
 
   useEffect(() => {
     const storedUser = localStorage.getItem('permission');
@@ -85,7 +91,8 @@ function App() {
       defaultLayout, setDefaultLayout,
       role, setRole,
       permission , setPermission,
-      bens, setBens
+      bens, setBens,
+      itemsSelecionados , setItensSelecionados
     }}
     >
       <DefaultLayout>

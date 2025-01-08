@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import { Item } from "../components/item-page/item-page";
+import { ItemsSelecionados } from "../App";
 
 interface User {
   user_id:string
@@ -45,6 +46,10 @@ interface UserContextType {
   urlGeral: string,
   setUrlGeral: React.Dispatch<React.SetStateAction<string>>;
 
+  itemsSelecionados: ItemsSelecionados[] , 
+  setItensSelecionados: React.Dispatch<React.SetStateAction<ItemsSelecionados[]>>,
+
+
        
   isCollapsed:boolean, 
   setIsCollapsed:React.Dispatch<React.SetStateAction<boolean>>;
@@ -62,6 +67,7 @@ interface UserContextType {
 export const UserContext = createContext<UserContextType>({
   loggedIn: false,
   setLoggedIn: () => {},
+  
   user: {} as User,
   setUser: () => {},
 
@@ -70,6 +76,9 @@ export const UserContext = createContext<UserContextType>({
 
   isCollapsed:false, 
   setIsCollapsed:() => {},
+
+  itemsSelecionados: [] , 
+  setItensSelecionados: () => {},
 
   defaultLayout: [],
   setDefaultLayout:() => {},

@@ -43,7 +43,7 @@ export function HomeInicial() {
 
 
  ///////////////////////
- const {user, urlGeral, defaultLayout, bens, setBens} = useContext(UserContext)
+ const {user, urlGeral, defaultLayout, bens, setBens, setItensSelecionados} = useContext(UserContext)
          
           const [loading, isLoading] = useState(false)
          
@@ -111,7 +111,7 @@ export function HomeInicial() {
                                       key={index}
                                       className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
                                   onClick={() => {
-                                     
+                                    setItensSelecionados([{ term: word }]);
                                   }}
                                   >
                                       {word}

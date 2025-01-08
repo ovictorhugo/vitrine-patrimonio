@@ -17,7 +17,7 @@ export function SearchModalVitrine() {
     const query = useQuery();
      const navigate = useNavigate();
 
-     const {bens} = useContext(UserContext)
+     const {bens, setItensSelecionados} = useContext(UserContext)
 
     const { onClose, isOpen, type } = useModal();
     const isModalOpen = isOpen && type === "search-vitrine";
@@ -53,7 +53,7 @@ export function SearchModalVitrine() {
         </Alert>
 
 
-        {input.length >= 3 && (
+        {(input.length >= 3 && filteredMatNom.length > 0) && (
           <Alert>
              <div className="flex flex-wrap gap-3 z-[3] w-full lg:w-[60vw]">
                               {filteredMatNom.map((word, index) => (
@@ -61,7 +61,8 @@ export function SearchModalVitrine() {
                                       key={index}
                                       className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
                                   onClick={() => {
-                                     
+                                    setItensSelecionados([{ term: word }]);
+                                    onClose()
                                   }}
                                   >
                                       {word}

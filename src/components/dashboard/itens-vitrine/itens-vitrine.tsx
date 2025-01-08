@@ -104,6 +104,7 @@ console.log(urlBens)
                   isLoading(true)
                   const response = await fetch(urlBens, {
                     mode: "cors",
+                    method:'GET',
                     headers: {
                       "Access-Control-Allow-Origin": "*",
                       "Access-Control-Allow-Methods": "GET",
@@ -177,6 +178,7 @@ console.log(urlBens)
       <BlockItem bens={bens}/>
     )}
     </TabsContent>
+    
   <TabsContent value="2">
   {loading ? (
       <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
