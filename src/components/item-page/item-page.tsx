@@ -480,7 +480,7 @@ export function ItemPage() {
                   <div className="flex justify-between items-center">
           <div className="text-sm w-fit text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
             <Avatar className="cursor-pointer rounded-md  h-16 w-16">
-      <AvatarImage  className={'rounded-md h-16 w-16'} src={`${urlGeral}s/user/image/${props.user_id}`} />
+      <AvatarImage  className={'rounded-md h-16 w-16'} src={`${urlGeral}s/user/imagem/${props.user_id}`} />
       <AvatarFallback className="flex items-center justify-center"><User size={16}/></AvatarFallback>
   </Avatar>
  <div>
