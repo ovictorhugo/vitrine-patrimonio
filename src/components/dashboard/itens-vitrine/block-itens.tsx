@@ -142,8 +142,8 @@ export function BlockItem(props:Props) {
            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
            
            {props.new_item && (
-            <Link to={'/dashboard/novo-item'}>
-            <Alert  className="flex flex-col min-h-[200px] cursor-pointer text-eng-blue items-center justify-center hover:bg-neutral-100 transition-all dark:hover:bg-neutral-900">
+            <Link to={'/dashboard/novo-item'} className="">
+            <Alert  className="flex flex-col min-h-[200px] cursor-pointer text-eng-blue items-center justify-center aspect-square hover:bg-neutral-100 transition-all dark:hover:bg-neutral-900">
                            <div className="mb-4">
                            <Plus size={32}/>
                            </div>

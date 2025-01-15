@@ -16,6 +16,7 @@ import { CreateBarCode } from "../dashboard/create-etiqueta/create-bar-code";
 import {  PainelGeral } from "../dashboard/painel-usuario/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
 import { ItensDesfazimento } from "../dashboard/itens-desfazimento/itens-desfazimento";
+import { Transferencia } from "../dashboard/transferencia/transferencia";
 
 
 
@@ -52,6 +53,8 @@ const ModalContent = () => {
       return <Assinaturee/>
     case 'itens-desfazimento':
       return <ItensDesfazimento/>
+    case 'transferencia':
+      return <Transferencia/>
     default:
       return null;
   }

@@ -110,6 +110,10 @@ function App() {
         <Route path='/dashboard/visao-sala' element={<Admin/>}/>
         <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
         <Route path='/dashboard/itens-desfazimento' element={<Admin/>}/>
+        <Route path='/dashboard/transferencias' element={<Admin/>}/>
+
+
+
         <Route path='/dashboard/empenhos' element={<Admin/>}/>
         <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
         <Route path='/dashboard/painel' element={<Admin/>}/>

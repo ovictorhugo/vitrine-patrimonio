@@ -21,6 +21,7 @@ import { useContext, useEffect, useState } from "react";
 import { Item } from "../../item-page/item-page";
 import { UserContext } from "../../../context/context";
 import { BlockItem } from "../itens-vitrine/block-itens";
+import { SalaItem } from "./sala-item";
 
 export function PainelGeral() {
     const { isOpen, type} = useModalDashboard();
@@ -110,6 +111,7 @@ useEffect(() => {
   handleGetFavorites('favorito', user?.user_id || '')
   }, [user?.user_id])
 
+  const [value, setValue] = useState('1')
    
     return(
        
@@ -155,48 +157,7 @@ useEffect(() => {
       <CarouselContent className="-ml-1 flex w-full flex-1">
         {Array.from({ length: 5 }).map((_, index) => (
           <CarouselItem key={index} className="pl-1 md:basis-1/2 lg:basis-1/4">
-            <div className="p-1">
-            <Alert className="border-none bg-transparent p-0 h-[140px] " >
-            <div className="h-full">
-            <div className=" rounded-xl ">
-            <div className="flex justify-between w-full">
-            <div className="flex gap-3 bg-white border w-full border-r-0  rounded-tl-xl  items-center p-4">
-                            <Tag size={20}/>
-                            <div>
-                                <p className="font-medium">I</p>
-                                <p className="text-xs">Infor</p>
-                            </div>
-                        </div>
-
-                        <div className="flex">
-                            <div>
-                            <div className="h-full w-[44px] bg-white border border-l-0 border-r-0 rounded-tr-xl "></div>
-                            </div>
-                            <div className="flex flex-col h-full">
-                            <div className="flex">
-                                <div className="bg-white absolute top-0 w-[44px]  h-full  max-h-[80px]"></div>
-                            <div className="bg-neutral-50 z-[9] h-fit dark:bg-neutral-900 p-2 flex gap-3 rounded-bl-xl ">
-                        <Button variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
-
-              </Button>
-
-              <Button variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-                        </div>
-                            </div>
-                        <div className="h-full">
-                            <div className="min-h-[44px] h-full max-h-[80px] w-full bg-white border boder-r-0 rounded-tr-xl "></div>
-                            </div>
-                            </div>
-                        </div>
-
-            </div>
-            </div>
-            </div>
-              </Alert>
-            </div>
+            <SalaItem/>
           </CarouselItem>
         ))}
       </CarouselContent>
@@ -209,7 +170,7 @@ useEffect(() => {
             </div>
 
           {favoritos.length > 0 && (
-              <div>
+              <Alert className="p-8">
               <div className="flex items-center gap-3 mb-3">
                   <Heart size={16}/>
               <h3 className=" font-medium">Itens salvos</h3>
@@ -228,16 +189,18 @@ useEffect(() => {
     </div>
   )}
               </div>
-          </div>
+          </Alert>
           )}
 
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <LoaderIcon size={16}/>
-                <h3 className=" font-medium">Aguardando aprovação</h3>
-                </div>
-
-                <div className="w-full">
+<Tabs defaultValue={value} value={value} className="">
+  <TabsList>
+    <TabsTrigger value="1" onClick={() => setValue('1')}> <LoaderIcon size={16}/> Aguardando aprovação</TabsTrigger>
+    <TabsTrigger value="2" onClick={() => setValue('2')}><Store size={16}/>Itens anunciados</TabsTrigger>
+    <TabsTrigger value="3" onClick={() => setValue('3')}> <Trash size={16}/>Desfazimento</TabsTrigger>
+    <TabsTrigger value="4" onClick={() => setValue('4')}><Check size={16}/>Transferidos</TabsTrigger>
+  </TabsList>
+  <TabsContent value="1">
+  <div className="w-full">
                 {loading ? (
       <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
           {items.map((item, index) => (
@@ -247,18 +210,13 @@ useEffect(() => {
     ):(
       <div>
         <BlockItem bens={bens.filter(item => item.verificado === false)} new_item={true}/>
+       
       </div>
     )}
                 </div>
-            </div>
-
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <Store size={16}/>
-                <h3 className=" font-medium">Itens anunciados</h3>
-                </div>
-
-                <div className="w-full">
+  </TabsContent>
+  <TabsContent value="2">
+  <div className="w-full">
                 {loading ? (
       <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
           {items.map((item, index) => (
@@ -267,19 +225,19 @@ useEffect(() => {
       </div>
     ):(
       <div>
-        <BlockItem bens={bens.filter(item => item.verificado === true)} />
+        {bens.filter(item => item.verificado === true).length > 0 ? (
+  <BlockItem bens={bens.filter(item => item.verificado === true)} />
+        ):(
+          <p className="text-center w-full text-sm py-8">Nenhum item encontrado</p>
+        )}
+       
       </div>
     )}
                 </div>
-            </div>
+  </TabsContent>
 
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <Trash size={16}/>
-                <h3 className=" font-medium">Desfazimento</h3>
-                </div>
-
-                <div className="w-full">
+  <TabsContent value="3">
+  <div className="w-full">
                 {loading ? (
       <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
           {items.map((item, index) => (
@@ -288,33 +246,47 @@ useEffect(() => {
       </div>
     ):(
       <div>
-        <BlockItem bens={bens} />
+        {bens.filter(item => item.verificado === true).length > 0 ? (
+  <BlockItem bens={bens.filter(item => item.verificado === true)} />
+        ):(
+          <p className="text-center w-full text-sm py-8">Nenhum item encontrado</p>
+        )}
+        
       </div>
     )}
                 </div>
-            </div>
+  </TabsContent>
+
+  <TabsContent value="4">
+  <div className="w-full">
+                {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <div>
+        {bens.filter(item => item.verificado === true).length > 0 ? (
+  <BlockItem bens={bens.filter(item => item.verificado === true)} />
+        ):(
+          <p className="text-center w-full text-sm py-8">Nenhum item encontrado</p>
+        )}
+        
+      </div>
+    )}
+                </div>
+  </TabsContent>
+</Tabs>
+
+
+      
+            
+
+           
 
             
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <Check size={16}/>
-                <h3 className=" font-medium">Transferidos</h3>
-                </div>
-
-                <div className="w-full">
-                {loading ? (
-      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
-          {items.map((item, index) => (
-                          <div key={index}>{item}</div>
-                        ))}
-      </div>
-    ):(
-      <div>
-        <BlockItem bens={bens} />
-      </div>
-    )}
-                </div>
-            </div>
+          
 
 
             </TabsContent>

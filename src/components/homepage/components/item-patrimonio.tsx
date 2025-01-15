@@ -15,6 +15,8 @@ import { useContext } from "react"
 import { UserContext } from "../../../context/context"
 import { toast } from "sonner"
 import { Badge } from "../../ui/badge"
+import { useModal } from "../../hooks/use-modal-store"
+import { Gear } from "phosphor-react"
 
 
 interface Props {
@@ -46,6 +48,8 @@ interface Props {
 
 export function ItemPatrimonio(props:Props) {
      const history = useNavigate();
+
+     const {onOpen} = useModal()
 
      const {urlGeral, loggedIn, user} = useContext(UserContext)
      const isFavorite = props.isFavorite
@@ -85,12 +89,23 @@ export function ItemPatrimonio(props:Props) {
           <div className="p-1 relative flex justify-end">
         <div className="absolute z-[9] gap-2 flex justify-end p-3">  
 
+
+        <Button
+onClick={() => onOpen('edit-admin-item')}
+size={'icon'} variant={'ghost'}
+
+  className={`  h-8 w-8  `}// Aplica a classe de estilo condicionalmente
+>
+  <Gear size={16} /> 
+</Button>
+
+
         {loggedIn &&
 
 
 
 <Button
-onClick={() => props.onToggleFavorite(props.patrimonio_id)}
+onClick={() => onOpen('edit-item')}
 size={'icon'} variant={'ghost'}
 
   className={`  h-8 w-8  `}// Aplica a classe de estilo condicionalmente
