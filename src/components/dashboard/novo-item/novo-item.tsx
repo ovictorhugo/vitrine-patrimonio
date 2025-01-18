@@ -916,42 +916,44 @@ const handleFileUpload = async (id:string) => {
                         <SelectValue placeholder="Selecione a condição do bem" className={'whitespace-nowrap'} />
                       </SelectTrigger>
                       <SelectContent>
-                      <SelectItem value="Em boas condições">
+                      <SelectItem value="Excelente estado">
                           <div className="flex items-start gap-3 text-muted-foreground ">
                             <Checks className="size-5" />
                             <div className="grid gap-0.5 ">
                               <p>
-                                Em boas condições
+                              Excelente estado
                               </p>
                               <p className="text-xs" data-description>
-                                Não necessita de qualquer tipo de reparo
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="Semi-novo ou em excelente estado ">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Check className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                              Semi-novo ou em excelente estado 
-
-                              </p>
-                              <p className="text-xs" data-description>
-                              possui todos acessórios necessários para uso (se tiver ou não )
+                              Como novo. Inclui caixa original e todos os acessórios.
                               </p>
                             </div>
                           </div>
                         </SelectItem>
                         <SelectItem value="Semi-novo">
                           <div className="flex items-start gap-3 text-muted-foreground">
+                            <Check className="size-5" />
+                            <div className="grid gap-0.5">
+                              <p>
+                              Semi-novo  
+
+                              </p>
+                              <p className="text-xs" data-description>
+                              Em excelente estado, mas apresenta sinais de uso.
+
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Quase novo">
+                          <div className="flex items-start gap-3 text-muted-foreground">
                             <Warning className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                              Semi-novo
+                             Quase novo
                               </p>
                               <p className="text-xs" data-description>
-                                mas e necessário algum acessório para o completo uso
+                              Funcional, mas falta cabos ou periféricos para uso pleno.
+
                               </p>
                             </div>
                           </div>
@@ -964,23 +966,22 @@ const handleFileUpload = async (id:string) => {
                                 Necessita de pequenos reparos
                               </p>
                               <p className="text-xs" data-description>
-                                The most powerful model for complex
-                                computations.
+                              Funciona, mas exige reparos que não comprometem totalmente seu uso.
+
                               </p>
                             </div>
                           </div>
                         </SelectItem>
 
-                        <SelectItem value="Sem condição de uso">
+                        <SelectItem value="Inutilizável">
                           <div className="flex items-start gap-3 text-muted-foreground">
                             <X className="size-5" />
                             <div className="grid gap-0.5">
                               <p>
-                               Sem condição de uso
+                              Inutilizável
                               </p>
                               <p className="text-xs" data-description>
-                                The most powerful model for complex
-                                computations.
+                              Sem condições de uso
                               </p>
                             </div>
                           </div>

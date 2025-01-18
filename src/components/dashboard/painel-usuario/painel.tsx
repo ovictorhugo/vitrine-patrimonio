@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, File, Heart, LoaderIcon, Plus, Shapes, Store, Tag, Trash } from "lucide-react";
+import { Check, ChevronLeft, File, Heart, LoaderIcon, Mail, Plus, Rows, Shapes, Store, Tag, Trash } from "lucide-react";
 import { useModalDashboard } from "../../hooks/use-modal-dashboard";
 import { Button } from "../../ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import {
     CarouselPrevious,
   } from "../../ui/carousel"
 
-  import { Card, CardContent } from "../../ui/card"
+  import { Card, CardContent, CardHeader } from "../../ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Alert } from "../../ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
@@ -22,6 +22,11 @@ import { Item } from "../../item-page/item-page";
 import { UserContext } from "../../../context/context";
 import { BlockItem } from "../itens-vitrine/block-itens";
 import { SalaItem } from "./sala-item";
+import { MeusBens } from "./meus-bens";
+import { MinhasSalas } from "./minhas-salas";
+import { Accordion, AccordionItem, AccordionTrigger } from "../../ui/accordion";
+import { SquaresFour } from "phosphor-react";
+import { HeaderResultTypeHome } from "../../header-result-type-home";
 
 export function PainelGeral() {
     const { isOpen, type} = useModalDashboard();
@@ -112,7 +117,7 @@ useEffect(() => {
   }, [user?.user_id])
 
   const [value, setValue] = useState('1')
-   
+
     return(
        
              <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -145,38 +150,47 @@ useEffect(() => {
             </div>
 
             <TabsContent value="all" className="h-auto flex flex-col gap-8">
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <Shapes size={16}/>
-                <h3 className=" font-medium">Minhas salas</h3>
+            
+            <main className="h-full w-full flex flex-col ">
+        <div className="flex justify-between items-center py-12">
+               <div className="flex items-center  gap-6">
+               <Avatar className="cursor-pointer rounded-lg  h-24 w-24">
+  <AvatarImage  className={'rounded-md h-24 w-24'} src={user?.photo_url} />
+  <AvatarFallback className="flex items-center justify-center"></AvatarFallback>
+</Avatar>
+
+               <div>
+                 
+
+                    <h1 className="text-3xl max-w-[800px] mb-2  font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
+                    {user?.display_name}
+                    </h1>
+
+                    <p className="max-w-[750px] text-lg font-light text-foreground">
+                  <div className="flex flex-wrap gap-4 ">
+    <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"><Mail size={12}/>{user?.email}</div>
+ 
+
+    </div> 
+                    </p>
+                  </div>
+               </div>
+
+                 <div>
+
+                 </div>
                 </div>
 
-                <div className="w-full">
-                <Carousel className="w-full flex gap-3 items-center ">
-                <CarouselPrevious />
-      <CarouselContent className="-ml-1 flex w-full flex-1">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <CarouselItem key={index} className="pl-1 md:basis-1/2 lg:basis-1/4">
-            <SalaItem/>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      
-     
-      <CarouselNext />
-      
-    </Carousel>
-                </div>
-            </div>
+             
+                </main>
 
-          {favoritos.length > 0 && (
+                {favoritos.length > 0 && (
               <Alert className="p-8">
-              <div className="flex items-center gap-3 mb-3">
-                  <Heart size={16}/>
-              <h3 className=" font-medium">Itens salvos</h3>
-              </div>
+               <HeaderResultTypeHome title="Favoritos" icon={<Heart size={24} className="text-gray-400" />}>
+               
+               </HeaderResultTypeHome>
 
-              <div className="w-full">
+              <div className="mt-6 w-full">
               {loading ? (
     <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
         {items.map((item, index) => (
@@ -191,6 +205,31 @@ useEffect(() => {
               </div>
           </Alert>
           )}
+
+                <div>
+                <HeaderResultTypeHome title="Minhas salas" icon={<Shapes size={24} className="text-gray-400" />}>
+               
+              </HeaderResultTypeHome>
+                <div className="w-full">
+                <MinhasSalas/>
+                </div>
+            </div>
+
+            
+            
+            <div>
+           
+            </div>
+                <div>
+               
+
+                <div className="w-full">
+                <MeusBens/>
+                </div>
+            </div>
+
+
+        
 
 <Tabs defaultValue={value} value={value} className="">
   <TabsList>

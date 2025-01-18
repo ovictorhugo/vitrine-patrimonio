@@ -55,6 +55,57 @@ interface ModalData {
   pdf_nf?:string
   pdf_resumo?:string
   created_at?:string
+
+
+    condicao?: string
+    desfazimento?: boolean
+    email?: string
+    imagens?: string[]
+    loc?: string
+    material?: string
+    matricula?: string
+    num_patrimonio?:number
+    num_verificacao?:number
+    observacao?: string
+    patrimonio_id?: string
+    phone?: string
+    situacao?: string
+    u_matricula?: string
+    user_id?: string
+    verificado?: boolean,
+    vitrine?:boolean
+    mat_nom?:string
+    bem_cod?:string
+    bem_dgv?:string
+    bem_dsc_com?:string
+    bem_num_atm?:string
+    bem_serie?:string
+    bem_sta?:string
+    bem_val?:string
+    csv_cod?:string
+    display_name?:string
+    ele_cod?:string
+    grp_cod?:string
+    ite_mar?:string
+    ite_mod?:string
+    loc_cod?:string
+
+    mat_cod?:string
+    org_cod?:string
+    org_nom?:string
+    pes_cod?:string
+    pes_nome?:string
+    sbe_cod?:string
+    set_cod?:string
+    set_nom?:string
+    tgr_cod?:string
+    tre_cod?:string
+    uge_cod?:string
+    uge_nom?:string
+    uge_siaf?:string
+    qtd_de_favorito?:string
+    estado_transferencia?:string
+
  
 }
 

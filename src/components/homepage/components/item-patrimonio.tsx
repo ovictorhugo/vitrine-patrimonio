@@ -105,13 +105,41 @@ size={'icon'} variant={'ghost'}
 
 
 <Button
-onClick={() => onOpen('edit-item')}
-size={'icon'} variant={'ghost'}
-
-  className={`  h-8 w-8  `}// Aplica a classe de estilo condicionalmente
+  onClick={() =>
+    onOpen('edit-item', {
+      condicao: props.condicao,
+      desfazimento: props.desfazimento,
+      email: props.email,
+      imagens: props.imagens,
+      loc: props.loc,
+      material: props.material,
+      matricula: props.matricula,
+      num_patrimonio: props.num_patrimonio,
+      num_verificacao: props.num_verificacao,
+      observacao: props.observacao,
+      patrimonio_id: props.patrimonio_id,
+      phone: props.phone,
+      situacao: props.situacao,
+      u_matricula: props.u_matricula,
+      user_id: props.user_id,
+      verificado: props.verificado,
+      vitrine: props.vitrine,
+      mat_nom: props.mat_nom,
+      bem_cod: String(props.num_patrimonio),
+      bem_dgv: String(props.num_verificacao),
+      loc_nom: props.loc,
+      qtd_de_favorito: props.qtd_de_favorito,
+      estado_transferencia: props.estado_transferencia,
+      created_at: props.created_at,
+    })
+  }
+  size="icon"
+  variant="ghost"
+  className="h-8 w-8"
 >
-  <Pencil size={16} /> 
+  <Pencil size={16} />
 </Button>
+
 
 }
        
