@@ -27,7 +27,7 @@ interface Uid {
 const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  const { setLoggedIn, setUser, urlGeral, setPermission, permission,  setRole, version } = useContext(UserContext)
+  const { setLoggedIn, setUser, urlGeral, setPermission, permission,  setRole } = useContext(UserContext)
   const [uid, setUid] = useState<Uid| null>(null);
 
     ///// LOGIN SHIBBOLETH

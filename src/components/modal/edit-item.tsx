@@ -1,4 +1,4 @@
-import { Barcode, Check, ChevronsUpDown, ImageDown, Upload, Wrench, X } from "lucide-react";
+import { Barcode, Check, ChevronsUpDown, ImageDown, RefreshCcw, Trash, Upload, Wrench, X } from "lucide-react";
 import { useModal } from "../hooks/use-modal-store";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Checks, MagnifyingGlass, Warning } from "phosphor-react";
+import { Checks, Funnel, MagnifyingGlass, Warning } from "phosphor-react";
 import { useContext, useEffect, useState } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -16,6 +16,7 @@ import { Textarea } from "../ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner"
+import { Switch } from "../ui/switch";
 
 export function EditItem() {
     const { data, onClose, isOpen, type: typeModal } = useModal();
@@ -60,21 +61,17 @@ export function EditItem() {
 
     let urlLocNom = `${urlGeral}AllLocNom`;
 
-      const [condicao, setCondicao] = useState("");
-      const [descricao, setDescricao] = useState("");
-       const [relevance, setRelevance] = useState(false);
-        const [desfazimento, setDesfazimento] = useState(false);
+      const [condicao, setCondicao] = useState(data.condicao);
+      const [descricao, setDescricao] = useState(data.observacao);
+       const [relevance, setRelevance] = useState(data.vitrine);
+        const [desfazimento, setDesfazimento] = useState(data.desfazimento);
     
     const isModalOpen = (isOpen && typeModal === 'edit-item')
 
     const [openPopo, setOpenPopo] = useState(false)
-      const [localizacao, setLocalizacao] = useState("")
+      const [localizacao, setLocalizacao] = useState(data.loc)
     
-      useEffect(() => {   
-       if(localizacao.length == 0 && patrimonio.length > 0) {
-        setLocalizacao(patrimonio[0].loc_nom)
-       }
-          }, [patrimonio]);
+   
     
       const handleRemoveImage = (index: number) => {
         setImages(prevImages => prevImages.filter((_, i) => i !== index));
@@ -83,7 +80,7 @@ export function EditItem() {
     //
 
     //images
-const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<string[]>(data?.imagens ?? []);
 
 const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
   const files = event.target.files;
@@ -106,6 +103,176 @@ const normalizeString = (str:any) => {
 const filteredList = locNomLista.filter((framework) =>
   normalizeString(framework.loc_nom).includes(normalizeString(searchTerm))
 );
+
+
+///enviar
+
+const newImageNames: string[] = [];
+
+const handleSubmit = async () => {
+
+  try {
+    const dataPut = [
+      {
+        patrimonio_id:data.patrimonio_id,
+        loc: localizacao ,
+        observacao:descricao,
+        vitrine:relevance,
+        condicao:condicao,
+        imagens:newImageNames,
+        desfazimento:desfazimento,
+      }
+    ]
+
+    console.log(dataPut)
+
+    let urlProgram = urlGeral + '/formulario'
+
+
+    const fetchData = async () => {
+    
+     if (condicao == '') {
+      toast("Campo 'Nome do programa' vazio", {
+        description: "Preencha o campo",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Undo"),
+        },
+      })
+     } else if (images.length === 0) {
+        toast("Nenhuma imagem selecionada!", {
+          description: "Por favor, selecione ao menos uma imagem antes de enviar.",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
+        return;
+      }
+     
+     else  {
+      try {
+       
+        const response = await fetch(urlProgram, {
+          mode: 'cors',
+          method: 'PUT',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'PUT',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dataPut),
+        });
+
+        if (response.ok) {
+         
+          toast("Dados enviados com sucesso", {
+              description: "Item adicionado ao Vitrine",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+
+            handleFileUpload(data.patrimonio_id || '')
+         
+        } else {
+          console.error('Erro ao enviar dados para o servidor.');
+          toast("Tente novamente!", {
+              description: "Tente novamente",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+        }
+        
+      } catch (err) {
+        console.log(err);
+      } 
+     }
+    };
+    fetchData();
+
+
+  } catch (error) {
+      toast("Erro ao processar requisição", {
+          description: "Tente novamente",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Undo"),
+          },
+        })
+  }
+}
+
+ // Constante para armazenar os nomes gerados
+//imagemns
+
+const handleFileUpload = async (id:string) => {
+  if (images.length < 4) {
+    toast("Você precisa submeter 4 imagens", {
+      description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
+      action: {
+        label: "Fechar",
+        onClick: () => console.log("Fechar"),
+      },
+    });
+    return;
+  }
+
+  try {
+    const uploadPromises = images.slice(0, 4).map((image, index) => {
+      const formData = new FormData();
+      const fileName = `${id}`; // Nome único para a imagem
+      newImageNames.push(fileName); // Armazena o nome gerado
+
+      // Converter a URL de imagem para Blob
+      return fetch(image)
+        .then((res) => res.blob())
+        .then((blob) => {
+          formData.append("file", blob, fileName);
+
+          const urlUpload = `${urlGeral}imagem/${fileName}`;
+
+          return fetch(urlUpload, {
+            method: "PUT",
+            body: formData,
+          });
+        });
+    });
+
+    const responses = await Promise.all(uploadPromises);
+
+    const allSuccessful = responses.every((response) => response.ok);
+
+    if (allSuccessful) {
+      toast("Upload realizado com sucesso!", {
+        description: "As imagens foram enviadas com sucesso!",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Fechar"),
+        },
+      });
+
+      console.log("Novos nomes das imagens:", newImageNames); // Exibe os nomes gerados no console
+      setImages([]); // Resetar o estado das imagens após o envio
+    } else {
+      throw new Error("Nem todas as imagens foram enviadas com sucesso.");
+    }
+  } catch (error) {
+    console.error("Erro ao enviar imagens:", error);
+    toast("Erro no envio", {
+      description: "Não foi possível enviar as imagens. Tente novamente.",
+      action: {
+        label: "Fechar",
+        onClick: () => console.log("Fechar"),
+      },
+    });
+  }
+};
 
 
     return(
@@ -138,7 +305,7 @@ const filteredList = locNomLista.filter((framework) =>
  <ScrollArea className="relative pb-4 whitespace-nowrap h-[calc(100vh-50px)] p-8 ">
         <div className="mb-8">
                       <p className="max-w-[750px] mb-2 text-lg font-light text-foreground">
-                      Patrimonio - 
+                      Patrimônio - ({data.bem_cod} - {data.bem_dgv})
                         </p>
 
                         <h1 className="max-w-[500px] text-3xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
@@ -146,7 +313,7 @@ const filteredList = locNomLista.filter((framework) =>
                         </h1>
                         
                       </div>
-                <div className="">
+                <div className="flex flex-col gap-8">
                 <Alert className="p-0">
                 <CardHeader>
                     <CardTitle>Condição do item</CardTitle>
@@ -241,6 +408,254 @@ const filteredList = locNomLista.filter((framework) =>
                   </CardContent>
                 </Alert>
 
+               {!data.verificado && (
+                 <Alert className="p-0">
+                 <CardHeader>
+                     <CardTitle>Destinação do item</CardTitle>
+                     <CardDescription>
+                      jsdfgsdfgsdfg
+                     </CardDescription>
+                   </CardHeader>
+                   <CardContent className="flex flex-col gap-4">
+                     <div className="">
+                     <div className="grid gap-3 w-full">
+                         <Label htmlFor="name">Alocação no Vitrine (sala 4301)</Label>
+                         <CardDescription>
+                       Caso haja a disponibilidade, gostaria que o item seja guardado na sala física do Vitrine?
+                     </CardDescription>
+                         <div className="flex gap-2 items-center ">
+             <Switch checked={relevance} onCheckedChange={(e) => {
+               setRelevance(e)
+               setDesfazimento(false)
+             }} />
+             <p className="text-sm">{relevance ? "Sim, preciso da alocação" : "Não, não preciso"} </p>
+           </div>
+                       </div>
+                     
+                     </div>
+ 
+                     <div className="">
+                     <div className="grid gap-3 w-full">
+                         <Label htmlFor="name">Desfazimento</Label>
+                         <CardDescription>
+                     Este é um item elegível para o desfazimento?
+                     </CardDescription>
+                         <div className="flex gap-2 items-center ">
+             <Switch disabled={relevance} checked={desfazimento} onCheckedChange={(e) => setDesfazimento(e)} />
+             <p className="text-sm">{desfazimento ? "Não, não preciso" : "Sim, preciso da alocação"} </p>
+           </div>
+                       </div>
+                     
+                     </div>
+                   </CardContent>
+                 </Alert>
+               )}
+
+                <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
+                <CardHeader>
+                    <CardTitle>Detalhes do item</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-6">
+                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 `}>
+                    
+
+                      <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Número do patrimônio</Label>
+                     <div className="flex items-center gap-3">
+                     <Input
+                        id="name"
+                        type="text"
+                        className="w-ful"
+                       value={`${data.bem_cod} - ${data.bem_dgv}`}
+                        
+                        disabled
+                        />
+
+                 
+                     </div>
+                    </div>
+
+                  
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Material</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          value={data.mat_nom}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Condição do bem</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={data.csv_cod == "BM" ? 'Bom': data.csv_cod == 'AE' ? 'Anti-Econômico': data.csv_cod == 'IR' ? 'Irrecuperável': data.csv_cod == 'OC' ? 'Ocioso': data.csv_cod == 'BX' ? 'Baixado': data.csv_cod == 'RE' ? 'Recuperável': ''}
+                        />
+                      </div>
+
+                     
+                     </div>
+
+                     <div className="flex gap-6">
+                    
+                        <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Valor</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                      disabled
+                          value={parseFloat(data.bem_val || '') }
+                        />
+                      </div>
+                  
+                     
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Responsável</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                         disabled
+                          value={data.pes_nome}
+                        />
+                      </div>
+
+                     </div>
+
+                     <div className="flex gap-6">
+                     <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Situação</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          disabled
+                          className="w-full"
+                          value={data.bem_sta == "NO" ? ('Normal'):('Não encontrado no local de guarda')}
+                        />
+                      </div>
+
+                      <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Localização</Label>
+                        <div className="flex gap-3">
+                        {locState ? (
+                          <Input
+                         
+                          type="text"
+                          className="w-full"
+                        
+                          value={localizacao}
+                        />
+                        ):(
+                          <Dialog open={openPopo} onOpenChange={setOpenPopo}>
+                        <DialogTrigger className="w-full">
+                        <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openPopo}
+                              className="w-full justify-between"
+                            >
+                              {localizacao
+                                ? locNomLista.find((framework) => framework.loc_nom === localizacao)?.loc_nom
+                                : 'Selecione um local'}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Escolher localização</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. This will permanently delete your account
+        and remove your data from our servers.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="border rounded-md px-6 h-12 flex items-center gap-1 border-neutral-200 dark:border-neutral-800">
+                                <MagnifyingGlass size={16} />
+                                <Input
+                                  className="border-0"
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  placeholder="Buscar localização"
+                                />
+                              </div>
+
+                              <div className={'max-h-[350px] overflow-y-auto elementBarra'}>
+                              
+                              <div className="flex flex-col gap-1 p-2">
+                                {filteredList.length > 0 ? (
+                                  filteredList.map((props, index) => (
+                                    <Button
+                                      variant={'ghost'}
+                                      key={index}
+                                      className="text-left justify-start"
+                                      onClick={() => {
+                                        setLocalizacao(props.loc_nom);
+                                        setLocState(true);
+                                        setOpenPopo(false); // Fechar o popover após a seleção
+                                      }}
+                                    >
+                                      {props.loc_nom}
+                                    </Button>
+                                  ))
+                                ) : (
+                                  <div>Nenhuma sala encontrada</div>
+                                )}
+                              </div>
+                            </div>
+  </DialogContent>
+
+                        </Dialog>
+
+                        )}
+
+                       
+
+                     
+                           <div className="flex gap-3">
+                           <Button onClick={() => setLocState(false)} variant="outline" size={'icon'}><X size={16} /></Button>
+                             <Button onClick={() => setLocState(true)}  size={'icon'}><Check size={16} /></Button>
+                             </div>
+                      
+                       
+                        </div>
+                      </div>
+                     </div>
+
+                     <div className="grid gap-3 w-full">
+                        <Label htmlFor="name">Descrição</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          className="w-full"
+                          disabled
+                          value={data.bem_dsc_com}
+                        />
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="description">Observações</Label>
+                        <Textarea
+                          id="description"
+                          value={descricao} onChange={(e) => setDescricao(e.target.value)}
+                          className="min-h-32"
+                        />
+                      </div>
+                    </div>
+                    
+                  </CardContent>
+                  </Alert>
+
 
                 <Alert className="p-0">
       <CardHeader>
@@ -312,7 +727,7 @@ const filteredList = locNomLista.filter((framework) =>
                 
                 className="aspect-square w-full rounded-md object-cover"
                 height="84"
-                src={image}
+                src={`${urlGeral}/imagem/${image}` || image}
                 width="84"
               />
                 <Button onClick={() => handleRemoveImage(index+1)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
@@ -340,221 +755,12 @@ const filteredList = locNomLista.filter((framework) =>
       </CardContent>
     </Alert>
 
-    <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
-                <CardHeader>
-                    <CardTitle>Detalhes do item</CardTitle>
-                    <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-6">
-                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 ${typeCod == 'scod' ? ('md:grid-cols-3'):('')}`}>
-                     <div className="grid gap-3 w-full ">
-                        <Label htmlFor="name">Tipo do código</Label>
-                        <Select defaultValue={typeCod} value={typeCod} onValueChange={(value) => setTypeCod(value)}>
-                            <SelectTrigger className="">
-                              <SelectValue placeholder="" />
-                            </SelectTrigger>
-                            <SelectContent>
-                            <SelectItem value={'atm'}>Código ATM</SelectItem>
-                            <SelectItem value={'cod'}>Número de patrimônio</SelectItem>
-                            <SelectItem value={'scod'}>Sem código</SelectItem>
-                            </SelectContent>
-                          </Select>
-                      </div>
 
-                      <div className="grid gap-3 w-full">
-                      <Label htmlFor="name">Número do patrimônio</Label>
-                     <div className="flex items-center gap-3">
-                     <Input
-                        id="name"
-                        type="text"
-                        className="w-ful"
-                       
-                        
-                        disabled
-                        />
+    <div className="flex justify-end">
+      <Button  onClick={handleSubmit }><RefreshCcw size={16}/> Atualizar item</Button>
+    </div>
 
-                      <Button className="min-w-10" size={'icon'} onClick={onClickBuscaPatrimonio}><Funnel size={16}/></Button>
-                     </div>
-                    </div>
-
-                  
-
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Material</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
-                        />
-                      </div>
-
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Condição do bem</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].csv_cod == "BM" ? 'Bom': patrimonio[0].csv_cod == 'AE' ? 'Anti-Econômico': patrimonio[0].csv_cod == 'IR' ? 'Irrecuperável': patrimonio[0].csv_cod == 'OC' ? 'Ocioso': patrimonio[0].csv_cod == 'BX' ? 'Baixado': patrimonio[0].csv_cod == 'RE' ? 'Recuperável': ''):''}
-                        />
-                      </div>
-
-                     
-                     </div>
-
-                     <div className="flex gap-6">
-                      {(patrimonio.length > 0 && patrimonio[0].bem_val.length > 0) && (
-                        <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Valor</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? parseFloat(patrimonio[0].bem_val) : ''}
-                        />
-                      </div>
-                      ) }
-                     
-
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Responsável</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].pes_nome : ''}
-                        />
-                      </div>
-
-                     </div>
-
-                     <div className="flex gap-6">
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Situação</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].bem_sta == "NO" ? ('Normal'):('Não encontrado no local de guarda')):''}
-                        />
-                      </div>
-
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Localização</Label>
-                        <div className="flex gap-3">
-                        {locState ? (
-                          <Input
-                         
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={localizacao}
-                        />
-                        ):(
-                          <Dialog open={openPopo} onOpenChange={setOpenPopo}>
-                        <DialogTrigger className="w-full">
-                        <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openPopo}
-                              className="w-full justify-between"
-                            >
-                              {localizacao
-                                ? locNomLista.find((framework) => framework.loc_nom === localizacao)?.loc_nom
-                                : 'Selecione um local'}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Escolher localização</DialogTitle>
-      <DialogDescription>
-        This action cannot be undone. This will permanently delete your account
-        and remove your data from our servers.
-      </DialogDescription>
-    </DialogHeader>
-
-    <div className="border rounded-md px-6 h-12 flex items-center gap-1 border-neutral-200 dark:border-neutral-800">
-                                <MagnifyingGlass size={16} />
-                                <Input
-                                  className="border-0"
-                                  value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
-                                  placeholder="Buscar localização"
-                                />
-                              </div>
-
-                              <div className={'max-h-[350px] overflow-y-auto elementBarra'}>
-                              
-                              <div className="flex flex-col gap-1 p-2">
-                                {filteredList.length > 0 ? (
-                                  filteredList.map((props, index) => (
-                                    <Button
-                                      variant={'ghost'}
-                                      key={index}
-                                      className="text-left justify-start"
-                                      onClick={() => {
-                                        setLocalizacao(props.loc_nom);
-                                        setLocState(true);
-                                        setOpenPopo(false); // Fechar o popover após a seleção
-                                      }}
-                                    >
-                                      {props.loc_nom}
-                                    </Button>
-                                  ))
-                                ) : (
-                                  <div>Nenhuma sala encontrada</div>
-                                )}
-                              </div>
-                            </div>
-  </DialogContent>
-
-                        </Dialog>
-
-                        )}
-
-                       
-
-                      
-                           <div className="flex gap-3">
-                           <Button onClick={() => setLocState(false)} variant="outline" size={'icon'}><X size={16} /></Button>
-                             <Button onClick={() => setLocState(true)}  size={'icon'}><Check size={16} /></Button>
-                             </div>
-                       
-                        </div>
-                      </div>
-                     </div>
-
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Descrição</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (localizacao.length > 0 ? localizacao : patrimonio[0].bem_dsc_com) : ''}
-                        />
-                      </div>
-                      <div className="grid gap-3">
-                        <Label htmlFor="description">Observações</Label>
-                        <Textarea
-                          id="description"
-                          value={descricao} onChange={(e) => setDescricao(e.target.value)}
-                          className="min-h-32"
-                        />
-                      </div>
-                    </div>
-                    
-                  </CardContent>
-                  </Alert>
+    
                 </div>
 
 

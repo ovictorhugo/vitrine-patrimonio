@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function BlockItem(props:Props) {
-      const {user, urlGeral, defaultLayout, loggedIn} = useContext(UserContext)
+      const {user, urlGeral, defaultLayout, loggedIn, itemsSelecionados} = useContext(UserContext)
       const [favoritos, setFavoritos] = useState<Item[]>([]); 
 
    
@@ -152,8 +152,14 @@ export function BlockItem(props:Props) {
                         </Alert>
             </Link>
            )}
-            {props.bens.slice(0, count).map((item) => {
-          return (
+            {props.bens
+  .filter((item) => 
+    itemsSelecionados.length === 0 || 
+    itemsSelecionados.some((selected) => selected.term === item.mat_nom)
+  )
+  .slice(0, count)
+  .map((item) => {
+    return (
             <ItemPatrimonio
               codigo_atm={item.codigo_atm}
               condicao={item.condicao}
@@ -179,12 +185,44 @@ export function BlockItem(props:Props) {
             qtd_de_favorito={item.qtd_de_favorito}
             estado_transferencia={item.estado_transferencia}
             created_at={item.created_at}
+            bem_dsc_com={item.bem_dsc_com}
+            bem_num_atm={item.bem_num_atm}
+            bem_serie={item.bem_serie}
+            bem_sta={item.bem_sta}
+            bem_val={item.bem_val}
+            csv_cod={item.csv_cod}
+            display_name={item.display_name}
+            ele_cod={item.ele_cod}
+            grp_cod={item.grp_cod}
+            ite_mar={item.ite_mar}
+            ite_mod={item.ite_mod}
+            loc_cod={item.loc_cod}
+            loc_nom={item.loc_nom}
+            mat_cod={item.mat_cod}
+            org_cod={item.org_cod}
+            org_nom={item.org_nom}
+            pes_cod={item.pes_cod}
+            pes_nome={item.pes_nome}
+            sbe_cod={item.sbe_cod}
+            set_cod={item.set_cod}
+            set_nom={item.set_nom}
+            tgr_cod={item.tgr_cod}
+            tre_cod={item.tre_cod}
+            uge_cod={item.uge_cod}
+            uge_nom={item.uge_nom}
+            uge_siaf={item.uge_siaf}
+            bem_cod={item.bem_cod}
+            bem_dgv={item.bem_dgv}
             />
           );
         })}
             </div>
 
-            {props.bens.length > count && (
+            {props.bens
+  .filter((item) => 
+    itemsSelecionados.length === 0 || 
+    itemsSelecionados.some((selected) => selected.term === item.mat_nom)
+  ).length > count && (
             <div className="w-full flex justify-center mt-8"><Button onClick={() => setCount(count + 24)}><Plus size={16} />Mostrar mais</Button></div>
         )}
         </div>

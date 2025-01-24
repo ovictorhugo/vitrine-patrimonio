@@ -427,7 +427,17 @@ const handleSubmit = async () => {
             })
 
             handleFileUpload(docId)
-         
+
+            setCondicao('')
+            setDescricao('')
+            setLocalizacao('')
+            setImages([])
+            setRelevance(false)
+            setDesfazimento(false)
+            setInput('')
+            setInputATM('')
+            setPatrimonio([])
+
         } else {
           console.error('Erro ao enviar dados para o servidor.');
           toast("Tente novamente!", {
@@ -651,7 +661,7 @@ const handleFileUpload = async (id:string) => {
                      </div>
 
                      <div className="flex gap-6">
-                      {(patrimonio.length > 0 && patrimonio[0].bem_val.length > 0) && (
+                      {(patrimonio.length > 0 ) && (
                         <div className="grid gap-3 w-full">
                         <Label htmlFor="name">Valor</Label>
                         <Input

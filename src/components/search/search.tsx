@@ -16,7 +16,7 @@ export function Search() {
         <div className="flex items-center gap-2 w-full flex-1">
           <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
 
-          <div>
+          <div className="flex">
           <div className='flex gap-2 mx-2 items-center'>
               {itemsSelecionados.map((valor, index) => {
           return(

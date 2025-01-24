@@ -223,7 +223,7 @@ export function ItemPage() {
                           } 
                         };
                         fetchData();
-                     
+                        history('/')
                   
                      
                       };
@@ -508,41 +508,7 @@ export function ItemPage() {
 
                 <div className="lg:w-[400px] flex flex-col gap-8 lg:min-w-[400px] w-full">
                 
-                <Alert className="p-0">
-               
-                  <CardContent className="flex mt-6 flex-col gap-4">
-                    <div className="">
-                    <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Alocação no Vitrine (sala 40)</Label>
-                        <CardDescription>
-                      Caso haja a disponibilidade, gostaria que o item seja guardado na sala física do Vitrine?
-                    </CardDescription>
-                        <div className="flex gap-2 items-center ">
-            <Switch checked={relevance} onCheckedChange={(e) => {
-              setRelevance(e)
-              setDesfazimento(false)
-            }} />
-            <p className="text-sm">{relevance ? "Sim, preciso da alocação" : "Não, não preciso"} </p>
-          </div>
-                      </div>
-                    
-                    </div>
-
-                    <div className="">
-                    <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Desfazimento</Label>
-                        <CardDescription>
-                    Este é um item elegível para o desfazimento?
-                    </CardDescription>
-                        <div className="flex gap-2 items-center ">
-            <Switch disabled={relevance} checked={desfazimento} onCheckedChange={(e) => setDesfazimento(e)} />
-            <p className="text-sm">{desfazimento ? "Não, não preciso" : "Sim, preciso da alocação"} </p>
-          </div>
-                      </div>
-                    
-                    </div>
-                  </CardContent>
-                </Alert>
+                
                 {bens.slice(0, 1).map((props) => {
               return(
                 <Alert className="p-0">

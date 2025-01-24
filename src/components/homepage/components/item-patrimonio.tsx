@@ -44,6 +44,38 @@ interface Props {
   qtd_de_favorito:string
   estado_transferencia:string
   created_at:string
+  bem_dsc_com:string
+
+
+  bem_cod:string
+  bem_dgv:string
+
+  bem_num_atm:string
+  bem_serie:string
+  bem_sta:string
+  bem_val:string
+  csv_cod:string
+  display_name:string
+  ele_cod:string
+  grp_cod:string
+  ite_mar:string
+  ite_mod:string
+  loc_cod:string
+  loc_nom:string
+  mat_cod:string
+  org_cod:string
+  org_nom:string
+  pes_cod:string
+  pes_nome:string
+  sbe_cod:string
+  set_cod:string
+  set_nom:string
+  tgr_cod:string
+  tre_cod:string
+  uge_cod:string
+  uge_nom:string
+  uge_siaf:string
+
 }
 
 export function ItemPatrimonio(props:Props) {
@@ -91,7 +123,61 @@ export function ItemPatrimonio(props:Props) {
 
 
         <Button
-onClick={() => onOpen('edit-admin-item')}
+onClick={() =>
+  onOpen('edit-admin-item', {
+    condicao: props.condicao,
+    desfazimento: props.desfazimento,
+    email: props.email,
+    imagens: props.imagens,
+    loc: props.loc,
+    material: props.material,
+    matricula: props.matricula,
+    num_patrimonio: props.num_patrimonio,
+    num_verificacao: props.num_verificacao,
+    observacao: props.observacao,
+    patrimonio_id: props.patrimonio_id,
+    phone: props.phone,
+    situacao: props.situacao,
+    u_matricula: props.u_matricula,
+    user_id: props.user_id,
+    verificado: props.verificado,
+    vitrine: props.vitrine,
+    mat_nom: props.mat_nom,
+    bem_cod: String(props.num_patrimonio),
+    bem_dgv: String(props.num_verificacao),
+    loc_nom: props.loc,
+    qtd_de_favorito: props.qtd_de_favorito,
+    estado_transferencia: props.estado_transferencia,
+    created_at: props.created_at,
+    bem_dsc_com:props.bem_dsc_com,
+
+  
+    bem_num_atm: props.bem_num_atm,
+bem_serie: props.bem_serie,
+bem_sta: props.bem_sta,
+bem_val: props.bem_val,
+csv_cod: props.csv_cod,
+display_name: props.display_name,
+ele_cod: props.ele_cod,
+grp_cod: props.grp_cod,
+ite_mar: props.ite_mar,
+ite_mod: props.ite_mod,
+loc_cod: props.loc_cod,
+mat_cod: props.mat_cod,
+org_cod: props.org_cod,
+org_nom: props.org_nom,
+pes_cod: props.pes_cod,
+pes_nome: props.pes_nome,
+sbe_cod: props.sbe_cod,
+set_cod: props.set_cod,
+set_nom: props.set_nom,
+tgr_cod: props.tgr_cod,
+tre_cod: props.tre_cod,
+uge_cod: props.uge_cod,
+uge_nom: props.uge_nom,
+uge_siaf: props.uge_siaf
+  })
+}
 size={'icon'} variant={'ghost'}
 
   className={`  h-8 w-8  `}// Aplica a classe de estilo condicionalmente
@@ -131,6 +217,33 @@ size={'icon'} variant={'ghost'}
       qtd_de_favorito: props.qtd_de_favorito,
       estado_transferencia: props.estado_transferencia,
       created_at: props.created_at,
+      bem_dsc_com:props.bem_dsc_com,
+
+    
+      bem_num_atm: props.bem_num_atm,
+  bem_serie: props.bem_serie,
+  bem_sta: props.bem_sta,
+  bem_val: props.bem_val,
+  csv_cod: props.csv_cod,
+  display_name: props.display_name,
+  ele_cod: props.ele_cod,
+  grp_cod: props.grp_cod,
+  ite_mar: props.ite_mar,
+  ite_mod: props.ite_mod,
+  loc_cod: props.loc_cod,
+  mat_cod: props.mat_cod,
+  org_cod: props.org_cod,
+  org_nom: props.org_nom,
+  pes_cod: props.pes_cod,
+  pes_nome: props.pes_nome,
+  sbe_cod: props.sbe_cod,
+  set_cod: props.set_cod,
+  set_nom: props.set_nom,
+  tgr_cod: props.tgr_cod,
+  tre_cod: props.tre_cod,
+  uge_cod: props.uge_cod,
+  uge_nom: props.uge_nom,
+  uge_siaf: props.uge_siaf
     })
   }
   size="icon"

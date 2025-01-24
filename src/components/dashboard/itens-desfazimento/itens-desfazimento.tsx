@@ -15,6 +15,7 @@ import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 
 import { Skeleton } from "../../ui/skeleton";
 import { BlockItem } from "../itens-vitrine/block-itens";
+import { Item } from "../itens-vitrine/itens-vitrine";
 
 interface Patrimonio {
     bem_cod:string
@@ -47,28 +48,7 @@ interface Patrimonio {
     pes_nome:string
   }
 
-interface Item {
-  codigo_atm: string
-  condicao: string
-  desfazimento: boolean
-  email: string
-  imagens: string[]
-  loc: string
-  material: string
-  matricula: string
-  num_patrimonio:number
-  num_verificacao:number
-  observacao: string
-  patrimonio_id: string
-  phone: string
-  situacao: string
-  u_matricula: string
-  user_id: string
-  verificado: boolean,
-  vitrine:boolean
-  mat_nom:string
-  qtd_de_favorito:string
-}
+
 
 export function ItensDesfazimento() {
     const { isOpen, type} = useModalDashboard();
@@ -97,7 +77,7 @@ export function ItensDesfazimento() {
           const [bens, setBens] = useState<Item[]>([]); 
           const [loading, isLoading] = useState(false)
          
-          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=true`
+          let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=true&estado_transferencia=NÃO+VERIFICADO`
 console.log(urlBens)
           useEffect(() => {
             const fetchData = async () => {
