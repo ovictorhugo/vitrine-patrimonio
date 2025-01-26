@@ -19,7 +19,7 @@ import { Button } from "../ui/button";
 import { CoinVertical, Coins, Envelope, FileCsv, FileXls, Package, Trash, User, Plus, MagnifyingGlass, Funnel, Check, ChartBar } from "phosphor-react";
 import { Alert } from "../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ArrowUpRight, ChevronLeft, DollarSign } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, DollarSign, RefreshCcw, WalletCards } from "lucide-react";
 import { useModal } from "../hooks/use-modal-store";
 import { TabelaPatrimonio } from "./components/tabela-patrimonios";
 import { ScrollArea } from "../ui/scroll-area";
@@ -314,7 +314,7 @@ const has_editar_configuracoes_plataforma = permission.some(
                     <CardTitle className="text-sm font-medium">
                       Total de itens anunciados
                     </CardTitle>
-                    <Trash className="h-4 w-4 text-muted-foreground" />
+                    <WalletCards className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio)}</div>
@@ -327,9 +327,9 @@ const has_editar_configuracoes_plataforma = permission.some(
                   <Alert className="p-0">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Total de transações
+                      Total de transferência
                     </CardTitle>
-                    <Trash className="h-4 w-4 text-muted-foreground" />
+                    <RefreshCcw className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{total.map((props) => props.total_patrimonio)}</div>

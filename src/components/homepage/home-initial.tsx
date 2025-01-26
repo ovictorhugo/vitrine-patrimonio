@@ -7,16 +7,20 @@ import { Alert } from "../ui/alert";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Armchair, ArrowRight, Camera, ChalkboardSimple, ComputerTower, Desktop, DotsThree, Folder, Ladder, Laptop, MagnifyingGlass, Phone, Printer, ProjectorScreen, Scales, Television, Timer, Wrench } from "phosphor-react";
-
+interface TotalPatrimonios {
+  total_patrimonio:string
+  total_patrimonio_morto:string
+}
 
 import { Link } from "react-router-dom";
 
-import { Fan, Heart, Info, User } from "lucide-react";
+import { Fan, Heart, Info, Package, RefreshCcw, Trash, User, WalletCards } from "lucide-react";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { ItemPatrimonio } from "./components/item-patrimonio";
 import { Search } from "../search/search";
 import { Item } from "../item-page/item-page";
 import { BlockItem } from "../dashboard/itens-vitrine/block-itens";
+import { CardContent, CardHeader, CardTitle } from "../ui/card";
 
 export function HomeInicial() {
     const { isOpen, type, onOpen } = useModalHomepage();
@@ -80,6 +84,39 @@ export function HomeInicial() {
 
             const uniqueMatNom = [...new Set(bens.map((item) => item.mat_nom))];
 
+            //////////////////
+
+
+            
+                const [total, setTotal] = useState<TotalPatrimonios[]>([]);
+            
+                const urlPatrimonioInsert = `${urlGeral}totalPatrimonio?loc_nom=`;
+            
+                useEffect(() => {
+                  const fetchData = async () => {
+                    try {
+                      const response = await fetch(urlPatrimonioInsert , {
+                        mode: "cors",
+                        headers: {
+                          "Access-Control-Allow-Origin": "*",
+                          "Access-Control-Allow-Methods": "GET",
+                          "Access-Control-Allow-Headers": "Content-Type",
+                          "Access-Control-Max-Age": "3600",
+                          "Content-Type": "text/plain",
+                        },
+                      });
+                      const data = await response.json();
+                      if (data) {
+                          setTotal(data)
+                      }
+                    } catch (err) {
+                      console.log(err);
+                    }
+                  };
+                  fetchData()
+              
+                 
+                }, [urlPatrimonioInsert]);
 
     return(
 
@@ -125,6 +162,87 @@ export function HomeInicial() {
 </div>
 
 
+<div className="px-8 w-full">
+<Alert className="grid gap-3 lg:grid-cols-4 grid-cols-2 ">
+         <div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">
+                Total de patrimônios
+                </CardTitle>
+              </div>
+
+              <Package className="h-4 w-4 text-muted-foreground" />
+
+            </CardHeader>
+
+            <CardContent>
+              <span className="text-lg font-bold leading-none sm:text-3xl">
+              {total.length != 0? total.map((props) => props.total_patrimonio) : 0}
+              </span>
+            </CardContent>
+            </div>
+            <div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">
+                Total de patrimônios baixados
+                </CardTitle>
+              </div>
+
+              <Trash className="h-4 w-4 text-muted-foreground" />
+
+            </CardHeader>
+
+            <CardContent>
+              <span className="text-lg font-bold leading-none sm:text-3xl">
+              {total.length != 0? total.map((props) => props.total_patrimonio_morto) : 0}
+              </span>
+            </CardContent>
+            </div>
+        
+            <div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">
+                Total de itens anunciados
+                </CardTitle>
+              </div>
+
+              <WalletCards className="h-4 w-4 text-muted-foreground" />
+
+            </CardHeader>
+
+            <CardContent>
+              <span className="text-lg font-bold leading-none sm:text-3xl">
+              {total.length != 0? total.map((props) => props.total_patrimonio):0}
+              </span>
+            </CardContent>
+          </div>
+
+         <div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">
+                Total de transferência
+                </CardTitle>
+
+              </div>
+
+              <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+
+            </CardHeader>
+
+            <CardContent>
+              <span className="text-lg font-bold leading-none sm:text-3xl">
+              {total.length != 0?total.map((props) => props.total_patrimonio):0}
+              </span>
+            </CardContent>
+            </div>
+          
+
+        </Alert>
+</div>
 
 <BlockItem bens={bens}/>
 </div>
