@@ -30,7 +30,7 @@ import { CaretLeft, ChartLine, Funnel, Gear, GraduationCap, GridFour, ListDashes
 import { DotSquare, GitBranch, Grip, Laptop, LayoutDashboard, LogIn, Moon, Search, Sun, User } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
-import { UserConfigHeader } from "./user-config-header";
+
 
 import {
   DropdownMenu,
