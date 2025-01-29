@@ -1,10 +1,8 @@
 
 import { useContext, useEffect } from "react";
-import SearchLayout from "../layout/search-layout";
 
-import { useModalHomepage } from "../components/hooks/use-modal-homepage";
 import { useLocation } from "react-router-dom";
-import { GeralDashboard } from "../components/dashboard/geral-dashboard";
+
 import { DashboardProvider } from "../components/provider/dashboard-provider";
 import SimpleLayout from "../layout/simple-layout";
 import { useModalDashboard } from "../components/hooks/use-modal-dashboard";

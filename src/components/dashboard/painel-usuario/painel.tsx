@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Alert } from "../../ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { AssinarDocumentos } from "../assinar-documento";
+
 import { Skeleton } from "../../ui/skeleton";
 import { useContext, useEffect, useState } from "react";
 import { Item } from "../../item-page/item-page";
@@ -333,7 +333,7 @@ useEffect(() => {
 
            
             <TabsContent value="unread" className="flex flex-col gap-4 md:gap-8">
-                <AssinarDocumentos/>
+              
             </TabsContent>
 
             

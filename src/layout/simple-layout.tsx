@@ -11,12 +11,9 @@ import { Link} from "react-router-dom";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/context";
 
-import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, ListTodo, Package, Plus, SearchCheck, X, Trash, WalletCards, Stamp, Barcode, ArrowLeftRight, LayoutPanelLeft, FilePenLine } from "lucide-react";
 
-import { ScrollArea } from "../components/ui/scroll-area";
-import { UserConfigHeader } from "../components/header/user-config-header";
 import { SidebarInset, SidebarProvider } from "../components/ui/sidebar";
-import { AppSidebar } from "../components/app-sidebar";
+
 import { AppSidebarAdmin } from "../components/app-sidebar-admin";
 interface MailProps {
  

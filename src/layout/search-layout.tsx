@@ -13,8 +13,7 @@ import { UserContext } from "../context/context";
 
 import { AlertCircle, BarChartBig, GraduationCap, Home, Info, LayoutDashboard, List, Package, SearchCheck, X, MapPin } from "lucide-react";
 
-import { ScrollArea } from "../components/ui/scroll-area";
-import { UserConfigHeader } from "../components/header/user-config-header";
+
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/app-sidebar";
 import { Separator } from "../components/ui/separator";

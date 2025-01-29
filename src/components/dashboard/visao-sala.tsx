@@ -3,7 +3,7 @@ import { useModalDashboard } from "../hooks/use-modal-dashboard";
 
 import { LogoUfmg } from "../svg/logo-ufmg";
 import { Logo } from "../svg/logo";
-import { Navbar } from "./navbar";
+
 
 import {
     Breadcrumb,
@@ -113,7 +113,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { MovimentacaoBrns } from "./components/movimentacao-bens";
+
 
 export function VisaoSala() {
     const { isOpen, type} = useModalDashboard();

@@ -1,18 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useModalDashboard } from "../hooks/use-modal-dashboard";
 
-import { LogoUfmg } from "../svg/logo-ufmg";
-import { Logo } from "../svg/logo";
-import { Navbar } from "./navbar";
-
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-  } from "../ui/breadcrumb"
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
