@@ -42,11 +42,18 @@ export interface ItemsSelecionados {
   term:string
 }
 
+export interface PatrimoniosSelecionados {
+  term:string
+  type:string
+}
+
+
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState<User| null>(null);;
   const storedIsCollapsed = localStorage.getItem("isCollapsed");
+  const [searchType, setSearchType] = useState('cod');
   const [isCollapsed, setIsCollapsed] = useState(
     storedIsCollapsed ? JSON.parse(storedIsCollapsed) : true
   );
@@ -65,6 +72,7 @@ function App() {
   const [role, setRole] = useState('')
   const [permission , setPermission] = useState<Permission[]>([])
   const [itemsSelecionados , setItensSelecionados] = useState<ItemsSelecionados[]>([])
+  const [patrimoniosSelecionados , setPatrimoniosSelecionados] = useState<PatrimoniosSelecionados[]>([])
 
   useEffect(() => {
     const storedUser = localStorage.getItem('permission');
@@ -92,7 +100,9 @@ function App() {
       role, setRole,
       permission , setPermission,
       bens, setBens,
-      itemsSelecionados , setItensSelecionados
+      itemsSelecionados , setItensSelecionados,
+      patrimoniosSelecionados , setPatrimoniosSelecionados,
+      searchType, setSearchType
     }}
     >
       <DefaultLayout>

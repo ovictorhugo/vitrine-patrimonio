@@ -39,11 +39,11 @@ export function NavProjects({
 
   return (
     <SidebarGroup className="">
-      <SidebarGroupLabel>Páginas</SidebarGroupLabel>
+      <SidebarGroupLabel>Acesso rápido</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild className={`${item.url == location.pathname && ('bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white')}`}>
+            <SidebarMenuButton asChild className={`${item.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
               <Link to={item.url}>
                 <item.icon />
                 <span>{item.name}</span>

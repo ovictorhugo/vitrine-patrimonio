@@ -13,6 +13,8 @@ import { MinhaArea } from "../minha-area/minha-area";
 import { SearchModalVitrine } from "../modal/search-modal-vitrine";
 import { EditAdminItem } from "../modal/edit-admin-item";
 import { EditItem } from "../modal/edit-item";
+import { SearchPatrimonio } from "../search/search-patrimonio";
+import { SearchModalPatrimonio } from "../modal/search-modal-patrimonio";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -36,6 +38,8 @@ const ModalContent = () => {
       return <EditAdminItem/>
     case 'edit-item':
       return <EditItem/>
+    case 'search-patrimonio':
+      return <SearchModalPatrimonio/>
     default:
       return null
   }

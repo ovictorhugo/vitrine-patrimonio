@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import { Item } from "../components/item-page/item-page";
-import { ItemsSelecionados } from "../App";
+import { ItemsSelecionados, PatrimoniosSelecionados } from "../App";
 
 interface User {
   user_id:string
@@ -49,6 +49,8 @@ interface UserContextType {
   itemsSelecionados: ItemsSelecionados[] , 
   setItensSelecionados: React.Dispatch<React.SetStateAction<ItemsSelecionados[]>>,
 
+  patrimoniosSelecionados: PatrimoniosSelecionados[] , 
+  setPatrimoniosSelecionados: React.Dispatch<React.SetStateAction<PatrimoniosSelecionados[]>>,
 
        
   isCollapsed:boolean, 
@@ -61,6 +63,10 @@ interface UserContextType {
 
       defaultLayout: number[];
   setDefaultLayout: React.Dispatch<React.SetStateAction<number[]>>;
+
+  searchType: string,
+  setSearchType: React.Dispatch<React.SetStateAction<string>>;
+
 
 }
 
@@ -77,8 +83,14 @@ export const UserContext = createContext<UserContextType>({
   isCollapsed:false, 
   setIsCollapsed:() => {},
 
+  searchType: "",
+  setSearchType: () => { },
+
   itemsSelecionados: [] , 
   setItensSelecionados: () => {},
+
+  patrimoniosSelecionados: [] , 
+  setPatrimoniosSelecionados: () => {},
 
   defaultLayout: [],
   setDefaultLayout:() => {},

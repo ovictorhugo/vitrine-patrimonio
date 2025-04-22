@@ -25,15 +25,16 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: LucideIcon
+    icon?: LucideIcon | React.ElementType
     isActive?: boolean
-    items?: {
+    items?: ({
       title: string
-      url: string
-      icon?: LucideIcon
-    }[]
+      url?: string // Agora opcional
+      icon?: LucideIcon | React.ElementType
+      onClick?: () => void // Adiciona a opção de clique direto
+    })[]
   }[]
-}) {
+})  {
 
   const location = useLocation()
   return (
@@ -56,17 +57,32 @@ export function NavMain({
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild className={`${subItem.url == location.pathname && ('bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white')}`}>
-                        <Link to={subItem.url}>
-                          <span className="flex z-[99] items-center gap-1"> {subItem.icon && <subItem.icon className="h-4" />} {subItem.title}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
+              <SidebarMenuSub>
+  {item.items?.map((subItem) => (
+    <SidebarMenuSubItem key={subItem.title}>
+      {subItem.onClick ? (
+        <SidebarMenuSubButton 
+          onClick={subItem.onClick} 
+          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"
+        >
+          <span className="flex z-[99] items-center gap-1">
+            {subItem.icon && <subItem.icon className="h-4" />} 
+            {subItem.title}
+          </span>
+        </SidebarMenuSubButton>
+      ) : (
+        <SidebarMenuSubButton asChild className={` ${subItem.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue  hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
+          <Link to={subItem.url!}>
+            <span className="flex z-[99] items-center gap-1">
+              {subItem.icon && <subItem.icon className="h-4" />} 
+              {subItem.title}
+            </span>
+          </Link>
+        </SidebarMenuSubButton>
+      )}
+    </SidebarMenuSubItem>
+  ))}
+</SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>
           </Collapsible>

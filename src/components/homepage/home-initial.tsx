@@ -121,7 +121,7 @@ export function HomeInicial() {
     return(
 
 
-<div className="items-center w-full flex flex-col h-[200vh] max-sm:ml-4">
+<div className="items-center w-full flex flex-col ">
 <div ref={ref} className="bg-cover bg-no-repeat bg-center w-full">
 <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >      
    
