@@ -271,6 +271,11 @@ useEffect(() => {
   selectedLocNom,
   selectedSetNom,
     clearFilters,
+    setSelectedBemSta,
+    setSelectedLocNom,
+    setSelectedOrgNom,
+    setSelectedPesNom,
+    setSelectedSetNom,
     component: (
     <Sheet open={isModalOpen} onOpenChange={onClose}>
       <SheetContent className={`p-0 dark:bg-neutral-900 dark:border-gray-600 min-w-[60vw]`}>
@@ -529,6 +534,7 @@ const {urlGeral, searchType, patrimoniosSelecionados} = useContext(UserContext)
         }
       } catch (err) {
         console.log(err);
+        setLoading(false);
       }
     };
     fetchData();
@@ -573,13 +579,17 @@ console.log(url)
   const [typeVisu, setTypeVisu] = useState('block');
   const { onOpen } = useModal();
 
-  const {  component, clearFilters, selectedBemSta, selectedLocNom, selectedOrgNom, selectedPesNom, selectedSetNom } = FiltersModal({
+  const {   setSelectedBemSta,
+    setSelectedLocNom,
+    setSelectedOrgNom,
+    setSelectedPesNom,
+    setSelectedSetNom,component, clearFilters, selectedBemSta, selectedLocNom, selectedOrgNom, selectedPesNom, selectedSetNom } = FiltersModal({
     patrimonio: originalPatrimonio,
     setPatrimonio,
   });
 
     return(
-<main className="w-full">
+<main className="w-full relative">
 <Helmet>
         <title>
           Busca de patrimônio | Patrimônio
@@ -589,8 +599,8 @@ console.log(url)
       </Helmet>
 
        {patrimoniosSelecionados.length > 0 ? (
-        <div>
-          <div>
+        <div className="relative">
+       
        <div className="top-[68px] sticky z-[9] supports-[backdrop-filter]:dark:bg-neutral-900/60 supports-[backdrop-filter]:bg-neutral-50/60 backdrop-blur">
 <div className={`w-full px-8  border-b border-b-neutral-200 dark:border-b-neutral-800`}>
 
@@ -646,7 +656,7 @@ console.log(url)
 
 
 
-       </div>
+    
 
        <div className="mt-8 px-4 md:px-8">
 
@@ -663,53 +673,78 @@ console.log(url)
 >
 <p className="text-sm font-medium">Filtros aplicados:</p>
 
-
 {selectedBemSta.map((item) => (
   <Badge
     key={item}
-    className="bg-eng-blue hover:bg-eng-dark-blue rounded-md dark:bg-eng-blue dark:hover:bg-eng-dark-blue dark:text-white py-2 px-3 font-normal"
+    className="bg-eng-blue gap-2 items-center flex  rounded-md dark:bg-eng-blue dark:text-white py-2 px-3 font-normal"
   >
     {item}
+    <div
+      className="cursor-pointer"
+      onClick={() => setSelectedBemSta(selectedBemSta.filter(i => i !== item))}
+    >
+      <X size={16} />
+    </div>
   </Badge>
 ))}
-
 
 {selectedOrgNom.map((item) => (
   <Badge
     key={item}
-    className="bg-eng-blue hover:bg-eng-dark-blue rounded-md dark:bg-eng-blue dark:hover:bg-eng-dark-blue dark:text-white py-2 px-3 font-normal"
+    className="bg-eng-blue gap-2 items-center flex  rounded-md dark:bg-eng-blue  dark:text-white py-2 px-3 font-normal"
   >
     {item}
+    <div
+      className="cursor-pointer"
+      onClick={() => setSelectedOrgNom(selectedOrgNom.filter(i => i !== item))}
+    >
+      <X size={16} />
+    </div>
   </Badge>
 ))}
-
 
 {selectedSetNom.map((item) => (
   <Badge
     key={item}
-    className="bg-eng-blue hover:bg-eng-dark-blue rounded-md dark:bg-eng-blue dark:hover:bg-eng-dark-blue dark:text-white py-2 px-3 font-normal"
+    className="bg-eng-blue gap-2 items-center flex  rounded-md dark:bg-eng-blue  dark:text-white py-2 px-3 font-normal"
   >
     {item}
+    <div
+      className="cursor-pointer"
+      onClick={() => setSelectedSetNom(selectedSetNom.filter(i => i !== item))}
+    >
+      <X size={16} />
+    </div>
   </Badge>
 ))}
-
-
 
 {selectedLocNom.map((item) => (
   <Badge
     key={item}
-    className="bg-eng-blue hover:bg-eng-dark-blue rounded-md dark:bg-eng-blue dark:hover:bg-eng-dark-blue dark:text-white py-2 px-3 font-normal"
+    className="bg-eng-blue gap-2 items-center flex  rounded-md dark:bg-eng-blue  dark:text-white py-2 px-3 font-normal"
   >
     {item}
+    <div
+      className="cursor-pointer"
+      onClick={() => setSelectedLocNom(selectedLocNom.filter(i => i !== item))}
+    >
+      <X size={16} />
+    </div>
   </Badge>
 ))}
 
 {selectedPesNom.map((item) => (
   <Badge
     key={item}
-    className="bg-eng-blue hover:bg-eng-dark-blue rounded-md dark:bg-eng-blue dark:hover:bg-eng-dark-blue dark:text-white py-2 px-3 font-normal"
+    className="bg-eng-blue gap-2 items-center flex  rounded-md dark:bg-eng-blue  dark:text-white py-2 px-3 font-normal"
   >
     {item}
+    <div
+      className="cursor-pointer"
+      onClick={() => setSelectedPesNom(selectedPesNom.filter(i => i !== item))}
+    >
+      <X size={16} />
+    </div>
   </Badge>
 ))}
 

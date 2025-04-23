@@ -26,10 +26,7 @@ export const columnsPatrimonio: ColumnDef<Patrimonio>[] = [
       accessorKey: "bem_cod",
       header: "Nº de patrimônio",
     },
-    {
-      accessorKey: "bem_dgv",
-      header: "Dig. Verificador",
-    },
+
     {
       accessorKey: "bem_num_atm",
       header: "Código ATM",

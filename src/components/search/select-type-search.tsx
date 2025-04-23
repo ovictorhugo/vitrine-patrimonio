@@ -1,4 +1,4 @@
-import { useContext } from "react"
+import { useContext, useEffect } from "react"
 import {
   Select,
   SelectContent,
@@ -19,7 +19,6 @@ export function SelectTypeSearch() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const posGrad = location.pathname == '/pos-graduacao'
 
   const resultados = location.pathname == '/resultados'
 
@@ -27,6 +26,7 @@ export function SelectTypeSearch() {
   const queryUrl = useQuery()
   const { searchType, setSearchType } = useContext(UserContext)
   let type_search = ''
+
 
   return (
     <div className="min-w-max">

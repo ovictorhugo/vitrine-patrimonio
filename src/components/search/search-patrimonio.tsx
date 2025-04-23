@@ -34,13 +34,49 @@ export function SearchPatrimonio() {
       setPatrimoniosSelecionados(selecionados);
     }
   }, [type_search, terms]); // ou usar algum hook de rota, como useSearchParams do React Router
-
   
 
+  
+  useEffect(() => {
+    queryUrl.set('type_search', searchType);
+
+    navigate({
+      pathname: '/buscar-patrimonio',
+      search: queryUrl.toString(),
+    });
+  
+    }, [searchType]);
+
   const handleRemoveItem = (index: number) => {
-    const newItems = [...patrimoniosSelecionados];
-    newItems.splice(index, 1);
-    setPatrimoniosSelecionados(newItems);
+    
+
+    if(patrimoniosSelecionados.length == 1) {
+      queryUrl.set('terms', '');
+      navigate({
+        pathname: '/buscar-patrimonio',
+        search: queryUrl.toString(),
+      });
+
+      setPatrimoniosSelecionados([])
+    } else {
+       // Copia os selecionados para manipular
+  const newItems = [...patrimoniosSelecionados];
+  newItems.splice(index, 1); // remove o item da lista
+
+  // Atualiza a URL com a nova lista de termos
+  const newTerms = newItems.map(item => item.term).join(';');
+  queryUrl.set('terms', newTerms);
+
+  navigate({
+    pathname: '/buscar-patrimonio',
+    search: queryUrl.toString(),
+  });
+
+  // Por último, atualiza o estado
+  setPatrimoniosSelecionados(newItems);
+    }
+
+
   };
     return(
         <Alert  className="h-14 p-2  mt-4 mb-2  flex items-center justify-between ">

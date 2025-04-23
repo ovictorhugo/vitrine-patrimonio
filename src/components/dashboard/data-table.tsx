@@ -100,45 +100,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex items-center py-4">
-       
-       
-
-        <div className="flex gap-3 ml-auto">
-          <Button onClick={() => handleBtnCsv()} variant="outline" className="ml-auto">
-            <FileCsv size={16} />
-            Download CSV
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                <Columns size={16} />
-                Colunas
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
+     
       <div className="rounded-md border dark:border-none">
         <Table>
           <TableHeader className="rounded-md">

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useModalHomepage } from "../hooks/use-modal-homepage";
-
+import { motion } from "motion/react";
 import { UserContext } from "../../context/context";
 import fump_bg from '../../assets/fump_bg.png';
 import { Alert } from "../ui/alert";
@@ -21,6 +21,7 @@ import { Search } from "../search/search";
 import { Item } from "../item-page/item-page";
 import { BlockItem } from "../dashboard/itens-vitrine/block-itens";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
+import { AuroraBackground } from "../ui/aurora-background";
 
 export function HomeInicial() {
     const { isOpen, type, onOpen } = useModalHomepage();
@@ -122,6 +123,8 @@ export function HomeInicial() {
 
 
 <div className="items-center w-full flex flex-col ">
+
+
 <div ref={ref} className="bg-cover bg-no-repeat bg-center w-full">
 <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >      
    

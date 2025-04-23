@@ -78,7 +78,7 @@ export function SearchModalPatrimonio() {
         if (itemsSelecionadosPopUp.length > 0) {
           setInput('')
           TypeSearch = searchType
-          Terms = itemsSelecionadosPopUp.map(item => item.term).join('; ');
+          Terms = itemsSelecionadosPopUp.map(item => item.term).join(';');
 
 
           queryUrl.set('terms', Terms.replace(/[()]/g, ''));
@@ -90,6 +90,19 @@ export function SearchModalPatrimonio() {
           });
 
           onClose()
+        } else {
+          if (input.length > 0) {
+            queryUrl.set('terms', input);
+            queryUrl.set('type_search', searchType);
+  
+            navigate({
+              pathname: '/buscar-patrimonio',
+              search: queryUrl.toString(),
+            });
+  
+            setInput('')
+            onClose()
+          }
         }
       };
 
