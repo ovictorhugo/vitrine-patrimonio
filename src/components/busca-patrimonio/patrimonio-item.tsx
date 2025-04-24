@@ -31,10 +31,11 @@ interface Patrimonio {
     pes_nome:string
 }
 
-import { Barcode, Locate, User } from "lucide-react";
+import { Barcode, Locate, Maximize2, User } from "lucide-react";
 import logo_eng from '../../assets/logo_eng.png';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowRight, Camera, Check, Funnel, Info, MagnifyingGlass, X, MapPin } from "phosphor-react";
+import { Button } from "../ui/button";
 
 
 export function PatrimonioItem(props: Patrimonio) {
@@ -68,47 +69,44 @@ export function PatrimonioItem(props: Patrimonio) {
     const bemStaTrimmed = props.bem_sta ? props.bem_sta.trim() : '';
   
     return (
-      <div className="flex w-full gap-3 flex-1 flex-col">
-        <div className=" p-4 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800  flex gap-3 items-center">
-          <img src={logo_eng} alt="" className="h-20" />
-          {/* Outros elementos aqui */}
-          <img src={`https://barcode.tec-it.com/barcode.ashx?data=${props.bem_cod.trim()}-${props.bem_dgv.trim()}&code=Code39&textposition=none`} alt="" className="h-20 mix-blend-multiply" />
-        </div>
+
+ 
   
-        <div className="flex flex-1">
-          <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border min-h-[250px]  border-neutral-200 border-r-0 ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]} min-h-full relative `}></div>
+        <div className="flex group">
+          <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border  border-neutral-200 border-r-0 ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]} min-h-full relative `}></div>
   
-          <Alert className="flex flex-col flex-1 gap-4 rounded-l-none p-0 ">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+          <Alert className="flex flex-col flex-1 h-fit  rounded-l-none p-0 ">
+            <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
+              <p className="font-semibold text-left mb-4 flex flex-1">
                 {props.bem_cod}-{props.bem_dgv}
-              </CardTitle>
-              <Barcode className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex flex-col justify-between h-full">
+              </p>
+
+              <div className="flex items-start justify-end min-w-20   gap-3">
+              <Button
+                 
+                 variant="outline"
+                 size={'icon'}
+                 className=" hidden group-hover:flex text-sm h-8 w-8 text-gray-500 dark:text-gray-300"
+               >
+                 <Maximize2 size={16} />
+               </Button>
+              </div>
+             
+             
+            </div>
+            <div className="flex flex-col p-4 pt-0 justify-between">
               <div>
-                <div className="text-2xl font-bold">{props.mat_nom}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-lg mb-2 font-bold">{props.mat_nom}</div>
+                <p className="text-left uppercase">
                   {props.bem_dsc_com} {props.ite_mar !== "" && (`| ${props.ite_mar}`)}
                 </p>
               </div>
   
-              <div className="flex mt-8 flex-wrap gap-4">
-                <div className="flex gap-2 items-center text-xs font-medium"><User size={12} />{props.pes_nome}</div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">
-                  <div className={`w-4 h-4 rounded-md ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]}`}></div>
-                  {csvCodToText[csvCodTrimmed as keyof typeof csvCodToText]}
-                </div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">
-                  {bemStaTrimmed === "NO" ? (<Check size={12} />) : (<X size={12} />)}
-                  {bemStaTrimmed === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
-                </div>
-                <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_nom}</div>
-              </div>
-            </CardContent>
+            
+            </div>
           </Alert>
         </div>
-      </div>
+   
     );
   }
   

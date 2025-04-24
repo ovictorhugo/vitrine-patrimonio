@@ -495,20 +495,22 @@ const {urlGeral, searchType, patrimoniosSelecionados} = useContext(UserContext)
   const type_search = queryUrl.get('type_search');
   const terms = queryUrl.get('terms');
 
+ if(terms != undefined && terms?.length > 0 ) {
   if (searchType == 'dsc') {
-      url = urlGeral + `search_by_nom?bem_dsc_com=${terms}`
-  } else if (searchType == 'pes') {
-    url = urlGeral + `search_by_nom?pes_nome=${terms}`
+    url = urlGeral + `search_by_nom?bem_dsc_com=${terms}`
+} else if (searchType == 'pes') {
+  url = urlGeral + `search_by_nom?pes_nome=${terms}`
 } else if (searchType == 'nom') {
-  url = urlGeral + `search_by_nom?mat_nom=${terms}`
+url = urlGeral + `search_by_nom?mat_nom=${terms}`
 } else if (searchType == 'atm') {
-  url = urlGeral + `checkoutPatrimonio?bem_num_atm=${terms}`
+url = urlGeral + `checkoutPatrimonio?bem_num_atm=${terms}`
 } else if (searchType == 'loc') {
-  url = urlGeral + `search_by_nom?loc_nom=${terms}`
+url = urlGeral + `search_by_nom?loc_nom=${terms}`
 } else if (searchType == 'cod') {
-  url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
+url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
 }
 
+ }
 
 
   useEffect(() => {
@@ -792,10 +794,10 @@ console.log(url)
                         <ResponsiveMasonry
                           columnsCountBreakPoints={{
                             350: 1,
-                            750: 2,
-                            900: 2,
-                            1200: 3,
-                            1700: 4
+                          750: 2,
+                          900: 2,
+                          1200: 4,
+                          1700: 5
                           }}
                         >
                           <Masonry gutter="16px">
@@ -810,14 +812,17 @@ console.log(url)
                           350: 1,
                           750: 2,
                           900: 2,
-                          1200: 3,
-                          1700: 4
+                          1200: 4,
+                          1700: 5
                         }}
                       >
-                        <Masonry gutter="16px" className=" z-[1] w-full">
-                         <div>
-
-                         </div>
+                        <Masonry gutter="16px" className="w-full">
+                        {patrimonio
+                            .map((props, index) => (
+                                <PatrimonioItem
+                                key={index} {...props}
+                                />
+                            ))}
                         </Masonry>
                       </ResponsiveMasonry>
                       )

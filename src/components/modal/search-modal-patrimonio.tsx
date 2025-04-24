@@ -19,12 +19,11 @@ interface Csv {
   bem_cod: string
   bem_dgv: string
   bem_num_atm: string
-  bem_dsc_com:string
   mat_nom:string
   type: 'cod' | 'atm' | 'nom' | 'dsc' | 'pes' | 'loc';
   pes_nome:string
   loc_nom:string
-  bem_dsc_com_list:string[]
+  bem_dsc_com:string[]
 }
 
 export const useQuery = () => {
@@ -174,7 +173,7 @@ export function SearchModalPatrimonio() {
               { field: 'bem_num_atm', value: normalizedInput, type: 'atm', operator: '>=' },
               { field: 'mat_nom', value: normalizedInput, type: 'nom', operator: '>=' },
               { field: 'loc_nom', value: normalizedInput, type: 'loc', operator: '>=' },
-              { field: 'bem_dsc_com_list', value: normalizedInput, type: 'dsc', operator: 'array-contains' },
+              { field: 'bem_dsc_com', value: normalizedInput, type: 'dsc', operator: 'array-contains' },
               { field: 'pes_nome', value: normalizedInput, type: 'pes', operator: '>=' }
             ];
       
@@ -203,7 +202,7 @@ export function SearchModalPatrimonio() {
                   type === 'nom'
                     ? `${data.mat_nom}`
                     : type === 'dsc'
-                    ? `${data.bem_dsc_com_list}`
+                    ? `${data.bem_dsc_com}`
                     : type === 'pes'
                     ? `${data.pes_nome}`
                     : type === 'loc'
@@ -229,7 +228,7 @@ export function SearchModalPatrimonio() {
             type: file.type,
             loc_nom: file.loc_nom,
             pes_nome: file.pes_nome,
-            bem_dsc_com_list:file.bem_dsc_com_list
+           
           }));
       
           setFilteredItems(mappedFiles);
@@ -493,30 +492,33 @@ export function SearchModalPatrimonio() {
   </div>
 )}
 
-{filteredItems.filter(item => item.type === 'dsc').length !== 0 && (
+{filteredItems.filter(item => item.type === 'dsc').length !== 0 && input.length >= 3 && (
   <div>
-    <p className="uppercase font-medium text-xs mb-3">Descrição do item</p>
+    <p className="uppercase font-medium text-xs mb-3">Palavras da descrição</p>
     <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'dsc')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.bem_dsc_com) === normalizeTerm(value.bem_dsc_com)
-          ))
+      {Array.from(
+        new Set(
+          filteredItems
+          .filter(item => item.type === 'dsc')
+          .flatMap(item => item.bem_dsc_com)
+          .flatMap(desc => normalizeTerm(desc).split(/\s+/))
+          .filter(word => word.length > 2 && normalizeTerm(word).includes(normalizeTerm(input)))
         )
-        .slice(0, 15)
-        .map((props, index) => (
+      )
+        .slice(0, 30)
+        .map((word, index) => (
           <div
             key={index}
-            onClick={() => handlePesquisa(`${props.bem_dsc_com}`, props.type)}
+            onClick={() => handlePesquisa(word, 'dsc')}
             className="flex gap-2 min-h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
           >
-            {props.bem_dsc_com}
+            {word}
           </div>
         ))}
     </div>
   </div>
 )}
+
 
 
             </Masonry>
