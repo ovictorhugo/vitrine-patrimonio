@@ -10,7 +10,10 @@ import { SelectTypeSearch } from "./select-type-search";
 import { useQuery } from "../modal/search-modal-patrimonio";
 import { useNavigate } from "react-router-dom";
 
-export function SearchPatrimonio() {
+interface Props{
+page:string
+}
+export function SearchPatrimonio(props:Props) {
   const {onOpen} = useModal()
   const navigate = useNavigate();
 
@@ -41,7 +44,7 @@ export function SearchPatrimonio() {
     queryUrl.set('type_search', searchType);
 
     navigate({
-      pathname: '/buscar-patrimonio',
+      pathname: props.page,
       search: queryUrl.toString(),
     });
   
@@ -53,7 +56,7 @@ export function SearchPatrimonio() {
     if(patrimoniosSelecionados.length == 1) {
       queryUrl.set('terms', '');
       navigate({
-        pathname: '/buscar-patrimonio',
+        pathname: props.page,
         search: queryUrl.toString(),
       });
 
@@ -68,7 +71,7 @@ export function SearchPatrimonio() {
   queryUrl.set('terms', newTerms);
 
   navigate({
-    pathname: '/buscar-patrimonio',
+    pathname: props.page,
     search: queryUrl.toString(),
   });
 

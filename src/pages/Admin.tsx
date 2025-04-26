@@ -20,7 +20,7 @@ export function Admin() {
         if(location.pathname == '/dashboard') {
             onOpen('visao-geral-user')
   
-        } else if (location.pathname == '/dashboard/todos-os-patrimonios') {
+        } else if (location.pathname == '/dashboard/patrimonios') {
             onOpen('lista-patrimonio')
         } else if (location.pathname == '/dashboard/visao-sala') {
             onOpen('visao-sala')

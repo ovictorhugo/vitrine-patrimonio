@@ -71,113 +71,21 @@ export function ImportCsv() {
   
 
   
+    const [file, setFile] = useState<File | null>(null);
 
-
-      const handleFileUpload = (files:any) => {
-        const uploadedFile = files[0];
-        if (uploadedFile) {
-          setFileInfo({
-            name: uploadedFile.name,
-            size: uploadedFile.size,
-          });
-          readExcelFile(uploadedFile);
-        }
-      };
-  
-    const readExcelFile = (file: File) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-  
-        // Convert the worksheet to JSON, starting from the third row
-        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-  
-        // Extract headers from the first row
-        const headers: string[] = json[0] as string[];
-  
-        // Remove the first row (headers themselves)
-        const rows = json.slice(1);
-  
-        // Map headers to your interface keys
-        const headerMap: { [key: string]: keyof Patrimonio } = {
-          'bem_cod': 'bem_cod',
-          'bem_dgv': 'bem_dgv',
-          'bem_num_atm': 'bem_num_atm',
-          'csv_cod': 'csv_cod',
-          'bem_serie': 'bem_serie',
-          'bem_sta': 'bem_sta',
-          'bem_val': 'bem_val',
-          'tre_cod': 'tre_cod',
-          'bem_dsc_com': 'bem_dsc_com',
-          'uge_cod': 'uge_cod',
-          'uge_nom': 'uge_nom',
-          'org_cod': 'org_cod',
-          'uge_siaf': 'uge_siaf',
-          'org_nom': 'org_nom',
-          'set_cod': 'set_cod',
-          'set_nom': 'set_nom',
-          'loc_cod': 'loc_cod',
-          'loc_nom': 'loc_nom',
-          'ite_mar': 'ite_mar',
-          'ite_mod': 'ite_mod',
-          'tgr_cod': 'tgr_cod',
-          'grp_cod': 'grp_cod',
-          'ele_cod': 'ele_cod',
-          'sbe_cod': 'sbe_cod',
-          'mat_cod': 'mat_cod',
-          'mat_nom': 'mat_nom',
-          'pes_cod': 'pes_cod',
-          'pes_nome': 'pes_nome'
-        };
-  
-        // Convert rows to an array of objects
-        const jsonData = rows.map((row: any) => {
-          const obj: Patrimonio = {
-            bem_cod: row[0] || "",
-            bem_dgv: row[1] || "",
-            bem_num_atm: row[2] || "",
-            csv_cod: row[3] || "",
-            bem_serie: row[4] || "",
-            bem_sta: row[5] || "",
-            bem_val: row[6] || "",
-            tre_cod: row[7] || "",
-            bem_dsc_com: row[8] || "",
-            uge_cod: row[9] || "",
-            uge_nom: row[10] || "",
-            org_cod: row[11] || "",
-            uge_siaf: row[12] || "",
-            org_nom: row[13] || "",
-            set_cod: row[14] || "",
-            set_nom: row[15] || "",
-            loc_cod: row[16] || "",
-            loc_nom: row[17] || "",
-            ite_mar: row[18] || "",
-            ite_mod: row[19] || "",
-            tgr_cod: row[20] || "",
-            grp_cod: row[21] || "",
-            ele_cod: row[22] || "",
-            sbe_cod: row[23] || "",
-            mat_cod: row[24] || "",
-            mat_nom: row[25] || "",
-            pes_cod: row[26] || "",
-            pes_nome: row[27] || ""
-          };
-          headers.forEach((header, index) => {
-            const key = headerMap[header];
-            if (key) {
-              obj[key] = row[index] || "";
-            }
-          });
-          return obj;
+    const handleFileUpload = (files: any) => {
+      const uploadedFile = files[0];
+      if (uploadedFile) {
+        setFile(uploadedFile); // salva o arquivo
+        setFileInfo({
+          name: uploadedFile.name,
+          size: uploadedFile.size,
         });
-  
-        setData(jsonData);
-      };
-      reader.readAsArrayBuffer(file);
+      }
     };
+
+
+   
   
 
     const [uploadProgress, setUploadProgress] = useState(false);
@@ -186,9 +94,9 @@ export function ImportCsv() {
 
     const handleSubmitPatrimonio = async () => {
       try {
-        if (data.length === 0) {
+        if (!fileInfo.name) {
           toast("Erro: Nenhum arquivo selecionado", {
-            description: "Por favor, selecione um arquivo csv para enviar.",
+            description: "Por favor, selecione um arquivo .xls para enviar.",
             action: {
               label: "Fechar",
               onClick: () => console.log("Fechar"),
@@ -196,46 +104,59 @@ export function ImportCsv() {
           });
           return;
         }
-        setUploadProgress(true)
     
-        let urlPatrimonioInsert = ``;
-
-        if(typeModal == 'import-csv') {
-          urlPatrimonioInsert = `${urlGeral}insertPatrimonio`;
-        } else if(typeModal == 'import-csv-morto') {
-          urlPatrimonioInsert = `${urlGeral}insertPatrimonioMorto`;
+        if (!file) {
+          toast("Erro: Nenhum arquivo encontrado", {
+            description: "Tente selecionar o arquivo novamente.",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+          });
+          return;
         }
     
-        
-          const response = await fetch(urlPatrimonioInsert, {
-            mode: 'cors',
-            method: 'POST',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'POST',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Max-Age': '3600',
-              'Content-Type': 'application/json'
+        setUploadProgress(true);
+    
+        const formData = new FormData();
+        formData.append('file', file); // 'file' é o nome que o servidor espera
+    
+        let urlPatrimonioInsert = `${urlGeral}insertPatrimonio`;
+    
+        const response = await fetch(urlPatrimonioInsert, {
+          method: 'POST',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600',
+            'Content-Type': 'multipart/form-data'
+          },
+          body: formData,
+        });
+    
+        if (response.ok) {
+          toast("Arquivo enviado com sucesso", {
+            description: "O arquivo foi enviado para o servidor.",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
             },
-            body: JSON.stringify(data),
           });
 
-          if (response.ok) {
-            toast("Dados enviados com sucesso", {
-              description: "Todos os dados foram enviados.",
-              action: {
-                label: "Fechar",
-                onClick: () => console.log("Fechar"),
-              },
-            });
-            setUploadProgress(false)
-          }
-
-        setData([])
-        setFileInfo({
-          name: '',
-          size: 0,
-        });
+        } else {
+          toast("Erro no envio", {
+            description: "O servidor retornou um erro.",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Fechar"),
+            },
+          });
+        }
+    
+        setFile(null);
+        setFileInfo({ name: '', size: 0 });
+        setUploadProgress(false);
     
       } catch (error) {
         console.error('Erro ao processar a requisição:', error);
@@ -246,10 +167,9 @@ export function ImportCsv() {
             onClick: () => console.log("Fechar"),
           },
         });
-        setUploadProgress(false)
+        setUploadProgress(false);
       }
     };
-    
 
     console.log(data)
   
@@ -292,8 +212,8 @@ export function ImportCsv() {
                         
                       </div>
 
-               <div className="">
-               <div {...getRootProps()} className="border-dashed mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-4">
+               <div className="flex flex-1 flex-col ">
+               <div {...getRootProps()} className="border-dashed h-full mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-4">
                         <input {...getInputProps()} />
                         <div className="p-4  border rounded-md">
                             <FileXls size={24} className=" whitespace-nowrap" />
@@ -316,16 +236,6 @@ export function ImportCsv() {
                         )}
     </div>
 
-    {data.length > 0 && (
-                    <div className="">
-                        <div className="my-6 border-b dark:border-b-neutral-800"></div>
-                        <h5 className="font-medium text-xl mb-4">Tabela de dados</h5>
-                    <DataTableModal columns={columnsPatrimonio} data={data} />
-                    <div className="mt-2 mb-6 border-b dark:border-b-neutral-800"></div>
-
-                    
-                    </div>
-                )}
 
 <div className="flex items-center justify-between">
     <div className="text-sm font-gray-500">

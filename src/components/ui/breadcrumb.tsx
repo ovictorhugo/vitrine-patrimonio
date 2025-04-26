@@ -1,8 +1,8 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
-
 import { cn } from "../../lib"
+import { Link } from "react-router-dom"
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -19,7 +19,7 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-neutral-500 sm:gap-2.5 dark:text-neutral-400",
+      "flex flex-wrap items-center gap-1.5 break-words text-sm text-slate-500 sm:gap-2.5 dark:text-slate-400",
       className
     )}
     {...props}
@@ -39,23 +39,25 @@ const BreadcrumbItem = React.forwardRef<
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
+
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
-  React.ComponentPropsWithoutRef<"a"> & {
+  React.ComponentPropsWithoutRef<typeof Link> & {
     asChild?: boolean
   }
 >(({ asChild, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+  const Comp = asChild ? Slot : Link
 
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-neutral-950 dark:hover:text-neutral-50", className)}
+      className={cn("transition-colors hover:text-slate-950 dark:hover:text-slate-50", className)}
       {...props}
     />
   )
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
+
 
 const BreadcrumbPage = React.forwardRef<
   HTMLSpanElement,
@@ -66,7 +68,7 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-neutral-950 dark:text-neutral-50", className)}
+    className={cn("font-normal text-slate-950 dark:text-slate-50", className)}
     {...props}
   />
 ))

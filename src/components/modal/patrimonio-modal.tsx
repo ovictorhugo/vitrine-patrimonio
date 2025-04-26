@@ -36,7 +36,7 @@ export function PatrimonioModal() {
               <p className="font-semibold flex gap-3 items-center text-left mb-4  flex-1">
                 {data.bem_cod?.trim()} - {data.bem_dgv}
 
-             {data.bem_num_atm && (
+             {(data.bem_num_atm != '' && data.bem_num_atm != 'None') && (
                  <Badge variant={'outline'}>ATM: {data.bem_num_atm}</Badge>
              )}
               </p>

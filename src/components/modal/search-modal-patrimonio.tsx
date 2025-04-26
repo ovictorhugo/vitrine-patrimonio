@@ -40,7 +40,7 @@ export function SearchModalPatrimonio() {
     const isModalOpen = isOpen && type === "search-patrimonio";
     const type_search = queryUrl.get('type_search');
     const terms = queryUrl.get('terms');
-
+    const location = useLocation();
     const [input, setInput] = useState("");
 
     let bemCod = parseInt(input.split('-')[0], 10).toString();
@@ -84,7 +84,7 @@ export function SearchModalPatrimonio() {
           queryUrl.set('type_search', searchType);
 
           navigate({
-            pathname: '/buscar-patrimonio',
+            pathname: location.pathname,
             search: queryUrl.toString(),
           });
 
@@ -95,7 +95,7 @@ export function SearchModalPatrimonio() {
             queryUrl.set('type_search', searchType);
   
             navigate({
-              pathname: '/buscar-patrimonio',
+              pathname: location.pathname,
               search: queryUrl.toString(),
             });
   

@@ -82,9 +82,10 @@ const useQuery = () => {
 type FiltersModalProps = {
   patrimonio: Patrimonio[];
   setPatrimonio: React.Dispatch<React.SetStateAction<Patrimonio[]>>;
+  page:string
 };
 
-export function FiltersModal({ patrimonio, setPatrimonio }: FiltersModalProps) {
+export function FiltersModal({ patrimonio, setPatrimonio, page }: FiltersModalProps) {
   const { onClose, isOpen, type: typeModal } = useModal();
   const isModalOpen = isOpen && typeModal === "filters-patrimonio";
   const queryUrl = useQuery();
@@ -145,7 +146,7 @@ useEffect(() => {
   updateFilters("set_nom", selectedSetNom);
 
   navigate({
-    pathname: '/buscar-patrimonio',
+    pathname: page,
     search: queryUrl.toString(),
   });
 
@@ -588,16 +589,17 @@ console.log(url)
     setSelectedSetNom,component, clearFilters, selectedBemSta, selectedLocNom, selectedOrgNom, selectedPesNom, selectedSetNom } = FiltersModal({
     patrimonio: originalPatrimonio,
     setPatrimonio,
+    page: '/buscar-patrimonio'
   });
 
 
-  const [count, setCount] = useState(12)
+  const [count, setCount] = useState(30)
 
     return(
 <main className="w-full relative">
 <Helmet>
         <title>
-          Busca de patrimônio | Patrimônio
+          Busca de patrimônio | Vitrine Patrimônio
         </title>
         <meta name="description" content={`Busca de patrimônio | Patrimônio`} />
         <meta name="robots" content="index, follow" />
@@ -614,7 +616,7 @@ console.log(url)
            <div className="w-full   flex justify-between items-center">
  
                       <div className="w-full pt-4  flex justify-between items-center">
-                          <SearchPatrimonio/>
+                          <SearchPatrimonio page={'/buscar-patrimonio'}/>
                       </div>
                          </div>
                     )}
@@ -797,10 +799,10 @@ console.log(url)
                         <ResponsiveMasonry
                           columnsCountBreakPoints={{
                             350: 1,
-                          750: 2,
-                          900: 2,
-                          1200: 4,
-                          1700: 5
+                            750: 2,
+                            900: 2,
+                            1200: 3,
+                            1700: 4
                           }}
                         >
                           <Masonry gutter="16px">
@@ -831,7 +833,7 @@ console.log(url)
                       </ResponsiveMasonry>
 
 {patrimonio.length > count && (
-  <div className="w-full flex justify-center my-8"><Button onClick={() => setCount(count + 12)}><Plus size={16} />Mostrar mais</Button></div>
+  <div className="w-full flex justify-center my-8"><Button onClick={() => setCount(count + 24)}><Plus size={16} />Mostrar mais</Button></div>
 )}
                       </div>
                       )
@@ -864,7 +866,7 @@ console.log(url)
           <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
           <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
-            <SearchPatrimonio />
+            <SearchPatrimonio page="/buscar-patrimonio" />
           </div>
 
          

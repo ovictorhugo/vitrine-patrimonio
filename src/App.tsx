@@ -114,7 +114,7 @@ function App() {
         <Route path='/join-room' element={<Notification/>}/>
         <Route path='/dashboard' element={<Admin/>}/>
         <Route path='/dashboard/administrativo' element={<Admin/>}/>
-        <Route path='/dashboard/todos-os-patrimonios' element={<Admin/>}/>
+        <Route path='/dashboard/patrimonios' element={<Admin/>}/>
         <Route path='/dashboard/novo-item' element={<Admin/>}/>
         <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
         <Route path='/dashboard/visao-sala' element={<Admin/>}/>

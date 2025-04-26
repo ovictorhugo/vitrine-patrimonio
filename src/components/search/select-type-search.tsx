@@ -20,7 +20,7 @@ export function SelectTypeSearch() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const resultados = location.pathname == '/resultados'
+  const resultados = location.pathname == '/dashboard/patrimonios'
 
   const { onOpen } = useModalResult()
   const queryUrl = useQuery()
@@ -37,13 +37,6 @@ export function SelectTypeSearch() {
           setSearchType(value);
           onOpen("researchers-home");
 
-          if(resultados) {
-            queryUrl.set('type_search', value);
-    navigate({
-      pathname: '/resultados',
-      search: queryUrl.toString(),
-    });
-          }
         }}
       >
         <SelectTrigger className="w-full whitespace-nowrap">
@@ -62,23 +55,35 @@ export function SelectTypeSearch() {
               <div className="bg-amber-600 flex rounded-sm h-4 w-4"></div> Código ATM
             </div>
           </SelectItem>
+
+          
+        
           <SelectItem value="nom">
             <div className="flex gap-4 items-center mr-2">
               <div className="bg-indigo-600 flex rounded-sm h-4 w-4"></div> Tipo de patrimônio
             </div>
           </SelectItem>
 
-          <SelectItem value="pes">
-            <div className="flex gap-4 items-center mr-2">
-              <div className="bg-red-600 flex rounded-sm h-4 w-4"></div> Responsável
-            </div>
-          </SelectItem>
+          {resultados && (
+             <SelectItem value="pes">
+             <div className="flex gap-4 items-center mr-2">
+               <div className="bg-red-600 flex rounded-sm h-4 w-4"></div> Responsável
+             </div>
+           </SelectItem>
+          )}
 
-          <SelectItem value="loc">
+         
+{resultados && (
+            <SelectItem value="loc">
             <div className="flex gap-4 items-center mr-2">
               <div className="bg-lime-600 flex rounded-sm h-4 w-4"></div> Local de guarda
             </div>
           </SelectItem>
+          )}
+
+
+
+         
 
           <SelectItem value="dsc">
             <div className="flex gap-4 items-center mr-2">

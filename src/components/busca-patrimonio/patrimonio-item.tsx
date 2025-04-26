@@ -84,7 +84,7 @@ const {onOpen} = useModal()
             <p className="font-semibold flex gap-3 items-center text-left mb-4  flex-1">
                 {props.bem_cod?.trim()} - {props.bem_dgv}
 
-             {props.bem_num_atm && (
+             {(props.bem_num_atm != '' && props.bem_num_atm != 'None') && (
                  <Badge variant={'outline'}>ATM: {props.bem_num_atm}</Badge>
              )}
               </p>

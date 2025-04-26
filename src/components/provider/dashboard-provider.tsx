@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { VisaoGeralUser } from "../dashboard/visao-geral-user";
 
 
-import { ListaPatrimonios } from "../dashboard/lista-patrimonios";
+import { ListaPatrimonios } from "../dashboard/patrimonios/lista-patrimonios";
 import { NovoItem } from "../dashboard/novo-item/novo-item";
 import { VisaoSala } from "../dashboard/visao-sala";
 import { ItensVitrine } from "../dashboard/itens-vitrine/itens-vitrine";
