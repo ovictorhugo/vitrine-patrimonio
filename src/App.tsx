@@ -67,7 +67,7 @@ function App() {
   const [defaultLayout, setDefaultLayout] = useState([0,440,655])
   const [mode, setMode] = useState('user')
 
-  const [urlGeral, setUrlGeral] = useState("https://vitrinepatrimonio.eng.ufmg.br/api/");
+  const [urlGeral, setUrlGeral] = useState(import.meta.env.VITE_BACKEND_URL || '');
   const [bens, setBens] = useState<Item[]>([]); 
   const [role, setRole] = useState('')
   const [permission , setPermission] = useState<Permission[]>([])

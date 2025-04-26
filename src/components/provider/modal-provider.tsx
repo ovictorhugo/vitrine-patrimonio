@@ -15,6 +15,7 @@ import { EditAdminItem } from "../modal/edit-admin-item";
 import { EditItem } from "../modal/edit-item";
 import { SearchPatrimonio } from "../search/search-patrimonio";
 import { SearchModalPatrimonio } from "../modal/search-modal-patrimonio";
+import { PatrimonioModal } from "../modal/patrimonio-modal";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -40,6 +41,8 @@ const ModalContent = () => {
       return <EditItem/>
     case 'search-patrimonio':
       return <SearchModalPatrimonio/>
+    case 'patrimonio':
+      return <PatrimonioModal/>
     default:
       return null
   }

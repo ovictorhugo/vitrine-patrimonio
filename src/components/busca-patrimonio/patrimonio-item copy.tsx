@@ -67,6 +67,7 @@ export function PatrimonioItem(props: Patrimonio) {
     // Verificar se props.bem_sta está definido antes de usar .trim()
     const bemStaTrimmed = props.bem_sta ? props.bem_sta.trim() : '';
   
+  
     return (
       <div className="flex w-full gap-3 flex-1 flex-col">
         <div className=" p-4 rounded-md bg-gray-200 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-800  flex gap-3 items-center">
@@ -99,10 +100,7 @@ export function PatrimonioItem(props: Patrimonio) {
                   <div className={`w-4 h-4 rounded-md ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]}`}></div>
                   {csvCodToText[csvCodTrimmed as keyof typeof csvCodToText]}
                 </div>
-                <div className="flex gap-2 items-center text-xs font-medium uppercase">
-                  {bemStaTrimmed === "NO" ? (<Check size={12} />) : (<X size={12} />)}
-                  {bemStaTrimmed === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
-                </div>
+               
                 <div className="flex gap-2 items-center text-xs font-medium"><MapPin size={12} />{props.loc_nom}</div>
               </div>
             </CardContent>

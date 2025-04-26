@@ -13,7 +13,7 @@ import { ArrowRight, Camera, Check, Funnel, Info, MagnifyingGlass, X, MapPin, Ro
 import { Link } from "react-router-dom";
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Barcode, ChevronDown, ChevronUp, Download, File, Locate, Package, SlidersHorizontal, Trash, User } from "lucide-react";
+import { Barcode, ChevronDown, ChevronUp, Download, File, Locate, Package, Plus, SlidersHorizontal, Trash, User } from "lucide-react";
 
 import Scanner from "../busca-patrimonio/Scanner.jsx"
 import { Helmet } from "react-helmet";
@@ -590,6 +590,9 @@ console.log(url)
     setPatrimonio,
   });
 
+
+  const [count, setCount] = useState(12)
+
     return(
 <main className="w-full relative">
 <Helmet>
@@ -807,17 +810,18 @@ console.log(url)
                           </Masonry>
                         </ResponsiveMasonry>
                       ) : (
-                        <ResponsiveMasonry
+                      <div className="">
+                          <ResponsiveMasonry
                         columnsCountBreakPoints={{
                           350: 1,
                           750: 2,
                           900: 2,
-                          1200: 4,
-                          1700: 5
+                          1200: 3,
+                          1700: 4
                         }}
                       >
                         <Masonry gutter="16px" className="w-full">
-                        {patrimonio
+                        {patrimonio.slice(0, count)
                             .map((props, index) => (
                                 <PatrimonioItem
                                 key={index} {...props}
@@ -825,6 +829,11 @@ console.log(url)
                             ))}
                         </Masonry>
                       </ResponsiveMasonry>
+
+{patrimonio.length > count && (
+  <div className="w-full flex justify-center my-8"><Button onClick={() => setCount(count + 12)}><Plus size={16} />Mostrar mais</Button></div>
+)}
+                      </div>
                       )
                     ) : (
                       loading ? (

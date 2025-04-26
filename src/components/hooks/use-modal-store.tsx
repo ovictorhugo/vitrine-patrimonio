@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho' | 'confirm-delete-fornecedor' | 'informacoes-empenhos' | 'search' | 'minha-area' | 'search-vitrine' | 'edit-item' | 'edit-admin-item' | 'search-patrimonio' | 'filters-patrimonio'
+export type ModalType = 'add-background' | 'delete-account' | 'atualizar-senha' | 'import-csv' | 'import-csv-morto' |'itens-ociosos' | 'adicionar-empenho' | 'confirm-delete-fornecedor' | 'informacoes-empenhos' | 'search' | 'minha-area' | 'search-vitrine' | 'edit-item' | 'edit-admin-item' | 'search-patrimonio' | 'filters-patrimonio' | 'patrimonio'
 
 interface ModalData {
   id?: string,

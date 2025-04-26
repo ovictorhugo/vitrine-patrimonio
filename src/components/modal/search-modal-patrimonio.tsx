@@ -106,10 +106,18 @@ export function SearchModalPatrimonio() {
       };
 
       useEffect(() => {
-
-        setItensSelecionadosPopUp(patrimoniosSelecionados)
-    
-      }, [patrimoniosSelecionados]);
+        if (terms) {
+          const termList: PatrimoniosSelecionados[] = terms
+            .split(';')
+            .filter(t => t.trim() !== '')
+            .map(t => ({
+              term: t.trim(),
+              type: searchType
+            }));
+        
+          setItensSelecionadosPopUp(termList);
+        }
+      }, [terms]);
 
       const handleEnterPress = (event:any) => {
         if (event.key === "Enter") {
