@@ -35,6 +35,11 @@ import { useDropzone } from "react-dropzone";
 import * as XLSX from 'xlsx';
 import { toast } from "sonner";
 import { useQuery } from "../../modal/search-modal-patrimonio";
+import { HeaderResult } from "../../busca-patrimonio/header-results";
+import { GraficoCsvCod } from "./graficos/grafico-csv-cod";
+import { GraficoBemSta } from "./graficos/grafico-bem-sta";
+import { GraficoOrgNom } from "./graficos/grafico-set-nom";
+import { Separator } from "../../ui/separator";
 
 interface Patrimonio {
   bem_cod:string
@@ -258,7 +263,7 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
                 
             
               <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
-            <Button onClick={() => onOpen('patrimonio-temporario')} variant={'outline'}><Package size={16}/>Adicionar patrimônio temporário</Button>
+            <Button onClick={() => onOpen('add-patrimonio')} variant={'outline'}><Package size={16}/>Adicionar patrimônio temporário</Button>
             <Button onClick={() => onOpen('import-csv')}><FileXls size={16}/>Atualizar dados</Button>
           
               </div>
@@ -327,7 +332,9 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
 </div>
 
 
-<div className="mt-8 px-4 md:px-8">
+<div className="mt-8 px-4 md:px-8 gap-4 flex flex-col ">
+
+  <HeaderResult/>
 <div
   className={`${
     selectedOrgNom.length > 0 ||
@@ -337,8 +344,13 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
     selectedSetNom.length > 0
       ? "flex"
       : "hidden"
-  } flex flex-wrap gap-3 mb-6 items-center`}
+  }  flex-wrap     flex-col gap-4 w-full flex`}
 >
+
+<Separator/>
+
+<div className="flex flex-wrap gap-3 items-center">
+  
 <p className="text-sm font-medium">Filtros aplicados:</p>
 
 {selectedBemSta.map((item) => (
@@ -419,32 +431,33 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
 <Badge variant={'secondary'} onClick={() => clearFilters()} className=" rounded-md cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-900 border-0  py-2 px-3 font-normal flex items-center justify-center gap-2"><Trash size={12}/>Limpar filtros</Badge>
     
 
+</div>
 
 </div>
 
 
-<div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-<Alert className={`p-0 mb-6 bg-cover bg-no-repeat bg-center `}  >
+<div className="grid mt-4 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+<Alert className={`p-0  bg-cover bg-no-repeat bg-center `}  >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Total de bens
+                    Total de patrimônios
                   </CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{patrimonio.length}</div>
+                  <div className="text-2xl font-bold">{patrimonio.filter(item => item.bem_sta != 'BX').length}</div>
                   <p className="text-xs text-muted-foreground">
-                    {patrimonio.length > 1 ? ('encontrados'):('encontrado')} na busca
+                    {patrimonio.filter(item => item.bem_sta != 'BX').length > 1 ? ('encontrados'):('encontrado')} na busca
                   </p>
                 </CardContent>
               </Alert>
 
-              <Alert className="p-0 mb-6 bg-cover bg-no-repeat bg-center">
+              <Alert className="p-0  bg-cover bg-no-repeat bg-center">
   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
     <CardTitle className="text-sm font-medium">
-      Bens baixados
+      Total de patrimônios baixados
     </CardTitle>
-    <Package className="h-4 w-4 text-muted-foreground" />
+    <Trash className="h-4 w-4 text-muted-foreground" />
   </CardHeader>
   <CardContent>
     <div className="text-2xl font-bold">{patrimonio.filter(item => item.bem_sta === 'BX').length}</div>
@@ -454,7 +467,7 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
   </CardContent>
 </Alert>
 
-              <Alert className={`p-0 mb-6 bg-cover bg-no-repeat bg-center `}  >
+              <Alert className={`p-0  bg-cover bg-no-repeat bg-center `}  >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
                     Bens 
@@ -469,7 +482,7 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
                 </CardContent>
               </Alert>
 
-              <Alert className={`p-0 mb-6 bg-cover bg-no-repeat bg-center `}  >
+              <Alert className={`p-0  bg-cover bg-no-repeat bg-center `}  >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
                     Total de bens
@@ -504,7 +517,12 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
                   
                   ) : (
                     <div className="grid gap-8">
-                      
+                      <GraficoCsvCod patrimoniolist={patrimonio}/>
+
+                      <div className="grid gap-8 md:grid-cols-2">
+                      <GraficoBemSta patrimoniolist={patrimonio}/>
+                      <GraficoOrgNom patrimoniolist={patrimonio}/>
+                      </div>
                     </div>
                   )}
                               </AccordionContent>

@@ -31,7 +31,7 @@ interface Patrimonio {
     pes_nome:string
 }
 
-import { Barcode, Locate, Maximize2, User } from "lucide-react";
+import { Archive, Barcode, HelpCircle, Hourglass, Locate, Maximize2, MoveRight, User } from "lucide-react";
 import logo_eng from '../../assets/logo_eng.png';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ArrowRight, Camera, Check, Funnel, Info, MagnifyingGlass, X, MapPin } from "phosphor-react";
@@ -45,7 +45,6 @@ export const qualisColor = {
   'AE': 'bg-red-500',
   'IR': 'bg-yellow-500',
   'OC': 'bg-blue-500',
-  'BX': 'bg-gray-500',
   'RE': 'bg-purple-500'
 };
 
@@ -54,7 +53,6 @@ export const csvCodToText = {
   'AE': 'Anti-Econômico',
   'IR': 'Irrecuperável',
   'OC': 'Ocioso',
-  'BX': 'Baixado',
   'RE': 'Recuperável'
 };
 
@@ -75,6 +73,18 @@ export function PatrimonioItem(props: Patrimonio) {
     const conectee = import.meta.env.VITE_BACKEND_URL || ''
     
 const {onOpen} = useModal()
+
+const statusMap = {
+  NO: { text: "Normal", icon: <Check size={12} className="" /> },
+  NI: { text: "Não inventariado", icon: <HelpCircle size={12} className="" /> },
+  CA: { text: "Cadastrado", icon: <Archive size={12} className="" /> },
+  TS: { text: "Aguardando aceite", icon: <Hourglass size={12} className="" /> },
+  MV: { text: "Movimentado", icon: <MoveRight size={12} className="" /> },
+  BX:{ text: "Baixado", icon: <X size={12} className="" /> },
+};
+
+const status = statusMap[bemStaTrimmed];
+
     return (
         <div className="flex group">
           <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border  border-neutral-200 border-r-0 ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]} min-h-full relative `}></div>
@@ -117,10 +127,14 @@ const {onOpen} = useModal()
                 </div>
                 )}
 
-                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                  {bemStaTrimmed === "NO" ? (<Check size={12} />) : (<X size={12} />)}
-                  {bemStaTrimmed === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
-                </div>
+                
+                {status && (
+                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+      {status.icon}
+      {status.text}
+      </div>
+  ) }
+                
 
                 {(props.pes_nome != '' && props.pes_nome  != 'None' && props.pes_nome  != null) && (
                   <div className="flex gap-1 items-center cursor-pointer">

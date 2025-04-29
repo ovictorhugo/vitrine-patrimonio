@@ -50,7 +50,7 @@ interface Patrimonio {
     pes_nome:string
 }
 
-export function ImportCsv() {
+export function AddPatrimonioModal() {
     const { onClose, isOpen, type: typeModal } = useModal();
     
     const isModalOpen = (isOpen && typeModal === 'import-csv')|| (isOpen && typeModal === 'import-csv-morto')
@@ -200,7 +200,7 @@ export function ImportCsv() {
                         </p>
 
                         <h1 className="max-w-[500px] text-3xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
-                          {typeModal == 'import-csv' ? ('Atualizar patrimônios'):('Importar patrimônios baixados')}
+                          {typeModal == 'add-patrimonio' ? ('Adicionar patrimônio temporário'):('Editar patrimônio temporário')}
                         </h1>
                         
                       </div>

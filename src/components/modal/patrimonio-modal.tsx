@@ -1,4 +1,4 @@
-import { Check, ChevronRight, CircleDollarSign, File, User, X } from "lucide-react";
+import { Archive, Check, ChevronRight, CircleDollarSign, File, HelpCircle, Hourglass, MoveRight, User, X } from "lucide-react";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { csvCodToText, qualisColor } from "../busca-patrimonio/patrimonio-item";
 import { useModal } from "../hooks/use-modal-store";
@@ -25,6 +25,17 @@ export function PatrimonioModal() {
   
     const conectee = import.meta.env.VITE_BACKEND_URL || ''
     
+    const statusMap = {
+      NO: { text: "Normal", icon: <Check size={12} className="" /> },
+      NI: { text: "Não inventariado", icon: <HelpCircle size={12} className="" /> },
+      CA: { text: "Cadastrado", icon: <Archive size={12} className="" /> },
+      TS: { text: "Aguardando aceite", icon: <Hourglass size={12} className="" /> },
+      MV: { text: "Movimentado", icon: <MoveRight size={12} className="" /> },
+      BX:{ text: "Baixado", icon: <X size={12} className="" /> },
+    };
+    
+    
+    const status = statusMap[bemStaTrimmed];
 
     const content = () => {
         return(
@@ -74,10 +85,12 @@ export function PatrimonioModal() {
                 </div>
                 )}
 
-                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                  {bemStaTrimmed === "NO" ? (<Check size={12} />) : (<X size={12} />)}
-                  {bemStaTrimmed === "NO" ? 'Normal' : 'Não encontrado no local de guarda'}
-                </div>
+{status && (
+                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+      {status.icon}
+      {status.text}
+      </div>
+  ) }
 
                 {(data.pes_nome != '' && data.pes_nome  != 'None' && data.pes_nome  != null) && (
                   <div className="flex gap-1 items-center cursor-pointer">

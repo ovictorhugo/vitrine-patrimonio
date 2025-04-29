@@ -108,6 +108,7 @@ export function FiltersModal({ patrimonio, setPatrimonio, page }: FiltersModalPr
   const [selectedPesNom, setSelectedPesNom] = useState<string[]>(getArrayFromUrl("pes_nome"));
   const [selectedLocNom, setSelectedLocNom] = useState<string[]>(getArrayFromUrl("loc_nom"));
   const [selectedSetNom, setSelectedSetNom] = useState<string[]>(getArrayFromUrl("set_nom"));
+  const [selectedCsvCod, setSelectedCsvCod] = useState<string[]>(getArrayFromUrl("csv_cod"));
 
  // Atualiza a URL com os filtros selecionados
  const updateFilters = (category: string, values: string[]) => {
@@ -126,14 +127,14 @@ useEffect(() => {
   const pesNomFromUrl = getArrayFromUrl("pes_nome");
   const locNomFromUrl = getArrayFromUrl("loc_nom");
   const setNomFromUrl = getArrayFromUrl("set_nom");
-
+  const csvCodFromUrl = getArrayFromUrl("csv_cod");
 
   setSelectedOrgNom(orgNomFromUrl);
   setSelectedBemSta(bemStaFromUrl);
   setSelectedPesNom(pesNomFromUrl);
   setSelectedLocNom(locNomFromUrl);
   setSelectedSetNom(setNomFromUrl);
-
+  setSelectedCsvCod(csvCodFromUrl);
 }, []);
 
 const [filteredCount, setFilteredCount] = useState<number>(0);
@@ -144,6 +145,7 @@ useEffect(() => {
   updateFilters("pes_nome", selectedPesNom);
   updateFilters("loc_nom", selectedLocNom);
   updateFilters("set_nom", selectedSetNom);
+  updateFilters("csv_cod", selectedCsvCod);
 
   navigate({
     pathname: page,
@@ -157,6 +159,7 @@ useEffect(() => {
   selectedPesNom,
   selectedLocNom,
   selectedSetNom,
+  selectedCsvCod
 ]);
 
 const clearFilters = () => {
@@ -165,6 +168,7 @@ const clearFilters = () => {
   setSelectedPesNom([]);
   setSelectedLocNom([]);
   setSelectedSetNom([]);
+  setSelectedCsvCod([])
   setPatrimonio(patrimonio); // Restaura os programas originais
   onClose();
 };
@@ -174,6 +178,7 @@ const uniqueBemStas = Array.from(new Set(patrimonio.map((res) => res.bem_sta))).
 const uniquePesNoms = Array.from(new Set(patrimonio.map((res) => res.pes_nome))).filter(Boolean);
 const uniqueLocNoms = Array.from(new Set(patrimonio.map((res) => res.loc_nom))).filter(Boolean);
 const uniqueSetNoms = Array.from(new Set(patrimonio.map((res) => res.set_nom))).filter(Boolean);
+const uniqueCsvCod = Array.from(new Set(patrimonio.map((res) => res.csv_cod))).filter(Boolean);
 
 const handleOrgNomToggle = (value: string[]) => {
   setSelectedOrgNom(value);
@@ -195,6 +200,10 @@ const handleSetNomToggle = (value: string[]) => {
   setSelectedSetNom(value);
 };
 
+const handleCsvCodToggle = (value: string[]) => {
+  setSelectedCsvCod(value);
+};
+
 
 useEffect(() => {
   let filtered = [...patrimonio];
@@ -214,6 +223,9 @@ useEffect(() => {
   if (selectedSetNom.length > 0) {
     filtered = filtered.filter((r) => selectedSetNom.includes(r.set_nom));
   }
+  if (selectedCsvCod.length > 0) {
+    filtered = filtered.filter((r) => selectedCsvCod.includes(r.csv_cod));
+  }
 
   setFilteredCount(filtered.length);
   setPatrimonio(filtered); // Aplica os filtros corretamente aqui
@@ -223,6 +235,7 @@ useEffect(() => {
   selectedPesNom,
   selectedLocNom,
   selectedSetNom,
+  selectedCsvCod
 ]);
 
 const filteredPrograms = patrimonio.filter((res) => {
@@ -232,13 +245,15 @@ const filteredPrograms = patrimonio.filter((res) => {
   const hasSelectedPesNom = selectedPesNom.length === 0 || selectedPesNom.includes(res.pes_nome);
   const hasSelectedLocNom = selectedLocNom.length === 0 || selectedLocNom.includes(res.loc_nom);
   const hasSelectedSetNom = selectedSetNom.length === 0 || selectedSetNom.includes(res.set_nom);
+  const hasSelectedCsvCod = selectedCsvCod.length === 0 || selectedCsvCod.includes(res.csv_cod);
 
   return (
     hasSelectedOrgNom &&
     hasSelectedBemSta &&
     hasSelectedPesNom &&
     hasSelectedLocNom &&
-    hasSelectedSetNom
+    hasSelectedSetNom && 
+    hasSelectedCsvCod
   );
 });
 
@@ -249,7 +264,8 @@ useEffect(() => {
     selectedBemSta.length > 0 ||
     selectedPesNom.length > 0 ||
     selectedLocNom.length > 0 ||
-    selectedSetNom.length > 0
+    selectedSetNom.length > 0 ||
+    selectedCsvCod.length > 0
   );
 
   if (noFiltersActive) {
@@ -262,7 +278,53 @@ useEffect(() => {
   selectedPesNom,
   selectedLocNom,
   selectedSetNom,
+  selectedCsvCod
 ]);
+
+const [search, setSearch] = useState('')
+  const [search2, setSearch2] = useState('')
+  const [search3, setSearch3] = useState('')
+  const [search4, setSearch4] = useState('')
+
+const filteredTotal = Array.isArray(uniquePesNoms) ? uniquePesNoms.filter(item => {
+  // Normaliza a string do item e da busca para comparação
+  const normalizeString = (str: any) => str
+    .normalize("NFD") // Decompõe os caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "") // Remove os diacríticos
+    .toLowerCase(); // Converte para minúsculas
+
+  const searchString = normalizeString(item);
+  const normalizedSearch = normalizeString(search2);
+
+  return searchString.includes(normalizedSearch);
+}) : [];
+
+const filteredTotal2 = Array.isArray(uniqueSetNoms) ? uniqueSetNoms.filter(item => {
+  // Normaliza a string do item e da busca para comparação
+  const normalizeString = (str: any) => str
+    .normalize("NFD") // Decompõe os caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "") // Remove os diacríticos
+    .toLowerCase(); // Converte para minúsculas
+
+  const searchString = normalizeString(item);
+  const normalizedSearch = normalizeString(search);
+
+  return searchString.includes(normalizedSearch);
+}) : [];
+
+const filteredTotal3 = Array.isArray(uniqueLocNoms) ? uniqueLocNoms.filter(item => {
+  // Normaliza a string do item e da busca para comparação
+  const normalizeString = (str: any) => str
+    .normalize("NFD") // Decompõe os caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "") // Remove os diacríticos
+    .toLowerCase(); // Converte para minúsculas
+
+  const searchString = normalizeString(item);
+  const normalizedSearch = normalizeString(search3);
+
+  return searchString.includes(normalizedSearch);
+}) : [];
+
 
 
   return {
@@ -348,6 +410,36 @@ useEffect(() => {
   </AccordionContent>
 </AccordionItem>
 
+
+<AccordionItem value="item-csv-cod">
+  <div className="flex items-center justify-between">
+    <Label>Estado de conservação</Label>
+    <div className="flex gap-2 items-center">
+      {selectedCsvCod.length > 0 && (
+        <Button onClick={() => setSelectedCsvCod([])} variant="destructive" size="icon">
+          <Trash size={16} />
+        </Button>
+      )}
+      <AccordionTrigger />
+    </div>
+  </div>
+  <AccordionContent>
+    <ToggleGroup
+      type="multiple"
+      variant="outline"
+      value={selectedCsvCod}
+      onValueChange={handleCsvCodToggle}
+      className="aspect-auto flex flex-wrap items-start justify-start gap-2"
+    >
+      {uniqueCsvCod.map((sta) => (
+        <ToggleGroupItem key={sta} value={sta} className="px-3 py-2">
+          {sta}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  </AccordionContent>
+</AccordionItem>
+
 <AccordionItem value="item-pes-nom">
   <div className="flex items-center justify-between">
     <Label>Responsável</Label>
@@ -361,6 +453,18 @@ useEffect(() => {
     </div>
   </div>
   <AccordionContent>
+  <Alert className="h-12 p-2 mb-4 flex items-center justify-between  w-full ">
+                <div className="flex items-center gap-2 w-full flex-1">
+                  <MagnifyingGlass size={16} className=" whitespace-nowrap w-10" />
+                  <Input onChange={(e) => setSearch2(e.target.value)} value={search2} type="text" className="border-0 w-full " />
+                </div>
+
+                <div className="w-fit">
+
+
+                </div>
+              </Alert>
+
     <ToggleGroup
       type="multiple"
       variant="outline"
@@ -368,7 +472,7 @@ useEffect(() => {
       onValueChange={handlePesNomToggle}
       className="aspect-auto flex flex-wrap items-start justify-start gap-2"
     >
-      {uniquePesNoms.map((pes) => (
+      {filteredTotal.map((pes) => (
         <ToggleGroupItem key={pes} value={pes} className="px-3 py-2">
           {pes}
         </ToggleGroupItem>
@@ -419,6 +523,18 @@ useEffect(() => {
     </div>
   </div>
   <AccordionContent>
+  <Alert className="h-12 p-2 mb-4 flex items-center justify-between  w-full ">
+                <div className="flex items-center gap-2 w-full flex-1">
+                  <MagnifyingGlass size={16} className=" whitespace-nowrap w-10" />
+                  <Input onChange={(e) => setSearch(e.target.value)} value={search} type="text" className="border-0 w-full " />
+                </div>
+
+                <div className="w-fit">
+
+
+                </div>
+              </Alert>
+
     <ToggleGroup
       type="multiple"
       variant="outline"
@@ -426,7 +542,7 @@ useEffect(() => {
       onValueChange={handleSetNomToggle}
       className="aspect-auto flex flex-wrap items-start justify-start gap-2"
     >
-      {uniqueSetNoms.map((setor) => (
+      {filteredTotal2.map((setor) => (
         <ToggleGroupItem key={setor} value={setor} className="px-3 py-2">
           {setor}
         </ToggleGroupItem>
@@ -450,6 +566,17 @@ useEffect(() => {
     </div>
   </div>
   <AccordionContent>
+  <Alert className="h-12 p-2 mb-4 flex items-center justify-between  w-full ">
+                <div className="flex items-center gap-2 w-full flex-1">
+                  <MagnifyingGlass size={16} className=" whitespace-nowrap w-10" />
+                  <Input onChange={(e) => setSearch3(e.target.value)} value={search3} type="text" className="border-0 w-full " />
+                </div>
+
+                <div className="w-fit">
+
+
+                </div>
+              </Alert>
     <ToggleGroup
       type="multiple"
       variant="outline"
@@ -457,7 +584,7 @@ useEffect(() => {
       onValueChange={handleLocNomToggle}
       className="aspect-auto flex flex-wrap items-start justify-start gap-2"
     >
-      {uniqueLocNoms.map((loc) => (
+      {filteredTotal3.map((loc) => (
         <ToggleGroupItem key={loc} value={loc} className="px-3 py-2">
           {loc}
         </ToggleGroupItem>
@@ -644,10 +771,7 @@ console.log(url)
                 </div>
 
                 <div>
-                <Button onClick={() => onOpen('filters-patrimonio')}  variant="ghost" className="">
-                      <SlidersHorizontal size={16} className="" />
-                      Filtros
-                    </Button>
+              
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setIsOn(!isOn)}>
                   {isOn ? (

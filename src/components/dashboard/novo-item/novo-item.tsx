@@ -16,7 +16,7 @@ import { Button } from "../../ui/button";
 import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel  } from "phosphor-react";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
-import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown, ImageDown, Barcode } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown, ImageDown, Barcode, Package } from "lucide-react";
 import { useModal } from "../../hooks/use-modal-store";
 
 import { Badge } from "../../ui/badge";
@@ -106,439 +106,173 @@ interface NovoItem {
 }
 
 export function NovoItem() {
-    const { isOpen, type} = useModalDashboard();
-    const {user, urlGeral} = useContext(UserContext)
-    const {onOpen} = useModal();
+  const history = useNavigate();
+const {urlGeral, user} = useContext(UserContext)
+  const handleVoltar = () => {
+    history(-1);
+  };
 
-    const history = useNavigate();
+    const queryUrl = useQuery();
 
-    const handleVoltar = () => {
-      history(-3);
-    };
-
-    const isModalOpen = isOpen && type === "novo-item";
-
-    const [total, setTotal] = useState<TotalPatrimonios[]>([]);
-
-    const [locNomLista, setLocNomLista] = useState<loc_nom[]>([]);
-  const[locState, setLocState] = useState(true)
-
-    let urlLocNom = `${urlGeral}AllLocNom`;
-
-    //retorna url
-    const query = useQuery();
-     const navigate = useNavigate();
-  const bem_cod = query.get('bem_cod');
-  const bem_dgv = query.get('bem_dgv');
-  const type_cod = query.get('type_cod');
-  const bem_num_atm = query.get('bem_num_atm');
-  const [typeCod, setTypeCod] = useState(type_cod ?? 'cod')
-
-  let bemCod = bem_cod ?? '';  // Default value if bem_cod is null
-  let bemDgv = bem_dgv ?? '';  // Default value if bem_dgv is null
-  let BemNumatm = bem_num_atm ?? ''
+  const query = useQuery();
+  const type_search = queryUrl.get('type_search');
+  const terms = queryUrl.get('terms');
+  const loc_nom = queryUrl.get('loc_nom');
 
   const [input, setInput] = useState("");
-  const [inputATM, setInputATM] = useState("");
-  const [condicao, setCondicao] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [relevance, setRelevance] = useState(false);
-  const [desfazimento, setDesfazimento] = useState(false);
 
-  useEffect(() => {   
-    query.set('type_cod', typeCod);
-    navigate({
-      pathname: '/dashboard/novo-item',
-      search: query.toString(),
+  const handleSubmit = async () => {
+
+  }
+
+   const [patrimonio, setPatrimonio] = useState<Patrimonio>();
+
+   const [data, setData] = useState<Patrimonio>({
+    bem_cod: patrimonio?.bem_cod || '',
+    bem_dgv: patrimonio?.bem_dgv || '',
+    bem_num_atm: patrimonio?.bem_num_atm || '',
+    csv_cod: patrimonio?.csv_cod || '',
+    bem_serie: patrimonio?.bem_serie || '',
+    bem_sta: patrimonio?.bem_sta || '',
+    bem_val: patrimonio?.bem_val || '',
+    tre_cod: patrimonio?.tre_cod || '',
+    bem_dsc_com: patrimonio?.bem_dsc_com || '',
+    uge_cod: patrimonio?.uge_cod || '',
+    uge_nom: patrimonio?.uge_nom || '',
+    org_cod: patrimonio?.org_cod || '',
+    uge_siaf: patrimonio?.uge_siaf || '',
+    org_nom: patrimonio?.org_nom || '',
+    set_cod: patrimonio?.set_cod || '',
+    set_nom: patrimonio?.set_nom || '',
+    loc_cod: patrimonio?.loc_cod || '',
+    loc_nom: loc_nom || patrimonio?.loc_nom || '',
+    ite_mar: patrimonio?.ite_mar || '',
+    ite_mod: patrimonio?.ite_mod || '',
+    tgr_cod: patrimonio?.tgr_cod || '',
+    grp_cod: patrimonio?.grp_cod || '',
+    ele_cod: patrimonio?.ele_cod || '',
+    sbe_cod: patrimonio?.sbe_cod || '',
+    mat_cod: patrimonio?.mat_cod || '',
+    mat_nom: patrimonio?.mat_nom || '',
+    pes_cod: patrimonio?.pes_cod || '',
+    pes_nome: patrimonio?.pes_nome || '',
+  });
+
+  const [dataUser, setDataUser] = useState<any>({
+    name: user?.display_name|| '',
+    matricula: user?.matricula || '',
+    email: user?.email || '',
+    tel: user?.telephone || '',
+    ramal: user?.ramal || ''
+  })
+
+  const [dataPatrimonio, setDataPatrimonio] = useState<any>({
+    condicao:'',
+    descricao: '',
+    alocacao: false,
+    desfazimento:false
+  })
+  
+let url = urlGeral + ``
+
+if(terms != undefined) {
+  if (type_search == 'atm') {
+    url = urlGeral + `checkoutPatrimonio?bem_num_atm=${terms}`
+    } else if (type_search == 'cod') {
+      url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
+      }
+}
+
+console.log(url)
+
+const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(url, {
+        mode: "cors",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "3600",
+          "Content-Type": "text/plain",
+        },
+      });
+      const data = await response.json();
+      if (data) {
+        setPatrimonio(data[0]);
+        console.log('oi',patrimonio)
+        setLoading(false);
+      }
+    } catch (err) {
+      console.log(err);
+      setLoading(false);
+    }
+  };
+  fetchData();
+
+  console.log('oi',patrimonio)
+}, [url, terms]);
+
+useEffect(() => {
+  if (patrimonio) {
+    setData({
+      ...patrimonio,
+      loc_nom: loc_nom || patrimonio.loc_nom, // Se loc_nom existir, usa ele; senão, usa o do patrimônio
     });
-
-    setPatrimonio([])
-    setInputATM('')
-    setInput('')
-  
-      }, [typeCod]);
+  }
+}, [patrimonio, loc_nom]);
 
 
-    useEffect(() => {   
-    const fetchDataLocNom = async () => {
-      try {
-       
-        const response = await fetch( urlLocNom, {
-          mode: "cors",
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "3600",
-            "Content-Type": "text/plain",
-          },
-        });
-        const data = await response.json();
-        if (data) {
-          setLocNomLista(data);
-       
-        } else {
-          toast("Erro: Nenhum patrimônio encontrado", {
-            description: "Revise o número",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
+  const {onOpen} = useModal()
 
-    fetchDataLocNom()
-  }, []);
-    ///
+  const handleChange = (field: keyof Patrimonio, value: string) => {
+    setData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-   
+  const handleChangeUser = (field: keyof any, value: string) => {
+    setDataUser((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-    const handleChange = (value:any) => {
-
-      // Remover caracteres não numéricos
-      value = value.replace(/[^0-9]/g, '');
-  
-      if (value.length > 1) {
-        // Inserir "-" antes do último caractere
-        value = value.slice(0, -1) + "-" + value.slice(-1);
-      }
-  
-      setInput(value);
-    };
-
-    const [patrimonio, setPatrimonio] = useState<Patrimonio[]>([])
-
-    useEffect(() => {   
-      if(type !=  'novo-item') {
-        setPatrimonio([])
-      
-      }
-        }, [type]);
-
-        useEffect(() => {   
-          handleChange(`${bem_cod}${bem_dgv}`)
-          setInputATM(bem_num_atm|| '')
-            }, []);
-
-    bemCod = parseInt(input.split('-')[0], 10).toString();
-    bemDgv = input.split('-')[1];
-    let urlPatrimonio = ``;
-
-    if(typeCod == 'cod') {
-       urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bemCod}&bem_dgv=${bemDgv}`
-    } else if (typeCod == 'atm') {
-      urlPatrimonio = `${urlGeral}searchByBemNumAtm?bem_num_atm=${inputATM}`
-    }
-
-    const fetchData = async () => {
-      try {
-       
-        const response = await fetch( urlPatrimonio, {
-          mode: "cors",
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "3600",
-            "Content-Type": "text/plain",
-          },
-        });
-        const data = await response.json();
-        if (data) {
-          setPatrimonio(data);
-          setLocalizacao(patrimonio[0].loc_nom)
-       
-        } else {
-          toast("Nenhum patrimônio encontrado", {
-            description: "Revise o número",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    const onClickBuscaPatrimonio = () => {
-      fetchData();
-      if(typeCod == 'cod') {
-
-          query.set('bem_cod', bemCod);
-          query.set('bem_dgv', bemDgv);
-          query.set('type_cod', typeCod);
-          query.set('bem_num_atm', '');
-        
-          navigate({
-            pathname: '/dashboard/novo-item',
-            search: query.toString(),
-          });
-        
-      } else if (typeCod == 'atm') {
-        query.set('bem_cod', '');
-        query.set('bem_dgv', '');
-          query.set('type_cod', typeCod);
-          query.set('bem_num_atm', inputATM);
-          navigate({
-            pathname: '/dashboard/novo-item',
-            search: query.toString(),
-          });
-        
-      } 
-    }
+  const handleChangePatrimonio = (field: keyof any, value: any) => {
+    setDataPatrimonio((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
 
-    const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') {
-        onClickBuscaPatrimonio();
-      }
-    }, [onClickBuscaPatrimonio]);
 
-
-console.log(patrimonio)
-
-const [openPopo, setOpenPopo] = useState(false)
-  const [localizacao, setLocalizacao] = useState("")
-
-  useEffect(() => {   
-   if(localizacao.length == 0 && patrimonio.length > 0) {
-    setLocalizacao(patrimonio[0].loc_nom)
-   }
-      }, [patrimonio]);
+  ////imagem
 
   const handleRemoveImage = (index: number) => {
     setImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
 
-//
-console.log('loc', locNomLista)
+  const [images, setImages] = useState<string[]>([]);
 
-//images
-const [images, setImages] = useState<string[]>([]);
-
-const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const files = event.target.files;
-  if (files) {
-    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-    setImages(prevImages => [...prevImages, ...newImages]);
-  }
-};
-
-
-const [searchTerm, setSearchTerm] = useState('');
-
-const normalizeString = (str:any) => {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-};
-
-const filteredList = locNomLista.filter((framework) =>
-  normalizeString(framework.loc_nom).includes(normalizeString(searchTerm))
-);
-
-
-
-//enviar 
-const newImageNames: string[] = [];
-
-const handleSubmit = async () => {
-
-  const docId = uuidv4();
-
-  try {
-    const data = [
-      {
-        patrimonio_id:docId,
-        num_patrimonio:patrimonio[0].bem_cod,
-        loc: localizacao ,
-        observacao:descricao,
-        user_id:user?.user_id,
-        vitrine:relevance,
-        condicao:condicao,
-        imagens:newImageNames,
-        desfazimento:desfazimento,
-        verificado:false,
-        num_verificacao:patrimonio[0].bem_dgv,
-        codigo_atm:BemNumatm,
-        situacao:'',
-        material:''
-      
-      }
-    ]
-
-    console.log(data)
-
-    let urlProgram = urlGeral + '/formulario'
-
-
-    const fetchData = async () => {
-    
-     if (condicao == '') {
-      toast("Campo 'Nome do programa' vazio", {
-        description: "Preencha o campo",
-        action: {
-          label: "Fechar",
-          onClick: () => console.log("Undo"),
-        },
-      })
-     } else if (images.length === 0) {
-        toast("Nenhuma imagem selecionada!", {
-          description: "Por favor, selecione ao menos uma imagem antes de enviar.",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
-        });
-        return;
-      }
-     
-     else  {
-      try {
-       
-        const response = await fetch(urlProgram, {
-          mode: 'cors',
-          method: 'POST',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '3600',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-         
-          toast("Dados enviados com sucesso", {
-              description: "Item adicionado ao Vitrine",
-              action: {
-                label: "Fechar",
-                onClick: () => console.log("Undo"),
-              },
-            })
-
-            handleFileUpload(docId)
-
-            setCondicao('')
-            setDescricao('')
-            setLocalizacao('')
-            setImages([])
-            setRelevance(false)
-            setDesfazimento(false)
-            setInput('')
-            setInputATM('')
-            setPatrimonio([])
-
-        } else {
-          console.error('Erro ao enviar dados para o servidor.');
-          toast("Tente novamente!", {
-              description: "Tente novamente",
-              action: {
-                label: "Fechar",
-                onClick: () => console.log("Undo"),
-              },
-            })
-        }
-        
-      } catch (err) {
-        console.log(err);
-      } 
-     }
-    };
-    fetchData();
-
-
-  } catch (error) {
-      toast("Erro ao processar requisição", {
-          description: "Tente novamente",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Undo"),
-          },
-        })
-  }
-}
-
- // Constante para armazenar os nomes gerados
-//imagemns
-
-const handleFileUpload = async (id:string) => {
-  if (images.length < 4) {
-    toast("Você precisa submeter 4 imagens", {
-      description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
-      action: {
-        label: "Fechar",
-        onClick: () => console.log("Fechar"),
-      },
-    });
-    return;
-  }
-
-  try {
-    const uploadPromises = images.slice(0, 4).map((image, index) => {
-      const formData = new FormData();
-      const fileName = `${id}`; // Nome único para a imagem
-      newImageNames.push(fileName); // Armazena o nome gerado
-
-      // Converter a URL de imagem para Blob
-      return fetch(image)
-        .then((res) => res.blob())
-        .then((blob) => {
-          formData.append("file", blob, fileName);
-
-          const urlUpload = `${urlGeral}imagem/${fileName}`;
-
-          return fetch(urlUpload, {
-            method: "POST",
-            body: formData,
-          });
-        });
-    });
-
-    const responses = await Promise.all(uploadPromises);
-
-    const allSuccessful = responses.every((response) => response.ok);
-
-    if (allSuccessful) {
-      toast("Upload realizado com sucesso!", {
-        description: "As imagens foram enviadas com sucesso!",
-        action: {
-          label: "Fechar",
-          onClick: () => console.log("Fechar"),
-        },
-      });
-
-      console.log("Novos nomes das imagens:", newImageNames); // Exibe os nomes gerados no console
-      setImages([]); // Resetar o estado das imagens após o envio
-    } else {
-      throw new Error("Nem todas as imagens foram enviadas com sucesso.");
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+      setImages(prevImages => [...prevImages, ...newImages]);
     }
-  } catch (error) {
-    console.error("Erro ao enviar imagens:", error);
-    toast("Erro no envio", {
-      description: "Não foi possível enviar as imagens. Tente novamente.",
-      action: {
-        label: "Fechar",
-        onClick: () => console.log("Fechar"),
-      },
-    });
-  }
-};
+  };
 
-
+  
     return(
  
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <div className="  gap-4">
+            <main  className="flex flex-1 flex-col gap-8 p-4 md:p-8 md:pb-0">
+         <div className="w-full  gap-4">
             <div className="flex items-center gap-4">
          
            <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
@@ -549,268 +283,243 @@ const handleFileUpload = async (id:string) => {
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 Adicionar novo item
               </h1>
-              {patrimonio.length > 0 && (
-                <Badge variant="outline" className="ml-auto sm:ml-0">
-                {`${patrimonio[0].bem_cod} - ${patrimonio[0].bem_dgv }`}
-              </Badge>
-              )}
-              <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                <Button variant="outline" size="sm">
-                  Discard
+             
+              <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
+                <Button onClick={() => {
+
+                }} variant="outline" >
+                <Trash size={16}/> Descartar
                 </Button>
-                <Button onClick={handleSubmit} size="sm"><Check size={16} />Publicar item</Button>
+                <Button onClick={handleSubmit} ><Check size={16} />Publicar item</Button>
               </div>
             </div>
 
             </div>
 
-          
-
-            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-               <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
-               {typeCod == 'scod' && (
-                <Alert variant={'destructive'}>
-                  <Warning className="h-4 w-4" />
-                  <AlertTitle>Atenção!</AlertTitle>
-                  <AlertDescription>Apenas utilize esta opção se o item não tiver o código ATM ou o número do patrimônio
-                  </AlertDescription>
-                </Alert>
-               )}
-
-
-               <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
+            <div className="grid pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
+            <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
                 <CardHeader>
+                    <div className="flex justify-between">
+                    <div>
                     <CardTitle>Detalhes do item</CardTitle>
                     <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
+                     Adicione as informações básicas do patrimônio
                     </CardDescription>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                   
+
+                      <Button   onClick={() => onOpen('search-cod-atm')}><Package size={16}/>Cadastrar patrimônio</Button>
+                    </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col gap-6">
-                     <div className={`grid gap-6 w-full  sm:grid-cols-2 grid-cols-1 ${typeCod == 'scod' ? ('md:grid-cols-3'):('')}`}>
-                     <div className="grid gap-3 w-full ">
-                        <Label htmlFor="name">Tipo do código</Label>
-                        <Select defaultValue={typeCod} value={typeCod} onValueChange={(value) => setTypeCod(value)}>
-                            <SelectTrigger className="">
-                              <SelectValue placeholder="" />
-                            </SelectTrigger>
-                            <SelectContent>
-                            <SelectItem value={'atm'}>Código ATM</SelectItem>
-                            <SelectItem value={'cod'}>Número de patrimônio</SelectItem>
-                            <SelectItem value={'scod'}>Sem código</SelectItem>
-                            </SelectContent>
-                          </Select>
-                      </div>
+                  <div className="flex flex-col gap-4">
+                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
 
-                     {typeCod == 'cod' && (
-                      <div className="grid gap-3 w-full">
-                      <Label htmlFor="name">Número do patrimônio</Label>
+                        {/* Código */}
+                  <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Código</Label>
                      <div className="flex items-center gap-3">
                      <Input
-                        id="name"
-                        type="text"
-                        className="w-ful"
-                        onKeyDown={handleKeyDown} onChange={(e) => handleChange(e.target.value)} 
-                        value={input}
-                      />
-
-                      <Button className="min-w-10" size={'icon'} onClick={onClickBuscaPatrimonio}><Funnel size={16}/></Button>
+                    id="bem_cod"
+                    type="text"
+                    className="w-full"
+                    value={data.bem_cod}
+                    disabled={data.bem_cod !== ""}
+                    onChange={(e) => handleChange('bem_cod', e.target.value)}
+                  />
                      </div>
                     </div>
-                     )}
 
-                  {typeCod == 'atm' && (
-                      <div className="grid gap-3 w-full">
-                      <Label htmlFor="name">Código ATM</Label>
-                      <div className="flex items-center gap-3">
-                     <Input
-                        id="name"
-                        type="text"
-                        className="w-full"
-                        onKeyDown={handleKeyDown} onChange={(e) => setInputATM(e.target.value)} 
-                        value={patrimonio.length > 0 ? (`${patrimonio[0].bem_num_atm}`) : inputATM}
-                      />
-                        <Button className="min-w-10" size={'icon'} onClick={onClickBuscaPatrimonio}><Funnel size={16}/></Button>
-                     </div>
-                    </div>
-                     )}
 
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Material</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].mat_nom : ''}
-                        />
-                      </div>
+                    {/* Dígito Verificador */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dgv">Díg. Verificador</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_dgv"
+            type="text"
+            className="w-full"
+            value={data.bem_dgv}
+            disabled={data.bem_dgv !== ""}
+            onChange={(e) => handleChange('bem_dgv', e.target.value)}
+          />
+        </div>
+      </div>
 
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Condição do bem</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].csv_cod == "BM" ? 'Bom': patrimonio[0].csv_cod == 'AE' ? 'Anti-Econômico': patrimonio[0].csv_cod == 'IR' ? 'Irrecuperável': patrimonio[0].csv_cod == 'OC' ? 'Ocioso': patrimonio[0].csv_cod == 'BX' ? 'Baixado': patrimonio[0].csv_cod == 'RE' ? 'Recuperável': ''):''}
-                        />
-                      </div>
+      
+      {/* Número ATM */}
+     {(data.bem_num_atm != 'None' && data.bem_num_atm != '') && (
+       <div className="grid gap-3 w-full">
+       <Label htmlFor="bem_num_atm">Número ATM</Label>
+       <div className="flex items-center gap-3">
+         <Input
+           id="bem_num_atm"
+           type="text"
+           className="w-full"
+           value={data.bem_num_atm}
+           disabled={data.bem_num_atm !== ""}
+           onChange={(e) => handleChange('bem_num_atm', e.target.value)}
+         />
+       </div>
+     </div>
+     )}
 
-                     
-                     </div>
+     {/* Código CSV */}
+     <div className="grid gap-3 w-full">
+        <Label htmlFor="mat_nom">Material</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="mat_nom"
+            type="text"
+            className="w-full"
+            value={data.mat_nom}
+            disabled={data.mat_nom !== ""}
+            onChange={(e) => handleChange('mat_nom', e.target.value)}
+          />
+        </div>
+      </div>
 
-                     <div className="flex gap-6">
-                      {(patrimonio.length > 0 ) && (
-                        <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Valor</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? parseFloat(patrimonio[0].bem_val) : ''}
-                        />
-                      </div>
-                      ) }
-                     
+                  </div>
 
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Responsável</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? patrimonio[0].pes_nome : ''}
-                        />
-                      </div>
+                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
+ 
+  {/* Código CSV */}
+  <div className="grid gap-3 w-full">
+  <Label htmlFor="csv_cod">Estado de conservação</Label>
+  <div className="flex items-center gap-3">
+    <Select
+      value={data.csv_cod || ""}
+      onValueChange={(value) => handleChange('csv_cod', value)}
+      disabled={data.csv_cod !== ""}
+    >
+      <SelectTrigger id="csv_cod" className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="BM">Bom</SelectItem>
+        <SelectItem value="AE">Anti-Econômico</SelectItem>
+        <SelectItem value="IR">Irrecuperável</SelectItem>
+        <SelectItem value="OC">Ocioso</SelectItem>
+        <SelectItem value="RE">Recuperável</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
-                     </div>
 
-                     <div className="flex gap-6">
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Situação</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (patrimonio[0].bem_sta == "NO" ? ('Normal'):('Não encontrado no local de guarda')):''}
-                        />
-                      </div>
+ {/* Status */}
+ <div className="grid gap-3 w-full">
+  <Label htmlFor="bem_sta">Situação</Label>
+  <div className="flex items-center gap-3">
+    <Select
+      value={data.bem_sta || ""}
+      onValueChange={(value) => handleChange('bem_sta', value)}
+      disabled={data.bem_sta !== ""}
+    >
+      <SelectTrigger id="bem_sta" className="w-full">
+        <SelectValue  />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="NO">Normal</SelectItem>
+        <SelectItem value="NI">Não inventariado</SelectItem>
+        <SelectItem value="CA">Cadastrado</SelectItem>
+        <SelectItem value="TS">Aguardando aceite</SelectItem>
+        <SelectItem value="MV">Movimentado</SelectItem>
+        <SelectItem value="BX">Baixado</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
-                      <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Localização</Label>
-                        <div className="flex gap-3">
-                        {locState ? (
-                          <Input
-                         
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={localizacao}
-                        />
-                        ):(
-                          <Dialog open={openPopo} onOpenChange={setOpenPopo}>
-                        <DialogTrigger className="w-full">
-                        <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openPopo}
-                              className="w-full justify-between"
-                            >
-                              {localizacao
-                                ? locNomLista.find((framework) => framework.loc_nom === localizacao)?.loc_nom
-                                : 'Selecione um local'}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Escolher localização</DialogTitle>
-      <DialogDescription>
-        This action cannot be undone. This will permanently delete your account
-        and remove your data from our servers.
-      </DialogDescription>
-    </DialogHeader>
+      {/* Valor */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_val">Valor</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_val"
+            type="text"
+            className="w-full"
+            value={data.bem_val}
+            disabled={data.bem_val !== ""}
+            onChange={(e) => handleChange('bem_val', e.target.value)}
+          />
+        </div>
+      </div>
 
-    <div className="border rounded-md px-6 h-12 flex items-center gap-1 border-neutral-200 dark:border-neutral-800">
-                                <MagnifyingGlass size={16} />
-                                <Input
-                                  className="border-0"
-                                  value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
-                                  placeholder="Buscar localização"
-                                />
-                              </div>
+        {/* Código TRE */}
+        <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Termo de resp.</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="tre_cod"
+            type="text"
+            className="w-full"
+            value={data.tre_cod}
+            disabled={data.tre_cod !== ""}
+            onChange={(e) => handleChange('tre_cod', e.target.value)}
+          />
+        </div>
+      </div>
 
-                              <div className={'max-h-[350px] overflow-y-auto elementBarra'}>
-                              
-                              <div className="flex flex-col gap-1 p-2">
-                                {filteredList.length > 0 ? (
-                                  filteredList.map((props, index) => (
-                                    <Button
-                                      variant={'ghost'}
-                                      key={index}
-                                      className="text-left justify-start"
-                                      onClick={() => {
-                                        setLocalizacao(props.loc_nom);
-                                        setLocState(true);
-                                        setOpenPopo(false); // Fechar o popover após a seleção
-                                      }}
-                                    >
-                                      {props.loc_nom}
-                                    </Button>
-                                  ))
-                                ) : (
-                                  <div>Nenhuma sala encontrada</div>
-                                )}
-                              </div>
-                            </div>
-  </DialogContent>
+      
+                  </div>
 
-                        </Dialog>
+                   {/* Código TRE */}
+        <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Local de guarda</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="loc_nom"
+            type="text"
+            className="w-full"
+            value={data.loc_nom}
+           
+         onClick={() => onOpen('search-loc-nom')}
+            onChange={(e) => handleChange('loc_nom', e.target.value)}
+          />
+          
+        </div>
+      </div>
 
-                        )}
+                   {/* Descrição Completa */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dsc_com">Descrição </Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_dsc_com"
+         type="text"
+            className="w-full"
+            value={data.bem_dsc_com}
+            disabled={data.bem_dsc_com !== ""}
+            onChange={(e) => handleChange('bem_dsc_com', e.target.value)}
+          />
+        </div>
+      </div>
 
-                       
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="observacao">Observações</Label>
+        <div className="flex items-center gap-3">
+          <Textarea
+            id="observacao"
+            className="w-full"
+            value={dataPatrimonio.observacao}
+            onChange={(e) => handleChangePatrimonio('observacao', e.target.value)}
+          />
+        </div>
+      </div>
 
-                        {typeCod != 'scod' && (
-                           <div className="flex gap-3">
-                           <Button onClick={() => setLocState(false)} variant="outline" size={'icon'}><X size={16} /></Button>
-                             <Button onClick={() => setLocState(true)}  size={'icon'}><Check size={16} /></Button>
-                             </div>
-                        )}
-                       
-                        </div>
-                      </div>
-                     </div>
 
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Descrição</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={typeCod != 'scod'}
-                          value={patrimonio.length > 0 ? (localizacao.length > 0 ? localizacao : patrimonio[0].bem_dsc_com) : ''}
-                        />
-                      </div>
-                      <div className="grid gap-3">
-                        <Label htmlFor="description">Observações</Label>
-                        <Textarea
-                          id="description"
-                          value={descricao} onChange={(e) => setDescricao(e.target.value)}
-                          className="min-h-32"
-                        />
-                      </div>
-                    </div>
-                    
+
+                  </div>
                   </CardContent>
-                  </Alert>
+            </Alert>
 
-                  <Alert>
+
+            <Alert>
                   <CardHeader>
                     <CardTitle>Informações pessoais</CardTitle>
                     <CardDescription>
@@ -818,37 +527,41 @@ const handleFileUpload = async (id:string) => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                  <div className="flex gap-6 w-full">
-                     <div className="grid gap-3 w-2/3">
-                        <Label htmlFor="name">Nome Completo</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          value={user?.display_name}
-                          disabled={true}
-                          
-                        />
-                      </div>
+                  <div className="flex flex-col gap-4">
+                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
+                  <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Nome completo</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="loc_nom"
+            type="text"
+            className="w-full"
+            value={dataUser.name}
+            onChange={(e) => handleChangeUser('name', e.target.value)}
+          />
+          
+        </div>
+      </div>
 
-                      <div className="grid gap-3 w-1/3">
-                        <Label htmlFor="name">Matrícula</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                        disabled
-                        />
-                      </div>
-
-                     
-                     </div>
-
-                    
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Matrícula</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="loc_nom"
+            type="text"
+            className="w-full"
+            value={dataUser.name}
+            onChange={(e) => handleChangeUser('matricula', e.target.value)}
+          />
+          
+        </div>
+      </div>
+                  </div>
+                  </div>
                     </CardContent>
                     </Alert>
 
-                  <Alert>
+                    <Alert>
                   <CardHeader>
                     <CardTitle>Informações de contato</CardTitle>
                     <CardDescription>
@@ -856,200 +569,160 @@ const handleFileUpload = async (id:string) => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                  <div className="flex flex-col gap-4">
+                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
                   <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Email principal</Label>
+                        <Label htmlFor="name">Email</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
-                          value={user?.email}
-                          disabled={true}
-                        />
-                      </div>
-                  <div className="flex gap-6 w-full">
-                    
-                     <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Email corporativo</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled
+                          value={dataUser.email}
+                          onChange={(e) => handleChangeUser('email', e.target.value)}
                         />
                       </div>
 
-                     
-
-                     
-                     </div>
-
-                     <div className="flex gap-6 mt-6">
-                     <div className="grid gap-3 w-full">
+                      <div className="grid gap-3 w-full mb-6">
                         <Label htmlFor="name">Telefone</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
-                        disabled
+                          value={dataUser.tel}
+                          onChange={(e) => handleChangeUser('telefone', e.target.value)}
                         />
                       </div>
 
-                      <div className="grid gap-3 w-full">
+                      
+                      <div className="grid gap-3 w-full mb-6">
                         <Label htmlFor="name">Ramal</Label>
                         <Input
                           id="name"
                           type="text"
                           className="w-full"
-                         disabled
+                          value={dataUser.ramal}
+                          onChange={(e) => handleChangeUser('ramal', e.target.value)}
                         />
                       </div>
-                     </div>
+                    </div>
+                    </div>
                     </CardContent>
                     </Alert>
-               </div>
+            </div>
 
-               <div className="  flex flex-col md:gap-8 gap-4"  >
-                <Alert className="p-0">
+            <div className="  flex flex-col md:gap-8 gap-4"  >
+            <Alert className="p-0">
                 <CardHeader>
-                    <CardTitle>Condição do item</CardTitle>
+                    <CardTitle>Destinação</CardTitle>
                     <CardDescription>
                       Lipsum dolor sit amet, consectetur adipiscing elit
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="">
-                    <Select value={condicao} onValueChange={(value) => setCondicao(value)}>
-                      <SelectTrigger
-                        id="model"
-                        className="items-start [&_[data-description]]:hidden"
-                      >
-                        <SelectValue placeholder="Selecione a condição do bem" className={'whitespace-nowrap'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                      <SelectItem value="Excelente estado">
-                          <div className="flex items-start gap-3 text-muted-foreground ">
-                            <Checks className="size-5" />
-                            <div className="grid gap-0.5 ">
-                              <p>
-                              Excelente estado
-                              </p>
-                              <p className="text-xs" data-description>
-                              Como novo. Inclui caixa original e todos os acessórios.
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="Semi-novo">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Check className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                              Semi-novo  
+                  <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dgv">Condição do item</Label>
+        <div className="flex items-center gap-3">
+        <Select 
+                   value={dataPatrimonio.condicao || ""}
+                   onValueChange={(value) => handleChangePatrimonio('condicao', value)}
+                   >
+  <SelectTrigger
+    id="model"
+    className="items-start [&_[data-description]]:hidden"
+  >
+    <SelectValue />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="Excelente estado">
+      <div className="flex items-start gap-3 text-muted-foreground">
+        <Checks className="size-5 " />
+        <div className="grid gap-0.5">
+          <p className="font-medium whitespace-nowrap">Excelente estado</p>
+          <p className="text-xs text-muted-foreground" data-description>
+            Como novo. Com caixa original e todos os acessórios.
+          </p>
+        </div>
+      </div>
+    </SelectItem>
+    <SelectItem value="Semi-novo">
+      <div className="flex items-start gap-3 text-muted-foreground">
+        <Check className="size-5 " />
+        <div className="grid gap-0.5">
+          <p className="font-medium whitespace-nowrap">Semi-novo</p>
+          <p className="text-xs text-muted-foreground" data-description>
+            Excelente estado, com leves sinais de uso.
+          </p>
+        </div>
+      </div>
+    </SelectItem>
+    <SelectItem value="Quase novo">
+      <div className="flex items-start gap-3 text-muted-foreground">
+        <Warning className="size-5 " />
+        <div className="grid gap-0.5">
+          <p className="font-medium whitespace-nowrap">Quase novo</p>
+          <p className="text-xs text-muted-foreground" data-description>
+            Funciona bem, mas sem cabos ou periféricos.
+          </p>
+        </div>
+      </div>
+    </SelectItem>
+    <SelectItem value="Necessita de pequenos reparos">
+      <div className="flex items-start gap-3 text-muted-foreground">
+        <Wrench className="size-5 " />
+        <div className="grid gap-0.5">
+          <p className="font-medium whitespace-nowrap">Pequenos reparos</p>
+          <p className="text-xs text-muted-foreground" data-description>
+            Funcional, mas precisa de manutenção leve.
+          </p>
+        </div>
+      </div>
+    </SelectItem>
+    <SelectItem value="Inutilizável">
+      <div className="flex items-start gap-3 text-muted-foreground">
+        <X className="size-5 text-destructive" />
+        <div className="grid gap-0.5">
+          <p className="font-medium whitespace-nowrap">Inutilizável</p>
+          <p className="text-xs text-muted-foreground" data-description>
+            Sem condições de uso ou recuperação.
+          </p>
+        </div>
+      </div>
+    </SelectItem>
+  </SelectContent>
+</Select>
+        </div>
+      </div>
+                 
 
-                              </p>
-                              <p className="text-xs" data-description>
-                              Em excelente estado, mas apresenta sinais de uso.
+<div className="flex gap-4 items-center justify-between mt-4">
+  <div className="flex flex-col">
+    <p className="text-sm font-medium">
+      {dataPatrimonio.desfazimento
+        ? "Este item será destinado ao desfazimento."
+        : "Este item será anunciado na Vitrine."}
+    </p>
+    <p className="text-xs text-muted-foreground">
+      Use o botão ao lado para alterar a destinação do item.
+    </p>
+  </div>
+  <Switch
+    checked={dataPatrimonio.desfazimento}
+    onCheckedChange={(e) => handleChangePatrimonio('desfazimento', e)}
+  />
+</div>
 
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="Quase novo">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Warning className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                             Quase novo
-                              </p>
-                              <p className="text-xs" data-description>
-                              Funcional, mas falta cabos ou periféricos para uso pleno.
+                    </CardContent>
+                    </Alert>
 
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="Necessita de pequenos reparos">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <Wrench className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                                Necessita de pequenos reparos
-                              </p>
-                              <p className="text-xs" data-description>
-                              Funciona, mas exige reparos que não comprometem totalmente seu uso.
 
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="Inutilizável">
-                          <div className="flex items-start gap-3 text-muted-foreground">
-                            <X className="size-5" />
-                            <div className="grid gap-0.5">
-                              <p>
-                              Inutilizável
-                              </p>
-                              <p className="text-xs" data-description>
-                              Sem condições de uso
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    </div>
-                  </CardContent>
-                </Alert>
-
-                <Alert className="p-0">
-                <CardHeader>
-                    <CardTitle>Destinação do item</CardTitle>
-                    <CardDescription>
-                     jsdfgsdfgsdfg
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-4">
-                    <div className="">
-                    <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Alocação no Vitrine (sala 4301)</Label>
-                        <CardDescription>
-                      Caso haja a disponibilidade, gostaria que o item seja guardado na sala física do Vitrine?
-                    </CardDescription>
-                        <div className="flex gap-2 items-center ">
-            <Switch checked={relevance} onCheckedChange={(e) => {
-              setRelevance(e)
-              setDesfazimento(false)
-            }} />
-            <p className="text-sm">{relevance ? "Sim, preciso da alocação" : "Não, não preciso"} </p>
-          </div>
-                      </div>
                     
-                    </div>
-
-                    <div className="">
-                    <div className="grid gap-3 w-full">
-                        <Label htmlFor="name">Desfazimento</Label>
-                        <CardDescription>
-                    Este é um item elegível para o desfazimento?
-                    </CardDescription>
-                        <div className="flex gap-2 items-center ">
-            <Switch disabled={relevance} checked={desfazimento} onCheckedChange={(e) => setDesfazimento(e)} />
-            <p className="text-sm">{desfazimento ? "Não, não preciso" : "Sim, preciso da alocação"} </p>
-          </div>
-                      </div>
-                    
-                    </div>
-                  </CardContent>
-                </Alert>
-
                 <Alert className="p-0">
       <CardHeader>
         <CardTitle>Imagens do item</CardTitle>
         <CardDescription>
         <Accordion type="single" collapsible>
   <AccordionItem value="item-1" className="border-none">
-    <AccordionTrigger className="border-none">Instruções</AccordionTrigger>
+    <AccordionTrigger className="border-none p-0">Instruções</AccordionTrigger>
     <AccordionContent>
     <Alert className="p-0 pl-4 border-none my-4">
                   <ImageDown className="h-4 w-4" />
@@ -1140,8 +813,8 @@ const handleFileUpload = async (id:string) => {
         </div>
       </CardContent>
     </Alert>
-               </div>
-              </div>
+            </div>
+            </div>
            </main>
       
     )

@@ -14,6 +14,7 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { toast } from "sonner";
 import { UserContext } from "../../context/context";
 import { SelectTypeSearch } from "../search/select-type-search";
+import { SelectTypeNewItem } from "../search/select-type-new-item";
 
 interface Csv {
   bem_cod: string
@@ -30,16 +31,16 @@ export const useQuery = () => {
     return new URLSearchParams(useLocation().search);
   }
 
-export function SearchModalPatrimonio() {
+export function SearchLocNomModal() {
   const queryUrl = useQuery();
   const {searchType, setSearchType, patrimoniosSelecionados, setPatrimoniosSelecionados} = useContext(UserContext)
 
      const navigate = useNavigate();
      const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([])
     const { onClose, isOpen, type } = useModal();
-    const isModalOpen = isOpen && type === "search-patrimonio";
-    const type_search = queryUrl.get('type_search');
-    const terms = queryUrl.get('terms');
+    const isModalOpen = isOpen && type === 'search-loc-nom';
+
+    const terms = queryUrl.get('loc_nom');
     const location = useLocation();
     const [input, setInput] = useState("");
 
@@ -59,7 +60,7 @@ export function SearchModalPatrimonio() {
         setInput(value);
       };
 
-        let TypeSearch = type_search ?? ''
+     
        let Terms = terms ?? ''
 
       const handlePesquisaFinal = () => {
@@ -76,12 +77,11 @@ export function SearchModalPatrimonio() {
 
         if (itemsSelecionadosPopUp.length > 0) {
           setInput('')
-          TypeSearch = searchType
+         
           Terms = itemsSelecionadosPopUp.map(item => item.term).join(';');
 
 
-          queryUrl.set('terms', Terms.replace(/[()]/g, ''));
-          queryUrl.set('type_search', searchType);
+          queryUrl.set('loc_nom', Terms.replace(/[()]/g, ''));
 
           navigate({
             pathname: location.pathname,
@@ -89,20 +89,7 @@ export function SearchModalPatrimonio() {
           });
 
           onClose()
-        } else {
-          if (input.length > 0) {
-            queryUrl.set('terms', input);
-            queryUrl.set('type_search', searchType);
-  
-            navigate({
-              pathname: location.pathname,
-              search: queryUrl.toString(),
-            });
-  
-            setInput('')
-            onClose()
-          }
-        }
+        } 
       };
 
       useEffect(() => {
@@ -112,7 +99,7 @@ export function SearchModalPatrimonio() {
             .filter(t => t.trim() !== '')
             .map(t => ({
               term: t.trim(),
-              type: searchType
+              type: 'loc'
             }));
         
           setItensSelecionadosPopUp(termList);
@@ -154,21 +141,7 @@ export function SearchModalPatrimonio() {
         try {
           const filesRef = collection(db, import.meta.env.VITE_BANCO_FIREBASE_SEARCH);
           let results: Csv[] = [];
-      
-          if (input.includes('-')) {
-            const [cod, dgv] = input.split('-');
-            const q = query(
-              filesRef,
-              where('bem_cod', '==', cod),
-              where('bem_dgv', '==', dgv),
-              limit(100)
-            );
-            const snapshot = await getDocs(q);
-            results = snapshot.docs.map(doc => ({
-              ...(doc.data() as Csv),
-              type: 'cod'
-            }));
-          } else {
+    
             const normalizedInput = normalizeInput(input).toUpperCase();
       
             const searchParams: {
@@ -177,12 +150,8 @@ export function SearchModalPatrimonio() {
               type: Csv['type'];
               operator?: 'array-contains' | '>=';
             }[] = [
-              { field: 'bem_cod', value: input, type: 'cod', operator: '>=' },
-              { field: 'bem_num_atm', value: normalizedInput, type: 'atm', operator: '>=' },
-              { field: 'mat_nom', value: normalizedInput, type: 'nom', operator: '>=' },
               { field: 'loc_nom', value: normalizedInput, type: 'loc', operator: '>=' },
-              { field: 'bem_dsc_com', value: normalizedInput, type: 'dsc', operator: 'array-contains' },
-              { field: 'pes_nome', value: normalizedInput, type: 'pes', operator: '>=' }
+            
             ];
       
             const uniqueByKey = new Set<string>();
@@ -225,7 +194,7 @@ export function SearchModalPatrimonio() {
             }
       
             results = Array.from(combinedMap.values());
-          }
+          
       
           const mappedFiles = results.map(file => ({
             bem_num_atm: file.bem_num_atm,
@@ -245,8 +214,7 @@ export function SearchModalPatrimonio() {
           return [];
         }
       };
-      
-      
+
       
       
       console.log(filteredItems)
@@ -264,12 +232,7 @@ export function SearchModalPatrimonio() {
         setInput('');
        
         setShowInput(false)
-       if (type == searchType) {
-        setItensSelecionadosPopUp(prev => [...prev, { term: value, type }]);
-       } else {
-        setSearchType(type)
         setItensSelecionadosPopUp([{ term: value, type }]);
-       }
       }
 
         //itens selecionados 
@@ -286,25 +249,6 @@ export function SearchModalPatrimonio() {
       .replace(/[^\w\s]/gi, "") // Remove caracteres especiais
       .toLowerCase(); // Converte para minúsculas
 
-
-      const handleChangeInputCod = (value: any) => {
-        // Remover caracteres não numéricos
-        let cleanValue = value.replace(/[^0-9]/g, '');
-      
-        // Aplicar formatação com hífen antes do último caractere, se necessário
-        let formattedValue = cleanValue;
-        if (cleanValue.length > 1) {
-          formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
-        }
-      
-        // Usar o valor limpo para a busca
-        searchFilesByTermPrefix(cleanValue);
-      
-        // Usar o valor formatado para exibir no input
-        setInput(formattedValue);
-      };
-      
-
     return(
         <Dialog open={isModalOpen} onOpenChange={onClose}  >
         <DialogContent   className="p-0 border-none min-w-[60vw] bg-transparent dark:bg-transparent">
@@ -314,7 +258,7 @@ export function SearchModalPatrimonio() {
         <Play size={16} className=" whitespace-nowrap w-10" />
         </div>
 
-        <SelectTypeSearch />
+    
         <ScrollArea className="max-h-[40px] w-full">
         <div className='flex w-full whitespace-nowrap gap-2 items-center'>
         {itemsSelecionadosPopUp.map((valor, index) => (
@@ -341,23 +285,10 @@ export function SearchModalPatrimonio() {
            </div>
         ))}
      
-        {(itemsSelecionadosPopUp.length >= 1 && !showInput) && (
-                  <div
-                    className="rounded-full cursor-pointer flex items-center justify-center whitespace-nowrap h-8 w-8 bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 transition-all"
-                    onClick={() => setShowInput(true)}
-                  >
-                    <Plus size={16} className="" />
-                  </div>
-                )}
-       {(showInput || itemsSelecionadosPopUp.length == 0) && (
+      
+       {( itemsSelecionadosPopUp.length == 0) && (
                 <Input
-                onChange={(e) => {
-                  if(searchType == 'cod') {
-                    handleChangeInputCod(e.target.value)
-                  } else {
-                    handleChangeInput(e.target.value)
-                  }
-                }}
+                  onChange={(e) => handleChangeInput(e.target.value)}
                   type="text"
                   ref={inputRef}
                   value={input}
@@ -378,19 +309,8 @@ export function SearchModalPatrimonio() {
 
 <Button
   onClick={() => handlePesquisaFinal()}
-  className={`${
-    searchType === 'cod'
-      ? 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700'
-      : searchType === 'atm'
-      ? 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700'
-      : searchType === 'pes'
-      ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
-      : searchType === 'loc'
-      ? 'bg-lime-600 hover:bg-lime-700 dark:bg-lime-600 dark:hover:bg-lime-700'
-       : searchType === 'dsc'
-      ? 'bg-fuchsia-600 hover:bg-fuchsia-700 dark:bg-fuchsia-600 dark:hover:bg-fuchsia-700'
-      : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700'
-  } text-white border-0 z-[9999]`}
+  className={`
+     text-white border-0 bg-lime-600 hover:bg-lime-700 dark:bg-lime-600 dark:hover:bg-lime-700 z-[9999]`}
   size={'icon'}
 >
   <Search size={16} className="" />
@@ -401,106 +321,8 @@ export function SearchModalPatrimonio() {
 
         {((input.length >= 3 && filteredItems.length != 0)) && (
              <Alert className="w-full">
-    <ResponsiveMasonry
-              columnsCountBreakPoints={{
-                350: 1,
-                750: 2,
-                900: 2,
-                1200: 2
-              }}
-            >
-              <Masonry className="max-h-[80vh] md:overflow-y-auto overflow-y-scroll" gutter="20px">
-   {filteredItems.filter(item => item.type === 'cod').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Número de patrimônio</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'cod')
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.bem_cod}-${props.bem_dgv}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.bem_cod}-{props.bem_dgv}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'atm').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Código ATM</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'atm')
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.bem_num_atm}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.bem_num_atm}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'nom').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Tipo de patrimônio</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'nom')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.mat_nom) === normalizeTerm(value.mat_nom)
-          ))
-        )
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.mat_nom}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.mat_nom}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'pes').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Responsável</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'pes')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.pes_nome) === normalizeTerm(value.pes_nome)
-          ))
-        )
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.pes_nome}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.pes_nome}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'loc').length !== 0 && (
+    <div className="flex flex-col gap-8">
+    {filteredItems.filter(item => item.type === 'loc').length !== 0 && (
   <div>
     <p className="uppercase font-medium text-xs mb-3">Local de guarda</p>
     <div className="flex flex-wrap gap-3">
@@ -525,37 +347,8 @@ export function SearchModalPatrimonio() {
   </div>
 )}
 
-{filteredItems.filter(item => item.type === 'dsc').length !== 0 && input.length >= 3 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Palavras da descrição</p>
-    <div className="flex flex-wrap gap-3">
-      {Array.from(
-        new Set(
-          filteredItems
-          .filter(item => item.type === 'dsc')
-          .flatMap(item => item.bem_dsc_com)
-          .flatMap(desc => normalizeTerm(desc).split(/\s+/))
-          .filter(word => word.length > 2 && normalizeTerm(word).includes(normalizeTerm(input)))
-        )
-      )
-        .slice(0, 30)
-        .map((word, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(word, 'dsc')}
-            className="flex gap-2 min-h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {word}
-          </div>
-        ))}
+
     </div>
-  </div>
-)}
-
-
-
-            </Masonry>
-            </ResponsiveMasonry>
              </Alert>
         )}
             </DialogContent>

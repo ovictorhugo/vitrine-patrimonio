@@ -13,6 +13,9 @@ interface User {
   phone:string
   shib_id:string
   provider:string
+  matricula:string
+  telephone:string
+  ramal:string
 }
 
 interface Roles {
