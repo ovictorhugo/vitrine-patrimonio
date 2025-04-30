@@ -344,7 +344,7 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
     selectedSetNom.length > 0
       ? "flex"
       : "hidden"
-  }  flex-wrap     flex-col gap-4 w-full flex`}
+  }  flex-wrap   mb-4  flex-col gap-4 w-full flex`}
 >
 
 <Separator/>
@@ -436,7 +436,7 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
 </div>
 
 
-<div className="grid mt-4 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+<div className="grid  gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
 <Alert className={`p-0  bg-cover bg-no-repeat bg-center `}  >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">

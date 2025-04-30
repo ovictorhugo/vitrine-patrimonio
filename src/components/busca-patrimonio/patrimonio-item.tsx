@@ -70,7 +70,7 @@ export function PatrimonioItem(props: Patrimonio) {
     // Verificar se props.bem_sta está definido antes de usar .trim()
     const bemStaTrimmed = props.bem_sta ? props.bem_sta.trim() : '';
   
-    const conectee = import.meta.env.VITE_BACKEND_URL || ''
+    const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
     
 const {onOpen} = useModal()
 
@@ -137,8 +137,8 @@ const status = statusMap[bemStaTrimmed];
                 
 
                 {(props.pes_nome != '' && props.pes_nome  != 'None' && props.pes_nome  != null) && (
-                  <div className="flex gap-1 items-center cursor-pointer">
-                  <Avatar className="cursor-pointer rounded-md  h-5 w-5">
+                  <div className="flex gap-1 items-center ">
+                  <Avatar className=" rounded-md  h-5 w-5">
                                 <AvatarImage className={'rounded-md h-5 w-5'} src={`${conectee}ResearcherData/Image?name=${props.pes_nome}`} />
                                 <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
                               </Avatar>

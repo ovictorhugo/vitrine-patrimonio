@@ -291,6 +291,15 @@ export function SearchModalPatrimonio() {
         // Remover caracteres não numéricos
         let cleanValue = value.replace(/[^0-9]/g, '');
       
+        // Remover zeros à esquerda
+        const originalValue = cleanValue;
+        cleanValue = cleanValue.replace(/^0+/, '');
+      
+        // Exibir toast se zeros à esquerda forem removidos
+        if (originalValue !== cleanValue) {
+          toast.info("Zeros à esquerda foram removidos.");
+        }
+      
         // Aplicar formatação com hífen antes do último caractere, se necessário
         let formattedValue = cleanValue;
         if (cleanValue.length > 1) {
@@ -303,6 +312,7 @@ export function SearchModalPatrimonio() {
         // Usar o valor formatado para exibir no input
         setInput(formattedValue);
       };
+      
       
 
     return(

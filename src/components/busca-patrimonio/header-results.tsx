@@ -158,7 +158,7 @@ export function HeaderResult() {
       .toLowerCase(); // Converte para minúsculas
 
   return (
-    <div>
+    <>
       {filteredItems.length > 0 && (
         <div className="grid grid-cols-1">
           <ScrollArea>
@@ -261,6 +261,6 @@ export function HeaderResult() {
           </ScrollArea>
         </div>
       )}
-    </div>
+    </>
   );
 }

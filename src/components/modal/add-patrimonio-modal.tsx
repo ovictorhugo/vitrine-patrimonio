@@ -18,6 +18,9 @@ import { LoaderCircle, X } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { DataTableModal } from "../componentsModal/data-table";
 import { columnsPatrimonio } from "../componentsModal/columns-patrimonio";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface Patrimonio {
     bem_cod:string
@@ -51,121 +54,50 @@ interface Patrimonio {
 }
 
 export function AddPatrimonioModal() {
-    const { onClose, isOpen, type: typeModal } = useModal();
+    const { onClose, isOpen, type: typeModal, data } = useModal();
     
-    const isModalOpen = (isOpen && typeModal === 'import-csv')|| (isOpen && typeModal === 'import-csv-morto')
+    const isModalOpen = (isOpen && typeModal === 'add-patrimonio') || (isOpen && typeModal === 'edit-patrimonio')
 
     const {urlGeral} = useContext(UserContext)
-    const [fileInfo, setFileInfo] = useState({ name: '', size: 0 });
-
-    const [data, setData] = useState<Patrimonio[]>([]);
-
-    const onDrop = useCallback((acceptedFiles:any) => {
-      handleFileUpload(acceptedFiles);
-    }, []);
-  
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-      onDrop,
-     
-    });
-  
-
-  
-    const [file, setFile] = useState<File | null>(null);
-
-    const handleFileUpload = (files: any) => {
-      const uploadedFile = files[0];
-      if (uploadedFile) {
-        setFile(uploadedFile); // salva o arquivo
-        setFileInfo({
-          name: uploadedFile.name,
-          size: uploadedFile.size,
-        });
-      }
-    };
-
-
    
-  
+   const [dataPatrimonio, setDataPatrimonio] = useState<Patrimonio>({
+    bem_cod: data?.bem_cod || '',
+    bem_dgv: data?.bem_dgv || '',
+    bem_num_atm: data?.bem_num_atm || '',
+    csv_cod: data?.csv_cod || '',
+    bem_serie: data?.bem_serie || '',
+    bem_sta: data?.bem_sta || '',
+    bem_val: data?.bem_val || '',
+    tre_cod: data?.tre_cod || '',
+    bem_dsc_com: data?.bem_dsc_com || '',
+    uge_cod: data?.uge_cod || '',
+    uge_nom: data?.uge_nom || '',
+    org_cod: data?.org_cod || '',
+    uge_siaf: data?.uge_siaf || '',
+    org_nom: data?.org_nom || '',
+    set_cod: data?.set_cod || '',
+    set_nom: data?.set_nom || '',
+    loc_cod: data?.loc_cod || '',
+    loc_nom: data?.loc_nom || '',
+    ite_mar: data?.ite_mar || '',
+    ite_mod: data?.ite_mod || '',
+    tgr_cod: data?.tgr_cod || '',
+    grp_cod: data?.grp_cod || '',
+    ele_cod: data?.ele_cod || '',
+    sbe_cod: data?.sbe_cod || '',
+    mat_cod: data?.mat_cod || '',
+    mat_nom: data?.mat_nom || '',
+    pes_cod: data?.pes_cod || '',
+    pes_nome: data?.pes_nome || '',
+  });
 
-    const [uploadProgress, setUploadProgress] = useState(false);
+  const handleChangePatrimonio = (field: keyof any, value: any) => {
+    setDataPatrimonio((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-
-
-    const handleSubmitPatrimonio = async () => {
-      try {
-        if (!fileInfo.name) {
-          toast("Erro: Nenhum arquivo selecionado", {
-            description: "Por favor, selecione um arquivo .xls para enviar.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-          return;
-        }
-    
-        if (!file) {
-          toast("Erro: Nenhum arquivo encontrado", {
-            description: "Tente selecionar o arquivo novamente.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-          return;
-        }
-    
-        setUploadProgress(true);
-    
-        const formData = new FormData();
-        formData.append('file', file); // 'file' é o nome que o servidor espera
-    
-        let urlPatrimonioInsert = `${urlGeral}insertPatrimonio`;
-    
-        const response = await fetch(urlPatrimonioInsert, {
-          method: 'POST',
-          body: formData,
-        });
-    
-        if (response.ok) {
-          toast("Arquivo enviado com sucesso", {
-            description: "O arquivo foi enviado para o servidor.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-
-        } else {
-          toast("Erro no envio", {
-            description: "O servidor retornou um erro.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-        }
-    
-        setFile(null);
-        setFileInfo({ name: '', size: 0 });
-        setUploadProgress(false);
-    
-      } catch (error) {
-        console.error('Erro ao processar a requisição:', error);
-        toast("Erro ao processar a requisição", {
-          description: "Tente novamente mais tarde.",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
-        });
-        setUploadProgress(false);
-      }
-    };
-
-    console.log(data)
-  
     return(
       <Sheet open={isModalOpen} onOpenChange={onClose}>
       <SheetContent className={`p-0 dark:bg-neutral-900 dark:border-gray-600 min-w-[50vw]`}>
@@ -206,48 +138,139 @@ export function AddPatrimonioModal() {
                       </div>
 
                <div className="flex flex-1 flex-col ">
-               <div {...getRootProps()} className="border-dashed h-full mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-4">
-                        <input {...getInputProps()} />
-                        <div className="p-4  border rounded-md">
-                            <FileXls size={24} className=" whitespace-nowrap" />
-                        </div>
-                        {isDragActive ? (
-                            <p>Solte os arquivos aqui ...</p>
-                        ) : (
-                            <p>Arraste e solte o arquivo .xls aqui ou clique para selecionar o arquivo</p>
-                        )}
+               <div className="flex flex-col gap-4">
+                <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
+  {/* Código */}
+  <div className="grid gap-3 w-full">
+                      <Label htmlFor="name">Código</Label>
+                     <div className="flex items-center gap-3">
+                     <Input
+                    id="bem_cod"
+                    type="text"
+                    className="w-full"
+                    value={dataPatrimonio.bem_cod}
+               
+                    onChange={(e) => handleChangePatrimonio('bem_cod', e.target.value)}
+                  />
+                     </div>
                     </div>
 
-    <div >
-    {fileInfo.name && (
-                            <div className="justify-center flex items-center gap-3">
-                                <FileXls size={16} />
-                                <p className=" text-center  text-zinc-500 text-sm">
-                                    Arquivo selecionado: <strong>{fileInfo.name}</strong> ({(fileInfo.size / 1024).toFixed(2)} KB)
-                                </p>
-                            </div>
-                        )}
-    </div>
 
+                    {/* Dígito Verificador */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dgv">Díg. Verificador</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_dgv"
+            type="text"
+            className="w-full"
+            value={dataPatrimonio.bem_dgv}
+         
+            onChange={(e) => handleChangePatrimonio('bem_dgv', e.target.value)}
+          />
+        </div>
+      </div>
 
-<div className="flex items-center justify-between">
-    <div className="text-sm font-gray-500">
-    {uploadProgress ? ('Isso pode demorar bastante, não feche a página.'):('')}
-    </div>
-<Button onClick={() => handleSubmitPatrimonio()} className="ml-auto flex mt-3">
-                        {uploadProgress ? (<LoaderCircle size={16} className="an animate-spin" />):(<Upload size={16} className="" />)}  {uploadProgress ? ('Atualizando dados'):('Atualizar dados')} 
-                    </Button>
+      {/* Código CSV */}
+     <div className="grid gap-3 w-full">
+        <Label htmlFor="mat_nom">Material</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="mat_nom"
+            type="text"
+            className="w-full"
+            value={dataPatrimonio.mat_nom}
+  
+            onChange={(e) => handleChangePatrimonio('mat_nom', e.target.value)}
+          />
+        </div>
+      </div>
+                  
+                </div>
 
+                <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
+{/* Código CSV */}
+<div className="grid gap-3 w-full">
+  <Label htmlFor="csv_cod">Estado de conservação</Label>
+  <div className="flex items-center gap-3">
+    <Select
+      value={dataPatrimonio.csv_cod || ""}
+      onValueChange={(value) => handleChangePatrimonio('csv_cod', value)}
+     
+    >
+      <SelectTrigger id="csv_cod" className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="BM">Bom</SelectItem>
+        <SelectItem value="AE">Anti-Econômico</SelectItem>
+        <SelectItem value="IR">Irrecuperável</SelectItem>
+        <SelectItem value="OC">Ocioso</SelectItem>
+        <SelectItem value="RE">Recuperável</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
 </div>
+
+{/* Código CSV */}
+<div className="grid gap-3 w-full">
+  <Label htmlFor="csv_cod">Estado de conservação</Label>
+  <div className="flex items-center gap-3">
+    <Select
+      value={dataPatrimonio.csv_cod || ""}
+      onValueChange={(value) => handleChangePatrimonio('csv_cod', value)}
+   
+    >
+      <SelectTrigger id="csv_cod" className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="BM">Bom</SelectItem>
+        <SelectItem value="AE">Anti-Econômico</SelectItem>
+        <SelectItem value="IR">Irrecuperável</SelectItem>
+        <SelectItem value="OC">Ocioso</SelectItem>
+        <SelectItem value="RE">Recuperável</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
+
+
+  {/* Valor */}
+  <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_val">Valor</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_val"
+            type="text"
+            className="w-full"
+            value={dataPatrimonio.bem_val}
+         
+            onChange={(e) => handleChangePatrimonio('bem_val', e.target.value)}
+          />
+        </div>
+      </div>
+                </div>
+
+                  {/* Descrição Completa */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dsc_com">Descrição </Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_dsc_com"
+         type="text"
+            className="w-full"
+            value={dataPatrimonio.bem_dsc_com}
+         
+            onChange={(e) => handleChangePatrimonio('bem_dsc_com', e.target.value)}
+          />
+        </div>
+      </div>
+               </div>
                </div>
 
 </ScrollArea>
-               <DialogFooter>
-                <Button onClick={() => onClose()} variant={'ghost'}><ArrowUUpLeft size={16} className="" />Cancelar</Button>
-            
-
-                </DialogFooter>
-
+              
     
 
                </SheetContent>

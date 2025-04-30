@@ -6,7 +6,7 @@ import { TooltipProvider } from "../../ui/tooltip";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Input } from "../../ui/input";
-import { CheckCheck, ChevronDown, ChevronLeft, ChevronUp, Download, Search, Store, X } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import { ItensListVitrine } from "../components/itens-list-vitrine";
 import { DisplayItemVitrine } from "../components/display-item-vitrine";
 import { Button } from "../../ui/button";
@@ -14,10 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { BlockItem } from "./block-itens";
 import { Skeleton } from "../../ui/skeleton";
-import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
-import { MagnifyingGlass } from "phosphor-react";
-import { Alert } from "../../ui/alert";
-import { EsperandoAprovacao } from "./esperando-aprovacao";
 
 interface Patrimonio {
     bem_cod:string
@@ -129,11 +125,9 @@ export function ItensVitrine() {
           ///////////////////////
           const [bens, setBens] = useState<Item[]>([]); 
           const [loading, isLoading] = useState(false)
-          const [jsonData, setJsonData] = useState<any[]>([]);
-
+         
           let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=false&estado_transferencia=NÃO+VERIFICADO`
 console.log(urlBens)
-
           useEffect(() => {
             const fetchData = async () => {
                 try {
@@ -153,7 +147,6 @@ console.log(urlBens)
                   const data = await response.json();
                   if (data) {
                     setBens(data);
-                    setJsonData(data)
                     isLoading(false)
                   } 
                   
@@ -168,47 +161,12 @@ console.log(urlBens)
             const items = Array.from({ length: 12 }, (_, index) => (
               <Skeleton key={index} className="w-full rounded-md aspect-square" />
             ));
-
-            const [isOn, setIsOn] = useState(true);
-
-            const tabs = [
-              { id: "1", label: "Esperando aprovação", icon: CheckCheck },
-              { id: "2", label: "Anunciados", icon: Store},
-          
-            
-            ];
-
-            const convertJsonToCsv = (json: any[]): string => {
-              const items = json;
-              const replacer = (_: string, value: any) => (value === null ? '' : value); // Handle null values
-              const header = Object.keys(items[0]);
-              const csv = [
-                '\uFEFF' + header.join(';'), // Add BOM and CSV header
-                ...items.map((item) =>
-                  header.map((fieldName) => JSON.stringify(item[fieldName], replacer)).join(';')
-                ) // CSV data
-              ].join('\r\n');
-          
-              return csv;
-            };
-          
-            const handleDownloadJson = async () => {
-              try {
-                const csvData = convertJsonToCsv(jsonData);
-                const blob = new Blob([csvData], { type: 'text/csv;charset=windows-1252;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = `dados.csv`;
-                link.href = url;
-                link.click();
-              } catch (error) {
-                console.error(error);
-              }
-            };
           
     return(
-      <main  className="flex flex-1 flex-col  ">
-         <div className="w-full  gap-4 p-4 md:p-8 md:pb-0">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        
+        <Tabs defaultValue={value} className="">
+         <div className="mb-8  gap-4">
             <div className="flex items-center gap-4">
          
            <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
@@ -219,98 +177,52 @@ console.log(urlBens)
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 Itens do vitrine
               </h1>
-             
-              <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
-              
-                <Button  >Publicar item</Button>
-              </div>
-            </div>
-
-            </div>
-
-            <Tabs defaultValue="1" value={value} className="">
-            <div>
-              <div className={`w-full ${isOn ? 'px-8' : 'px-8'} border-b border-b-neutral-200 dark:border-b-neutral-800`}>
-                {isOn && (
-                  <div className="w-full pt-4  flex justify-between items-center">
-                   <Alert className="h-12 p-2 mb-4 flex items-center justify-between  w-full ">
-                <div className="flex items-center gap-2 w-full flex-1">
-                  <MagnifyingGlass size={16} className=" whitespace-nowrap w-10" />
-                  <Input onChange={(e) => setSearch(e.target.value)} value={search} type="text" className="border-0 w-full " />
-                </div>
-
-                <div className="w-fit">
-
-
-                </div>
-              </Alert>
-                  </div>
-                )}
-                <div className={`flex pt-2 gap-8 justify-between  ${isOn ? '' : ''} `}>
-                  <div className="flex items-center gap-2">
-                  <div className="relative grid grid-cols-1">
-  <ScrollArea className="relative overflow-x-auto">
-    <TabsList className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
-      {tabs.map(
-        ({ id, label, icon: Icon  }) =>
-          
-            <div
-              key={id}
-              className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
-                value === id ? "border-b-[#719CB8]" : "border-b-transparent"
-              }`}
-              onClick={() => setValue(id)}
-            >
-              <Button variant="ghost" className="m-0">
-                <Icon size={16} />
-                {label}
-              </Button>
-            </div>
-          
-      )}
-    </TabsList>
-    <ScrollBar orientation="horizontal" />
-  </ScrollArea>
-
- 
-</div>
-
-       
-                   
-                  </div>
-                  <div className="hidden xl:flex xl:flex-nowrap gap-2">
-                <div className="md:flex md:flex-nowrap gap-2">
-                  
-                  <Button onClick={() => handleDownloadJson()} variant="ghost" className="">
-                    <Download size={16} className="" />
-                    Baixar resultado
-                  </Button>
-
-                  <Button variant="ghost" size="icon" onClick={() => setIsOn(!isOn)}>
-                  {isOn ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-                </div>
-
-               
-              </div>
-
-             
-
-                </div>
-              </div>
             
+              <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <TabsList>
+    <TabsTrigger value="1" onClick={() => setValue('1')}>Esperando aprovação</TabsTrigger>
+    <TabsTrigger value="2" onClick={() => setValue('2')}>Anunciados</TabsTrigger>
+  </TabsList>
+
+              <Button variant={'outline'}  size="sm">
+                  Filtros
+                </Button>
+                <Button  size="sm">
+                  Discard
+                </Button>
+              
+              </div>
             </div>
 
+            </div>
 
-            <TabsContent value="1" className="p-0 m-0">
-                    <EsperandoAprovacao bens={bens} loading={loading}/>
-            </TabsContent>
-            </Tabs>
-            </main>
+  
+  <TabsContent value="1">
+    {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <BlockItem bens={bens}/>
+    )}
+    </TabsContent>
+    
+  <TabsContent value="2">
+  {loading ? (
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+          {items.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+      </div>
+    ):(
+      <BlockItem bens={bens}/>
+    )}
+    
+    </TabsContent>
+</Tabs>
 
+       </main>
     )
 }

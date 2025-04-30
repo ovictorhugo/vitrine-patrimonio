@@ -23,7 +23,7 @@ export function PatrimonioModal() {
     // Verificar se props.bem_sta está definido antes de usar .trim()
     const bemStaTrimmed = data.bem_sta ? data.bem_sta.trim() : '';
   
-    const conectee = import.meta.env.VITE_BACKEND_URL || ''
+    const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
     
     const statusMap = {
       NO: { text: "Normal", icon: <Check size={12} className="" /> },
@@ -92,15 +92,7 @@ export function PatrimonioModal() {
       </div>
   ) }
 
-                {(data.pes_nome != '' && data.pes_nome  != 'None' && data.pes_nome  != null) && (
-                  <div className="flex gap-1 items-center cursor-pointer">
-                  <Avatar className="cursor-pointer rounded-md  h-5 w-5">
-                                <AvatarImage className={'rounded-md h-5 w-5'} src={`${conectee}ResearcherData/Image?name=${data.pes_nome}`} />
-                                <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
-                              </Avatar>
-                    <p className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">{data.pes_nome}</p>
-                  </div>
-                )}
+               
 
 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
 <CircleDollarSign size={12} />
@@ -126,6 +118,22 @@ export function PatrimonioModal() {
 )}
               
              </div>
+
+             {(data.pes_nome != '' && data.pes_nome  != 'None' && data.pes_nome  != null) && (
+                 <div>
+                   <Separator className="my-8"/>
+                   <div className="flex gap-3 items-center ">
+                  <Avatar className=" rounded-md  h-10 w-10">
+                                <AvatarImage className={'rounded-md h-10 w-10'} src={`${conectee}ResearcherData/Image?name=${data.pes_nome}`} />
+                                <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
+                              </Avatar>
+                 <div>
+                 <p className="text-sm w-fit text-gray-500">Responsável</p>
+                 <p className="text-black dark:text-white font-medium text-lg">{data.pes_nome}</p>
+                 </div>
+                  </div>
+                 </div>
+                )}
 
               <div>
                 <Separator className="my-8"/>

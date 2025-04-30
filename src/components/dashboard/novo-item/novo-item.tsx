@@ -13,7 +13,7 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { UserContext } from "../../../context/context";
 import { Button } from "../../ui/button";
-import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel  } from "phosphor-react";
+import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel, User  } from "phosphor-react";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
 import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown, ImageDown, Barcode, Package } from "lucide-react";
@@ -87,6 +87,7 @@ import {
 import { Dialog } from "../../ui/dialog";
 import { LinhaTempo } from "../components/linha-tempo";
 import { Switch } from "../../ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 
 interface NovoItem {
   patrimonio_id:string
@@ -120,10 +121,184 @@ const {urlGeral, user} = useContext(UserContext)
   const loc_nom = queryUrl.get('loc_nom');
 
   const [input, setInput] = useState("");
+  const newImageNames: string[] = [];
+  const docId = uuidv4();
+  const BemCodId = Math.floor(10000000 + Math.random() * 90000000).toString();
+  const BemDgvId = Math.floor(Math.random() * 9 + 1).toString();
 
   const handleSubmit = async () => {
+  
 
+
+    try {
+      const dataFinal = [{
+        patrimonio_id:docId,
+        num_patrimonio:data.bem_cod || BemCodId,
+        num_verificacao:data.bem_dgv || BemDgvId,
+        loc:data.loc_nom,
+        observacao:dataPatrimonio.observacao,
+        user_id:user?.user_id,
+        condicao:dataPatrimonio.condicao,
+        verificado:false,
+        codigo_atm:data.bem_num_atm,
+        imagens:newImageNames,
+        desfazimento:dataPatrimonio.desfazimento,
+        vitrine:!dataPatrimonio.desfazimento,
+              situacao:'',
+        material:''
+      }]
+
+       let urlProgram = urlGeral + '/formulario'
+
+       const fetchData = async () => {
+    
+        if (!patrimonio && data.mat_nom.length == 0) {
+         toast("Preencha todos os campos antes de enviar", {
+           description: "Parece que alguns campos estão vazios",
+           action: {
+             label: "Fechar",
+             onClick: () => console.log("Undo"),
+           },
+         })
+         return;
+        } else if (dataPatrimonio.condicao.length == 0) {
+          toast("Campo 'ondição do item' vazio", {
+            description: "Preencha o campo",
+            action: {
+              label: "Fechar",
+              onClick: () => console.log("Undo"),
+            },
+          })
+          return;
+         } else if (images.length != 4) {
+           toast("Nenhuma imagem selecionada!", {
+             description: "Por favor, selecione ao menos uma imagem antes de enviar.",
+             action: {
+               label: "Fechar",
+               onClick: () => console.log("Fechar"),
+             },
+           });
+           return;
+         }
+        
+        else  {
+         try {
+          
+           const response = await fetch(urlProgram, {
+             mode: 'cors',
+             method: 'POST',
+             headers: {
+               'Access-Control-Allow-Origin': '*',
+               'Access-Control-Allow-Methods': 'POST',
+               'Access-Control-Allow-Headers': 'Content-Type',
+               'Access-Control-Max-Age': '3600',
+               'Content-Type': 'application/json'
+             },
+             body: JSON.stringify(dataFinal),
+           });
+   
+           if (response.ok) {
+            
+             toast("Dados enviados com sucesso", {
+                 description: "Item adicionado ao Vitrine",
+                 action: {
+                   label: "Fechar",
+                   onClick: () => console.log("Undo"),
+                 },
+               })
+   
+               handleFileUpload(docId)
+               setImages([])
+               setData(emptyPatrimonio)
+              
+   
+           } else {
+             console.error('Erro ao enviar dados para o servidor.');
+             toast("Erro ao enviar dados para o servidor.", {
+                 description: "Tente novamente",
+                 action: {
+                   label: "Fechar",
+                   onClick: () => console.log("Undo"),
+                 },
+               })
+           }
+           
+         } catch (err) {
+           console.log(err);
+         } 
+        }
+       };
+       fetchData();
+
+    } catch {
+
+    }
   }
+
+
+  const handleFileUpload = async (id:string) => {
+    if (images.length < 4) {
+      toast("Você precisa submeter 4 imagens", {
+        description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Fechar"),
+        },
+      });
+      return;
+    }
+  
+    try {
+      const uploadPromises = images.slice(0, 4).map((image, index) => {
+        const formData = new FormData();
+        const fileName = `${id}`; // Nome único para a imagem
+        newImageNames.push(fileName); // Armazena o nome gerado
+  
+        // Converter a URL de imagem para Blob
+        return fetch(image)
+          .then((res) => res.blob())
+          .then((blob) => {
+            formData.append("file", blob, fileName);
+  
+            const urlUpload = `${urlGeral}imagem/${fileName}`;
+  
+            return fetch(urlUpload, {
+              method: "POST",
+              body: formData,
+            });
+          });
+      });
+  
+      const responses = await Promise.all(uploadPromises);
+  
+      const allSuccessful = responses.every((response) => response.ok);
+  
+      if (allSuccessful) {
+        toast("Upload realizado com sucesso!", {
+          description: "As imagens foram enviadas com sucesso!",
+          action: {
+            label: "Fechar",
+            onClick: () => console.log("Fechar"),
+          },
+        });
+  
+        console.log("Novos nomes das imagens:", newImageNames); // Exibe os nomes gerados no console
+        setImages([]); // Resetar o estado das imagens após o envio
+      } else {
+        throw new Error("Nem todas as imagens foram enviadas com sucesso.");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar imagens:", error);
+      toast("Erro no envio", {
+        description: "Não foi possível enviar as imagens. Tente novamente.",
+        action: {
+          label: "Fechar",
+          onClick: () => console.log("Fechar"),
+        },
+      });
+    }
+  };
+  
 
    const [patrimonio, setPatrimonio] = useState<Patrimonio>();
 
@@ -168,7 +343,7 @@ const {urlGeral, user} = useContext(UserContext)
 
   const [dataPatrimonio, setDataPatrimonio] = useState<any>({
     condicao:'',
-    descricao: '',
+    observacao: '',
     alocacao: false,
     desfazimento:false
   })
@@ -226,7 +401,8 @@ useEffect(() => {
   }
 }, [patrimonio, loc_nom]);
 
-
+const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
+    
   const {onOpen} = useModal()
 
   const handleChange = (field: keyof Patrimonio, value: string) => {
@@ -268,7 +444,41 @@ useEffect(() => {
     }
   };
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const emptyPatrimonio: Patrimonio = {
+    bem_cod: '',
+    bem_dgv: '',
+    bem_num_atm: '',
+    csv_cod: '',
+    bem_serie: '',
+    bem_sta: '',
+    bem_val: '',
+    tre_cod: '',
+    bem_dsc_com: '',
+    uge_cod: '',
+    uge_nom: '',
+    org_cod: '',
+    uge_siaf: '',
+    org_nom: '',
+    set_cod: '',
+    set_nom: '',
+    loc_cod: '',
+    loc_nom: '',
+    ite_mar: '',
+    ite_mod: '',
+    tgr_cod: '',
+    grp_cod: '',
+    ele_cod: '',
+    sbe_cod: '',
+    mat_cod: '',
+    mat_nom: '',
+    pes_cod: '',
+    pes_nome: '',
+  };
   
+
     return(
  
             <main  className="flex flex-1 flex-col gap-8 p-4 md:p-8 md:pb-0">
@@ -283,14 +493,46 @@ useEffect(() => {
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 Adicionar novo item
               </h1>
+
+              {data.bem_cod && (
+                <Badge variant="outline" className="ml-auto sm:ml-0">
+                {`${data.bem_cod.trim()} - ${data.bem_dgv }`}
+              </Badge>
+              )}
+
+
+                <Badge variant="outline" className={`ml-auto sm:ml-0 ${dataPatrimonio.desfazimento ? ('bg-red-600 text-white'):('bg-eng-blue text-white')}`}>
+                {dataPatrimonio.desfazimento ? ('Desfazimento'):('Anunciar na Vitrine')}
+              </Badge>
+          
              
               <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
                 <Button onClick={() => {
+ console.log('oid')
+ queryUrl.set('terms', '');
+ queryUrl.set('type_search', '');
 
+ navigate({
+   pathname: location.pathname,
+   search: queryUrl.toString(),
+ });
+ setPatrimonio(undefined);
+
+ setData(emptyPatrimonio);
+
+ setDataPatrimonio({
+   condicao:'',
+   observacao: '',
+   alocacao: false,
+   desfazimento:false
+ })
                 }} variant="outline" >
                 <Trash size={16}/> Descartar
                 </Button>
-                <Button onClick={handleSubmit} ><Check size={16} />Publicar item</Button>
+                <Button onClick={() => {
+                 handleSubmit()
+                 
+                }} ><Check size={16} />Publicar item</Button>
               </div>
             </div>
 
@@ -320,35 +562,40 @@ useEffect(() => {
                   <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
 
                         {/* Código */}
-                  <div className="grid gap-3 w-full">
-                      <Label htmlFor="name">Código</Label>
-                     <div className="flex items-center gap-3">
-                     <Input
-                    id="bem_cod"
-                    type="text"
-                    className="w-full"
-                    value={data.bem_cod}
-                    disabled={data.bem_cod !== ""}
-                    onChange={(e) => handleChange('bem_cod', e.target.value)}
-                  />
-                     </div>
-                    </div>
+                {(data.bem_cod != '') && (
+                    <div className="grid gap-3 w-full">
+                    <Label htmlFor="name">Código</Label>
+                   <div className="flex items-center gap-3">
+                   <Input
+                  id="bem_cod"
+                  type="text"
+                  className="w-full"
+                  value={data.bem_cod}
+                  disabled={data.bem_cod !== ""}
+                  onChange={(e) => handleChange('bem_cod', e.target.value)}
+                />
+                   </div>
+                  </div>
+                )}
 
 
                     {/* Dígito Verificador */}
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="bem_dgv">Díg. Verificador</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="bem_dgv"
-            type="text"
-            className="w-full"
-            value={data.bem_dgv}
-            disabled={data.bem_dgv !== ""}
-            onChange={(e) => handleChange('bem_dgv', e.target.value)}
-          />
-        </div>
-      </div>
+                    {(data.bem_cod != '') && (
+                       <div className="grid gap-3 w-full">
+                       <Label htmlFor="bem_dgv">Díg. Verificador</Label>
+                       <div className="flex items-center gap-3">
+                         <Input
+                           id="bem_dgv"
+                           type="text"
+                           className="w-full"
+                           value={data.bem_dgv}
+                           disabled={data.bem_dgv !== ""}
+                           onChange={(e) => handleChange('bem_dgv', e.target.value)}
+                         />
+                       </div>
+                     </div>
+                    )}
+     
 
       
       {/* Número ATM */}
@@ -377,7 +624,7 @@ useEffect(() => {
             type="text"
             className="w-full"
             value={data.mat_nom}
-            disabled={data.mat_nom !== ""}
+            disabled={!!patrimonio}
             onChange={(e) => handleChange('mat_nom', e.target.value)}
           />
         </div>
@@ -389,12 +636,35 @@ useEffect(() => {
  
   {/* Código CSV */}
   <div className="grid gap-3 w-full">
+  <Label htmlFor="bem_sta">Situação</Label>
+  <div className="flex items-center gap-3">
+    <Select
+      value={data.bem_sta || ""}
+      onValueChange={(value) => handleChange('bem_sta', value)}
+      disabled={!!patrimonio}
+    >
+      <SelectTrigger id="bem_sta" className="w-full">
+        <SelectValue  />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="NO">Normal</SelectItem>
+        <SelectItem value="NI">Não inventariado</SelectItem>
+        <SelectItem value="CA">Cadastrado</SelectItem>
+        <SelectItem value="TS">Aguardando aceite</SelectItem>
+        <SelectItem value="MV">Movimentado</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
+
+{/* Código CSV */}
+<div className="grid gap-3 w-full">
   <Label htmlFor="csv_cod">Estado de conservação</Label>
   <div className="flex items-center gap-3">
     <Select
       value={data.csv_cod || ""}
       onValueChange={(value) => handleChange('csv_cod', value)}
-      disabled={data.csv_cod !== ""}
+      disabled={!!patrimonio}
     >
       <SelectTrigger id="csv_cod" className="w-full">
         <SelectValue />
@@ -410,31 +680,6 @@ useEffect(() => {
   </div>
 </div>
 
-
- {/* Status */}
- <div className="grid gap-3 w-full">
-  <Label htmlFor="bem_sta">Situação</Label>
-  <div className="flex items-center gap-3">
-    <Select
-      value={data.bem_sta || ""}
-      onValueChange={(value) => handleChange('bem_sta', value)}
-      disabled={data.bem_sta !== ""}
-    >
-      <SelectTrigger id="bem_sta" className="w-full">
-        <SelectValue  />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="NO">Normal</SelectItem>
-        <SelectItem value="NI">Não inventariado</SelectItem>
-        <SelectItem value="CA">Cadastrado</SelectItem>
-        <SelectItem value="TS">Aguardando aceite</SelectItem>
-        <SelectItem value="MV">Movimentado</SelectItem>
-        <SelectItem value="BX">Baixado</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-</div>
-
       {/* Valor */}
       <div className="grid gap-3 w-full">
         <Label htmlFor="bem_val">Valor</Label>
@@ -444,31 +689,34 @@ useEffect(() => {
             type="text"
             className="w-full"
             value={data.bem_val}
-            disabled={data.bem_val !== ""}
+            disabled={!!patrimonio}
             onChange={(e) => handleChange('bem_val', e.target.value)}
           />
         </div>
       </div>
 
         {/* Código TRE */}
-        <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Termo de resp.</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="tre_cod"
-            type="text"
-            className="w-full"
-            value={data.tre_cod}
-            disabled={data.tre_cod !== ""}
-            onChange={(e) => handleChange('tre_cod', e.target.value)}
-          />
-        </div>
-      </div>
+       {data.tre_cod && (
+         <div className="grid gap-3 w-full">
+         <Label htmlFor="tre_cod">Termo de resp.</Label>
+         <div className="flex items-center gap-3">
+           <Input
+             id="tre_cod"
+             type="text"
+             className="w-full"
+             value={data.tre_cod}
+             disabled={data.tre_cod !== ""}
+             onChange={(e) => handleChange('tre_cod', e.target.value)}
+           />
+         </div>
+       </div>
+       )}
 
       
                   </div>
 
                    {/* Código TRE */}
+                   <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
         <div className="grid gap-3 w-full">
         <Label htmlFor="tre_cod">Local de guarda</Label>
         <div className="flex items-center gap-3">
@@ -485,6 +733,28 @@ useEffect(() => {
         </div>
       </div>
 
+                    {/* Descrição Completa */}
+                    <div className="grid gap-3 w-full">
+        <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
+        <div className="flex items-center gap-3">
+       {data.pes_nome && (
+         <Avatar className=" rounded-md  h-10 w-10 border dark:border-neutral-800">
+         <AvatarImage className={'rounded-md h-10 w-10'} src={`${conectee}ResearcherData/Image?name=${data.pes_nome}`} />
+         <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
+       </Avatar>
+       )}
+          <Input
+            id="pes_nome"
+         type="text"
+            className="w-full"
+            value={data.pes_nome}
+            disabled={!!patrimonio}
+            onChange={(e) => handleChange('pes_nome', e.target.value)}
+          />
+        </div>
+      </div>
+      </div>
+
                    {/* Descrição Completa */}
       <div className="grid gap-3 w-full">
         <Label htmlFor="bem_dsc_com">Descrição </Label>
@@ -494,7 +764,7 @@ useEffect(() => {
          type="text"
             className="w-full"
             value={data.bem_dsc_com}
-            disabled={data.bem_dsc_com !== ""}
+            disabled={!!patrimonio}
             onChange={(e) => handleChange('bem_dsc_com', e.target.value)}
           />
         </div>
@@ -523,7 +793,7 @@ useEffect(() => {
                   <CardHeader>
                     <CardTitle>Informações pessoais</CardTitle>
                     <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    Dados básicos do usuário registrados no sistema
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -550,7 +820,8 @@ useEffect(() => {
             id="loc_nom"
             type="text"
             className="w-full"
-            value={dataUser.name}
+            value={dataUser.matricula}
+            disabled={true}
             onChange={(e) => handleChangeUser('matricula', e.target.value)}
           />
           
@@ -565,7 +836,7 @@ useEffect(() => {
                   <CardHeader>
                     <CardTitle>Informações de contato</CardTitle>
                     <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    Detalhes para comunicação 
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -588,6 +859,7 @@ useEffect(() => {
                           id="name"
                           type="text"
                           className="w-full"
+                          disabled={true}
                           value={dataUser.tel}
                           onChange={(e) => handleChangeUser('telefone', e.target.value)}
                         />
@@ -601,6 +873,7 @@ useEffect(() => {
                           type="text"
                           className="w-full"
                           value={dataUser.ramal}
+                          disabled={true}
                           onChange={(e) => handleChangeUser('ramal', e.target.value)}
                         />
                       </div>
@@ -615,7 +888,7 @@ useEffect(() => {
                 <CardHeader>
                     <CardTitle>Destinação</CardTitle>
                     <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    Status e destino atual do item
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

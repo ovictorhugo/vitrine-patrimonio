@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { Alert } from "../../ui/alert";
 import { Plus } from "lucide-react";
 import { Button } from "../../ui/button";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 interface Props {
     bens: any[];
@@ -140,17 +139,19 @@ export function BlockItem(props:Props) {
 
     return(
         <div>
-          <ResponsiveMasonry
-                          columnsCountBreakPoints={{
-                            350: 1,
-                            750: 2,
-                            900: 2,
-                            1200: 4,
-                            1700: 5
-                          }}
-                        >
-                          <Masonry gutter="16px">
-     
+           <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5">
+           
+           {props.new_item && (
+            <Link to={'/dashboard/novo-item'} className="">
+            <Alert  className="flex flex-col min-h-[200px] cursor-pointer text-eng-blue items-center justify-center aspect-square hover:bg-neutral-100 transition-all dark:hover:bg-neutral-900">
+                           <div className="mb-4">
+                           <Plus size={32}/>
+                           </div>
+    
+                         <p className="font-semibold">  Criar item novo</p>
+                        </Alert>
+            </Link>
+           )}
             {props.bens
   .filter((item) => 
     itemsSelecionados.length === 0 || 
@@ -215,8 +216,7 @@ export function BlockItem(props:Props) {
             />
           );
         })}
-             </Masonry>
-             </ResponsiveMasonry>
+            </div>
 
             {props.bens
   .filter((item) => 

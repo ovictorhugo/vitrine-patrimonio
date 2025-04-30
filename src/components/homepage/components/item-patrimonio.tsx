@@ -300,11 +300,7 @@ size={'icon'} variant={'ghost'}
             <Eye size={12}/> {props.qtd_de_favorito}
           </div>
 
-          <Badge className={` text-white text-[8px] ${bgColor}`}>
-      {months > 0
-        ? `${months} ${months === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`
-        : `${days} ${days === 1 ? 'dia' : 'dias'}`}
-    </Badge>
+         
      </div>
     </div></Link>
   </div>
