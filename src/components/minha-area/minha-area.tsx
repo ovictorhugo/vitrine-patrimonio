@@ -226,34 +226,6 @@ console.log(urlTermPesquisadores)
                       <div className="my-6 border-b dark:border-b-neutral-800"></div>
 
 
-                      {researcher && researcher.slice(0, 1).map((props) => {
-                        const currentDate = new Date();
-                        const lattesUpdate = String(props.lattes_update).split('/');
-                        const lattesMonth = parseInt(lattesUpdate[1]);
-                        const lattesYear = parseInt(lattesUpdate[2]);
-
-                        const monthDifference = (currentDate.getFullYear() - lattesYear) * 12 + (currentDate.getMonth() + 1 - lattesMonth);
-
-                        const isOutdated = monthDifference > 3;
-
-
-                        if(isOutdated) {
-                          return(
-                            <div className="bg-red-50 flex gap-3 dark:bg-red-200/20 w-full p-8 rounded-md">
-                            <div>  <OctagonAlert size={24}/></div>
-          <div>
-          <AlertTitle className="whitespace-normal">Currículo Lattes desatualizado</AlertTitle>
-            <AlertDescription className="whitespace-normal mb-6">
-          Seu currículo na plataforma Lattes está sem alterações tem {monthDifference} meses. Última atualização em {String(props.lattes_update)}. 
-            </AlertDescription>
-      
-           <Link to={'https://lattes.cnpq.br/'}> <Button variant={'destructive'}>Acessar plataforma Lattes</Button></Link>
-            </div></div>
-                          )
-                        }
-
-                      })}
-                    
 
       
                   </div>

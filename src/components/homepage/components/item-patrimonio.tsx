@@ -111,184 +111,110 @@ export function ItemPatrimonio(props:Props) {
     const { months, days, bgColor } = calculateDifference(props.created_at);
 
  
+
     return(
-<div className="group">
+     
+<div className="group cursor-pointer" onClick={() => {
+ window.open(`/item?item_id=${props.patrimonio_id}`, '_blank');
+}}>
     <div>
-    <Carousel className="w-full flex items-center ">
-      <CarouselContent>
-        {props.imagens?.map((item, index) => (
-          <CarouselItem key={index}>
-          <div className="p-1 relative flex justify-end">
-        <div className="absolute z-[9] gap-2 flex justify-end p-3">  
 
+     <div className="relative">
+     <div className="absolute  w-full  float-right z-[1] gap-2 flex justify-end p-3">
+      <div className="flex gap-2 w-full justify-between ">  
+      <Badge className={` text-white text-xs font-medium ${bgColor}`}>
+      {months > 0
+        ? `${months} ${months === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`
+        : `${days} ${days === 1 ? 'dia' : 'dias'}`}
+    </Badge>
 
-        <Button
-onClick={() =>
-  onOpen('edit-admin-item', {
-    condicao: props.condicao,
-    desfazimento: props.desfazimento,
-    email: props.email,
-    imagens: props.imagens,
-    loc: props.loc,
-    material: props.material,
-    matricula: props.matricula,
-    num_patrimonio: props.num_patrimonio,
-    num_verificacao: props.num_verificacao,
-    observacao: props.observacao,
-    patrimonio_id: props.patrimonio_id,
-    phone: props.phone,
-    situacao: props.situacao,
-    u_matricula: props.u_matricula,
-    user_id: props.user_id,
-    verificado: props.verificado,
-    vitrine: props.vitrine,
-    mat_nom: props.mat_nom,
-    bem_cod: String(props.num_patrimonio),
-    bem_dgv: String(props.num_verificacao),
-    loc_nom: props.loc,
-    qtd_de_favorito: props.qtd_de_favorito,
-    estado_transferencia: props.estado_transferencia,
-    created_at: props.created_at,
-    bem_dsc_com:props.bem_dsc_com,
-
+<div className="flex gap-2">
   
-    bem_num_atm: props.bem_num_atm,
-bem_serie: props.bem_serie,
-bem_sta: props.bem_sta,
-bem_val: props.bem_val,
-csv_cod: props.csv_cod,
-display_name: props.display_name,
-ele_cod: props.ele_cod,
-grp_cod: props.grp_cod,
-ite_mar: props.ite_mar,
-ite_mod: props.ite_mod,
-loc_cod: props.loc_cod,
-mat_cod: props.mat_cod,
-org_cod: props.org_cod,
-org_nom: props.org_nom,
-pes_cod: props.pes_cod,
-pes_nome: props.pes_nome,
-sbe_cod: props.sbe_cod,
-set_cod: props.set_cod,
-set_nom: props.set_nom,
-tgr_cod: props.tgr_cod,
-tre_cod: props.tre_cod,
-uge_cod: props.uge_cod,
-uge_nom: props.uge_nom,
-uge_siaf: props.uge_siaf
-  })
-}
-size={'icon'} variant={'ghost'}
-
-  className={`  h-8 w-8  `}// Aplica a classe de estilo condicionalmente
->
-  <Gear size={16} /> 
-</Button>
-
-
-        {loggedIn &&
-
-
-
 <Button
-  onClick={() =>
-    onOpen('edit-item', {
-      condicao: props.condicao,
-      desfazimento: props.desfazimento,
-      email: props.email,
-      imagens: props.imagens,
-      loc: props.loc,
-      material: props.material,
-      matricula: props.matricula,
-      num_patrimonio: props.num_patrimonio,
-      num_verificacao: props.num_verificacao,
-      observacao: props.observacao,
-      patrimonio_id: props.patrimonio_id,
-      phone: props.phone,
-      situacao: props.situacao,
-      u_matricula: props.u_matricula,
-      user_id: props.user_id,
-      verificado: props.verificado,
-      vitrine: props.vitrine,
-      mat_nom: props.mat_nom,
-      bem_cod: String(props.num_patrimonio),
-      bem_dgv: String(props.num_verificacao),
-      loc_nom: props.loc,
-      qtd_de_favorito: props.qtd_de_favorito,
-      estado_transferencia: props.estado_transferencia,
-      created_at: props.created_at,
-      bem_dsc_com:props.bem_dsc_com,
+onClick={(event) =>
+{event.stopPropagation();
+  onOpen('edit-admin-item', {
+...props
+})}
+}
+size={'icon'} variant={'secondary'}
 
-    
-      bem_num_atm: props.bem_num_atm,
-  bem_serie: props.bem_serie,
-  bem_sta: props.bem_sta,
-  bem_val: props.bem_val,
-  csv_cod: props.csv_cod,
-  display_name: props.display_name,
-  ele_cod: props.ele_cod,
-  grp_cod: props.grp_cod,
-  ite_mar: props.ite_mar,
-  ite_mod: props.ite_mod,
-  loc_cod: props.loc_cod,
-  mat_cod: props.mat_cod,
-  org_cod: props.org_cod,
-  org_nom: props.org_nom,
-  pes_cod: props.pes_cod,
-  pes_nome: props.pes_nome,
-  sbe_cod: props.sbe_cod,
-  set_cod: props.set_cod,
-  set_nom: props.set_nom,
-  tgr_cod: props.tgr_cod,
-  tre_cod: props.tre_cod,
-  uge_cod: props.uge_cod,
-  uge_nom: props.uge_nom,
-  uge_siaf: props.uge_siaf
-    })
-  }
-  size="icon"
-  variant="ghost"
-  className="h-8 w-8"
+className={`  h-8 w-8 group-hover:flex hidden transition-all `}// Aplica a classe de estilo condicionalmente
 >
-  <Pencil size={16} />
+<Gear size={16} /> 
 </Button>
 
-
-}
-       
 
 {loggedIn &&
 
 
 
-    <Button
-    onClick={() => props.onToggleFavorite(props.patrimonio_id)}
-    size={'icon'} variant={'ghost'}
-   
-      className={`  h-8 w-8 ${isFavorite ? 'bg-pink-600 hover:bg-pink-700 hover:text-white text-white dark:bg-pink-600 dark:hover:bg-pink-700 dark:hover:text-white dark:text-white' : ' '} `}// Aplica a classe de estilo condicionalmente
-    >
-      <Heart size={16} /> 
-    </Button>
+<Button
+onClick={(event) =>
+{
+  event.stopPropagation();
+  onOpen('edit-item', {
+...props
+})}
+}
+size="icon"
+variant='secondary'
+className="h-8 w-8 group-hover:flex hidden transition-all"
+>
+<Pencil size={16} />
+</Button>
+
 
 }
 
-        </div>
-            <Alert className="bg-center bg-cover bg-no-repeat" style={{ backgroundImage: `url(${urlGeral}imagem/${item}` }}>
+
+{loggedIn &&
+
+
+
+<Button
+onClick={(event) => {
+  event.stopPropagation();
+  props.onToggleFavorite(props.patrimonio_id)}}
+size={'icon'} variant={'secondary'}
+
+className={`  h-8 w-8 ${isFavorite ? 'bg-pink-600 hover:bg-pink-700 hover:text-white text-white dark:bg-pink-600 dark:hover:bg-pink-700 dark:hover:text-white dark:text-white' : ' '} `}// Aplica a classe de estilo condicionalmente
+>
+<Heart size={16} /> 
+</Button>
+
+}
+</div>
+
+</div>
+
+      
+      </div>
+     </div>
+    <Carousel className="w-full flex items-center ">
+      <CarouselContent>
+        {props.imagens?.map((item, index) => (
+          <>
+          
+          <CarouselItem key={index}>
+          <div className="">
+  
+            <Alert className="bg-center bg-cover bg-no-repeat" style={{ backgroundImage: `url(${urlGeral}imagem/${item})` }}>
               <CardContent className="flex aspect-square  justify-end p-0">
             
               </CardContent>
             </Alert>
           </div>
-        </CarouselItem>
+        </CarouselItem></>
         ))}
       </CarouselContent>
-      <div className="w-full hidden  absolute justify-between group-hover:flex p-4">
-    <CarouselPrevious variant={'ghost'} />
-    <CarouselNext variant={'ghost'}  />
+      <div className="w-full hidden  absolute justify-between group-hover:flex p-3">
+    <CarouselPrevious variant={'secondary'} />
+    <CarouselNext variant={'secondary'}  />
     </div>
     </Carousel>
     </div>
-    <Link target="_blank" to={`/item?item_id=${props.patrimonio_id}`}>
+  
     <div className="mt-2 flex justify-between items-center">
      <div>
      <p className="font-medium">{props.mat_nom}</p>
@@ -296,13 +222,14 @@ size={'icon'} variant={'ghost'}
      </div>
 
      <div className="flex gap-2 items-center">
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <Eye size={12}/> {props.qtd_de_favorito}
+          <div className="text-sm text-gray-500 flex items-center gap-1">
+            <Eye size={16}/> {props.qtd_de_favorito}
           </div>
 
          
      </div>
-    </div></Link>
+    </div>
   </div>
+
     )
 }

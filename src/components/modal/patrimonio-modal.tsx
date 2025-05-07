@@ -11,6 +11,16 @@ import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import QRCode from "react-qr-code";
+import { useContext, useEffect, useState } from "react";
+import { UserContext } from "../../context/context";
+import { CardContent } from "../ui/card";
+import { GaleriaImagens } from "./galeria-images";
+
+
+export interface Images {
+  imagens:string[]
+  num_patrimonio:string
+}
 
 export function PatrimonioModal() {
     const isMobile = useIsMobile()
@@ -36,6 +46,40 @@ export function PatrimonioModal() {
     
     
     const status = statusMap[bemStaTrimmed];
+
+    const {urlGeral} = useContext(UserContext)
+    const [images, setImages] = useState<Images[]>([])
+
+    let url = urlGeral + `/patrimonio_imagens?bem_dgv=${data.bem_dgv}&bem_cod=${data.bem_cod}`
+
+
+      useEffect(() => {
+        const fetchData = async () => {
+         
+          try {
+            const response = await fetch(url, {
+              mode: "cors",
+              headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Max-Age": "3600",
+                "Content-Type": "text/plain",
+              },
+            });
+            const data = await response.json();
+            if (data) {
+              setImages(data)
+            }
+          } catch (err) {
+            console.log(err);
+          
+          }
+        };
+        fetchData();
+      }, [url]);
+    console.log(url)
+    console.log(images)
 
     const content = () => {
         return(
@@ -138,13 +182,28 @@ export function PatrimonioModal() {
               <div>
                 <Separator className="my-8"/>
 
-                <div className="flex items-center  flex-wrap gap-3">
+                <div className="flex items-center mb-4  flex-wrap gap-3">
                 <p className="text-sm uppercase font-bold">Localização:</p>
                 
+                {data.uge_nom != null && (
+                <>
+         
+                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              
+                {data.uge_cod} - {data.uge_nom}
+                </div></>
+               )}
+
+{data.org_nom != null && (
+                <>
+         
                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
               
                 {data.org_cod} - {data.org_nom}
-                </div>
+                </div></>
+               )}
+
+             
                {data.set_nom != null && (
                 <>
                  <ChevronRight size={16} />
@@ -167,16 +226,31 @@ export function PatrimonioModal() {
               </div>
 
               <div>
-              <Separator className="my-8"/>
+
+               {images.length > 0 && (
+                <>
+                 <Separator className="mb-8 mt-4"/>
+
+                 <div className="flex gap-3">
+                 <GaleriaImagens images={images} urlGeral={urlGeral}/>
+
+                 </div>
+                </>
+               )}
+            
 
                             
 {isMobile && (
   
-  <QRCode
+ <>
+   <Separator className="mb-8 mt-4"/>
+
+ <QRCode
   className={` w-full`}
      value={`https://vitrinepatrimonio.eng.ufmg.br/buscar-patrimonio?terms=${data.bem_cod?.trim()}-${data.bem_dgv}&type_search=cod`}
    
    />
+   </>
 )}
               </div>
   

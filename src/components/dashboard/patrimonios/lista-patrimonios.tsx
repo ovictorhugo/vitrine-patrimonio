@@ -104,7 +104,7 @@ export function ListaPatrimonios() {
   const [loading, setLoading] = useState(false);
 
 
-  let url = urlGeral + 'search_by_nom?mat_nom='
+  let url = urlGeral + `search_by_nom?institution_id=${user?.institution_id}`
 
   const queryUrl = useQuery();
 
@@ -498,37 +498,39 @@ url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
               </Alert>
 </div>
 
-<Accordion defaultValue="item-1" type="single" collapsible className="hidden md:flex ">
-                            <AccordionItem value="item-1" className="w-full ">
-                              <div className="flex mb-2">
-                                <HeaderResultTypeHome title="Gráficos dos bens patrimoniados" icon={<ChartBar size={24} className="text-gray-400" />}>
-                                </HeaderResultTypeHome>
-              
-                                <AccordionTrigger>
-              
-                                </AccordionTrigger>
-                              </div>
-                              <AccordionContent className="p-0">
-                              {loading ? (
-                                 <div className="grid gap-8">
-  <Skeleton className="rounded-md w-full h-[300px] " />
+{patrimonio.length > 1 && (
+  <Accordion defaultValue="item-1" type="single" collapsible className="hidden md:flex ">
+  <AccordionItem value="item-1" className="w-full ">
+    <div className="flex mb-2">
+      <HeaderResultTypeHome title="Gráficos dos bens patrimoniados" icon={<ChartBar size={24} className="text-gray-400" />}>
+      </HeaderResultTypeHome>
 
-                                 </div>
-                  
-                  ) : (
-                    <div className="grid gap-8">
-                      <GraficoCsvCod patrimoniolist={patrimonio}/>
+      <AccordionTrigger>
 
-                      <div className="grid gap-8 md:grid-cols-2">
-                      <GraficoBemSta patrimoniolist={patrimonio}/>
-                      <GraficoOrgNom patrimoniolist={patrimonio}/>
-                      </div>
-                    </div>
-                  )}
-                              </AccordionContent>
+      </AccordionTrigger>
+    </div>
+    <AccordionContent className="p-0">
+    {loading ? (
+       <div className="grid gap-8">
+<Skeleton className="rounded-md w-full h-[300px] " />
 
-                              </AccordionItem>
-                            </Accordion>
+       </div>
+
+) : (
+<div className="grid gap-8">
+<GraficoCsvCod patrimoniolist={patrimonio}/>
+
+<div className="grid gap-8 md:grid-cols-2">
+<GraficoBemSta patrimoniolist={patrimonio}/>
+<GraficoOrgNom patrimoniolist={patrimonio}/>
+</div>
+</div>
+)}
+    </AccordionContent>
+
+    </AccordionItem>
+  </Accordion>
+)}
 
               <Accordion defaultValue="item-1" type="single" collapsible>
                 <AccordionItem value="item-1">

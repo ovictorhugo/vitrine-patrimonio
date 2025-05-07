@@ -39,6 +39,9 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useModal } from "../hooks/use-modal-store";
 import { Badge } from "../ui/badge";
+import { useContext, useEffect, useState } from "react";
+import { Images } from "../modal/patrimonio-modal";
+import { UserContext } from "../../context/context";
 
 export const qualisColor = {
   'BM': 'bg-green-500',
@@ -84,6 +87,38 @@ const statusMap = {
 };
 
 const status = statusMap[bemStaTrimmed];
+
+const {urlGeral} = useContext(UserContext)
+ const [images, setImages] = useState<Images[]>([])
+
+    let url = urlGeral + `/patrimonio_imagens?bem_dgv=${props.bem_dgv}&bem_cod=${props.bem_cod}`
+
+
+      useEffect(() => {
+        const fetchData = async () => {
+         
+          try {
+            const response = await fetch(url, {
+              mode: "cors",
+              headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Max-Age": "3600",
+                "Content-Type": "text/plain",
+              },
+            });
+            const data = await response.json();
+            if (data) {
+              setImages(data)
+            }
+          } catch (err) {
+            console.log(err);
+          
+          }
+        };
+        fetchData();
+      }, [url]);
 
     return (
         <div className="flex group">
@@ -149,6 +184,18 @@ const status = statusMap[bemStaTrimmed];
               </div>
   
             
+            </div>
+
+            <div className="flex gap-3">
+            {images?.[0]?.imagens?.map((props) => {
+              return(
+                <Alert
+               
+                className="bg-center bg-cover bg-no-repeat p-0 h-10 w-10 "
+                style={{ backgroundImage: `url(${urlGeral}imagem/${props})` }}
+              />
+              )})}
+          
             </div>
           </Alert>
         </div>

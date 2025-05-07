@@ -144,28 +144,28 @@ export function ItemPage() {
 
                     const data = [
                       {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[0]}`,
+                        category: "Artificial Intelligence",
+                        title: "You can do more with AI.",
+                        src: `${urlGeral}imagem/${bens?.[0]?.imagens?.[0]}`,
                        
                       },
                       {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[1]}`,
+                        category: "Productivity",
+                        title: "Enhance your productivity.",
+                        src: `${urlGeral}imagem/${bens?.[0]?.imagens?.[1]}`,
                      
                       },
                       {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[2]}`,
+                        category: "Product",
+                        title: "Launching the new Apple Vision Pro.",
+                        src: `${urlGeral}imagem/${bens?.[0]?.imagens?.[2]}`,
                       
                       },
                      
                       {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}/imagem/${bens?.imagens?.[3]}`,
+                        category: "Product",
+                        title: "Maps for your iPhone 15 Pro Max.",
+                        src: `${urlGeral}/imagem/${bens?.[0]?.imagens?.[3]}`,
                   
                      
                       },
@@ -525,7 +525,13 @@ export function ItemPage() {
           </div>
 
                   <Separator className="my-8"/>
-               
+                {bens?.observacao.length > 0 && (
+                   <div>
+                   <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">Observações do anunciante</h2>
+                   <h2 className="mb-8 text-gray-500 ">{bens?.observacao}</h2>
+                   </div>
+                )}
+                
          
                   
                 </div>
@@ -533,7 +539,68 @@ export function ItemPage() {
                 <div className="lg:w-[400px] flex flex-col gap-8 lg:min-w-[400px] w-full">
                 
                 
-             
+                {bens.slice(0, 1).map((props) => {
+              return(
+                <Alert className="p-0">
+                   <CardHeader>
+                    <CardTitle>Transferência</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
+                  </CardHeader>
+               
+              <CardContent>
+              <ButtonTransference ofertante={props.user_id} patrimonio_id={props.patrimonio_id} loc_ofertante={props.loc}/>
+              </CardContent>
+                </Alert>
+ )
+})}
+
+                {bens.slice(0, 1).map((props) => {
+                   const urlPatrimonioBusca = `vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${props.bem_cod}&bem_dgv=${props.bem_dgv}`; 
+                return(
+                  <div id="content-to-pdf" className={` flex dark:text-black `}>
+                   <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 k border-r-0 bg-eng-blue min-h-full relative `}></div>
+                   <Alert className={`dark:bg-white  border-l-0  rounded-l-none items-center flex gap-4 `}>
+                   <div className="w-fit">
+                   <QRCode
+                    className={` w-fit  h-20`}
+                       value={urlPatrimonioBusca}
+                       
+                     />
+                   </div>
+                   
+                   <div className="flex flex-col w-full h-full justify-center py-2">
+                                 <p className={`dark:text-black  font-semibold `}>Escola de Engenharia da UFMG</p>
+                                 <p className={`text-muted-foreground dark:text-black  text-xs`}>
+                                    Resp.:{props.pes_nome}
+                                   </p>
+                   
+                                   <p className={`text-muted-foreground dark:text-black  text-xs`}>
+                                    Ano: {currentYear}
+                                   </p>
+                   
+                   
+                                   <div className={` font-bold dark:text-black  text-xl`}>{props.bem_cod}-{props.bem_dgv}</div>
+                                 <div className="">
+                                 <div
+  style={{
+    backgroundImage: `url('https://barcode.orcascan.com/?type=code128&data=${props.bem_cod}-${props.bem_dgv}&fontsize=Fit&format=svg')`,
+  }}
+  className="mix-blend-multiply w-full bg-cover bg-no-repeat h-7"
+></div>
+
+                                 </div>
+                   
+                                 </div>
+                   
+                   
+                   
+                   
+                   </Alert>
+                   </div>
+                  )
+                })}
 
                 </div>
             </div>

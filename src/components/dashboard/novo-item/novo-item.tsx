@@ -717,6 +717,39 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
 
                    {/* Código TRE */}
                    <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
+                   <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Unidade geral</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="uge_nom"
+            type="text"
+            className="w-full"
+            value={data.uge_nom}
+           
+         onClick={() => onOpen('search-loc-nom')}
+            onChange={(e) => handleChange('uge_nom', e.target.value)}
+          />
+          
+        </div>
+      </div>
+
+
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="tre_cod">Setor de guarda</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="loc_nom"
+            type="text"
+            className="w-full"
+            value={data.set_nom}
+           
+         onClick={() => onOpen('search-loc-nom')}
+            onChange={(e) => handleChange('loc_nom', e.target.value)}
+          />
+          
+        </div>
+      </div>
+
         <div className="grid gap-3 w-full">
         <Label htmlFor="tre_cod">Local de guarda</Label>
         <div className="flex items-center gap-3">
@@ -734,7 +767,25 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
       </div>
 
                     {/* Descrição Completa */}
-                    <div className="grid gap-3 w-full">
+                   
+      </div>
+
+                   {/* Descrição Completa */}
+      <div className="grid gap-3 w-full">
+        <Label htmlFor="bem_dsc_com">Descrição </Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="bem_dsc_com"
+         type="text"
+            className="w-full"
+            value={data.bem_dsc_com}
+            disabled={!!patrimonio}
+            onChange={(e) => handleChange('bem_dsc_com', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-3 w-full">
         <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
         <div className="flex items-center gap-3">
        {data.pes_nome && (
@@ -750,22 +801,6 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
             value={data.pes_nome}
             disabled={!!patrimonio}
             onChange={(e) => handleChange('pes_nome', e.target.value)}
-          />
-        </div>
-      </div>
-      </div>
-
-                   {/* Descrição Completa */}
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="bem_dsc_com">Descrição </Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="bem_dsc_com"
-         type="text"
-            className="w-full"
-            value={data.bem_dsc_com}
-            disabled={!!patrimonio}
-            onChange={(e) => handleChange('bem_dsc_com', e.target.value)}
           />
         </div>
       </div>

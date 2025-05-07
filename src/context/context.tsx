@@ -16,6 +16,8 @@ interface User {
   matricula:string
   telephone:string
   ramal:string
+  institution_id:string
+  verified:boolean
 }
 
 interface Roles {

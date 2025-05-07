@@ -14,9 +14,14 @@ export function SegurancaMinhaArea() {
 
     const {user, urlGeral} = useContext(UserContext)
 
-    const [lattes, setLattes] = useState(user?.phone || '')
+
     const [name, setName] = useState(user?.display_name || '')
     const [linkedin, setLinkedin] = useState(user?.linkedin || '')
+    
+    const [ramal, setRamal] = useState(user?.ramal || '')
+    const [telephone, setTelephone] = useState(user?.telephone || '')
+    const [matricula, setMatricula] = useState(user?.telephone || '')
+    const [institution, setInstitution] = useState(user?.telephone || '')
 
     const handleSubmit = async () => {
       try {
@@ -25,7 +30,7 @@ export function SegurancaMinhaArea() {
           {
             uid:(user?.uid),
             linkedin:linkedin,
-            lattes_id:lattes,
+            telephone:telephone,
             display_name:name
           }
         ]
@@ -173,19 +178,31 @@ export function SegurancaMinhaArea() {
 
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 mt-4">
+                    
+            <div className="flex w-full gap-4 items-end  mt-4 justify-end">
+            <div className="flex w-full flex-col gap-2 ">
                 <Label>Nome completo</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} type="text"/>
             </div>
+                    <div className="flex w-full flex-col gap-2 ">
+                <Label>Matrícula</Label>
+                <Input value={matricula} onChange={(e) => setMatricula(e.target.value)} type="text"/>
+            </div>
+                  
+         
+                    </div>
+
                     <div className="flex w-full gap-4 items-end">
                     <div className="flex w-full flex-col gap-2 mt-4">
-                <Label>LinkedIn</Label>
-                <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} type="text"/>
+                <Label>Telefone</Label>
+                <Input value={telephone} onChange={(e) => setTelephone(e.target.value)} type="text"/>
             </div>
+                   
                     <div className="flex w-full flex-col gap-2 mt-4">
-                <Label>Id lattes</Label>
-                <Input value={lattes} onChange={(e) => setLattes(e.target.value)} type="text"/>
+                <Label>Ramal</Label>
+                <Input value={matricula} onChange={(e) => setRamal(e.target.value)} type="text"/>
             </div>
+                    
 
             <Button onClick={() => handleSubmit()}><RefreshCcw size={16}/>Atualizar dados</Button>
                     </div>
