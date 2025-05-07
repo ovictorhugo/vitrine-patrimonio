@@ -97,7 +97,7 @@ export function ButtonTransference(props:Props) {
 
     return(
        <div className="flex gap-4 flex-col">
-        <Select disabled={(props.ofertante == user?.user_id) || !loggedIn} >
+        <Select disabled={ !loggedIn} >
   <SelectTrigger >
     <SelectValue placeholder="Selecione a sala de destino" />
   </SelectTrigger>
@@ -107,7 +107,7 @@ export function ButtonTransference(props:Props) {
   </SelectContent>
 </Select>
 
-         <Button disabled={(props.ofertante == user?.user_id) || !loggedIn} className="w-full">Solicitar transferência</Button>
+         <Button disabled={ !loggedIn} className="w-full">Solicitar transferência</Button>
        </div>
     )
 }

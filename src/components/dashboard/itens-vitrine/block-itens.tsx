@@ -12,6 +12,7 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 interface Props {
     bens: any[];
     new_item?:boolean
+    handlePutItem: (patrimonio_id: any, verificado: boolean) => Promise<void>;
 }
 
 export function BlockItem(props:Props) {
@@ -136,7 +137,9 @@ export function BlockItem(props:Props) {
             console.log(favoritos)
             }, [user?.user_id])
 
-            const [count, setCount] = useState(6)
+            const [count, setCount] = useState(12)
+
+
 
     return(
         <div>
@@ -144,7 +147,7 @@ export function BlockItem(props:Props) {
                           columnsCountBreakPoints={{
                             350: 1,
                             750: 2,
-                            900: 2,
+                            900: 3,
                             1200: 4,
                             1700: 5
                           }}
@@ -212,6 +215,7 @@ export function BlockItem(props:Props) {
             uge_siaf={item.uge_siaf}
             bem_cod={item.bem_cod}
             bem_dgv={item.bem_dgv}
+            handlePutItem={props.handlePutItem}
             />
           );
         })}

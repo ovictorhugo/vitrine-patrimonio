@@ -116,7 +116,13 @@ export function PatrimonioModal() {
              
              <div className="flex items-center gap-8 justify-between">
              <div className="flex flex-col flex-1">
-                <div className="text-2xl mb-2 font-bold">{data.mat_nom || 'Sem nome'}</div>
+                <div className="text-2xl mb-2 font-bold flex gap-2 items-center">{data.mat_nom || 'Sem nome'}  
+                  {(data.mat_cod != 'None' && data.mat_cod != '' && data.mat_cod != null)  && (
+                    <Badge variant="outline" className="ml-auto sm:ml-0">
+                    Código: {data.mat_cod}
+               </Badge>
+                  )}
+                </div>
                 <p className="text-left mb-4 uppercase">
                   {data.bem_dsc_com} 
                 </p>
@@ -165,7 +171,7 @@ export function PatrimonioModal() {
 
              {(data.pes_nome != '' && data.pes_nome  != 'None' && data.pes_nome  != null) && (
                  <div>
-                   <Separator className="my-8"/>
+                   <Separator className="my-4"/>
                    <div className="flex gap-3 items-center ">
                   <Avatar className=" rounded-md  h-10 w-10">
                                 <AvatarImage className={'rounded-md h-10 w-10'} src={`${conectee}ResearcherData/Image?name=${data.pes_nome}`} />
@@ -180,7 +186,7 @@ export function PatrimonioModal() {
                 )}
 
               <div>
-                <Separator className="my-8"/>
+                <Separator className="my-4"/>
 
                 <div className="flex items-center mb-4  flex-wrap gap-3">
                 <p className="text-sm uppercase font-bold">Localização:</p>
@@ -229,7 +235,7 @@ export function PatrimonioModal() {
 
                {images.length > 0 && (
                 <>
-                 <Separator className="mb-8 mt-4"/>
+                 <Separator className="mb-4"/>
 
                  <div className="flex gap-3">
                  <GaleriaImagens images={images} urlGeral={urlGeral}/>

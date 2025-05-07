@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
-import { Archive, Check, ChevronLeft, CircleDollarSign, File, Heart, HelpCircle, Hourglass, MapPin, MoveRight, Share, Trash, User, X } from "lucide-react";
+import { Archive, Check, ChevronLeft, ChevronRight, CircleDollarSign, Eye, File, Heart, HelpCircle, Hourglass, MapPin, MoveRight, Share, Trash, User, X } from "lucide-react";
 import { Card, Carousel } from "../ui/apple-cards-carousel";
 import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../context/context";
@@ -459,19 +459,32 @@ export function ItemPage() {
                 <div className="flex w-full flex-col">
             
                 
-                   <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">{bens?.mat_nom}</h2>
+                  <div className="flex justify-between items-start">
+                  <h2 className="text-3xl font-semibold flex gap-2 leading-none items-center tracking-tight mb-2">{bens?.mat_nom || 'Sem nome'} 
+                   {(bens?.mat_cod != 'None' && bens?.mat_cod != '' && bens?.mat_cod != null)  && (
+                    <Badge variant="outline" className="ml-auto sm:ml-0">
+                    Código: {bens?.mat_cod}
+               </Badge>
+                  )}
+                   </h2>
+
+                   <div className="flex gap-2 items-center">
+          <div className="text-sm text-gray-500 flex items-center gap-1">
+            <Eye size={16}/> {bens?.qtd_de_favorito}
+          </div>
+
+         
+     </div>
+                  </div>
                   <h2 className="mb-8 text-gray-500 ">{bens?.bem_dsc_com}</h2>
 
                   <div className="flex ">
                   <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border  border-neutral-200 border-r-0 ${qualisColor[bens?.csv_cod || '' as keyof typeof qualisColor]} relative `}></div>
 
                   <Alert className="flex flex-col  rounded-l-none">
-                  <p className="text-black dark:text-white font-medium text-lg">Informações</p>
+               
                   <div className="flex flex-col flex-1">
-                <div className="text-2xl mb-2 font-bold">{bens?.mat_nom || 'Sem nome'}</div>
-                <p className="text-left mb-4 uppercase">
-                  {bens?.bem_dsc_com} 
-                </p>
+    
 
                 <div className="flex  flex-wrap gap-3">
                 {(bens?.csv_cod != 'None' && bens?.csv_cod != '' && bens?.csv_cod != null) && (
@@ -503,28 +516,84 @@ export function ItemPage() {
                 )}
                 </div>
               </div>
+
+              <div>
+                <Separator className="my-4"/>
+
+                <div className="flex items-center   flex-wrap gap-3">
+                <p className="text-sm uppercase font-bold">Localização:</p>
+                
+                {bens?.uge_nom != null && (
+                <>
+         
+                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              
+                {bens?.uge_cod} - {bens?.uge_nom}
+                </div></>
+               )}
+
+{bens?.org_nom != null && (
+                <>
+         
+                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              
+                {bens?.org_cod} - {bens?.org_nom}
+                </div></>
+               )}
+
+             
+               {bens?.set_nom != null && (
+                <>
+                 <ChevronRight size={16} />
+                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              
+                {bens?.set_cod} - {bens?.set_nom}
+                </div></>
+               )}
+                {bens?.loc_nom != null && (
+                <>
+                 <ChevronRight size={16} />
+                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              
+                {bens?.loc_cod} - {bens?.loc_nom}
+                </div></>
+               )}
+                </div>
+
+            
+              </div>
+
                   </Alert>
                   </div>
 
-                  <Separator className="my-8"/>
+                  
+                  {(bens?.observacao.length || 0) > 0 && (
+                   <div>
+                     <Separator className="my-8"/>
+                  <Alert>
+                  <h2 className="text-sm uppercase font-bold mb-2">Observações do anunciante</h2>
+                  <h2 className=" text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center ">{bens?.observacao}</h2>
+                  </Alert>
+                   </div>
+                )}
 
-                  <div className="flex justify-between items-center">
-          <div className="text-sm w-fit text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
-            <Avatar className="cursor-pointer rounded-md  h-16 w-16">
-      <AvatarImage  className={'rounded-md h-16 w-16'} src={`${urlGeral}s/user/imagem/${bens?.user_id}`} />
-      <AvatarFallback className="flex items-center justify-center"><User size={16}/></AvatarFallback>
-  </Avatar>
- <div>
- 
- <p className="text-black dark:text-white font-medium text-lg">{bens?.display_name}</p>
- <p>{bens?.email}</p></div></div>
+                  {(bens?.pes_nome != '' && bens?.pes_nome  != 'None' && bens?.pes_nome  != null) && (
+                 <div>
+                   <Separator className="my-8"/>
+                   <div className="flex gap-3 items-center ">
+                  <Avatar className=" rounded-md  h-10 w-10">
+                                <AvatarImage className={'rounded-md h-10 w-10'} src={`${conectee}ResearcherData/Image?name=${bens?.pes_nome}`} />
+                                <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
+                              </Avatar>
+                 <div>
+                 <p className="text-sm w-fit text-gray-500">Responsável</p>
+                 <p className="text-black dark:text-white font-medium text-lg">{bens?.pes_nome}</p>
+                 </div>
+                  </div>
+                 </div>
+                )}
 
- <div>
-
- </div>
-          </div>
-
-                  <Separator className="my-8"/>
+                
                
          
                   
@@ -532,7 +601,18 @@ export function ItemPage() {
 
                 <div className="lg:w-[400px] flex flex-col gap-8 lg:min-w-[400px] w-full">
                 
-                
+                <Alert className="p-0">
+                   <CardHeader>
+                    <CardTitle>Transferência</CardTitle>
+                    <CardDescription>
+                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    </CardDescription>
+                  </CardHeader>
+               
+              <CardContent>
+              <ButtonTransference ofertante={bens?.user_id || ''} patrimonio_id={bens?.patrimonio_id || ''} loc_ofertante={bens?.loc || ''}/>
+              </CardContent>
+                </Alert>
              
 
                 </div>

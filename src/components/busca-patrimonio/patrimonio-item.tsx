@@ -39,7 +39,7 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useModal } from "../hooks/use-modal-store";
 import { Badge } from "../ui/badge";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Images } from "../modal/patrimonio-modal";
 import { UserContext } from "../../context/context";
 
@@ -90,13 +90,14 @@ const status = statusMap[bemStaTrimmed];
 
 const {urlGeral} = useContext(UserContext)
  const [images, setImages] = useState<Images[]>([])
-
-    let url = urlGeral + `/patrimonio_imagens?bem_dgv=${props.bem_dgv}&bem_cod=${props.bem_cod}`
-
+ const [imagesLoaded, setImagesLoaded] = useState(false);
+ const url = useMemo(() => {
+  return `${urlGeral}/patrimonio_imagens?bem_dgv=${props.bem_dgv}&bem_cod=${props.bem_cod}`;
+}, []);
 
       useEffect(() => {
         const fetchData = async () => {
-         
+          if (imagesLoaded) return; 
           try {
             const response = await fetch(url, {
               mode: "cors",
@@ -111,6 +112,7 @@ const {urlGeral} = useContext(UserContext)
             const data = await response.json();
             if (data) {
               setImages(data)
+              setImagesLoaded(true); // marca como carregado
             }
           } catch (err) {
             console.log(err);
@@ -118,7 +120,7 @@ const {urlGeral} = useContext(UserContext)
           }
         };
         fetchData();
-      }, [url]);
+      }, [imagesLoaded]);
 
     return (
         <div className="flex group">
@@ -136,7 +138,10 @@ const {urlGeral} = useContext(UserContext)
 
               <div className="flex items-start justify-end min-w-20   gap-3">
               <Button
-                 onClick={() => onOpen('patrimonio', {...props})}
+                 onClick={(event) => {
+                  event.stopPropagation();
+                  onOpen('patrimonio', {...props})
+                 }}
                  variant="outline"
                  size={'icon'}
                  className=" hidden group-hover:flex text-sm h-8 w-8 text-gray-500 dark:text-gray-300"
@@ -183,20 +188,20 @@ const {urlGeral} = useContext(UserContext)
                 </div>
               </div>
   
-            
-            </div>
-
-            <div className="flex gap-3">
+              <div className="flex gap-3 mt-6">
             {images?.[0]?.imagens?.map((props) => {
               return(
                 <Alert
                
-                className="bg-center bg-cover bg-no-repeat p-0 h-10 w-10 "
+                className="bg-center bg-cover bg-no-repeat p-0 h-14 w-14 "
                 style={{ backgroundImage: `url(${urlGeral}imagem/${props})` }}
               />
               )})}
           
             </div>
+            </div>
+
+           
           </Alert>
         </div>
    

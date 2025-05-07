@@ -1,4 +1,4 @@
-import { CheckCheck, Package } from "lucide-react"
+import { CheckCheck, Package, Store } from "lucide-react"
 import { Alert } from "../../ui/alert"
 import { CardContent, CardHeader, CardTitle } from "../../ui/card"
 import { Item } from "./itens-vitrine"
@@ -14,7 +14,7 @@ interface Props {
     handlePutItem: (patrimonio_id: any, verificado: boolean) => Promise<void>;
 }
 
-export function EsperandoAprovacao({bens, loading, handlePutItem}:Props) {
+export function Anunciados({bens, loading, handlePutItem}:Props) {
     const items = Array.from({ length: 12 }, (_, index) => (
         <Skeleton key={index} className="w-full rounded-md h-[300px]" />
       ));
@@ -24,9 +24,9 @@ export function EsperandoAprovacao({bens, loading, handlePutItem}:Props) {
               <Alert className={`p-0  bg-cover bg-no-repeat bg-center `}  >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Esperando aprovação
+                    Anunciados
                   </CardTitle>
-                  <CheckCheck className="h-4 w-4 text-muted-foreground" />
+                  <Store className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{bens.length}</div>

@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { Badge } from "../../ui/badge"
 import { useModal } from "../../hooks/use-modal-store"
 import { Gear } from "phosphor-react"
+import { Switch } from "../../ui/switch"
 
 
 interface Props {
@@ -75,7 +76,7 @@ interface Props {
   uge_cod:string
   uge_nom:string
   uge_siaf:string
-
+  handlePutItem: (patrimonio_id: any, verificado: boolean) => Promise<void>;
 }
 
 export function ItemPatrimonio(props:Props) {
@@ -122,27 +123,23 @@ export function ItemPatrimonio(props:Props) {
      <div className="relative">
      <div className="absolute  w-full  float-right z-[1] gap-2 flex justify-end p-3">
       <div className="flex gap-2 w-full justify-between ">  
-      <Badge className={` text-white text-xs font-medium ${bgColor}`}>
+      <Badge className={` text-white h-6 py-1 text-xs font-medium ${bgColor}`}>
       {months > 0
         ? `${months} ${months === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`
         : `${days} ${days === 1 ? 'dia' : 'dias'}`}
     </Badge>
 
-<div className="flex gap-2">
+<div className="flex gap-2 items-center">
   
-<Button
-onClick={(event) =>
-{event.stopPropagation();
-  onOpen('edit-admin-item', {
-...props
-})}
-}
-size={'icon'} variant={'secondary'}
-
-className={`  h-8 w-8 group-hover:flex hidden transition-all `}// Aplica a classe de estilo condicionalmente
->
-<Gear size={16} /> 
-</Button>
+<Switch
+className={`group-hover:flex hidden data-[state=checked]:bg-green-500 border`}
+  checked={props.verificado}
+  onClick={(event) => event.stopPropagation()}
+  onCheckedChange={(e) => {
+    console.log('switch', !props.verificado)
+    props.handlePutItem(props.patrimonio_id, !props.verificado);
+  }}
+/>
 
 
 {loggedIn &&

@@ -709,7 +709,7 @@ const data = patrimonio.map((item) => {
                 </TabsContent>
 
                 <TabsContent value="movimentacao-bens">
-                  <MovimentacaoBrns/>
+                 
                 </TabsContent>
               </Tabs>
             </main>

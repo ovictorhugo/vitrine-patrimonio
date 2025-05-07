@@ -22,6 +22,7 @@ import { Item } from "../item-page/item-page";
 import { BlockItem } from "../dashboard/itens-vitrine/block-itens";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { AuroraBackground } from "../ui/aurora-background";
+import { toast } from "sonner";
 
 export function HomeInicial() {
     const { isOpen, type, onOpen } = useModalHomepage();
@@ -53,35 +54,123 @@ export function HomeInicial() {
           const [loading, isLoading] = useState(false)
          
           let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=true&desfazimento=false&estado_transferencia=NÃO+VERIFICADO`
+          const fetchData = async () => {
+            try {
+              isLoading(true)
+              const response = await fetch(urlBens, {
+                mode: "cors",
+                headers: {
+                  "Access-Control-Allow-Origin": "*",
+                  "Access-Control-Allow-Methods": "GET",
+                  "Access-Control-Allow-Headers": "Content-Type",
+                  "Access-Control-Max-Age": "3600",
+                  "Content-Type": "text/plain",
+                },
+              });
+              
+              const data = await response.json();
+              if (data) {
+                setBens(data);
+                isLoading(false)
+              } 
+              
+          } catch (err) {
+            console.log(err);
+          }
+        }
 
           useEffect(() => {
-            const fetchData = async () => {
-                try {
-                  isLoading(true)
-                  const response = await fetch(urlBens, {
-                    mode: "cors",
-                    headers: {
-                      "Access-Control-Allow-Origin": "*",
-                      "Access-Control-Allow-Methods": "GET",
-                      "Access-Control-Allow-Headers": "Content-Type",
-                      "Access-Control-Max-Age": "3600",
-                      "Content-Type": "text/plain",
-                    },
-                  });
-                  
-                  const data = await response.json();
-                  if (data) {
-                    setBens(data);
-                    isLoading(false)
-                  } 
-                  
-              } catch (err) {
-                console.log(err);
-              }
-            }
+          
 
               fetchData();
             }, [urlBens])
+
+            const handlePutItem = async (patrimonio_id:any, verificado:boolean) => {
+
+              try {
+                const dataPut = [
+                  {
+                    patrimonio_id:patrimonio_id,
+        
+                    verificado:verificado
+                  }
+                ]
+            
+                console.log(dataPut)
+            
+                let urlProgram = urlGeral + '/formulario'
+            
+            
+                const fetchDataVisible = async () => {
+                
+               
+                  try {
+                   
+                    const response = await fetch(urlProgram, {
+                      mode: 'cors',
+                      method: 'PUT',
+                      headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'PUT',
+                        'Access-Control-Allow-Headers': 'Content-Type',
+                        'Access-Control-Max-Age': '3600',
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify(dataPut),
+                    });
+            
+                    if (response.ok) {
+                     
+                   if (verificado) {
+                    toast("Item despublicado", {
+                      description: "Item apenas para administração",
+                      action: {
+                        label: "Fechar",
+                        onClick: () => console.log("Undo"),
+                      },
+                    })
+        
+                   } else {
+                    toast("Item publicado", {
+                      description: "Visível para todos os usuários",
+                      action: {
+                        label: "Fechar",
+                        onClick: () => console.log("Undo"),
+                      },
+                    })
+        
+                   }
+                     
+                    } else {
+                      console.error('Erro ao enviar dados para o servidor.');
+                      toast("Tente novamente!", {
+                          description: "Tente novamente",
+                          action: {
+                            label: "Fechar",
+                            onClick: () => console.log("Undo"),
+                          },
+                        })
+                    }
+                    
+                  } catch (err) {
+                    console.log(err);
+                  } 
+                 }
+            
+                fetchDataVisible();
+                fetchData()
+            
+            
+              } catch (error) {
+                  toast("Erro ao processar requisição", {
+                      description: "Tente novamente",
+                      action: {
+                        label: "Fechar",
+                        onClick: () => console.log("Undo"),
+                      },
+                    })
+              }
+            }
 
             const uniqueMatNom = [...new Set(bens.map((item) => item.mat_nom))];
 
@@ -145,7 +234,7 @@ export function HomeInicial() {
           <Search/>
          </div>
 
-              <div className="flex flex-wrap gap-3 z-[3] w-full lg:w-[60vw]">
+              <div className="flex flex-wrap gap-3 z-[2] w-full lg:w-[60vw]">
                               {uniqueMatNom.slice(0, 10).map((word, index) => (
                                   <div
                                       key={index}
@@ -165,7 +254,7 @@ export function HomeInicial() {
 </div>
 
 
-<div className="px-8 w-full">
+<div className="px-8 w-full grid gap-8">
 <Alert className="grid gap-3 lg:grid-cols-4 grid-cols-2 ">
          <div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -245,9 +334,11 @@ export function HomeInicial() {
           
 
         </Alert>
+
+        <BlockItem bens={bens} handlePutItem={handlePutItem}/>
 </div>
 
-<BlockItem bens={bens}/>
+
 </div>
 
     )

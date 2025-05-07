@@ -18,6 +18,8 @@ import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { MagnifyingGlass } from "phosphor-react";
 import { Alert } from "../../ui/alert";
 import { EsperandoAprovacao } from "./esperando-aprovacao";
+import { toast } from "sonner";
+import { Anunciados } from "./anunciados";
 
 interface Patrimonio {
     bem_cod:string
@@ -134,8 +136,7 @@ export function ItensVitrine() {
           let urlBens = urlGeral +`formulario?user_id=&loc=&verificado=${value == '1' ? ('false') : ('true')}&desfazimento=false&estado_transferencia=NÃO+VERIFICADO`
 console.log(urlBens)
 
-          useEffect(() => {
-            const fetchData = async () => {
+  const fetchData = async () => {
                 try {
                   isLoading(true)
                   const response = await fetch(urlBens, {
@@ -162,8 +163,100 @@ console.log(urlBens)
               }
             }
 
+          useEffect(() => {
+          
+
               fetchData();
             }, [urlBens])
+
+
+            
+    const handlePutItem = async (patrimonio_id:any, verificado:boolean) => {
+
+      try {
+        const dataPut = [
+          {
+            patrimonio_id:patrimonio_id,
+
+            verificado:verificado
+          }
+        ]
+    
+        console.log(dataPut)
+    
+        let urlProgram = urlGeral + '/formulario'
+    
+    
+        const fetchDataVisible = async () => {
+        
+       
+          try {
+           
+            const response = await fetch(urlProgram, {
+              mode: 'cors',
+              method: 'PUT',
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'PUT',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Max-Age': '3600',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(dataPut),
+            });
+    
+            if (response.ok) {
+             
+           if (verificado == true) {
+            toast("Item despublicado", {
+              description: "Item apenas para administração",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+
+           } else {
+            toast("Item publicado", {
+              description: "Visível para todos os usuários",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+
+           }
+             
+            } else {
+              console.error('Erro ao enviar dados para o servidor.');
+              toast("Tente novamente!", {
+                  description: "Tente novamente",
+                  action: {
+                    label: "Fechar",
+                    onClick: () => console.log("Undo"),
+                  },
+                })
+            }
+            
+          } catch (err) {
+            console.log(err);
+          } 
+         }
+    
+        fetchDataVisible();
+        fetchData()
+    
+    
+      } catch (error) {
+          toast("Erro ao processar requisição", {
+              description: "Tente novamente",
+              action: {
+                label: "Fechar",
+                onClick: () => console.log("Undo"),
+              },
+            })
+      }
+    }
 
             const items = Array.from({ length: 12 }, (_, index) => (
               <Skeleton key={index} className="w-full rounded-md aspect-square" />
@@ -222,7 +315,7 @@ console.log(urlBens)
              
               <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
               
-                <Button  >Publicar item</Button>
+            
               </div>
             </div>
 
@@ -307,7 +400,11 @@ console.log(urlBens)
 
 
             <TabsContent value="1" className="p-0 m-0">
-                    <EsperandoAprovacao bens={bens} loading={loading}/>
+                    <EsperandoAprovacao bens={bens} loading={loading} handlePutItem={handlePutItem}/>
+            </TabsContent>
+
+            <TabsContent value="2" className="p-0 m-0">
+                    <Anunciados bens={bens} loading={loading} handlePutItem={handlePutItem}/>
             </TabsContent>
             </Tabs>
             </main>
