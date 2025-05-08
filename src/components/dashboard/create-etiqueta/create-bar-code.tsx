@@ -100,7 +100,7 @@ export function CreateBarCode() {
        bemCod = parseInt(input.split('-')[0], 10).toString();
             bemDgv = input.split('-')[1];
 
-     let urlPatrimonio = `${urlGeral}checkoutPatrimonio?bem_cod=${bem_cod}&bem_dgv=${bem_dgv}`;
+     let urlPatrimonio = `${urlGeral}checkoutPatrimonio?etiqueta=${bem_cod}-${bem_dgv}`;
      console.log(urlPatrimonio)
      let urlPatrimonioBusca = `vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${bem_cod}&bem_dgv=${bem_dgv}`; 
      const fetchData = async () => {

@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = "general" | "visao-geral-user" | 'atualizar-dados' | 'gerenciar-usuarios' | 'configuracoes' | 'lista-patrimonio' | 'visao-sala' | 'novo-item' | 'itens-vitrine' | 'empenhos' | 'create-bar-bode' | 'painel' | 'assinar-documento' | 'itens-desfazimento' | 'transferencia'
+export type ModalType = "general" | "visao-geral-user" | 'atualizar-dados' | 'gerenciar-usuarios' | 'configuracoes' | 'lista-patrimonio' | 'visao-sala' | 'novo-item' | 'itens-vitrine' | 'empenhos' | 'create-bar-bode' | 'painel' | 'assinar-documento' | 'itens-desfazimento' | 'transferencia' | 'editar-item'
 
 
 interface ModalStore {

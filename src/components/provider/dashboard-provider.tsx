@@ -16,6 +16,7 @@ import {  PainelGeral } from "../dashboard/painel-usuario/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
 import { ItensDesfazimento } from "../dashboard/itens-desfazimento/itens-desfazimento";
 import { Transferencia } from "../dashboard/transferencia/transferencia";
+import { EditItemVitrine } from "../dashboard/novo-item/edit-item-vitrine";
 
 
 
@@ -44,6 +45,8 @@ const ModalContent = () => {
       return <ItensDesfazimento/>
     case 'transferencia':
       return <Transferencia/>
+    case 'editar-item':
+      <EditItemVitrine/>
     default:
       return null;
   }

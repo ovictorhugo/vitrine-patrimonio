@@ -142,36 +142,12 @@ export function ItemPage() {
                       fetchData();
                     }, [urlBens])
 
-                    const data = [
-                      {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[0]}`,
-                       
-                      },
-                      {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[1]}`,
-                     
-                      },
-                      {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}imagem/${bens?.imagens?.[2]}`,
-                      
-                      },
-                     
-                      {
-                        category: "",
-                        title: "",
-                        src: `${urlGeral}/imagem/${bens?.imagens?.[3]}`,
-                  
-                     
-                      },
-                     
-                    ];
-                  
+                    const data = (bens?.imagens || []).slice(0, 4).map((img, index) => ({
+                      category: "",
+                      title: "",
+                      src: `${urlGeral}imagem/${img}`,
+                    }));
+                    
                     console.log(data)
                   
                   
@@ -378,6 +354,8 @@ export function ItemPage() {
                       useEffect(() => {
                         handleGetFavorites('favorito', user?.user_id || '')
                         }, [user?.user_id])
+
+                        const urlPatrimonioBusca = `vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${bens?.bem_cod}&bem_dgv=${bens?.bem_dgv}`; 
                       
                         const isFavorite = favoritos.some(fav => fav.patrimonio_id === bens?.patrimonio_id );
                         const csvCodTrimmed = bens?.csv_cod ? bens?.csv_cod.trim() : '';
@@ -605,7 +583,7 @@ export function ItemPage() {
                    <CardHeader>
                     <CardTitle>Transferência</CardTitle>
                     <CardDescription>
-                      Lipsum dolor sit amet, consectetur adipiscing elit
+                    Informe o destino desejado para a transferência.
                     </CardDescription>
                   </CardHeader>
                
@@ -613,6 +591,79 @@ export function ItemPage() {
               <ButtonTransference ofertante={bens?.user_id || ''} patrimonio_id={bens?.patrimonio_id || ''} loc_ofertante={bens?.loc || ''}/>
               </CardContent>
                 </Alert>
+
+                <Alert className="p-0">
+                <CardHeader>
+                   
+                <CardDescription className="text-justify">
+  Ao solicitar a transferência, o anunciante será notificado. A Seção de Patrimônio analisará o pedido e dará um retorno em até 3 dias úteis.
+</CardDescription>
+
+<div>
+<Separator className="my-4"/>
+</div>
+
+ <div className="flex justify-between items-center">
+          <div className="text-sm w-fit text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
+            <Avatar className="cursor-pointer rounded-md  h-10 w-10">
+      <AvatarImage  className={'rounded-md h-10 w-10'} src={`${urlGeral}s/user/imagem/${bens?.user_id}`} />
+      <AvatarFallback className="flex items-center justify-center"><User size={16}/></AvatarFallback>
+  </Avatar>
+ <div>
+ <p className="text-sm w-fit text-gray-500">Anunciante</p>
+ <p className="text-black dark:text-white font-medium text-lg">{bens?.display_name}</p>
+</div></div>
+
+ <div>
+
+ </div>
+          </div>
+
+                  </CardHeader>
+                </Alert>
+
+                <div id="content-to-pdf" className={` flex dark:text-black `}>
+                   <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 k border-r-0 bg-eng-blue min-h-full relative `}></div>
+                   <Alert className={`dark:bg-white  border-l-0  rounded-l-none items-center flex gap-4 `}>
+                   <div className="w-fit">
+                   <QRCode
+                    className={` w-fit  h-20`}
+                       value={urlPatrimonioBusca}
+                       
+                     />
+                   </div>
+                   
+                   <div className="flex flex-col w-full h-full justify-center py-2">
+                                 <p className={`dark:text-black  font-semibold `}>Escola de Engenharia da UFMG</p>
+                               <div className="flex gap-3 mb-2">
+                               <p className={`uppercase text-muted-foreground dark:text-black  text-xs`}>
+                                    Material: {bens?.mat_nom}
+                                   </p>
+                   
+                                   <p className={`text-muted-foreground dark:text-black  text-xs`}>
+                                    Ano: {currentYear}
+                                   </p>
+                   
+                               </div>
+                   
+                                   <div className={` font-bold dark:text-black  text-xl`}>{bens?.bem_cod}-{bens?.bem_dgv}</div>
+                                 <div className="">
+                                 <div
+  style={{
+    backgroundImage: `url('https://barcode.orcascan.com/?type=code128&data=${bens?.bem_cod}-${bens?.bem_dgv}&fontsize=Fit&format=svg')`,
+  }}
+  className="mix-blend-multiply w-full bg-cover bg-no-repeat h-7"
+></div>
+
+                                 </div>
+                   
+                                 </div>
+                   
+                   
+                   
+                   
+                   </Alert>
+                   </div>
              
 
                 </div>

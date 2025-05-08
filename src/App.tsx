@@ -126,7 +126,7 @@ function App() {
         <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
         <Route path='/dashboard/itens-desfazimento' element={<Admin/>}/>
         <Route path='/dashboard/transferencias' element={<Admin/>}/>
-
+        <Route path='/dashboard/editar-item' element={<Admin/>}/>
 
 
         <Route path='/dashboard/empenhos' element={<Admin/>}/>

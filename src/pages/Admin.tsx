@@ -40,6 +40,8 @@ export function Admin() {
             onOpen('itens-desfazimento')
         }  else if (location.pathname == '/dashboard/transferencias') {
             onOpen('transferencia')
+        } else if (location.pathname == '/dashboard/editar-item') {
+            onOpen('editar-item')
         }
 
 

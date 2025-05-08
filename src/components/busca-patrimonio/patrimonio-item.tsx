@@ -188,17 +188,18 @@ const {urlGeral} = useContext(UserContext)
                 </div>
               </div>
   
-              <div className="flex gap-3 mt-6">
-            {images?.[0]?.imagens?.map((props) => {
-              return(
-                <Alert
-               
-                className="bg-center bg-cover bg-no-repeat p-0 h-14 w-14 "
-                style={{ backgroundImage: `url(${urlGeral}imagem/${props})` }}
-              />
-              )})}
-          
-            </div>
+              {images.length > 0 && (
+                <div className="flex gap-3 mt-6">
+                {images?.[0]?.imagens?.map((props) => {
+                  return(
+                    <Alert
+                    className="bg-center bg-cover bg-no-repeat p-0 h-14 w-14 "
+                    style={{ backgroundImage: `url(${urlGeral}imagem/${props})` }}
+                  />
+                  )})}
+              
+                </div>
+              )}
             </div>
 
            
