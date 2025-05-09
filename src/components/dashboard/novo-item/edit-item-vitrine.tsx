@@ -117,8 +117,7 @@ const {urlGeral, user} = useContext(UserContext)
     const queryUrl = useQuery();
 
   const query = useQuery();
-  const type_search = queryUrl.get('type_search');
-  const terms = queryUrl.get('terms');
+  const patrimonio_id = queryUrl.get('patrimonio_id');
   const loc_nom = queryUrl.get('loc_nom');
 
   const [input, setInput] = useState("");
@@ -132,9 +131,7 @@ const {urlGeral, user} = useContext(UserContext)
 
 
     try {
-      const dataFinal = [{
-       
-      }]
+      
 
        let urlProgram = urlGeral + '/formulario'
 
@@ -158,7 +155,7 @@ const {urlGeral, user} = useContext(UserContext)
             },
           })
           return;
-         } else if (images.length != 4) {
+         } else if (images.length == 0) {
            toast("Nenhuma imagem selecionada!", {
              description: "Por favor, selecione ao menos uma imagem antes de enviar.",
              action: {
@@ -174,15 +171,15 @@ const {urlGeral, user} = useContext(UserContext)
           
            const response = await fetch(urlProgram, {
              mode: 'cors',
-             method: 'POST',
+             method: 'PUT',
              headers: {
                'Access-Control-Allow-Origin': '*',
-               'Access-Control-Allow-Methods': 'POST',
+               'Access-Control-Allow-Methods': 'PUT',
                'Access-Control-Allow-Headers': 'Content-Type',
                'Access-Control-Max-Age': '3600',
                'Content-Type': 'application/json'
              },
-             body: JSON.stringify(dataFinal),
+             body: JSON.stringify(data),
            });
    
            if (response.ok) {
@@ -345,7 +342,7 @@ const {urlGeral, user} = useContext(UserContext)
   
 
 
-let url = urlGeral + `formulario?user_id=&loc=&verificado=&patrimonio_id=`
+let url = urlGeral + `formulario?user_id=&loc=&verificado=&patrimonio_id=${patrimonio_id}`
 
 console.log(url)
 
@@ -379,7 +376,7 @@ useEffect(() => {
   fetchData();
 
   console.log('oi',patrimonio)
-}, [url, terms]);
+}, [url, patrimonio_id]);
 
 useEffect(() => {
   if (patrimonio) {
@@ -394,7 +391,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
     
   const {onOpen} = useModal()
 
-  const handleChange = (field: keyof Patrimonio, value: string) => {
+  const handleChange = (field: keyof Item, value: any) => {
     setData((prev) => ({
       ...prev,
       [field]: value,
@@ -423,36 +420,12 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
   const navigate = useNavigate();
   const location = useLocation();
 
-  const emptyPatrimonio: Patrimonio = {
-    bem_cod: '',
-    bem_dgv: '',
-    bem_num_atm: '',
-    csv_cod: '',
-    bem_serie: '',
-    bem_sta: '',
-    bem_val: '',
-    tre_cod: '',
-    bem_dsc_com: '',
-    uge_cod: '',
-    uge_nom: '',
-    org_cod: '',
-    uge_siaf: '',
-    org_nom: '',
-    set_cod: '',
-    set_nom: '',
-    loc_cod: '',
-    loc_nom: '',
-    ite_mar: '',
-    ite_mod: '',
-    tgr_cod: '',
-    grp_cod: '',
-    ele_cod: '',
-    sbe_cod: '',
-    mat_cod: '',
-    mat_nom: '',
-    pes_cod: '',
-    pes_nome: '',
-  };
+  useEffect(() => {
+    if (data.imagens && Array.isArray(data.imagens)) {
+      const imgs = data.imagens.map((item: string) => `${urlGeral}imagem/${item}`);
+      setImages(imgs);
+    }
+  }, [data.imagens]);
   
 
     return(
@@ -477,7 +450,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
               )}
 
 
-                <Badge variant="outline" className={`ml-auto sm:ml-0 ${dataPatrimonio.desfazimento ? ('bg-red-600 text-white'):('bg-eng-blue text-white')}`}>
+                <Badge variant="outline" className={`ml-auto sm:ml-0 ${data.desfazimento ? ('bg-red-600 text-white'):('bg-eng-blue text-white')}`}>
                 {data.desfazimento ? ('Desfazimento'):('Anunciar na Vitrine')}
               </Badge>
           
@@ -508,7 +481,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
                     <div className="flex gap-3 items-center">
                    
 
-                      <Button   onClick={() => onOpen('search-cod-atm')}><Package size={16}/>Cadastrar patrimônio</Button>
+                   
                     </div>
                     </div>
                   </CardHeader>
@@ -796,8 +769,8 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
             id="loc_nom"
             type="text"
             className="w-full"
-            value={data.name}
-            onChange={(e) => handleChange('name', e.target.value)}
+            value={data.display_name}
+            onChange={(e) => handleChange('display_name', e.target.value)}
           />
           
         </div>
@@ -843,30 +816,9 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
                         />
                       </div>
 
-                      <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Telefone</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={true}
-                          value={data.tel}
-                          onChange={(e) => handleChange('telefone', e.target.value)}
-                        />
-                      </div>
+                    
 
-                      
-                      <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Ramal</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          value={data.ramal}
-                          disabled={true}
-                          onChange={(e) => handleChange('ramal', e.target.value)}
-                        />
-                      </div>
+                    
                     </div>
                     </div>
                     </CardContent>
@@ -1021,60 +973,61 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
        
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-2">
-         <div>
-        {images.length == 0 ? (
-          <div className="aspect-square w-full rounded-md object-cover border " >
-
-          </div>
-        ):(
-          <div className="flex items-center justify-center group">
-          <img
-           
-          className="aspect-square w-full rounded-md object-cover"
-          height="300"
-          src={images[0] || "/placeholder.svg"}
-          width="300"
-        />
-        <Button onClick={() => handleRemoveImage(0)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
-          </div>
-        )}
-         </div>
-          <div className="grid grid-cols-3 gap-2">
-            {images.slice(1, 4).map((image, index) => (
-              <button key={index}>
-              <div className="flex items-center justify-center group">
-               <img
-                
-                className="aspect-square w-full rounded-md object-cover"
-                height="84"
-                src={image}
-                width="84"
-              />
-                <Button onClick={() => handleRemoveImage(index+1)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
-               </div>
-             
-              </button>
-            ))}
-            {images.length < 4 && (
-              <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="upload"
-                />
-                <label htmlFor="upload" className="cursor-pointer w-full h-full flex items-center justify-center">
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                  <span className="sr-only">Upload</span>
-                </label>
-              </button>
-            )}
-          </div>
+     <CardContent>
+  <div className="grid gap-2">
+    <div>
+      {images.length === 0 ? (
+        <div className="aspect-square w-full rounded-md border" />
+      ) : (
+        <div className="relative flex items-center justify-center group">
+          <div
+            className="aspect-square w-full rounded-md bg-cover bg-center"
+            style={{ backgroundImage: `url(${images[0]})` }}
+          />
+          <Button
+            onClick={() => handleRemoveImage(0)}
+            variant="destructive"
+            className="absolute z-[9] group-hover:flex hidden transition-all"
+            size="icon"
+          >
+            <Trash size={16} />
+          </Button>
         </div>
-      </CardContent>
+      )}
+    </div>
+
+    <div className="grid grid-cols-3 gap-2">
+      {images.slice(1, 4).map((image, index) => (
+        <div key={index} className="relative flex items-center justify-center group">
+          <div
+            className="aspect-square w-full rounded-md bg-cover bg-center flex items-center justify-center"
+            style={{ backgroundImage: `url(${image})` }}
+          />
+          <Button
+            onClick={() => handleRemoveImage(index + 1)}
+            variant="destructive"
+            className=" absolute z-[9] group-hover:flex hidden  transition-all"
+            size="icon"
+          >
+            <Trash size={16} />
+          </Button>
+        </div>
+      ))}
+
+      {images.length < 4 && (
+        <label className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <Upload className="h-4 w-4 text-muted-foreground" />
+        </label>
+      )}
+    </div>
+  </div>
+</CardContent>
     </Alert>
             </div>
             </div>

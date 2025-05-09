@@ -188,7 +188,7 @@ export function PatrimonioModal() {
               <div>
                 <Separator className="my-4"/>
 
-                <div className="flex items-center mb-4  flex-wrap gap-3">
+                <div className="flex items-center  flex-wrap gap-3">
                 <p className="text-sm uppercase font-bold">Localização:</p>
                 
                 {data.uge_nom != null && (
@@ -235,7 +235,7 @@ export function PatrimonioModal() {
 
                {images.length > 0 && (
                 <>
-                 <Separator className="mb-4"/>
+                 <Separator className="my-4"/>
 
                  <div className="flex gap-3">
                  <GaleriaImagens images={images} urlGeral={urlGeral}/>

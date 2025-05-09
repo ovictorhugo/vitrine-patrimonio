@@ -46,7 +46,7 @@ const ModalContent = () => {
     case 'transferencia':
       return <Transferencia/>
     case 'editar-item':
-      <EditItemVitrine/>
+      return <EditItemVitrine/>
     default:
       return null;
   }

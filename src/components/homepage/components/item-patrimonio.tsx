@@ -150,9 +150,8 @@ className={`group-hover:flex hidden data-[state=checked]:bg-green-500 border`}
 onClick={(event) =>
 {
   event.stopPropagation();
-  onOpen('edit-item', {
-...props
-})}
+  window.open(`/dashboard/editar-item?patrimonio_id=${props.patrimonio_id}`, '_blank');
+}
 }
 size="icon"
 variant='secondary'
