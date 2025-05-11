@@ -8,6 +8,8 @@ import { auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { LogoVitrineWhite } from './svg/LogoVitrineWhite';
 import { LogoVitrine } from './svg/LogoVitrine';
+import { SymbolEE } from './svg/SymbolEE';
+import { SymbolEEWhite } from './svg/SymbolEEWhite';
 
 
 
@@ -219,8 +221,11 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     const { theme } = useTheme()
 
   return <>{loading ? <main className='h-screen w-full flex items-center justify-center'>
-        <div className='h-16 animate-pulse'>
-        <div  className="h-16  "  >{(theme ==  'dark' ) ? (<LogoVitrineWhite />):(<LogoVitrine />)}</div>
+        <div className=' animate-pulse'>
+      <div className='flex gap-8 items-center'>
+      <div  className="h-24  "  >{(theme ==  'dark' ) ? (<SymbolEEWhite />):(<SymbolEE />)}</div>
+      <div  className="h-10  "  >{(theme ==  'dark' ) ? (<LogoVitrineWhite />):(<LogoVitrine />)}</div>
+      </div>
         </div>
   </main> : children}</>;
 };
