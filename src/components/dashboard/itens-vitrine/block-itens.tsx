@@ -12,7 +12,7 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 interface Props {
     bens: any[];
     new_item?:boolean
-    handlePutItem: (patrimonio_id: any, verificado: boolean) => Promise<void>;
+    handlePutItem?: (patrimonio_id: any, verificado: boolean) => Promise<void>;
 }
 
 export function BlockItem(props:Props) {

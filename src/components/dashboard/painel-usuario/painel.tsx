@@ -1,8 +1,8 @@
-import { Check, ChevronLeft, File, Heart, LoaderIcon, Mail, Phone, Plus, Rows, Shapes, Store, Tag, Trash } from "lucide-react";
+import { ArrowRightLeft, Check, CheckCheck, ChevronLeft, File, Heart, Home, LoaderIcon, Mail, Phone, Plus, Rows, Search, Shapes, Store, Tag, Trash } from "lucide-react";
 import { useModalDashboard } from "../../hooks/use-modal-dashboard";
 import { Button } from "../../ui/button";
 import { Link, useNavigate } from "react-router-dom";
-
+import { Helmet } from "react-helmet";
 import {
     Carousel,
     CarouselContent,
@@ -27,6 +27,8 @@ import { MinhasSalas } from "./minhas-salas";
 import { Accordion, AccordionItem, AccordionTrigger } from "../../ui/accordion";
 import { SquaresFour } from "phosphor-react";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
+import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
+import { Favoritos } from "./favoritos";
 
 export function PainelGeral() {
   const history = useNavigate();
@@ -36,18 +38,45 @@ const {urlGeral, user} = useContext(UserContext)
   };
 
 
+  const tabs = [
+    { id: "visao_geral", label: "Visão geral", icon: Home },
+    { id: "gestao_patrimonio", label: "Gestão de Patrimônio", icon: Search },
+    { id: "vitrine", label: "Vitrine", icon: Store },
+    { id: "desfazimento", label: "Desfazimento", icon: Trash },
+  
+ 
+  ];
+
+  const tabs2 = [
+    { id: "aguardando_aprovacao", label: "Aguardando aprovação", icon: CheckCheck },
+    { id: "itens_anunciados", label: "Itens anunciados", icon: Store },
+    { id: "transferidos", label: "Transferidos", icon: ArrowRightLeft },
+  
+ 
+  ];
+
+  const tabs3 = [
+    { id: "minhas_salas", label: "Minhas salas", icon: CheckCheck },
+    { id: "meus_bens", label: "Meus bens patrimoniados", icon: Store },
+    { id: "transferidos", label: "Assinaturas", icon: ArrowRightLeft },
+  
+ 
+  ];
+  const [value, setValue] = useState(tabs[0].id)
+  const [value2, setValue2] = useState(tabs2[0].id)
+
+
     return(
        
-             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 relative">
+             <main className="flex flex-1 flex-col  p-4  md:p-8 relative">
+            <Helmet>
+        <title>Dashboard | Módulo administrativo | Vitrine Ptrimônio</title>
+        <meta name="description" content={`Dashboard | Vitrine Ptrimônio`} />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
             <div className="flex relative">
-            <div className="bg-eng-blue w-full p-8 absolute rounded-lg h-[400px]">
-          
-            </div>
-            </div>
-            
-
-           <div className="z-[1] flex flex-col gap-8">
-           <div className="w-full px-8  gap-4">
+            <div className="bg-eng-blue flex-col flex items-center justify-center w-full   rounded-lg h-[400px]">
+            <div className="w-full gap-4 p-8 pb-0">
             <div className="flex items-center gap-4">
          
            <Button  onClick={handleVoltar} variant='ghost' size="icon" className="h-7 w-7 text-white hover:text-eng-blue dark:hover:text-eng-blue">
@@ -68,7 +97,8 @@ const {urlGeral, user} = useContext(UserContext)
             </div>
 
             </div>
-           <div className="grid  pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="flex flex-1 w-full items-center">
+          <div className="grid w-full  pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
             <div className="  flex flex-col md:gap-8 gap-4"  >
 
             </div>
@@ -92,6 +122,98 @@ const {urlGeral, user} = useContext(UserContext)
  </div> 
                  </p>
                </div>
+            </div>
+
+        
+
+            </div>
+          </div>
+            </div>
+            </div>
+            
+
+           <div className="z-[1] flex flex-col gap-8">
+           
+           <div className="grid  pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+            <div className=" -top-[100px] relative flex flex-col md:gap-8 gap-4"  >
+                <Button>e</Button>
+            </div>
+           
+            <div className="xl:col-span-2 -top-[50px] relative  flex flex-col md:gap-8 gap-4"  >
+            <Tabs defaultValue={tabs[0].id} value={value} className="">
+<div className="w-full flex justify-between bap-8">
+<ScrollArea className="relative overflow-x-auto">
+    <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent">
+      {tabs.map(
+        ({ id, label, icon: Icon }) =>
+         
+            <div
+              key={id}
+              className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
+                value === id ? "border-b-white" : "border-b-transparent"
+              }`}
+              onClick={() => setValue(id)}
+            >
+              <Button variant="ghost" className={`m-0 text-white hover:text-eng-blue ${ value === id ? "bg-white text-eng-blue" : ""}`}>
+                <Icon size={16} />
+                {label}
+              </Button>
+            </div>
+          
+      )}
+    </TabsList>
+    <ScrollBar orientation="horizontal" />
+  </ScrollArea>
+
+<div>
+
+</div>
+</div>
+
+<TabsContent value="visao_geral">
+  <div className="grid gap-8 mt-8 w-full">
+     <Favoritos/>
+  </div>
+</TabsContent>
+
+<TabsContent value="gestao_patrimonio">
+  <div className="grid gap-8 mt-8 w-full">
+    <MinhasSalas/>
+
+    <MeusBens/>
+  </div>
+</TabsContent>
+
+<TabsContent value="vitrine">
+  <div className="grid gap-8 w-full">
+  <h3 className="text-2xl font-medium ">Vitrine patrimônio</h3>
+      <Tabs defaultValue={tabs2[0].id} value={value2} className="">
+      <TabsList className="p-0 flex justify-start gap-2 h-auto bg-transparent dark:bg-transparent">
+      {tabs2.map(
+        ({ id, label, icon: Icon }) =>
+         
+            <div
+              key={id}
+              className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
+                value2 === id ? "border-b-[#719CB8]" : "border-b-transparent"
+              }`}
+              onClick={() => setValue2(id)}
+            >
+              <Button variant="ghost" className="m-0">
+                <Icon size={16} />
+                {label}
+              </Button>
+            </div>
+          
+      )}
+    </TabsList>
+    </Tabs>
+  </div>
+</TabsContent>
+            </Tabs>
+
+
+
             </div>
 
         

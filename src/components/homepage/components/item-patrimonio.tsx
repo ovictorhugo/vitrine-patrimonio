@@ -76,7 +76,7 @@ interface Props {
   uge_cod:string
   uge_nom:string
   uge_siaf:string
-  handlePutItem: (patrimonio_id: any, verificado: boolean) => Promise<void>;
+  handlePutItem?: (patrimonio_id: any, verificado: boolean) => Promise<void>;
 }
 
 export function ItemPatrimonio(props:Props) {
@@ -137,7 +137,7 @@ className={`group-hover:flex hidden data-[state=checked]:bg-green-500 border`}
   onClick={(event) => event.stopPropagation()}
   onCheckedChange={(e) => {
     console.log('switch', !props.verificado)
-    props.handlePutItem(props.patrimonio_id, !props.verificado);
+    props.handlePutItem?.(props.patrimonio_id, !props.verificado)
   }}
 />
 
