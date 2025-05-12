@@ -29,11 +29,14 @@ export function SegurancaMinhaArea() {
         const data = [
           {
             uid:(user?.uid),
-            linkedin:linkedin,
+            matricula:matricula,
             telephone:telephone,
-            display_name:name
+            display_name:name,
+            ramal:ramal
           }
         ]
+
+        console.log(data)
           if (name.length === 0) {
               toast("O nome não pode ser vazio", {
                   description: "Por favor, tente novamente",
