@@ -27,7 +27,7 @@ import {
 
   
 import { CaretLeft, ChartLine, Funnel, Gear, GraduationCap, GridFour, ListDashes, MagnifyingGlass, SignIn, Textbox, UserPlus } from "phosphor-react";
-import { DotSquare, GitBranch, Grip, Laptop, LayoutDashboard, LogIn, Moon, Search, Sun, User } from "lucide-react";
+import { DotSquare, GitBranch, Grip, Info, Laptop, LayoutDashboard, LogIn, Moon, Search, Sun, User } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { Button } from "../ui/button";
 
@@ -50,6 +50,7 @@ import { SymbolEE } from "../svg/SymbolEE";
 import { useModal } from "../hooks/use-modal-store";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ModeToggle } from "../mode-toggle";
+import { SpeedActions } from "./speed-actions";
 
 export function Header() {
   const {loggedIn, user, permission} = useContext(UserContext)
@@ -123,65 +124,35 @@ export function Header() {
   
 
         {!loggedIn && (
-  <Link to={'/signIn'}>
-  <Button variant='ghost' size="sm" className="h-8 px-2" >
-                  <LogIn className="h-4 w-4" />
-                  Fazer login
-                </Button></Link>
+   <Link to={'/signIn'}>
+   <Button variant='outline' size="sm" className="h-8 px-2" >
+     <LogIn className="h-4 w-4" />
+  Acessar
+   </Button></Link>
 )}
 
 
-{!loggedIn && (
- <Link to={'/signUp'}>
- <Button  size="sm"  className="h-8 px-2">
-                 <UserPlus className="h-4 w-4" />
-                 Criar conta
-               </Button></Link>
-)}  
 
 {(loggedIn && permission.length > 0) && (
   <Link to={'/dashboard'}>
   <Button variant='outline' size="sm"  className="h-8 px-2" >
                   <LayoutDashboard className="h-4 w-4" />
-                  Console
+                  Dashboard
                 </Button></Link>
 )}
+
+<Link to={'/informacoes'}>
+          <Button  variant='outline' size="icon" className="h-8 w-8" >
+                      <Info className="h-4 w-4" />
+                      <span className="sr-only">Informações</span>
+                    </Button></Link>
 
 <ModeToggle/>      
 
 
              
 
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-      <Button variant='outline' size="icon" className="h-8 w-8">
-                <Grip className="h-4 w-4" />
-                <span className="sr-only">Menu de ações rápidas</span>
-              </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="end" >
-        <div className="grid gap-3 grid-cols-3">
-        <Link to={'/'}>
-        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
-                      <div className="h-8 mb-4"><SymbolEE/></div>
-                      <div className="flex  text-xs font-medium max-w-[70px] truncate  text-center"> Vitrine Patrimônio</div>
-                      </DropdownMenuItem></Link>
-
-                      <Link to={'/'}>
-        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
-                      <div className="h-8 mb-4"><SymbolEE/></div>
-                      <div className="flex  text-xs font-medium max-w-[70px]  truncate text-center"> ConectEE</div>
-                      </DropdownMenuItem></Link>
-
-                      <Link to={'/'}>
-        <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
-                      <div className="h-8 mb-4"><SymbolEE/></div>
-                      <div className="flex  text-xs font-medium max-w-[70px]  truncate text-center"> CEGRADEE</div>
-                      </DropdownMenuItem></Link>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+ <SpeedActions/>
     
 
 

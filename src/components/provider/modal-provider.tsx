@@ -19,6 +19,7 @@ import { PatrimonioModal } from "../modal/patrimonio-modal";
 import { AddPatrimonioModal } from "../modal/add-patrimonio-modal";
 import { SearchCodAtmModal } from "../modal/search-modal-cod-atm";
 import { SearchLocNomModal } from "../modal/search-modal-loc-nom";
+import { RelatarBug } from "../modal/relatar-bug";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -52,6 +53,8 @@ const ModalContent = () => {
       return <SearchCodAtmModal/>
     case 'search-loc-nom':
       return <SearchLocNomModal/>
+    case 'relatar-problema':
+      return <RelatarBug/>
     default:
       return null
   }

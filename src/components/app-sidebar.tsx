@@ -41,34 +41,21 @@ import { UserContext } from "../context/context"
 import { useContext} from "react";
 import { AccountSwitcher } from "./navigation/user-list"
 import { DotsThree } from "phosphor-react"
+import { useModal } from "./hooks/use-modal-store"
 // This is sample data.
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  const {urlGeral, user,  loggedIn} = useContext(UserContext)
- 
+ const {onOpen} = useModal()
   const data = {
     user: {
-      name: user?.display_name || '',
+      name: user?.username || '',
       email: user?.email || '',
       avatar: user?.photo_url || '',
     },
    
     navMain: [
-      {
-        title: "Ferramentas",
-        url: "/",
-        icon: Wrench,
-        isActive: true,
-        items: [
-          {
-            title: "Mapa da instituição",
-            url: "/mapa",
-            icon: Map
-          },
-       
-        ],
-      },
-      
+   
 
       {
         title: "Outros",
@@ -77,15 +64,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: true,
         items: [
           {
-            title: "Relatar problema",
-            url: "/relatar-problema",
-            icon: Bug
-          },
-          {
-            title: "Informações",
-            url: "/informacoes",
-            icon: Info
-          },
+            title: "Feedback",
+            icon: Bug,
+            onClick: () => onOpen('relatar-problema'), // Chama a função onOpen() ao clicar
+        },
         ],
       },
    

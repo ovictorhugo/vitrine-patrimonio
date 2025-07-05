@@ -56,6 +56,7 @@
     "html2pdf.js": "^0.10.2",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.354.0",
     "mercadopago": "^2.0.9",
     "mini-svg-data-uri": "^1.4.4",

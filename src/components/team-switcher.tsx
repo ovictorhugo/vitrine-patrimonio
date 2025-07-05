@@ -102,7 +102,7 @@ export function TeamSwitcher({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!loggedIn && (teams.length > 0)}>
             <SidebarMenuButton
               size="lg"
               className=" data-[state=open]:text-sidebar-accent-foreground"

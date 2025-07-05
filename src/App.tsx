@@ -13,6 +13,7 @@ import { Admin } from './pages/Admin';
 import { Notification } from './pages/notification';
 import LoadingWrapper from './components/loading';
 import { Item } from './components/item-page/item-page';
+import { AuthenticationToken } from './pages/Authentication-token';
 
 
 interface User {
@@ -141,10 +142,7 @@ function App() {
         element={loggedIn == false ? <Authentication/> : <Navigate to='/' />}
         />
 
-        <Route
-         path='/signUp'
-         element={loggedIn == false ? <Authentication/> : <Navigate to='/' />}
-        />
+    <Route path='/authentication' element={<AuthenticationToken />} />
 
 
 

@@ -38,12 +38,47 @@ export default function SearchLayout({
   const isModalOpen = isOpenHomepage && typeHomepage === "initial-home";
   
   const router = useLocation();
-  const pathSegments = router.pathname.split('/').filter(Boolean); // Divide a URL em segmentos e remove a primeira parte vazia
+   // Função para formatar o texto dos segmentos
+    const formatSegment = (segment) => {
+      return segment
+        .replace(/-/g, ' ') // Substitui hífens por espaços
+        .replace(/_/g, ' ') // Substitui underscores por espaços
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+  
+    
 
-  // Se a URL estiver vazia, mostramos "Página Inicial"
-  const breadcrumbItems = pathSegments.length === 0 ? ['Página inicial'] : ['Página inicial', ...pathSegments];
-
-
+  // Função para criar os itens do breadcrumb
+  const createBreadcrumbItems = (pathname) => {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    
+    if (pathSegments.length === 0) {
+      return [{ label: 'Página Inicial', href: '/', isLast: true }];
+    }
+  
+    const items = [
+      { label: 'Página Inicial', href: '/', isLast: false }
+    ];
+  
+    pathSegments.forEach((segment, index) => {
+      const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+      const isLast = index === pathSegments.length - 1;
+      
+      items.push({
+        label: formatSegment(segment),
+        href,
+        isLast
+      });
+    });
+  
+    return items;
+  };
+  
+  const breadcrumbItems = createBreadcrumbItems(router.pathname);
+  
     return (
     <div>
       
@@ -62,34 +97,32 @@ export default function SearchLayout({
                 <Separator orientation="vertical" className="mr-2 h-4" />
 
 
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    {breadcrumbItems.map((segment, index) => {
-                      const isLastItem = index === breadcrumbItems.length - 1;
-
-                      // Construir o caminho parcial para cada segmento
-                      const href = index === 0
-                        ? '/' // O primeiro item sempre vai para a página inicial
-                        : `/${pathSegments.slice(0, index + 1).join('/')}`;
-
-                      return (
-                        <React.Fragment key={index}>
-                          <BreadcrumbItem className="hidden md:block capitalize">
-                            {/* Se for o último item, não criamos um link, é apenas texto */}
-                            {isLastItem ? (
-                              <span>{segment}</span>
-                            ) : (
-                              <BreadcrumbLink to={href} className="capitalize">
-                                {segment}
-                              </BreadcrumbLink>
-                            )}
-                          </BreadcrumbItem>
-                          {!isLastItem && <BreadcrumbSeparator className="hidden md:block" />}
-                        </React.Fragment>
-                      );
-                    })}
-                  </BreadcrumbList>
-                </Breadcrumb>
+              <Breadcrumb>
+                   <BreadcrumbList>
+                     {breadcrumbItems.map((item, index) => (
+                       <React.Fragment key={`breadcrumb-${index}`}>
+                         <BreadcrumbItem className="hidden md:block">
+                           {item.isLast ? (
+                             <span className="text-foreground font-medium capitalize">
+                               {item.label}
+                             </span>
+                           ) : (
+                             <BreadcrumbLink 
+                               to={item.href} 
+                               className="capitalize text-muted-foreground hover:text-foreground transition-colors"
+                             >
+                               {item.label}
+                             </BreadcrumbLink>
+                           )}
+                         </BreadcrumbItem>
+                         
+                         {!item.isLast && (
+                           <BreadcrumbSeparator className="hidden md:block" />
+                         )}
+                       </React.Fragment>
+                     ))}
+                   </BreadcrumbList>
+                 </Breadcrumb>
               </div>
 
              

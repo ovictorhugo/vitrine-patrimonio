@@ -39,19 +39,21 @@ export function AccountSwitcher() {
 
 
 
-const teams = [
-  {
-    name: 'Visitante', // Define o que deseja exibir no campo 'name'
-    id: '', // Personalize conforme necessário
-    plan: "Usuário", // Ajuste conforme necessário
-  },
-  ...(user?.roles?.map((rola) => ({
-    name: rola.role_id, // Define o que deseja exibir no campo 'name'
-    id: rola.id, // Personalize conforme necessário
-    plan: "Administrativo", // Ajuste conforme necessário
-  })) || []), // Garante que 'teams' seja um array vazio caso 'user.roles' seja undefined
-];
+  const teams = (
+    Array.isArray(user?.roles) && user.roles.length > 0
+      ? user.roles
+          .filter((rola) => rola?.role_id && rola?.id) // evita valores null/undefined
+          .map((rola) => ({
+            name: rola.role_id,
+            id: rola.id,
+            plan: "Administrativo",
+          }))
+      : [
 
+        ]
+  );
+  
+  
   return (
     <TeamSwitcher teams={teams} />
   )

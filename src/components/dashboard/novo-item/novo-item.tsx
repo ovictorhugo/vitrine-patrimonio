@@ -334,7 +334,7 @@ const {urlGeral, user} = useContext(UserContext)
   });
 
   const [dataUser, setDataUser] = useState<any>({
-    name: user?.display_name|| '',
+    name: user?.username|| '',
     matricula: user?.matricula || '',
     email: user?.email || '',
     tel: user?.telephone || '',
@@ -541,6 +541,27 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
             <div className="grid pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
             <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
             <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
+            <CardHeader>
+            <div className="flex gap-4 items-center justify-between ">
+  <div className="flex flex-col">
+    <p className=" font-medium">
+      {dataPatrimonio.desfazimento
+        ? "Este item será destinado ao desfazimento."
+        : "Este item será anunciado na Vitrine."}
+    </p>
+    <p className="text-xs text-muted-foreground">
+      Use o botão ao lado para alterar a destinação do item.
+    </p>
+  </div>
+  <Switch
+    checked={dataPatrimonio.desfazimento}
+    className={` ${dataPatrimonio.desfazimento ?? ('data-[state=checked]:bg-red-500')}`}
+    onCheckedChange={(e) => handleChangePatrimonio('desfazimento', e)}
+  />
+</div>
+              </CardHeader>
+            </Alert>
+            <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
                 <CardHeader>
                     <div className="flex justify-between">
                     <div>
@@ -734,22 +755,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
       </div>
 
 
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Setor de guarda</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="loc_nom"
-            type="text"
-            className="w-full"
-            value={data.set_nom}
-           
-         onClick={() => onOpen('search-loc-nom')}
-            onChange={(e) => handleChange('loc_nom', e.target.value)}
-          />
-          
-        </div>
-      </div>
-
+    
         <div className="grid gap-3 w-full">
         <Label htmlFor="tre_cod">Local de guarda</Label>
         <div className="flex items-center gap-3">
@@ -840,6 +846,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
           <Input
             id="loc_nom"
             type="text"
+            disabled
             className="w-full"
             value={dataUser.name}
             onChange={(e) => handleChangeUser('name', e.target.value)}
@@ -882,6 +889,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
                         <Input
                           id="name"
                           type="text"
+                          disabled
                           className="w-full"
                           value={dataUser.email}
                           onChange={(e) => handleChangeUser('email', e.target.value)}
@@ -1002,22 +1010,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
       </div>
                  
 
-<div className="flex gap-4 items-center justify-between mt-4">
-  <div className="flex flex-col">
-    <p className="text-sm font-medium">
-      {dataPatrimonio.desfazimento
-        ? "Este item será destinado ao desfazimento."
-        : "Este item será anunciado na Vitrine."}
-    </p>
-    <p className="text-xs text-muted-foreground">
-      Use o botão ao lado para alterar a destinação do item.
-    </p>
-  </div>
-  <Switch
-    checked={dataPatrimonio.desfazimento}
-    onCheckedChange={(e) => handleChangePatrimonio('desfazimento', e)}
-  />
-</div>
+
 
                     </CardContent>
                     </Alert>
