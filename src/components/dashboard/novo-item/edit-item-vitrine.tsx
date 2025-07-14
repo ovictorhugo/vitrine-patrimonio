@@ -315,7 +315,7 @@ const {urlGeral, user} = useContext(UserContext)
     bem_sta: patrimonio?.bem_sta || '',
     bem_val: patrimonio?.bem_val || '',
     csv_cod: patrimonio?.csv_cod || '',
-    display_name: patrimonio?.display_name || '',
+    username: patrimonio?.username || '',
     ele_cod: patrimonio?.ele_cod || '',
     grp_cod: patrimonio?.grp_cod || '',
     ite_mar: patrimonio?.ite_mar || '',
@@ -769,8 +769,8 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
             id="loc_nom"
             type="text"
             className="w-full"
-            value={data.display_name}
-            onChange={(e) => handleChange('display_name', e.target.value)}
+            value={data.username}
+            onChange={(e) => handleChange('username', e.target.value)}
           />
           
         </div>

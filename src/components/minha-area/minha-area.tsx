@@ -209,7 +209,7 @@ console.log(urlTermPesquisadores)
                     <div className="flex justify-between items-center">
                     <div>
                       <p className="max-w-[750px] mb-2 text-lg font-light text-foreground">
-                      Olá, {user?.display_name}
+                      Olá, {user?.username}
                         </p>
 
                         <h1 className="max-w-[500px] text-3xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">

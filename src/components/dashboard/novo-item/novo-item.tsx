@@ -335,9 +335,9 @@ const {urlGeral, user} = useContext(UserContext)
 
   const [dataUser, setDataUser] = useState<any>({
     name: user?.username|| '',
-    matricula: user?.matricula || '',
+    matricula: user?.registration || '',
     email: user?.email || '',
-    tel: user?.telephone || '',
+    tel: user?.number || '',
     ramal: user?.ramal || ''
   })
 

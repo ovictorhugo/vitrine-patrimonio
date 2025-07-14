@@ -55,7 +55,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
  
   const data = {
     user: {
-      name: user?.display_name || '',
+      name: user?.username || '',
       email: user?.email || '',
       avatar: user?.photo_url || '',
     },

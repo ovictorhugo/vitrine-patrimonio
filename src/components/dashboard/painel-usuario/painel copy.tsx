@@ -163,7 +163,7 @@ useEffect(() => {
                  
 
                     <h1 className="text-3xl max-w-[800px] mb-2  font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
-                    {user?.display_name}
+                    {user?.username}
                     </h1>
 
                     <p className="max-w-[750px] text-lg font-light text-foreground">

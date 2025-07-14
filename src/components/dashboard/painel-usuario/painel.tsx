@@ -108,7 +108,7 @@ const {urlGeral, user} = useContext(UserContext)
                  
 
                  <h1 className="text-3xl text-white mb-2  font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
-                 Olá, {user?.display_name}
+                 Olá, {user?.username}
                  </h1>
 
                  <p className="max-w-[750px] text-lg font-light text-foreground">

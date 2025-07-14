@@ -191,7 +191,7 @@ export function BlockItem(props:Props) {
             bem_sta={item.bem_sta}
             bem_val={item.bem_val}
             csv_cod={item.csv_cod}
-            display_name={item.display_name}
+            username={item.username}
             ele_cod={item.ele_cod}
             grp_cod={item.grp_cod}
             ite_mar={item.ite_mar}

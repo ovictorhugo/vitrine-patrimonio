@@ -15,7 +15,7 @@ export function SegurancaMinhaArea() {
     const {user, urlGeral} = useContext(UserContext)
 
 
-    const [name, setName] = useState(user?.display_name || '')
+    const [name, setName] = useState(user?.username || '')
     const [linkedin, setLinkedin] = useState(user?.linkedin || '')
     
     const [ramal, setRamal] = useState(user?.ramal || '')
@@ -31,7 +31,7 @@ export function SegurancaMinhaArea() {
             uid:(user?.uid),
             matricula:matricula,
             telephone:telephone,
-            display_name:name,
+            username:name,
             ramal:ramal
           }
         ]
@@ -160,7 +160,7 @@ export function SegurancaMinhaArea() {
                       <div className="flex justify-between items-center">
                       <div>
                       <p className="max-w-[750px] mb-2 text-lg font-light text-foreground">
-                       Olá, {user?.display_name}
+                       Olá, {user?.username}
                         </p>
 
                         <h1 className="max-w-[500px] text-3xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">

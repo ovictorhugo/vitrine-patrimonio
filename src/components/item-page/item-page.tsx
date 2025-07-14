@@ -43,7 +43,7 @@ export interface Item {
     bem_sta:string
     bem_val:string
     csv_cod:string
-    display_name:string
+    username:string
     ele_cod:string
     grp_cod:string
     ite_mar:string
@@ -611,7 +611,7 @@ export function ItemPage() {
   </Avatar>
  <div>
  <p className="text-sm w-fit text-gray-500">Anunciante</p>
- <p className="text-black dark:text-white font-medium text-lg">{bens?.display_name}</p>
+ <p className="text-black dark:text-white font-medium text-lg">{bens?.username}</p>
 </div></div>
 
  <div>

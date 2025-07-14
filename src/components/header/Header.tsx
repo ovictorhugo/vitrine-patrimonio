@@ -137,7 +137,7 @@ export function Header() {
   <Link to={'/dashboard'}>
   <Button variant='outline' size="sm"  className="h-8 px-2" >
                   <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
+                  Minha área
                 </Button></Link>
 )}
 

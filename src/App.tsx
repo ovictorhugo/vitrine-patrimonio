@@ -17,21 +17,31 @@ import { AuthenticationToken } from './pages/Authentication-token';
 
 
 interface User {
-  user_id:string
-  display_name:string
-  email:string 
-  uid:string
-  photo_url:string
-  roles:Roles[]
-  linkedin:string
-  phone:string
-  shib_id:string
-  provider:string
-  matricula:string
-  telephone:string
+  institution_id: string
+  user_id: string
+  visible:boolean
+  gp_count:number
+  dp_count:number
+
+  username: string
+
+  photo_url: string
+  background_url:string
+
+  dep_id: string
+
+  email: string
+  linkedin: string
+  lattes_id: string
+  registration: string
+  orcid:string
   ramal:string
-  institution_id:string
-  verified:boolean
+  number:string
+
+  roles: Roles[]
+
+  provider: string
+  verify: boolean
 }
 
 interface Roles {

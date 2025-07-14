@@ -56,7 +56,7 @@ interface Props {
   bem_sta:string
   bem_val:string
   csv_cod:string
-  display_name:string
+  username:string
   ele_cod:string
   grp_cod:string
   ite_mar:string
