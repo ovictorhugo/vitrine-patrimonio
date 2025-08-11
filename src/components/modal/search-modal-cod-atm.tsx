@@ -1,19 +1,18 @@
-import { Funnel, MagnifyingGlass } from "phosphor-react";
+
 import { useModal } from "../hooks/use-modal-store";
 import { Alert } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Play, Plus, Search, Trash, X } from "lucide-react";
 import { collection, getDocs, getFirestore, where, query, or, and, limit, updateDoc, doc } from "firebase/firestore";
 import { PatrimoniosSelecionados } from "../../App";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { toast } from "sonner";
-import { UserContext } from "../../context/context";
-import { SelectTypeSearch } from "../search/select-type-search";
+
 import { SelectTypeNewItem } from "../search/select-type-new-item";
 
 interface Csv {
@@ -33,7 +32,7 @@ export const useQuery = () => {
 
 export function SearchCodAtmModal() {
   const queryUrl = useQuery();
-  const {searchType, setSearchType, patrimoniosSelecionados, setPatrimoniosSelecionados} = useContext(UserContext)
+  
 const [itemType, setItemType] = useState('cod')
      const navigate = useNavigate();
      const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([])
@@ -44,21 +43,6 @@ const [itemType, setItemType] = useState('cod')
     const location = useLocation();
     const [input, setInput] = useState("");
 
-    let bemCod = parseInt(input.split('-')[0], 10).toString();
-    let bemDgv = input.split('-')[1];
-
-    const handleChange = (value:any) => {
-
-        // Remover caracteres não numéricos
-        value = value.replace(/[^0-9]/g, '');
-    
-        if (value.length > 1) {
-          // Inserir "-" antes do último caractere
-          value = value.slice(0, -1) + "-" + value.slice(-1);
-        }
-    
-        setInput(value);
-      };
 
         let TypeSearch = type_search ?? ''
        let Terms = terms ?? ''
@@ -276,14 +260,7 @@ const [itemType, setItemType] = useState('cod')
     setItensSelecionadosPopUp(newItems);
   };
 
-  const normalizeTerm = (term: string) => 
-    term
-      .normalize("NFD") // Separa acentos das letras
-      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-      .replace(/[^\w\s]/gi, "") // Remove caracteres especiais
-      .toLowerCase(); // Converte para minúsculas
-
-      
+ 
   
 
       const handleChangeInputCod = (value: any) => {
@@ -362,6 +339,7 @@ const [itemType, setItemType] = useState('cod')
                   type="text"
                   ref={inputRef}
                   value={input}
+                   autoFocus={true}
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />
               )}

@@ -91,42 +91,7 @@ export default function SearchLayout({
     
       <SidebarInset className=" ">
       <main className="h-full flex flex-col flex-1 ">
-      <div className="flex p-8 pt-8 pb-2 h-[68px] items-center justify-between top-0 sticky z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur ">
-              <div className="flex  pb-0 items-center gap-2">
-                <SidebarTrigger className="" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-
-
-              <Breadcrumb>
-                   <BreadcrumbList>
-                     {breadcrumbItems.map((item, index) => (
-                       <React.Fragment key={`breadcrumb-${index}`}>
-                         <BreadcrumbItem className="hidden md:block">
-                           {item.isLast ? (
-                             <span className="text-foreground font-medium capitalize">
-                               {item.label}
-                             </span>
-                           ) : (
-                             <BreadcrumbLink 
-                               to={item.href} 
-                               className="capitalize text-muted-foreground hover:text-foreground transition-colors"
-                             >
-                               {item.label}
-                             </BreadcrumbLink>
-                           )}
-                         </BreadcrumbItem>
-                         
-                         {!item.isLast && (
-                           <BreadcrumbSeparator className="hidden md:block" />
-                         )}
-                       </React.Fragment>
-                     ))}
-                   </BreadcrumbList>
-                 </Breadcrumb>
-              </div>
-
-             
-            </div>
+    
             {/* Assuming Header is another component */}
           
             <div className="h-full ">

@@ -55,6 +55,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import { Checkbox } from "../ui/checkbox";
+import { BreadcrumbHeader } from "../breadcrumb-header";
 
 export function VisaoGeralUser() {
     const { isOpen, type} = useModalDashboard();
@@ -229,8 +230,10 @@ const has_editar_configuracoes_plataforma = permission.some(
 
     return(
         <>
-        {isModalOpen && (
+       
+            <BreadcrumbHeader/>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+             
                <Tabs defaultValue={'all'} className="h-full" >
                 
                 <div className="w-full  gap-4">
@@ -488,7 +491,7 @@ const has_editar_configuracoes_plataforma = permission.some(
           </Tabs>
              
             </main>
-        )}
+      
         </>
     )
 }

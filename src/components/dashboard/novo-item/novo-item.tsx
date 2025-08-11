@@ -1,585 +1,536 @@
-import { Link } from "react-router-dom";
-import { useModalDashboard } from "../../hooks/use-modal-dashboard";
-import { v4 as uuidv4 } from 'uuid';
-
-import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../ui/dialog"
-
-import { useCallback, useContext, useEffect, useState } from "react";
-import { UserContext } from "../../../context/context";
+import { Alert } from "../../ui/alert";
+import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
-import { Checks, Check, Warning, Wrench, X, Trash, MagnifyingGlass, Funnel, User  } from "phosphor-react";
-import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
-import { ArrowUpRight, ChevronLeft, DollarSign, Upload, ChevronsUpDown, ImageDown, Barcode, Package } from "lucide-react";
-import { useModal } from "../../hooks/use-modal-store";
-
-import { Badge } from "../../ui/badge";
-import { Label } from "../../ui/label";
+import { ArrowLeft, ArrowRight,  Barcode,  Camera, Check, ChevronLeft, FormInput, Image, ImageDown, PanelRightOpen, Play, Plus, RefreshCcw, RotateCcw, ScanEye, Search, Trash, Upload, User, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { BreadcrumbHeader } from "../../breadcrumb-header";
+import { BreadcrumbHeaderCustom } from "../../breadcrumb-header-custom";
+import { Tabs, TabsContent } from "../../ui/tabs";
+import { Progress } from "../../ui/progress";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
+import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
+import { SelectTypeNewItem } from "../../search/select-type-new-item";
 import { Input } from "../../ui/input";
-import { Textarea } from "../../ui/textarea";
+import { UserContext } from "../../../context/context";
+import { PatrimoniosSelecionados } from "../../../App";
+import { useModal } from "../../hooks/use-modal-store";
+import { useQuery } from "../../modal/search-modal-patrimonio";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { cn } from "../../../lib"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../ui/dialog";
+import { toast } from "sonner";
+import { Badge } from "../../ui/badge";
+import { ArrowUUpLeft } from "phosphor-react";
+import { Separator } from "../../ui/separator";
+import { Textarea } from "../../ui/textarea";
+import { Label } from "../../ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { SearchBarNewItem } from "./search-bar";
 
 interface Patrimonio {
-  bem_cod:string
-  bem_dgv:string
-  bem_num_atm:string
-  csv_cod:string
-  bem_serie:string
-  bem_sta:string
-  bem_val:string
-  tre_cod:string
-  bem_dsc_com:string
-  uge_cod:string
-  uge_nom:string
-  org_cod:string
-  uge_siaf:string
-  org_nom:string
-  set_cod:string
-  set_nom:string
-  loc_cod:string
-  loc_nom:string
-  ite_mar:string
-  ite_mod:string
-  tgr_cod:string
-  grp_cod:string
-  ele_cod:string
-  sbe_cod:string
-  mat_cod:string
-  mat_nom:string
-  pes_cod:string
-  pes_nome:string
-}
-
-interface TotalPatrimonios {
-  total_patrimonio:string
-  total_patrimonio_morto:string
-}
-
-interface loc_nom {
-  loc_nom:string
- 
-}
-
-const useQuery = () => {
-  return new URLSearchParams(useLocation().search);
-}
-
-
-import { toast } from "sonner"
-
-
-
-import { useLocation,useNavigate } from 'react-router-dom';
-
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../../ui/accordion"
-import { Dialog } from "../../ui/dialog";
-import { LinhaTempo } from "../components/linha-tempo";
-import { Switch } from "../../ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-
-interface NovoItem {
-  patrimonio_id:string
-  num_patrimonio:string
-  loc:string
-  observacao:string
-  user_id:string
-  vitrine:string
-  condicao:string
-  imagens:string
-  desfazimento:boolean
-  verificado:boolean
-  num_verificacao:string
-  codigo_atm:string
-  situacao:string
-  material:string
+  asset_code: string;
+  asset_check_digit: string;
+  atm_number: string;
+  serial_number: string;
+  asset_status: string;
+  asset_value: string;
+  asset_description: string;
+  csv_code: string;
+  accounting_entry_code: string;
+  item_brand: string;
+  item_model: string;
+  group_type_code: string;
+  group_code: string;
+  expense_element_code: string;
+  subelement_code: string;
+  id: string;
+  agency: {
+    agency_name: string;
+    agency_code: string;
+    id: string;
+  };
+  unit: {
+    unit_name: string;
+    unit_code: string;
+    unit_siaf: string;
+    id: string;
+  };
+  sector: {
+    sector_name: string;
+    sector_code: string;
+    id: string;
+  };
+  location: {
+    location_code: string;
+    location_name: string;
+    id: string;
+  };
+  material: {
+    material_code: string;
+    material_name: string;
+    id: string;
+  };
+  legal_guardian: {
+    legal_guardians_code: string;
+    legal_guardians_name: string;
+    id: string;
+  };
+  is_official: boolean;
 }
 
 export function NovoItem() {
-  const history = useNavigate();
-const {urlGeral, user} = useContext(UserContext)
-  const handleVoltar = () => {
-    history(-1);
+   const location = useLocation();
+    const navigate = useNavigate();
+
+   const handleVoltar = () => {
+
+    const currentPath = location.pathname;
+    const hasQueryParams = location.search.length > 0;
+    
+    if (hasQueryParams) {
+      // Se tem query parameters, remove apenas eles
+      navigate(currentPath);
+    } else {
+      // Se não tem query parameters, remove o último segmento do path
+      const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+      
+      if (pathSegments.length > 1) {
+        pathSegments.pop();
+        const previousPath = '/' + pathSegments.join('/');
+        navigate(previousPath);
+      } else {
+        // Se estiver na raiz ou com apenas um segmento, vai para raiz
+        navigate('/');
+      }
+    }
   };
 
-    const queryUrl = useQuery();
+
+  const [tab, setTab] = useState('1')
+
+  const [value, setValue] = useState<string>("nao");
+
+  const hasPlaqueta = value === "sim";
+
+  const {} = useContext(UserContext)
+
+      const queryUrl = useQuery();
 
   const query = useQuery();
+
   const type_search = queryUrl.get('type_search');
   const terms = queryUrl.get('terms');
   const loc_nom = queryUrl.get('loc_nom');
 
-  const [input, setInput] = useState("");
-  const newImageNames: string[] = [];
-  const docId = uuidv4();
-  const BemCodId = Math.floor(10000000 + Math.random() * 90000000).toString();
-  const BemDgvId = Math.floor(Math.random() * 9 + 1).toString();
+  const [itemType, setItemType] = useState('cod')
+    const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([])
 
-  const handleSubmit = async () => {
-  
-
-
-    try {
-      const dataFinal = [{
-        patrimonio_id:docId,
-        num_patrimonio:data.bem_cod || BemCodId,
-        num_verificacao:data.bem_dgv || BemDgvId,
-        loc:data.loc_nom,
-        observacao:dataPatrimonio.observacao,
-        user_id:user?.user_id,
-        condicao:dataPatrimonio.condicao,
-        verificado:false,
-        codigo_atm:data.bem_num_atm,
-        imagens:newImageNames,
-        desfazimento:dataPatrimonio.desfazimento,
-        vitrine:!dataPatrimonio.desfazimento,
-              situacao:'',
-        material:''
-      }]
-
-       let urlProgram = urlGeral + '/formulario'
-
-       const fetchData = async () => {
-    
-        if (!patrimonio && data.mat_nom.length == 0) {
-         toast("Preencha todos os campos antes de enviar", {
-           description: "Parece que alguns campos estão vazios",
-           action: {
-             label: "Fechar",
-             onClick: () => console.log("Undo"),
-           },
-         })
-         return;
-        } else if (dataPatrimonio.condicao.length == 0) {
-          toast("Campo 'ondição do item' vazio", {
-            description: "Preencha o campo",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Undo"),
-            },
-          })
-          return;
-         } else if (images.length != 4) {
-           toast("Nenhuma imagem selecionada!", {
-             description: "Por favor, selecione ao menos uma imagem antes de enviar.",
-             action: {
-               label: "Fechar",
-               onClick: () => console.log("Fechar"),
-             },
-           });
-           return;
-         }
-        
-        else  {
-         try {
-          
-           const response = await fetch(urlProgram, {
-             mode: 'cors',
-             method: 'POST',
-             headers: {
-               'Access-Control-Allow-Origin': '*',
-               'Access-Control-Allow-Methods': 'POST',
-               'Access-Control-Allow-Headers': 'Content-Type',
-               'Access-Control-Max-Age': '3600',
-               'Content-Type': 'application/json'
-             },
-             body: JSON.stringify(dataFinal),
-           });
-   
-           if (response.ok) {
+     useEffect(() => {
+            if (terms) {
+              const termList: PatrimoniosSelecionados[] = terms
+                .split(';')
+                .filter(t => t.trim() !== '')
+                .map(t => ({
+                  term: t.trim(),
+                  type: itemType
+                }));
             
-             toast("Dados enviados com sucesso", {
-                 description: "Item adicionado ao Vitrine",
-                 action: {
-                   label: "Fechar",
-                   onClick: () => console.log("Undo"),
-                 },
-               })
-   
-               handleFileUpload(docId)
-               setImages([])
-               setData(emptyPatrimonio)
-              
-   
-           } else {
-             console.error('Erro ao enviar dados para o servidor.');
-             toast("Erro ao enviar dados para o servidor.", {
-                 description: "Tente novamente",
-                 action: {
-                   label: "Fechar",
-                   onClick: () => console.log("Undo"),
-                 },
-               })
-           }
-           
-         } catch (err) {
-           console.log(err);
-         } 
-        }
-       };
-       fetchData();
+              setItensSelecionadosPopUp(termList);
+            }
+          }, [terms]);
 
-    } catch {
+           const handleRemoveItem = (index: number) => {
+     queryUrl.delete("terms");
+  queryUrl.delete("type_search");
+            const newItems = [...itemsSelecionadosPopUp];
+    newItems.splice(index, 1);
+    setItensSelecionadosPopUp(newItems);
 
-    }
-  }
+     navigate({
+    pathname: location.pathname,
+    search: queryUrl.toString(),
+  });
+    
+  };
 
+    const {onOpen} = useModal()
 
-  const handleFileUpload = async (id:string) => {
-    if (images.length < 4) {
-      toast("Você precisa submeter 4 imagens", {
-        description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
-        action: {
-          label: "Fechar",
-          onClick: () => console.log("Fechar"),
-        },
-      });
-      return;
-    }
+     ////imagem
+
+ const [images, setImages] = useState<string[]>([]);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
+  const [showPhotoPreview, setShowPhotoPreview] = useState(false);
+ const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState('');
+ const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   
+  const videoRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = React.createRef<HTMLInputElement>();
+
+  const handleRemoveImage = (index) => {
+    setImages(prevImages => prevImages.filter((_, i) => i !== index));
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      const uploadPromises = images.slice(0, 4).map((image, index) => {
-        const formData = new FormData();
-        const fileName = `${id}`; // Nome único para a imagem
-        newImageNames.push(fileName); // Armazena o nome gerado
-  
-        // Converter a URL de imagem para Blob
-        return fetch(image)
-          .then((res) => res.blob())
-          .then((blob) => {
-            formData.append("file", blob, fileName);
-  
-            const urlUpload = `${urlGeral}imagem/${fileName}`;
-  
-            return fetch(urlUpload, {
-              method: "POST",
-              body: formData,
-            });
-          });
-      });
-  
-      const responses = await Promise.all(uploadPromises);
-  
-      const allSuccessful = responses.every((response) => response.ok);
-  
-      if (allSuccessful) {
-        toast("Upload realizado com sucesso!", {
-          description: "As imagens foram enviadas com sucesso!",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
-        });
-  
-        console.log("Novos nomes das imagens:", newImageNames); // Exibe os nomes gerados no console
-        setImages([]); // Resetar o estado das imagens após o envio
-      } else {
-        throw new Error("Nem todas as imagens foram enviadas com sucesso.");
+      const files = event.target.files;
+      if (!files || files.length === 0) {
+        throw new Error("No files selected");
+      }
+
+      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+      const availableSlots = Math.max(4 - images.length, 0);
+      const imagesToAdd = newImages.slice(0, availableSlots);
+
+      setImages(prevImages => [...prevImages, ...imagesToAdd]);
+      setShowUploadDialog(false);
+    } catch (error) {
+  const errorAsError = error as Error;
+  console.error("Error during file upload:", errorAsError);
+  toast("Erro ao carregar arquivo", {
+    description: errorAsError.message,
+    action: {
+      label: "Fechar",
+      onClick: () => console.log("Fechar"),
+    },
+  });
+}
+  };
+
+  const getCameras = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === 'videoinput');
+      setAvailableCameras(cameras);
+      if (cameras.length > 0) {
+        setSelectedCamera(cameras[0].deviceId);
       }
     } catch (error) {
-      console.error("Erro ao enviar imagens:", error);
-      toast("Erro no envio", {
-        description: "Não foi possível enviar as imagens. Tente novamente.",
-        action: {
-          label: "Fechar",
-          onClick: () => console.log("Fechar"),
-        },
-      });
+      console.error('Erro ao obter câmeras:', error);
     }
   };
-  
+
+  const startCamera = async () => {
+    try {
+      // Stop the existing stream if any
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+
+      // Define constraints for the camera
+      const constraints = {
+        video: {
+          deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      // Request the camera stream
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(newStream);
+
+      // Set the video source if ref is available
+      if (videoRef.current) {
+  (videoRef.current as HTMLVideoElement).srcObject = newStream;
+} else {
+        console.warn('videoRef is null or undefined');
+      }
+    } catch (error) {
+      console.error('Error starting camera:', error);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current as HTMLVideoElement;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+    
+    const ctx = (canvasRef.current as HTMLCanvasElement).getContext('2d');
+ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      setCapturedPhoto(photoDataUrl);
+      setShowPhotoPreview(true);
+      // Para com delay de 200ms para transição suave
+setTimeout(() => stopCamera(), 200);
+stopCamera();
+if (videoRef.current) {
+  (videoRef.current as HTMLVideoElement).srcObject = null;
+}
+    }
+  };
+
+  const confirmPhoto = () => {
+    if (capturedPhoto) {
+      setImages(prevImages => [...prevImages, capturedPhoto]);
+      setCapturedPhoto(null);
+      setShowPhotoPreview(false);
+      setShowCameraDialog(false);
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedPhoto(null);
+    setShowPhotoPreview(false);
+    startCamera();
+  };
+
+  const openUploadDialog = () => {
+    setShowUploadDialog(true);
+  };
+
+  const openCameraDialog = async () => {
+    setShowUploadDialog(false);
+    await getCameras();
+    setShowCameraDialog(true);
+    setTimeout(() => startCamera(), 500);
+  };
+
+  const closeCameraDialog = () => {
+    stopCamera();
+    setShowCameraDialog(false);
+    setCapturedPhoto(null);
+    setShowPhotoPreview(false);
+  };
+
+  const openFileDialog = () => {
+    setShowUploadDialog(false);
+    fileInputRef.current?.click();
+  };
+
+
+  //formulario
 
    const [patrimonio, setPatrimonio] = useState<Patrimonio>();
-
-   const [data, setData] = useState<Patrimonio>({
-    bem_cod: patrimonio?.bem_cod || '',
-    bem_dgv: patrimonio?.bem_dgv || '',
-    bem_num_atm: patrimonio?.bem_num_atm || '',
-    csv_cod: patrimonio?.csv_cod || '',
-    bem_serie: patrimonio?.bem_serie || '',
-    bem_sta: patrimonio?.bem_sta || '',
-    bem_val: patrimonio?.bem_val || '',
-    tre_cod: patrimonio?.tre_cod || '',
-    bem_dsc_com: patrimonio?.bem_dsc_com || '',
-    uge_cod: patrimonio?.uge_cod || '',
-    uge_nom: patrimonio?.uge_nom || '',
-    org_cod: patrimonio?.org_cod || '',
-    uge_siaf: patrimonio?.uge_siaf || '',
-    org_nom: patrimonio?.org_nom || '',
-    set_cod: patrimonio?.set_cod || '',
-    set_nom: patrimonio?.set_nom || '',
-    loc_cod: patrimonio?.loc_cod || '',
-    loc_nom: loc_nom || patrimonio?.loc_nom || '',
-    ite_mar: patrimonio?.ite_mar || '',
-    ite_mod: patrimonio?.ite_mod || '',
-    tgr_cod: patrimonio?.tgr_cod || '',
-    grp_cod: patrimonio?.grp_cod || '',
-    ele_cod: patrimonio?.ele_cod || '',
-    sbe_cod: patrimonio?.sbe_cod || '',
-    mat_cod: patrimonio?.mat_cod || '',
-    mat_nom: patrimonio?.mat_nom || '',
-    pes_cod: patrimonio?.pes_cod || '',
-    pes_nome: patrimonio?.pes_nome || '',
-  });
-
-  const [dataUser, setDataUser] = useState<any>({
-    name: user?.username|| '',
-    matricula: user?.registration || '',
-    email: user?.email || '',
-    tel: user?.number || '',
-    ramal: user?.ramal || ''
-  })
-
-  const [dataPatrimonio, setDataPatrimonio] = useState<any>({
-    condicao:'',
-    observacao: '',
-    alocacao: false,
-    desfazimento:false
-  })
   
-let url = urlGeral + ``
 
-if(terms != undefined) {
-  if (type_search == 'atm') {
-    url = urlGeral + `checkoutPatrimonio?bem_num_atm=${terms}`
-    } else if (type_search == 'cod') {
-      url = urlGeral + `checkoutPatrimonio?etiqueta=${terms}`
-      }
-}
+  const [data, setData] = useState<any>({
+   bem_cod: patrimonio?.asset_code || "",
+  bem_dgv: patrimonio?.asset_check_digit || "",
+  bem_num_atm: patrimonio?.atm_number || "",
+  bem_serie: patrimonio?.serial_number || "",
+  bem_sta: patrimonio?.asset_status || "",
+  bem_val: patrimonio?.asset_value || "",
+  bem_dsc_com: patrimonio?.asset_description || "",
+  csv_cod: patrimonio?.csv_code || "",
+  tre_cod: patrimonio?.accounting_entry_code || "",
+  agency_id: patrimonio?.agency?.id || "",
+  unit_id: patrimonio?.unit?.id || "",
+  sector_id: patrimonio?.sector?.id || "",
+  location_id: patrimonio?.location?.id || "",
+  material_id: patrimonio?.material?.id || "",
+  legal_guardian_id: patrimonio?.legal_guardian?.id || "",
+  ite_mar: patrimonio?.item_brand || "",
+  ite_mod: patrimonio?.item_model || "",
+  tgr_cod: patrimonio?.group_type_code || "",
+  grp_cod: patrimonio?.group_code || "",
+  ele_cod: patrimonio?.expense_element_code || "",
+  sbe_cod: patrimonio?.subelement_code || ""
+});
 
-console.log(url)
-
-const [loading, setLoading] = useState(false);
-
-useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(url, {
-        mode: "cors",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Max-Age": "3600",
-          "Content-Type": "text/plain",
-        },
-      });
-      const data = await response.json();
-      if (data) {
-        setPatrimonio(data[0]);
-        console.log('oi',patrimonio)
-        setLoading(false);
-      }
-    } catch (err) {
-      console.log(err);
-      setLoading(false);
-    }
-  };
-  fetchData();
-
-  console.log('oi',patrimonio)
-}, [url, terms]);
-
-useEffect(() => {
-  if (patrimonio) {
-    setData({
-      ...patrimonio,
-      loc_nom: loc_nom || patrimonio.loc_nom, // Se loc_nom existir, usa ele; senão, usa o do patrimônio
-    });
-  }
-}, [patrimonio, loc_nom]);
-
-const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
-    
-  const {onOpen} = useModal()
-
-  const handleChange = (field: keyof Patrimonio, value: string) => {
+  const handleChange = (field: any, value: string) => {
     setData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleChangeUser = (field: keyof any, value: string) => {
-    setDataUser((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
 
-  const handleChangePatrimonio = (field: keyof any, value: any) => {
-    setDataPatrimonio((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  return(
+     <div className="p-4  md:p-8 gap-8 flex flex-col  h-full">
+      <Helmet>
+              <title>
+                Cadastrar novo item | Vitrine Patrimônio
+              </title>
+              <meta name="description" content={`Cadastrar novo item | Vitrine Patrimônio`} />
+              <meta name="robots" content="index, follow" />
+            </Helmet>
+      <Progress className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1" value={33} />
+       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse  gap-8 ">
+       
+        <div className="w-full flex flex-col gap-8">
+          <BreadcrumbHeaderCustom/>
+          <div className="flex gap-2">
+             <Button onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7 ">
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="sr-only">Voltar</span>
+                    </Button>
 
+                     <div
+                      className="
+                        flex flex-col gap-4
 
+                        md:flex-col
 
-  ////imagem
-
-  const handleRemoveImage = (index: number) => {
-    setImages(prevImages => prevImages.filter((_, i) => i !== index));
-  };
-
-  const [images, setImages] = useState<string[]>([]);
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setImages(prevImages => [...prevImages, ...newImages]);
-    }
-  };
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const emptyPatrimonio: Patrimonio = {
-    bem_cod: '',
-    bem_dgv: '',
-    bem_num_atm: '',
-    csv_cod: '',
-    bem_serie: '',
-    bem_sta: '',
-    bem_val: '',
-    tre_cod: '',
-    bem_dsc_com: '',
-    uge_cod: '',
-    uge_nom: '',
-    org_cod: '',
-    uge_siaf: '',
-    org_nom: '',
-    set_cod: '',
-    set_nom: '',
-    loc_cod: '',
-    loc_nom: '',
-    ite_mar: '',
-    ite_mod: '',
-    tgr_cod: '',
-    grp_cod: '',
-    ele_cod: '',
-    sbe_cod: '',
-    mat_cod: '',
-    mat_nom: '',
-    pes_cod: '',
-    pes_nome: '',
-  };
-  
-
-    return(
- 
-            <main  className="flex flex-1 flex-col gap-8 p-4 md:p-8 md:pb-0">
-         <div className="w-full  gap-4">
-            <div className="flex items-center gap-4">
-         
-           <Button  onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar</span>
-              </Button>
-          
-              <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                Adicionar novo item
-              </h1>
-
-              {data.bem_cod && (
-                <Badge variant="outline" className="ml-auto sm:ml-0">
-                {`${data.bem_cod.trim()} - ${data.bem_dgv }`}
-              </Badge>
-              )}
+                        lg:flex-row
+                      "
+                    >
+                      <h1 className="flex-1 shrink-0  whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+        Cadastrar novo item
+        
+      </h1>
+      </div>
+          </div>
 
 
-                <Badge variant="outline" className={`ml-auto sm:ml-0 ${dataPatrimonio.desfazimento ? ('bg-red-600 text-white'):('bg-eng-blue text-white')}`}>
-                {dataPatrimonio.desfazimento ? ('Desfazimento'):('Anunciar na Vitrine')}
-              </Badge>
-          
-             
-              <div className="hidden items-center h-10 gap-2 md:ml-auto md:flex">
-                <Button onClick={() => {
- console.log('oid')
- queryUrl.set('terms', '');
- queryUrl.set('type_search', '');
+        <Tabs defaultValue="1" value={tab} className="grid grid-cols-1 h-full w-full">
+            <TabsContent value="1" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+              <div className="flex flex-1 flex-col">
+               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
+                Vamos começar, o item possui plaqueta de identificação?
+                </h1>
 
- navigate({
-   pathname: location.pathname,
-   search: queryUrl.toString(),
- });
- setPatrimonio(undefined);
+                <div className="flex gap-2">
+ <ToggleGroup
+      type="single"
+      value={value}
+      onValueChange={(val) => setValue(val)}
+      className="gap-2"
+      variant={'outline'}
+    >
+      <ToggleGroupItem value="sim" aria-label="Sim, possui plaqueta">
+        Sim, possui plaqueta
+      </ToggleGroupItem>
+      <ToggleGroupItem value="nao" aria-label="Não tem plaqueta">
+        Não, terei que cadastrar manualmente
+      </ToggleGroupItem>
+    </ToggleGroup>
+                </div>
+             </div>
 
- setData(emptyPatrimonio);
-
- setDataPatrimonio({
-   condicao:'',
-   observacao: '',
-   alocacao: false,
-   desfazimento:false
- })
-                }} variant="outline" >
-                <Trash size={16}/> Descartar
-                </Button>
-                <Button onClick={() => {
-                 handleSubmit()
-                 
-                }} ><Check size={16} />Publicar item</Button>
-              </div>
-            </div>
-
-            </div>
-
-            <div className="grid pb-8 gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-            <div className="xl:col-span-2  flex flex-col md:gap-8 gap-4"  >
-            <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
-            <CardHeader>
-            <div className="flex gap-4 items-center justify-between ">
-  <div className="flex flex-col">
-    <p className=" font-medium">
-      {dataPatrimonio.desfazimento
-        ? "Este item será destinado ao desfazimento."
-        : "Este item será anunciado na Vitrine."}
-    </p>
-    <p className="text-xs text-muted-foreground">
-      Use o botão ao lado para alterar a destinação do item.
-    </p>
-  </div>
-  <Switch
-    checked={dataPatrimonio.desfazimento}
-    className={` ${dataPatrimonio.desfazimento ?? ('data-[state=checked]:bg-red-500')}`}
-    onCheckedChange={(e) => handleChangePatrimonio('desfazimento', e)}
-  />
+                <div className="flex  items-center justify-between">
+<div className="flex items-start gap-0 flex-col">
+                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
+                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
 </div>
-              </CardHeader>
-            </Alert>
-            <Alert  className="p-0" x-chunk="dashboard-01-chunk-4" >
-                <CardHeader>
-                    <div className="flex justify-between">
+
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => setTab('2')}>Continuar <ArrowRight size={16}/></Button>
+                    </div>
+                </div>
+             </div>
+          </TabsContent>
+
+
+          <TabsContent value="2" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+             <div className="flex flex-1 flex-col">
+               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
+              Antes de continuar, atenha-se as informações
+                </h1>
+
+                <div className="flex gap-2 flex-col">
+                  <div className="flex gap-2">
+                    <FormInput size={24}/>
                     <div>
-                    <CardTitle>Detalhes do item</CardTitle>
-                    <CardDescription>
-                     Adicione as informações básicas do patrimônio
-                    </CardDescription>
+                      <p className="font-medium">Lorem Ipsum\defwef</p>
+                      <p className="text-gray-500 text-sm">import must precede all other statements (besides @charset or empty @layer)</p>
                     </div>
+                  </div>
+                </div>
+             </div>
 
-                    <div className="flex gap-3 items-center">
-                   
+                <div className="flex  items-center justify-between">
+<div className="flex gap-2 items-center">
+                        <Button size={'lg'} onClick={() => setTab('1')} variant={'ghost'} className="text-eng-blue hover:text-eng-dark-blue"><ArrowLeft size={16}/>Anterior</Button>
+</div>
 
-                      <Button   onClick={() => onOpen('search-cod-atm')}><Package size={16}/>Cadastrar patrimônio</Button>
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => {
+                        if(value == 'sim') {
+                          setTab('3')
+                        } else {
+                          setTab('4')
+                        }
+                      }}>Continuar <ArrowRight size={16}/></Button>
                     </div>
+                </div>
+                </div>
+          </TabsContent>
+
+
+           <TabsContent value="3" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+             <div className="flex flex-1 flex-col">
+               <h1 className=" text-4xl font-medium max-w-[700px]">
+             Digite o número de patrimônio para que possamos encontrar o item
+                </h1>
+
+                <Separator className="my-8"/>
+
+                <div className="flex gap-2 flex-col">
+                 <SearchBarNewItem/>
+                </div>
+             </div>
+
+                <div className="flex  items-center justify-between">
+<div className="flex gap-2 items-center">
+                        <Button size={'lg'} onClick={() => setTab('4')} variant={'ghost'} className="text-eng-blue hover:text-eng-dark-blue"><ArrowLeft size={16}/>Anterior</Button>
+</div>
+
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => {
+                        setTab('4')
+                      }}>Continuar <ArrowRight size={16}/></Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                  <div className="flex flex-col gap-4">
+                </div>
+                </div>
+          </TabsContent>
+
+            <TabsContent value="4" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+              <div className="flex flex-1 flex-col">
+               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
+                Vamos começar, o item possui plaqueta de identificação?
+                </h1>
+
+                <div className="flex gap-2">
+ 
+                </div>
+             </div>
+
+                <div className="flex  items-center justify-between">
+<div className="flex items-start gap-0 flex-col">
+                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
+                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
+</div>
+
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => setTab('5')}>Continuar <ArrowRight size={16}/></Button>
+                    </div>
+                </div>
+             </div>
+          </TabsContent>
+
+          
+            <TabsContent value="5" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+              <div className="flex flex-1 flex-col">
+               <h1 className=" text-4xl font-medium max-w-[700px]">
+              Adicione as informações de patrimônio
+                </h1>
+
+                    <Separator className="my-8"/>
+
+                <div className="flex gap-2 w-full">
+   <div className="flex flex-col gap-4 w-full mb-8">
                   <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
 
                         {/* Código */}
@@ -796,7 +747,7 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
         <div className="flex items-center gap-3">
        {data.pes_nome && (
          <Avatar className=" rounded-md  h-10 w-10 border dark:border-neutral-800">
-         <AvatarImage className={'rounded-md h-10 w-10'} src={`${conectee}ResearcherData/Image?name=${data.pes_nome}`} />
+         <AvatarImage className={'rounded-md h-10 w-10'} src={`ResearcherData/Image?name=${data.pes_nome}`} />
          <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
        </Avatar>
        )}
@@ -810,313 +761,301 @@ const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
           />
         </div>
       </div>
-
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="observacao">Observações</Label>
-        <div className="flex items-center gap-3">
-          <Textarea
-            id="observacao"
-            className="w-full"
-            value={dataPatrimonio.observacao}
-            onChange={(e) => handleChangePatrimonio('observacao', e.target.value)}
-          />
-        </div>
-      </div>
-
-
-
                   </div>
-                  </CardContent>
-            </Alert>
+                </div>
+             </div>
 
+                <div className="flex  items-center justify-between">
+<div className="flex items-start gap-0 flex-col">
+                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
+                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
+</div>
 
-            <Alert>
-                  <CardHeader>
-                    <CardTitle>Informações pessoais</CardTitle>
-                    <CardDescription>
-                    Dados básicos do usuário registrados no sistema
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                  <div className="flex flex-col gap-4">
-                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
-                  <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Nome completo</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="loc_nom"
-            type="text"
-            disabled
-            className="w-full"
-            value={dataUser.name}
-            onChange={(e) => handleChangeUser('name', e.target.value)}
-          />
-          
-        </div>
-      </div>
-
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Matrícula</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="loc_nom"
-            type="text"
-            className="w-full"
-            value={dataUser.matricula}
-            disabled={true}
-            onChange={(e) => handleChangeUser('matricula', e.target.value)}
-          />
-          
-        </div>
-      </div>
-                  </div>
-                  </div>
-                    </CardContent>
-                    </Alert>
-
-                    <Alert>
-                  <CardHeader>
-                    <CardTitle>Informações de contato</CardTitle>
-                    <CardDescription>
-                    Detalhes para comunicação 
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                  <div className="flex flex-col gap-4">
-                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
-                  <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Email</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          disabled
-                          className="w-full"
-                          value={dataUser.email}
-                          onChange={(e) => handleChangeUser('email', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Telefone</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          disabled={true}
-                          value={dataUser.tel}
-                          onChange={(e) => handleChangeUser('telefone', e.target.value)}
-                        />
-                      </div>
-
-                      
-                      <div className="grid gap-3 w-full mb-6">
-                        <Label htmlFor="name">Ramal</Label>
-                        <Input
-                          id="name"
-                          type="text"
-                          className="w-full"
-                          value={dataUser.ramal}
-                          disabled={true}
-                          onChange={(e) => handleChangeUser('ramal', e.target.value)}
-                        />
-                      </div>
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => setTab('6')}>Continuar <ArrowRight size={16}/></Button>
                     </div>
+                </div>
+             </div>
+          </TabsContent>
+
+
+          
+            <TabsContent value="6" className="m-0">
+             <div className="h-full m-0 flex flex-col w-full justify-between">
+              <div className="flex flex-1 flex-col">
+               <h1 className=" text-4xl font-medium max-w-[600px]">
+               Estamos finalizando, insira as fotos do patrimônio
+                </h1>
+
+                <Separator className="my-8"/>
+
+                 <div className="grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8">
+                  <div className="flex gap-2">
+                    <ImageDown size={24}/>
+                    <div>
+                      <p className="font-medium">Passo 1</p>
+                      <p className="text-gray-500 text-sm">Imagem frontal do patrimônio</p>
                     </div>
-                    </CardContent>
-                    </Alert>
-            </div>
+                  </div>
 
-            <div className="  flex flex-col md:gap-8 gap-4"  >
-            <Alert className="p-0">
-                <CardHeader>
-                    <CardTitle>Destinação</CardTitle>
-                    <CardDescription>
-                    Status e destino atual do item
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                  <div className="grid gap-3 w-full">
-        <Label htmlFor="bem_dgv">Condição do item</Label>
-        <div className="flex items-center gap-3">
-        <Select 
-                   value={dataPatrimonio.condicao || ""}
-                   onValueChange={(value) => handleChangePatrimonio('condicao', value)}
-                   >
-  <SelectTrigger
-    id="model"
-    className="items-start [&_[data-description]]:hidden"
-  >
-    <SelectValue />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="Excelente estado">
-      <div className="flex items-start gap-3 text-muted-foreground">
-        <Checks className="size-5 " />
-        <div className="grid gap-0.5">
-          <p className="font-medium whitespace-nowrap">Excelente estado</p>
-          <p className="text-xs text-muted-foreground" data-description>
-            Como novo. Com caixa original e todos os acessórios.
-          </p>
-        </div>
-      </div>
-    </SelectItem>
-    <SelectItem value="Semi-novo">
-      <div className="flex items-start gap-3 text-muted-foreground">
-        <Check className="size-5 " />
-        <div className="grid gap-0.5">
-          <p className="font-medium whitespace-nowrap">Semi-novo</p>
-          <p className="text-xs text-muted-foreground" data-description>
-            Excelente estado, com leves sinais de uso.
-          </p>
-        </div>
-      </div>
-    </SelectItem>
-    <SelectItem value="Quase novo">
-      <div className="flex items-start gap-3 text-muted-foreground">
-        <Warning className="size-5 " />
-        <div className="grid gap-0.5">
-          <p className="font-medium whitespace-nowrap">Quase novo</p>
-          <p className="text-xs text-muted-foreground" data-description>
-            Funciona bem, mas sem cabos ou periféricos.
-          </p>
-        </div>
-      </div>
-    </SelectItem>
-    <SelectItem value="Necessita de pequenos reparos">
-      <div className="flex items-start gap-3 text-muted-foreground">
-        <Wrench className="size-5 " />
-        <div className="grid gap-0.5">
-          <p className="font-medium whitespace-nowrap">Pequenos reparos</p>
-          <p className="text-xs text-muted-foreground" data-description>
-            Funcional, mas precisa de manutenção leve.
-          </p>
-        </div>
-      </div>
-    </SelectItem>
-    <SelectItem value="Inutilizável">
-      <div className="flex items-start gap-3 text-muted-foreground">
-        <X className="size-5 text-destructive" />
-        <div className="grid gap-0.5">
-          <p className="font-medium whitespace-nowrap">Inutilizável</p>
-          <p className="text-xs text-muted-foreground" data-description>
-            Sem condições de uso ou recuperação.
-          </p>
-        </div>
-      </div>
-    </SelectItem>
-  </SelectContent>
-</Select>
-        </div>
-      </div>
-                 
+                  <div className="flex gap-2">
+                    <Barcode size={24}/>
+                    <div>
+                      <p className="font-medium">Passo 2</p>
+                      <p className="text-gray-500 text-sm">Imagem com a idetificação do item (caso houver)</p>
+                    </div>
+                  </div>
 
+                  <div className="flex gap-2">
+                    <PanelRightOpen size={24}/>
+                    <div>
+                      <p className="font-medium">Passo 3</p>
+                      <p className="text-gray-500 text-sm">Imagem lateral ou traseira</p>
+                    </div>
+                  </div>
 
+                   <div className="flex gap-2">
+                    <ScanEye size={24}/>
+                    <div>
+                      <p className="font-medium">Passo 4</p>
+                      <p className="text-gray-500 text-sm">Imagem com detalhe da condição</p>
+                    </div>
+                  </div>
+                </div>
 
-                    </CardContent>
-                    </Alert>
+                  <Separator className="my-8"/>
 
+                <div className="flex gap-2 w-full mb-8">
+ <div className="w-full ">
+     <div className="grid grid-cols-4 w-full gap-2">
+  {Array.from({ length: 4 }).map((_, index) => {
+    const image = images[index];
 
-                    
-                <Alert className="p-0">
-      <CardHeader>
-        <CardTitle>Imagens do item</CardTitle>
-        <CardDescription>
-        <Accordion type="single" collapsible>
-  <AccordionItem value="item-1" className="border-none">
-    <AccordionTrigger className="border-none p-0">Instruções</AccordionTrigger>
-    <AccordionContent>
-    <Alert className="p-0 pl-4 border-none my-4">
-                  <ImageDown className="h-4 w-4" />
-                  <AlertTitle>Passo 1</AlertTitle>
-                  <AlertDescription>Imagem frontal do patrimônio
-                  </AlertDescription>
-                </Alert>
-
-                <Alert className="p-0 pl-4 border-none my-4">
-                  <Barcode className="h-4 w-4" />
-                  <AlertTitle>Passo 2</AlertTitle>
-                  <AlertDescription>Imagem com a idetificação do item</AlertDescription>
-                </Alert>
-
-                <Alert className="p-0 pl-4 border-none my-4">
-                  <Warning className="h-4 w-4" />
-                  <AlertTitle>Passo 3</AlertTitle>
-                  <AlertDescription>
-                    Imagem lateral ou traseira
-                  </AlertDescription>
-                </Alert>
-
-                <Alert className="p-0 pl-4 border-none my-4">
-                  <Warning className="h-4 w-4" />
-                  <AlertTitle>Passo 4</AlertTitle>
-                  <AlertDescription>
-                    Imagem com detalhe da condição
-                  </AlertDescription>
-                </Alert>
-    </AccordionContent>
-  </AccordionItem>
-</Accordion>
-       
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-2">
-         <div>
-        {images.length == 0 ? (
-          <div className="aspect-square w-full rounded-md object-cover border " >
-
+    return (
+      <div key={index} className="relative group">
+        {image ? (
+          <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
+            <img
+              className="aspect-square w-full rounded-md object-cover "
+              src={image}
+              alt={`Upload ${index + 1}`}
+            />
+            <Button
+              onClick={() => handleRemoveImage(index)}
+              variant="destructive"
+              className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              size="icon"
+            >
+              <Trash size={16} />
+            </Button>
           </div>
-        ):(
-          <div className="flex items-center justify-center group">
-          <img
-           
-          className="aspect-square w-full rounded-md object-cover"
-          height="300"
-          src={images[0] || "/placeholder.svg"}
-          width="300"
-        />
-        <Button onClick={() => handleRemoveImage(0)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
-          </div>
+        ) : (
+          <button
+            onClick={() => openUploadDialog()} // agora passando o index
+            className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
+          >
+            <Plus className="h-6 w-6 text-gray-400" />
+          </button>
         )}
-         </div>
-          <div className="grid grid-cols-3 gap-2">
-            {images.slice(1, 4).map((image, index) => (
-              <button key={index}>
-              <div className="flex items-center justify-center group">
-               <img
-                
-                className="aspect-square w-full rounded-md object-cover"
-                height="84"
-                src={image}
-                width="84"
-              />
-                <Button onClick={() => handleRemoveImage(index+1)} variant={'destructive'} className="absolute z-[9] group-hover:flex hidden transition-all" size={'icon'}><Trash size={16}/></Button>
-               </div>
-             
-              </button>
-            ))}
-            {images.length < 4 && (
-              <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="upload"
-                />
-                <label htmlFor="upload" className="cursor-pointer w-full h-full flex items-center justify-center">
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                  <span className="sr-only">Upload</span>
-                </label>
-              </button>
-            )}
+      </div>
+    );
+  })}
+</div>
+
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+        multiple
+      />
+
+      {/* Dialog de Opções de Upload */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+             <DialogHeader>
+        <DialogTitle className="text-2xl  mb-2 font-medium max-w-[450px]">
+      Adicionar imagem
+          </DialogTitle>
+          <DialogDescription className=" text-zinc-500">
+         Você pode capturar uma nova imagem com a câmera ou escolher um arquivo já existente do seu computador.  
+          </DialogDescription>
+            </DialogHeader>
+         
+          <div className="flex flex-col space-y-3">
+            <Button onClick={openCameraDialog} className="flex items-center justify-center space-x-2">
+              <Camera size={20} />
+              <span>Tirar Foto</span>
+            </Button>
+            <Button onClick={openFileDialog} variant="outline" className="flex items-center justify-center space-x-2">
+              <Image size={20} />
+              <span>Escolher do Computador</span>
+            </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+       {/* Dialog da Câmera */}
+      <Dialog open={showCameraDialog} onOpenChange={closeCameraDialog}>
+        <DialogContent className="max-w-lg">
+            <DialogHeader>
+        <DialogTitle className="text-2xl  mb-2 font-medium max-w-[450px]">
+      Capturar foto
+          </DialogTitle>
+         <DialogDescription className="text-zinc-500">
+  Fotografe o item patrimonial com atenção à boa iluminação e enquadramento.  
+  Essa foto será utilizada para registrar e exibir o item no sistema Vitrine Patrimônio.
+</DialogDescription>
+            </DialogHeader>
+          
+          {!showPhotoPreview ? (
+            <div className="space-y-4">
+              {/* Seleção de Câmera */}
+              <div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium mb-2 block">
+                  Câmeras Disponíveis <Badge variant='outline'>{availableCameras.length}</Badge>
+                </label>
+
+                 {/* Botões adicionais para gerenciar câmeras */}
+              <div className="flex justify-center space-x-2">
+                <Button 
+                  onClick={getCameras} 
+                  variant='outline' 
+                  size="sm"
+                  className="text-xs"
+                >
+                  <RefreshCcw size={16}/> Atualizar Câmeras
+                </Button>
+              
+              </div>
+                </div>
+                <div className="space-y-2">
+                  <Select 
+                    value={selectedCamera} 
+                    onValueChange={(value) => {
+                      setSelectedCamera(value);
+                      // Auto-iniciar nova câmera quando selecionada
+                      setTimeout(() => startCamera(), 100);
+                    }}
+                  >
+                    <SelectContent>
+                    {availableCameras.map((camera, index) => {
+                      const cameraName = camera.label || `Câmera ${index + 1}`;
+                      const isDefault = camera.deviceId === selectedCamera;
+                      
+                      return (
+                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                          {cameraName} {isDefault && '(Ativa)'}
+                        </SelectItem>
+                      );
+                    })}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Informações da câmera selecionada */}
+                  {selectedCamera && (
+                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                      <strong>Câmera Ativa:</strong> {
+                        availableCameras.find(c => c.deviceId === selectedCamera)?.label || 
+                        `Câmera ${availableCameras.findIndex(c => c.deviceId === selectedCamera) + 1}`
+                      }
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Preview da Câmera */}
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full rounded-lg bg-black"
+                  style={{ maxHeight: '300px' }}
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                
+                {/* Overlay com informações */}
+                <div className="absolute top-2 left-2 flex gap-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                 <Camera size={16}/> {stream ? 'Ao vivo' : 'Iniciando...'}
+                </div>
+              </div>
+              
+              {/* Controles */}
+              <div className="flex justify-center space-x-3">
+                  <Button onClick={closeCameraDialog} className="w-full" variant="outline">
+                 <ArrowUUpLeft size={16} className="" />  Cancelar
+                </Button>
+                <Button 
+                  onClick={capturePhoto} 
+                  disabled={!stream}
+                  className="w-full"
+                >
+                  <Camera size={16} />
+                  <span>Capturar Foto</span>
+                </Button>
+             
+              </div>
+              
+             
+            </div>
+          ) : (
+            <div className="space-y-4">
+            
+              <div className="relative">
+                <img 
+                  src={capturedPhoto ?? ''} 
+                  alt="Foto capturada" 
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: '300px', objectFit: 'cover' }}
+                />
+              </div>
+              
+              <div className="flex justify-center space-x-3">
+               
+                <Button onClick={retakePhoto} variant="outline" className="w-full">
+                  <ArrowUUpLeft size={16} className="" />
+                  <span>Tirar Outra</span>
+                </Button>
+                <Button onClick={confirmPhoto} className="w-full">
+                  <Check size={16} />
+                  <span>Usar Esta Foto</span>
+                </Button>
+               
+              </div>
+              
+            
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+                </div>
+             </div>
+
+                <div className="flex  items-center justify-between">
+<div className="flex items-start gap-0 flex-col">
+                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
+                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
+</div>
+
+                    <div className="flex gap-2 items-center">
+                      <Button size={'lg'} onClick={() => setTab('2')}>Continuar <ArrowRight size={16}/></Button>
+                    </div>
+                </div>
+             </div>
+          </TabsContent>
+
+        </Tabs>
         </div>
-      </CardContent>
-    </Alert>
+
+            <div className="lg:w-[400px] rounded-lg bg-eng-blue  w-full">
+
             </div>
-            </div>
-           </main>
-      
-    )
+       </main>
+     </div>
+  )
 }
