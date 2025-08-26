@@ -1,64 +1,46 @@
-
 import { useContext, useEffect } from "react";
-
-import { useLocation } from "react-router-dom";
-
 import { DashboardProvider } from "../components/provider/dashboard-provider";
 import SimpleLayout from "../layout/simple-layout";
-import { useModalDashboard } from "../components/hooks/use-modal-dashboard";
-import { useModalBackground } from "../components/hooks/use-modal-background";
+import { useLocation } from "react-router-dom";
+import { ModalType, useModalDashboard } from "../components/hooks/use-modal-dashboard";
 import { UserContext } from "../context/context";
 
 export function Admin() {
-    const { onOpen } = useModalDashboard();
-    const { onClose} = useModalBackground();
-    const {isCollapsed, navCollapsedSize, defaultLayout} = useContext(UserContext)
+  const { onOpen } = useModalDashboard();
+  const { isCollapsed, navCollapsedSize, defaultLayout } = useContext(UserContext);
+  const location = useLocation();
 
-    const location = useLocation();
+  const routeMap: Record<string, ModalType> = {
+    "/dashboard": "visao-geral-user",
+    "/dashboard/patrimonios": "lista-patrimonio",
+    "/dashboard/visao-sala": "visao-sala",
+    "/dashboard/novo-item": "novo-item",
+    "/dashboard/itens-vitrine": "itens-vitrine",
+    "/dashboard/empenhos": "empenhos",
+    "/dashboard/criar-etiqueta": "create-bar-bode",
+    "/dashboard/painel": "painel",
+    "/dashboard/assinaturee": "assinar-documento",
+    "/dashboard/itens-desfazimento": "itens-desfazimento",
+    "/dashboard/transferencias": "transferencia",
+    "/dashboard/editar-item": "editar-item",
+    "/dashboard/criar-patrimonio-temporario": "create-temp-asset",
+  };
 
-    useEffect(() => {
-        if(location.pathname == '/dashboard') {
-            onOpen('visao-geral-user')
-  
-        } else if (location.pathname == '/dashboard/patrimonios') {
-            onOpen('lista-patrimonio')
-        } else if (location.pathname == '/dashboard/visao-sala') {
-            onOpen('visao-sala')
-        } else if (location.pathname == '/dashboard/novo-item') {
-            onOpen('novo-item')
-        } else if (location.pathname == '/dashboard/itens-vitrine') {
-            onOpen('itens-vitrine')
-        } else if (location.pathname == '/dashboard/empenhos') {
-            onOpen('empenhos')
-        } else if (location.pathname == '/dashboard/criar-etiqueta') {
-            onOpen('create-bar-bode')
-        } else if (location.pathname == '/dashboard/painel') {
-            onOpen('painel')
-        }  else if (location.pathname == '/dashboard/assinaturee') {
-            onOpen('assinar-documento')
-        }  else if (location.pathname == '/dashboard/itens-desfazimento') {
-            onOpen('itens-desfazimento')
-        }  else if (location.pathname == '/dashboard/transferencias') {
-            onOpen('transferencia')
-        } else if (location.pathname == '/dashboard/editar-item') {
-            onOpen('editar-item')
-        }
+  useEffect(() => {
+    const modalKey: ModalType | undefined = routeMap[location.pathname];
 
+    if (modalKey) {
+      onOpen(modalKey);
+    }
+  }, [location]);
 
-
-    }, [location]);
-  
-
-    return(
-        <>
-        <SimpleLayout
-         defaultLayout={defaultLayout}
-         defaultCollapsed={isCollapsed}
-         navCollapsedSize={navCollapsedSize}
-        >
-           <DashboardProvider/>
-
-        </SimpleLayout>
-        </>
-    )
+  return (
+    <SimpleLayout
+      defaultLayout={defaultLayout}
+      defaultCollapsed={isCollapsed}
+      navCollapsedSize={navCollapsedSize}
+    >
+      <DashboardProvider />
+    </SimpleLayout>
+  );
 }

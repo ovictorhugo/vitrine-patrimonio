@@ -65,17 +65,17 @@ export function NavMain({
           onClick={subItem.onClick} 
           className="cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"
         >
-          <span className="flex z-[99] items-center gap-1">
-            {subItem.icon && <subItem.icon className="h-4" />} 
-            {subItem.title}
+          <span className="flex z-[99] items-center gap-1 truncate">
+            {subItem.icon && <subItem.icon className="h-4 min-h-4" />} 
+           <p className="truncate"> {subItem.title}</p>
           </span>
         </SidebarMenuSubButton>
       ) : (
         <SidebarMenuSubButton asChild className={` ${subItem.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue  hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
           <Link to={subItem.url!}>
-            <span className="flex z-[99] items-center gap-1">
-              {subItem.icon && <subItem.icon className="h-4" />} 
-              {subItem.title}
+            <span className="flex z-[99] items-center gap-1 truncate">
+              {subItem.icon && <subItem.icon className="h-4 min-h-4" />} 
+              <p className="truncate"> {subItem.title}</p>
             </span>
           </Link>
         </SidebarMenuSubButton>

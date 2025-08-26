@@ -28,6 +28,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   SquareTerminal,
+  TimerReset,
   UserPlus,
   WalletCards,
   Wrench,
@@ -73,7 +74,12 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
             icon: Barcode
           },
           {
-            title: "Novo item",
+            title: "Patrimonio temporário",
+            url: "/dashboard/criar-patrimonio-temporario",
+            icon: TimerReset
+          },
+          {
+            title: "Anunciar item",
             url: "/dashboard/novo-item",
             icon: Plus
           },

@@ -14,35 +14,32 @@ import { Notification } from './pages/notification';
 import LoadingWrapper from './components/loading';
 import { Item } from './components/item-page/item-page';
 import { AuthenticationToken } from './pages/Authentication-token';
+import { FavoriteProvider } from './context/favorite-context';
+
 
 
 interface User {
-  institution_id: string
-  user_id: string
-  visible:boolean
-  gp_count:number
-  dp_count:number
+  id: string;                // corresponde a "id" no JSON
+  institution_id: string;    // corresponde a "institution_id"
 
-  username: string
+  username: string;          // corresponde a "username"
+  email: string;             // corresponde a "email"
+  provider: string;          // corresponde a "provider"
 
-  photo_url: string
-  background_url:string
+  linkedin: string;          // corresponde a "linkedin"
+  lattes_id: string;         // corresponde a "lattes_id"
+  orcid: string;             // corresponde a "orcid"
+  ramal: string;             // corresponde a "ramal"
 
-  dep_id: string
+  photo_url: string;         // corresponde a "photo_url"
+  background_url: string;    // corresponde a "background_url"
 
-  email: string
-  linkedin: string
-  lattes_id: string
-  registration: string
-  orcid:string
-  ramal:string
-  number:string
+  matricula: string;         // corresponde a "matricula"
+  verify: boolean;           // corresponde a "verify"
 
   roles: Roles[]
-
-  provider: string
-  verify: boolean
 }
+
 
 interface Roles {
   id:string
@@ -121,6 +118,7 @@ function App() {
       searchType, setSearchType
     }}
     >
+               <FavoriteProvider>
       <DefaultLayout>
       <LoadingWrapper>
       <Routes>
@@ -131,7 +129,7 @@ function App() {
         <Route path='/dashboard' element={<Admin/>}/>
         <Route path='/dashboard/administrativo' element={<Admin/>}/>
         <Route path='/dashboard/patrimonios' element={<Admin/>}/>
-        <Route path='/dashboard/novo-item' element={<Admin/>}/>
+       
         <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
         <Route path='/dashboard/visao-sala' element={<Admin/>}/>
         <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
@@ -141,7 +139,7 @@ function App() {
 
 
         <Route path='/dashboard/empenhos' element={<Admin/>}/>
-        <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
+     
         <Route path='/dashboard/painel' element={<Admin/>}/>
         <Route path='/dashboard/assinaturee' element={<Admin/>}/>
 
@@ -153,13 +151,14 @@ function App() {
         />
 
     <Route path='/authentication' element={<AuthenticationToken />} />
-
-
-
+    <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
+    <Route path='/dashboard/novo-item' element={<Admin/>}/>
+    <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
         
       </Routes>
       </LoadingWrapper>
       </DefaultLayout>
+      </FavoriteProvider>
     </UserContext.Provider>
     </Router>
  

@@ -1,1061 +1,784 @@
-import { Alert } from "../../ui/alert";
+// src/pages/novo-item/index.tsx
 import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
-import { ArrowLeft, ArrowRight,  Barcode,  Camera, Check, ChevronLeft, FormInput, Image, ImageDown, PanelRightOpen, Play, Plus, RefreshCcw, RotateCcw, ScanEye, Search, Trash, Upload, User, X } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BreadcrumbHeader } from "../../breadcrumb-header";
-import { BreadcrumbHeaderCustom } from "../../breadcrumb-header-custom";
+import { ArrowLeft, ArrowRight, Barcode, Check, ChevronLeft, Download, File, LayoutDashboard, Loader2, LoaderCircle, Plus } from "lucide-react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent } from "../../ui/tabs";
 import { Progress } from "../../ui/progress";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
-import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
-import { SelectTypeNewItem } from "../../search/select-type-new-item";
-import { Input } from "../../ui/input";
-import { UserContext } from "../../../context/context";
-import { PatrimoniosSelecionados } from "../../../App";
-import { useModal } from "../../hooks/use-modal-store";
-import { useQuery } from "../../modal/search-modal-patrimonio";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../ui/dialog";
-import { toast } from "sonner";
-import { Badge } from "../../ui/badge";
-import { ArrowUUpLeft } from "phosphor-react";
-import { Separator } from "../../ui/separator";
-import { Textarea } from "../../ui/textarea";
-import { Label } from "../../ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { SearchBarNewItem } from "./search-bar";
+import { useLocation, useNavigate } from "react-router-dom";
+import { cn } from "../../../lib";
 
-interface Patrimonio {
-  asset_code: string;
-  asset_check_digit: string;
-  atm_number: string;
-  serial_number: string;
-  asset_status: string;
-  asset_value: string;
-  asset_description: string;
-  csv_code: string;
-  accounting_entry_code: string;
-  item_brand: string;
-  item_model: string;
-  group_type_code: string;
-  group_code: string;
-  expense_element_code: string;
-  subelement_code: string;
-  id: string;
-  agency: {
-    agency_name: string;
-    agency_code: string;
-    id: string;
+import { InicioStep } from "./steps/inicio";
+import { InformacoesStep } from "./steps/informacoes";
+import { PesquisaStep } from "./steps/pesquisa";
+import { FormularioStep, Patrimonio } from "./steps/formulario";
+import { FormularioSpStep } from "./steps/formulario-sp";
+import { TrocarLocalStep } from "./steps/trocar-local";
+import { InformacoesAdicionaisStep } from "./steps/informacoes-adicionais";
+import { EstadoStep } from "./steps/estado";
+import { ImagemStep } from "./steps/imagem";
+import { FinalStep } from "./steps/final";
+import { UserContext } from "../../../context/context";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
+
+/* ---- Tipos locais para trocar-local ---- */
+interface Agency { id: string; agency_name: string; agency_code: string; }
+interface Unit {
+  id: string; unit_name: string; unit_code: string; unit_siaf: string;
+  agency_id: string; agency?: Agency;
+}
+interface Sector { id: string; sector_name: string; sector_code: string; unit_id: string; unit: Unit; }
+interface Location { id: string; location_name: string; location_code: string; sector_id: string; sector: Sector; }
+
+/* ---- Wizard ---- */
+export type StepKey =
+  | "inicio" | "informacoes" | "pesquisa" | "formulario" | "formulario-sp"
+  | "informacoes-adicionais" | "trocar-local" | "estado" | "imagens" | "final";
+export type StepDef = { key: StepKey; label: string };
+export type FlowMode = "vitrine" | "desfazimento";
+
+const getSteps = (mode: FlowMode): StepDef[] =>
+  mode === "desfazimento"
+    ? [
+        { key: "inicio", label: "Início" },
+        { key: "informacoes", label: "Informações" },
+        { key: "formulario-sp", label: "Formulário" },
+        { key: "trocar-local", label: "Trocar local" },
+        { key: "estado", label: "Estado" },
+        { key: "informacoes-adicionais", label: "Informações adicionais" },
+        { key: "imagens", label: "Imagens" },
+        { key: "final", label: "Final" },
+      ]
+    : [
+        { key: "inicio", label: "Início" },
+        { key: "informacoes", label: "Informações" },
+        { key: "pesquisa", label: "Pesquisa" },
+        { key: "formulario", label: "Formulário" },
+        { key: "trocar-local", label: "Trocar local" },
+        { key: "estado", label: "Estado" },
+        { key: "informacoes-adicionais", label: "Informações adicionais" },
+        { key: "imagens", label: "Imagens" },
+        { key: "final", label: "Final" },
+      ];
+
+export type ValidMap = Partial<Record<StepKey, boolean>>;
+export type StepBaseProps<K extends keyof StepPropsMap> = {
+  value: K;
+  step:number
+  onValidityChange: (valid: boolean) => void;
+  onStateChange?: (state: unknown) => void;
+} & StepPropsMap[K];
+
+export type StepPropsMap = {
+  inicio: { onFlowChange: (flow: FlowMode) => void; initialData?: { flowShort?: FlowMode } };
+  informacoes: {};
+  "informacoes-adicionais": { 
+    flowShort: FlowMode; 
+    initialData?: { observacao?: string; situacao?: string };
+    estadoAtual?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
   };
-  unit: {
-    unit_name: string;
-    unit_code: string;
-    unit_siaf: string;
-    id: string;
+  "trocar-local": {
+    flowShort: FlowMode;
+    initialData?: {
+      agency_id?: string; unit_id?: string; sector_id?: string; location_id?: string;
+      agency?: Agency | null; unit?: Unit | null; sector?: Sector | null; location?: Location | null;
+      isOpen?: boolean;
+    };
+    formSnapshot?: {
+      agency_id?: string; unit_id?: string; sector_id?: string; location_id?: string;
+      agency?: Agency | null; unit?: Unit | null; sector?: Sector | null; location?: Location | null;
+    };
+    isActive: boolean;
   };
-  sector: {
-    sector_name: string;
-    sector_code: string;
-    id: string;
+  pesquisa: { value_item?: string; type?: string };
+  formulario: { value_item?: string; type?: string; initialData?: Patrimonio };
+  "formulario-sp": { value_item?: string; type?: string; initialData?: Patrimonio };
+  estado: { estado_previo?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel" };
+  imagens: { imagens?: string[] };
+  final: {}
+};
+
+type WizardState = {
+  inicio?: { flowShort?: FlowMode };
+  pesquisa?: { value_item?: string; type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc" };
+  informacoes?: Record<string, unknown>;
+  "informacoes-adicionais"?: { observacao?: string; situacao?: string };
+  formulario?: Patrimonio;
+  "formulario-sp"?: Patrimonio;
+  estado?: { estado_previo: "quebrado" | "ocioso" | "anti-economico" | "recuperavel" };
+  imagens?: { images_wizard: string[] }; // ⬅️ use sempre plural
+  "trocar-local"?: {
+    agency_id?: string; unit_id?: string; sector_id?: string; location_id?: string;
+    agency?: Agency | null; unit?: Unit | null; sector?: Sector | null; location?: Location | null;
+    isOpen?: boolean;
   };
-  location: {
-    location_code: string;
-    location_name: string;
-    id: string;
-  };
-  material: {
-    material_code: string;
-    material_name: string;
-    id: string;
-  };
-  legal_guardian: {
-    legal_guardians_code: string;
-    legal_guardians_name: string;
-    id: string;
-  };
-  is_official: boolean;
+};
+
+/* ===== Utils ===== */
+const DEV_LOGS = false;
+
+const shallowEqual = (a: any, b: any) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const ak = Object.keys(a); const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  for (const k of ak) if (a[k] !== b[k]) return false;
+  return true;
+};
+
+/** Snapshot para INPUTs readonly do trocar-local (não alimenta selects) */
+function deriveTrocarLocalFromFormulario(form?: Patrimonio) {
+  if (!form) return undefined;
+  const agency   = (form as any)?.agency ?? null;
+  const unit     = (form as any)?.unit ?? null;
+  const sector   = (form as any)?.sector ?? null;
+  const location = (form as any)?.location ?? null;
+
+  const agency_id   = (form as any)?.agency?.id   ?? "";
+  const unit_id     = (form as any)?.unit?.id     ?? "";
+  const sector_id   = (form as any)?.sector?.id   ?? "";
+  const location_id = (form as any)?.location?.id ?? "";
+
+  if (!(agency_id || unit_id || sector_id || location_id || agency || unit || sector || location)) {
+    return undefined;
+  }
+  return { agency_id, unit_id, sector_id, location_id, agency, unit, sector, location };
 }
 
 export function NovoItem() {
-   const location = useLocation();
-    const navigate = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { urlGeral } = useContext(UserContext); 
+  /* ---- Wizard state ---- */
+  const [flow, setFlow] = useState<FlowMode>("vitrine");
+  const STEPS = useMemo(() => getSteps(flow), [flow]);
 
-   const handleVoltar = () => {
+  const [active, setActive] = useState<StepKey>(STEPS[0].key);
+  const [valid, setValid] = useState<ValidMap>({});
+  const [wizard, setWizard] = useState<WizardState>({});
+  const token = localStorage.getItem("jwt_token");
 
-    const currentPath = location.pathname;
-    const hasQueryParams = location.search.length > 0;
-    
-    if (hasQueryParams) {
-      // Se tem query parameters, remove apenas eles
-      navigate(currentPath);
-    } else {
-      // Se não tem query parameters, remove o último segmento do path
-      const pathSegments = currentPath.split('/').filter(segment => segment !== '');
-      
-      if (pathSegments.length > 1) {
-        pathSegments.pop();
-        const previousPath = '/' + pathSegments.join('/');
-        navigate(previousPath);
-      } else {
-        // Se estiver na raiz ou com apenas um segmento, vai para raiz
-        navigate('/');
-      }
-    }
-  };
+  // NEW: estados de finalização e ids gerados
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [createdAssetId, setCreatedAssetId] = useState<string | null>(null);
+  const [createdCatalogId, setCreatedCatalogId] = useState<string | null>(null);
 
-
-  const [tab, setTab] = useState('1')
-
-  const [value, setValue] = useState<string>("nao");
-
-  const hasPlaqueta = value === "sim";
-
-  const {} = useContext(UserContext)
-
-      const queryUrl = useQuery();
-
-  const query = useQuery();
-
-  const type_search = queryUrl.get('type_search');
-  const terms = queryUrl.get('terms');
-  const loc_nom = queryUrl.get('loc_nom');
-
-  const [itemType, setItemType] = useState('cod')
-    const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([])
-
-     useEffect(() => {
-            if (terms) {
-              const termList: PatrimoniosSelecionados[] = terms
-                .split(';')
-                .filter(t => t.trim() !== '')
-                .map(t => ({
-                  term: t.trim(),
-                  type: itemType
-                }));
-            
-              setItensSelecionadosPopUp(termList);
-            }
-          }, [terms]);
-
-           const handleRemoveItem = (index: number) => {
-     queryUrl.delete("terms");
-  queryUrl.delete("type_search");
-            const newItems = [...itemsSelecionadosPopUp];
-    newItems.splice(index, 1);
-    setItensSelecionadosPopUp(newItems);
-
-     navigate({
-    pathname: location.pathname,
-    search: queryUrl.toString(),
-  });
-    
-  };
-
-    const {onOpen} = useModal()
-
-     ////imagem
-
- const [images, setImages] = useState<string[]>([]);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showCameraDialog, setShowCameraDialog] = useState(false);
-  const [showPhotoPreview, setShowPhotoPreview] = useState(false);
- const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCamera, setSelectedCamera] = useState('');
- const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  
-  const videoRef = useRef(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = React.createRef<HTMLInputElement>();
-
-  const handleRemoveImage = (index) => {
-    setImages(prevImages => prevImages.filter((_, i) => i !== index));
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Confetes (lazy import)
+  const launchConfetti = useCallback(async () => {
     try {
-      const files = event.target.files;
-      if (!files || files.length === 0) {
-        throw new Error("No files selected");
+      const mod = await import("canvas-confetti");
+      const confetti = mod.default;
+      confetti({ spread: 70, origin: { y: 0.7 } });
+      const end = Date.now() + 900;
+      (function frame() {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    } catch {
+      // silencioso se a lib não estiver disponível
+    }
+  }, []);
+  useEffect(() => { if (finished) launchConfetti(); }, [finished, launchConfetti]);
+
+  /* ===== Helpers para evitar setState desnecessário ===== */
+  const setValidIfChanged = useCallback((producer: (prev: ValidMap) => ValidMap) => {
+    setValid((prev) => {
+      const next = producer(prev);
+      return shallowEqual(prev, next) ? prev : next;
+    });
+  }, []);
+
+  const setWizardIfChanged = useCallback((producer: (prev: WizardState) => WizardState) => {
+    setWizard((prev) => {
+      const next = producer(prev);
+      return shallowEqual(prev, next) ? prev : next;
+    });
+  }, []);
+
+  /* ---- Props por etapa ---- */
+  const pesquisaType = wizard.pesquisa?.type === "atm" ? "atm" : "cod";
+
+  const stepProps: StepPropsMap = useMemo(
+    () => ({
+      inicio: { onFlowChange: (f) => setFlow(f), initialData: wizard.inicio },
+      informacoes: {},
+      pesquisa: {
+        value_item: wizard.pesquisa?.value_item,
+        type: pesquisaType,
+      },
+      formulario: {
+        value_item: wizard.pesquisa?.value_item,
+        type: pesquisaType,
+        initialData: wizard.formulario,
+      },
+      "formulario-sp": {
+        value_item: wizard.pesquisa?.value_item,
+        type: pesquisaType,
+        initialData: wizard["formulario-sp"],
+      },
+      estado: { estado_previo: wizard.estado?.estado_previo },
+      imagens: { imagens: wizard.imagens?.images_wizard },
+      "informacoes-adicionais": {
+        flowShort: flow,
+        initialData: wizard["informacoes-adicionais"],
+        estadoAtual: wizard.estado?.estado_previo,
+      },
+      "trocar-local": {
+        flowShort: flow,
+        initialData: wizard["trocar-local"],
+        formSnapshot: deriveTrocarLocalFromFormulario(wizard.formulario),
+        isActive: active === "trocar-local",
+      },
+      final: {
+
       }
+    }),
+    [wizard, flow, active, pesquisaType]
+  );
 
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      const availableSlots = Math.max(4 - images.length, 0);
-      const imagesToAdd = newImages.slice(0, availableSlots);
+  /* ---- sincroniza validações e aba ativa quando o flow muda ---- */
+  useEffect(() => {
+    if (!STEPS.some((s) => s.key === active)) setActive(STEPS[0].key);
+    setValidIfChanged((prev) => {
+      const next: ValidMap = {};
+      for (const s of STEPS) next[s.key] = prev[s.key] ?? (s.key === STEPS[0].key ? false : undefined);
+      return next;
+    });
+  }, [STEPS, active, setValidIfChanged]);
 
-      setImages(prevImages => [...prevImages, ...imagesToAdd]);
-      setShowUploadDialog(false);
-    } catch (error) {
-  const errorAsError = error as Error;
-  console.error("Error during file upload:", errorAsError);
-  toast("Erro ao carregar arquivo", {
-    description: errorAsError.message,
-    action: {
-      label: "Fechar",
-      onClick: () => console.log("Fechar"),
+  /* ---- reidrata o flow salvo (init once) ---- */
+  const initFlowOnce = useRef(false);
+  useEffect(() => {
+    if (initFlowOnce.current) return;
+    const saved = wizard.inicio?.flowShort;
+    if (saved && saved !== flow) setFlow(saved);
+    initFlowOnce.current = true;
+  }, [wizard.inicio?.flowShort, flow]);
+
+  /* ---- índice e total ---- */
+  const idx = useMemo(() => STEPS.findIndex((s) => s.key === active), [active, STEPS]);
+  const total = STEPS.length;
+  const isLast = idx === total - 1;
+
+  /* ---- progresso e navegação ---- */
+  const pct = ((idx + 1) / total) * 100;
+
+  const canGoNext = useMemo(() => {
+    const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
+    return upto && idx < total - 1;
+  }, [idx, total, valid, STEPS]);
+
+  const canFinish = useMemo(() => STEPS.every((s) => valid[s.key] === true), [STEPS, valid]);
+
+  const canActivateIndex = useCallback((targetIndex: number) => {
+    if (targetIndex <= idx) return true;
+    return STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true);
+  }, [idx, STEPS, valid]);
+
+  const goPrev = useCallback(() => { if (idx > 0) setActive(STEPS[idx - 1].key); }, [idx, STEPS]);
+  const goNext = useCallback(() => { if (!isLast && canGoNext) setActive(STEPS[idx + 1].key); }, [idx, STEPS, isLast, canGoNext]);
+
+  /* ---- attachCommon com callbacks estáveis ---- */
+  const onValidityChangeFactory = useCallback(
+    (key: StepKey) => (v: boolean) => {
+      setValidIfChanged(prev => (prev[key] === v ? prev : { ...prev, [key]: v }));
     },
-  });
-}
-  };
+    [setValidIfChanged]
+  );
 
-  const getCameras = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(device => device.kind === 'videoinput');
-      setAvailableCameras(cameras);
-      if (cameras.length > 0) {
-        setSelectedCamera(cameras[0].deviceId);
-      }
-    } catch (error) {
-      console.error('Erro ao obter câmeras:', error);
+  const onStateChangeFactory = useCallback(
+    (key: StepKey) => (st: unknown) => {
+      setWizardIfChanged(prev => {
+        const current = ((prev as any)[key] as Record<string, unknown>) || {};
+        const nextForKey: Record<string, unknown> = { ...current };
+
+        // undefined = remover; demais = sobrescrever
+        for (const [k, v] of Object.entries(st as Record<string, unknown>)) {
+          if (v === undefined) delete nextForKey[k];
+          else nextForKey[k] = v;
+        }
+
+        // remove seção vazia
+        if (Object.keys(nextForKey).length === 0) {
+          if (!(key in (prev as any))) return prev;
+          const { [key]: _removed, ...rest } = prev as any;
+          return rest as WizardState;
+        }
+
+        if (shallowEqual(current, nextForKey)) return prev;
+        return { ...prev, [key]: nextForKey } as WizardState;
+      });
+    },
+    [setWizardIfChanged]
+  );
+
+  const attachCommon = useCallback(
+    <K extends StepKey>(key: K) => ({
+      value: key,
+      step: idx,
+      onValidityChange: onValidityChangeFactory(key),
+      onStateChange: onStateChangeFactory(key),
+      ...(stepProps as any)[key],
+    }),
+    [onValidityChangeFactory, onStateChangeFactory, stepProps]
+  );
+
+  ///////// FINALIZAR
+
+  type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
+
+  // mapeia o estado salvo no passo "estado" para o expected do backend (ex.: "UNUSED")
+  const mapSituation = (s?: EstadoKind): string => {
+    switch (s) {
+      case "quebrado":        return "BROKEN";
+      case "ocioso":          return "UNUSED";
+      case "anti-economico":  return "UNECONOMICAL";
+      case "recuperavel":     return "RECOVERABLE";
+      default:                return "UNUSED";
     }
   };
 
-  const startCamera = async () => {
+  // escolhe de onde vem o location_id para o POST /catalog
+  const pickLocationId = (flow: FlowMode, w: WizardState): string | undefined => {
+    const useTroca =
+      (w["trocar-local"]?.isOpen ?? (flow !== "vitrine")) === true;
+
+    if (useTroca) {
+      return w["trocar-local"]?.location_id || undefined;
+    }
+
+    // quando NÃO usa a troca, pega do formulário do fluxo ativo
+    const formLoc =
+      (flow === "desfazimento" ? w["formulario-sp"]?.location?.id : w.formulario?.location?.id);
+
+    return formLoc || undefined;
+  };
+
+  // monta payload do /assets a partir do formulário-sp + trocar-local
+  const buildAssetsPayload = (form: Patrimonio, tl?: WizardState["trocar-local"]) => ({
+    bem_cod:        form.asset_code || "",
+    bem_dgv:        form.asset_check_digit || "",
+    bem_num_atm:    form.atm_number || "",
+    bem_serie:      form.serial_number || "",
+    bem_sta:        form.asset_status || "",
+    bem_val:        form.asset_value || "",
+    bem_dsc_com:    form.asset_description || "",
+    csv_cod:        form.csv_code || "",
+    tre_cod:        form.accounting_entry_code || "",
+    agency_id:      tl?.agency_id || "",
+    unit_id:        tl?.unit_id || "",
+    sector_id:      tl?.sector_id || "",
+    location_id:    tl?.location_id || "",
+    material_id:    form.material?.id || "",
+    legal_guardian_id: form.legal_guardian?.id || "",
+    ite_mar:        form.item_brand || "",
+    ite_mod:        form.item_model || "",
+    tgr_cod:        form.group_type_code || "",
+    grp_cod:        form.group_code || "",
+    ele_cod:        form.expense_element_code || "",
+    sbe_cod:        form.subelement_code || "",
+  });
+
+  // envia as 4 imagens para POST /catalog/{catalog_id}/images
+  const uploadImages = async (catalogId: string, imgs: string[], urlBase: string) => {
+    if (!Array.isArray(imgs) || imgs.length < 4) {
+      toast("Você precisa submeter 4 imagens", {
+        description: "Em caso de dúvida, acesse as instruções de como tirar as fotos",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+      return false;
+    }
+
+    const first4 = imgs.slice(0, 4);
+    const endpoint = `${urlGeral}catalog/${catalogId}/images`;
+
+    const uploads = first4.map(async (image, idx) => {
+      const blob = await fetch(image).then((r) => r.blob());
+      const formData = new FormData();
+      formData.append("file", blob, `catalog_${catalogId}_${idx + 1}.jpg`);
+
+      const resp = await fetch(endpoint, { method: "POST", body: formData });
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(`Falha ao enviar imagem ${idx + 1}: ${resp.status} ${txt}`);
+      }
+    });
+
+    await Promise.all(uploads);
+    return true;
+  };
+
+  // RESET rápido para "novo formulário"
+  const resetToNewForm = useCallback(() => {
+    // mantém o flow atual
+    setWizard({});
+    setValid({});
+    setActive("inicio");
+    setFinished(false);
+    setCreatedAssetId(null);
+    setCreatedCatalogId(null);
+  }, []);
+
+  // +++ SUBSTITUI o handleFinish por este +++
+  const handleFinish = useCallback(async () => {
+    setIsFinishing(true);
+    setFinished(false);
+    setCreatedAssetId(null);
+    setCreatedCatalogId(null);
+
     try {
-      // Stop the existing stream if any
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        setStream(null);
+      // 1) coleta peças do wizard
+      const formSP   = wizard["formulario-sp"];
+      const formVit  = wizard.formulario;
+      const troca    = wizard["trocar-local"];
+      const infoAdic = wizard["informacoes-adicionais"];
+      const estado   = wizard.estado?.estado_previo as EstadoKind | undefined;
+      const imgs     = wizard.imagens?.images_wizard || [];
+
+      // 2) se for DESFAZIMENTO: cria asset em /assets/
+      let assetId: string | undefined;
+      if (flow === "desfazimento") {
+        if (!formSP) {
+          toast("Dados incompletos", { description: "Preencha o formulário (SP) antes de finalizar." });
+          return;
+        }
+        if (!troca?.agency_id || !troca?.unit_id || !troca?.sector_id || !troca?.location_id) {
+          toast("Localização incompleta", { description: "Selecione Unidade/Organização/Setor/Local em Trocar Local." });
+          return;
+        }
+
+        const assetsPayload = buildAssetsPayload(formSP, troca);
+        const createAsset = await fetch(`${urlGeral}assets/`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json", 
+            Accept: "application/json",
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(assetsPayload),
+        });
+
+        if (createAsset.status !== 201) {
+          const txt = await createAsset.text();
+          throw new Error(`Falha ao criar asset (${createAsset.status}): ${txt}`);
+        }
+
+        const assetJson = await createAsset.json();
+        assetId = assetJson?.id as string | undefined;
+        if (!assetId) throw new Error("Resposta /assets/ sem ID.");
+      } else {
+        // vitrine: asset vem da aba "formulário" (já existente)
+        assetId = formVit?.id;
+        if (!assetId) {
+          toast("Item não encontrado", { description: "Abra o passo Formulário e selecione um item existente." });
+          return;
+        }
       }
 
-      // Define constraints for the camera
-      const constraints = {
-        video: {
-          deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+      // 3) decide qual location_id vai para /catalog/
+      const locationId = pickLocationId(flow, wizard);
+      if (!locationId) {
+        toast("Local não definido", { description: "Defina o local no formulário ou em Trocar Local." });
+        return;
+      }
+
+      // 4) cria entrada no catálogo
+      const catalogPayload = {
+        asset_id: assetId!,
+        location_id: locationId,
+        situation: mapSituation(estado),
+        conservation_status: infoAdic?.situacao || "",
+        description: infoAdic?.observacao || "",
       };
 
-      // Request the camera stream
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(newStream);
+      const createCatalog = await fetch(`${urlGeral}catalog/`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          Accept: "application/json",
+          'Authorization': `Bearer ${token}`, 
+        },
+        body: JSON.stringify(catalogPayload),
+      });
 
-      // Set the video source if ref is available
-      if (videoRef.current) {
-  (videoRef.current as HTMLVideoElement).srcObject = newStream;
-} else {
-        console.warn('videoRef is null or undefined');
+      if (createCatalog.status !== 201) {
+        const txt = await createCatalog.text();
+        throw new Error(`Falha ao criar catálogo (${createCatalog.status}): ${txt}`);
       }
-    } catch (error) {
-      console.error('Error starting camera:', error);
+
+      const catalogJson = await createCatalog.json();
+      const catalogId = catalogJson?.id as string | undefined;
+      if (!catalogId) throw new Error("Resposta /catalog/ sem ID.");
+
+      // 5) upload das imagens
+      const ok = await uploadImages(catalogId, imgs, urlGeral);
+      if (!ok) return;
+
+      // sucesso 🎉
+      setCreatedAssetId(assetId || null);
+      setCreatedCatalogId(catalogId || null);
+      setFinished(true);
+      setActive("final"); // opcional: manter navegação coerente
+
+      toast("Tudo certo!", {
+        description: "Bem cadastrado e imagens enviadas com sucesso.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+
+    } catch (err: any) {
+      console.error(err);
+      toast("Erro ao finalizar", {
+        description: err?.message || "Tente novamente.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+    } finally {
+      setIsFinishing(false);
     }
-  };
+  }, [flow, wizard, urlGeral, token]);
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-  };
+  /* ===================== RENDER ===================== */
+  const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
 
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current as HTMLVideoElement;
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-    
-    const ctx = (canvasRef.current as HTMLCanvasElement).getContext('2d');
-ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedPhoto(photoDataUrl);
-      setShowPhotoPreview(true);
-      // Para com delay de 200ms para transição suave
-setTimeout(() => stopCamera(), 200);
-stopCamera();
-if (videoRef.current) {
-  (videoRef.current as HTMLVideoElement).srcObject = null;
-}
-    }
-  };
-
-  const confirmPhoto = () => {
-    if (capturedPhoto) {
-      setImages(prevImages => [...prevImages, capturedPhoto]);
-      setCapturedPhoto(null);
-      setShowPhotoPreview(false);
-      setShowCameraDialog(false);
-    }
-  };
-
-  const retakePhoto = () => {
-    setCapturedPhoto(null);
-    setShowPhotoPreview(false);
-    startCamera();
-  };
-
-  const openUploadDialog = () => {
-    setShowUploadDialog(true);
-  };
-
-  const openCameraDialog = async () => {
-    setShowUploadDialog(false);
-    await getCameras();
-    setShowCameraDialog(true);
-    setTimeout(() => startCamera(), 500);
-  };
-
-  const closeCameraDialog = () => {
-    stopCamera();
-    setShowCameraDialog(false);
-    setCapturedPhoto(null);
-    setShowPhotoPreview(false);
-  };
-
-  const openFileDialog = () => {
-    setShowUploadDialog(false);
-    fileInputRef.current?.click();
-  };
-
-
-  //formulario
-
-   const [patrimonio, setPatrimonio] = useState<Patrimonio>();
+  useEffect(() => {
+    let timeouts: NodeJS.Timeout[] = [];
   
-
-  const [data, setData] = useState<any>({
-   bem_cod: patrimonio?.asset_code || "",
-  bem_dgv: patrimonio?.asset_check_digit || "",
-  bem_num_atm: patrimonio?.atm_number || "",
-  bem_serie: patrimonio?.serial_number || "",
-  bem_sta: patrimonio?.asset_status || "",
-  bem_val: patrimonio?.asset_value || "",
-  bem_dsc_com: patrimonio?.asset_description || "",
-  csv_cod: patrimonio?.csv_code || "",
-  tre_cod: patrimonio?.accounting_entry_code || "",
-  agency_id: patrimonio?.agency?.id || "",
-  unit_id: patrimonio?.unit?.id || "",
-  sector_id: patrimonio?.sector?.id || "",
-  location_id: patrimonio?.location?.id || "",
-  material_id: patrimonio?.material?.id || "",
-  legal_guardian_id: patrimonio?.legal_guardian?.id || "",
-  ite_mar: patrimonio?.item_brand || "",
-  ite_mod: patrimonio?.item_model || "",
-  tgr_cod: patrimonio?.group_type_code || "",
-  grp_cod: patrimonio?.group_code || "",
-  ele_cod: patrimonio?.expense_element_code || "",
-  sbe_cod: patrimonio?.subelement_code || ""
-});
-
-  const handleChange = (field: any, value: string) => {
-    setData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-
-  return(
-     <div className="p-4  md:p-8 gap-8 flex flex-col  h-full">
-      <Helmet>
-              <title>
-                Cadastrar novo item | Vitrine Patrimônio
-              </title>
-              <meta name="description" content={`Cadastrar novo item | Vitrine Patrimônio`} />
-              <meta name="robots" content="index, follow" />
-            </Helmet>
-      <Progress className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1" value={33} />
-       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse  gap-8 ">
-       
-        <div className="w-full flex flex-col gap-8">
-          <BreadcrumbHeaderCustom/>
-          <div className="flex gap-2">
-             <Button onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7 ">
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="sr-only">Voltar</span>
-                    </Button>
-
-                     <div
-                      className="
-                        flex flex-col gap-4
-
-                        md:flex-col
-
-                        lg:flex-row
-                      "
-                    >
-                      <h1 className="flex-1 shrink-0  whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-        Cadastrar novo item
-        
-      </h1>
-      </div>
-          </div>
-
-
-        <Tabs defaultValue="1" value={tab} className="grid grid-cols-1 h-full w-full">
-            <TabsContent value="1" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-              <div className="flex flex-1 flex-col">
-               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
-                Vamos começar, o item possui plaqueta de identificação?
-                </h1>
-
-                <div className="flex gap-2">
- <ToggleGroup
-      type="single"
-      value={value}
-      onValueChange={(val) => setValue(val)}
-      className="gap-2"
-      variant={'outline'}
-    >
-      <ToggleGroupItem value="sim" aria-label="Sim, possui plaqueta">
-        Sim, possui plaqueta
-      </ToggleGroupItem>
-      <ToggleGroupItem value="nao" aria-label="Não tem plaqueta">
-        Não, terei que cadastrar manualmente
-      </ToggleGroupItem>
-    </ToggleGroup>
-                </div>
-             </div>
-
-                <div className="flex  items-center justify-between">
-<div className="flex items-start gap-0 flex-col">
-                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
-                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
-</div>
-
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => setTab('2')}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-             </div>
-          </TabsContent>
-
-
-          <TabsContent value="2" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-             <div className="flex flex-1 flex-col">
-               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
-              Antes de continuar, atenha-se as informações
-                </h1>
-
-                <div className="flex gap-2 flex-col">
-                  <div className="flex gap-2">
-                    <FormInput size={24}/>
-                    <div>
-                      <p className="font-medium">Lorem Ipsum\defwef</p>
-                      <p className="text-gray-500 text-sm">import must precede all other statements (besides @charset or empty @layer)</p>
-                    </div>
-                  </div>
-                </div>
-             </div>
-
-                <div className="flex  items-center justify-between">
-<div className="flex gap-2 items-center">
-                        <Button size={'lg'} onClick={() => setTab('1')} variant={'ghost'} className="text-eng-blue hover:text-eng-dark-blue"><ArrowLeft size={16}/>Anterior</Button>
-</div>
-
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => {
-                        if(value == 'sim') {
-                          setTab('3')
-                        } else {
-                          setTab('4')
-                        }
-                      }}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-                </div>
-          </TabsContent>
-
-
-           <TabsContent value="3" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-             <div className="flex flex-1 flex-col">
-               <h1 className=" text-4xl font-medium max-w-[700px]">
-             Digite o número de patrimônio para que possamos encontrar o item
-                </h1>
-
-                <Separator className="my-8"/>
-
-                <div className="flex gap-2 flex-col">
-                 <SearchBarNewItem/>
-                </div>
-             </div>
-
-                <div className="flex  items-center justify-between">
-<div className="flex gap-2 items-center">
-                        <Button size={'lg'} onClick={() => setTab('4')} variant={'ghost'} className="text-eng-blue hover:text-eng-dark-blue"><ArrowLeft size={16}/>Anterior</Button>
-</div>
-
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => {
-                        setTab('4')
-                      }}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-                </div>
-          </TabsContent>
-
-            <TabsContent value="4" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-              <div className="flex flex-1 flex-col">
-               <h1 className="mb-16 text-4xl font-medium max-w-[700px]">
-                Vamos começar, o item possui plaqueta de identificação?
-                </h1>
-
-                <div className="flex gap-2">
- 
-                </div>
-             </div>
-
-                <div className="flex  items-center justify-between">
-<div className="flex items-start gap-0 flex-col">
-                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
-                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
-</div>
-
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => setTab('5')}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-             </div>
-          </TabsContent>
-
-          
-            <TabsContent value="5" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-              <div className="flex flex-1 flex-col">
-               <h1 className=" text-4xl font-medium max-w-[700px]">
-              Adicione as informações de patrimônio
-                </h1>
-
-                    <Separator className="my-8"/>
-
-                <div className="flex gap-2 w-full">
-   <div className="flex flex-col gap-4 w-full mb-8">
-                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
-
-                        {/* Código */}
-                {(data.bem_cod != '') && (
-                    <div className="grid gap-3 w-full">
-                    <Label htmlFor="name">Código</Label>
-                   <div className="flex items-center gap-3">
-                   <Input
-                  id="bem_cod"
-                  type="text"
-                  className="w-full"
-                  value={data.bem_cod}
-                  disabled={data.bem_cod !== ""}
-                  onChange={(e) => handleChange('bem_cod', e.target.value)}
-                />
-                   </div>
-                  </div>
-                )}
-
-
-                    {/* Dígito Verificador */}
-                    {(data.bem_cod != '') && (
-                       <div className="grid gap-3 w-full">
-                       <Label htmlFor="bem_dgv">Díg. Verificador</Label>
-                       <div className="flex items-center gap-3">
-                         <Input
-                           id="bem_dgv"
-                           type="text"
-                           className="w-full"
-                           value={data.bem_dgv}
-                           disabled={data.bem_dgv !== ""}
-                           onChange={(e) => handleChange('bem_dgv', e.target.value)}
-                         />
-                       </div>
-                     </div>
-                    )}
-     
-
-      
-      {/* Número ATM */}
-     {(data.bem_num_atm != 'None' && data.bem_num_atm != '') && (
-       <div className="grid gap-3 w-full">
-       <Label htmlFor="bem_num_atm">Número ATM</Label>
-       <div className="flex items-center gap-3">
-         <Input
-           id="bem_num_atm"
-           type="text"
-           className="w-full"
-           value={data.bem_num_atm}
-           disabled={data.bem_num_atm !== ""}
-           onChange={(e) => handleChange('bem_num_atm', e.target.value)}
-         />
-       </div>
-     </div>
-     )}
-
-     {/* Código CSV */}
-     <div className="grid gap-3 w-full">
-        <Label htmlFor="mat_nom">Material</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="mat_nom"
-            type="text"
-            className="w-full"
-            value={data.mat_nom}
-            disabled={!!patrimonio}
-            onChange={(e) => handleChange('mat_nom', e.target.value)}
-          />
-        </div>
-      </div>
-
-                  </div>
-
-                  <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
- 
-  {/* Código CSV */}
-  <div className="grid gap-3 w-full">
-  <Label htmlFor="bem_sta">Situação</Label>
-  <div className="flex items-center gap-3">
-    <Select
-      value={data.bem_sta || ""}
-      onValueChange={(value) => handleChange('bem_sta', value)}
-      disabled={!!patrimonio}
-    >
-      <SelectTrigger id="bem_sta" className="w-full">
-        <SelectValue  />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="NO">Normal</SelectItem>
-        <SelectItem value="NI">Não inventariado</SelectItem>
-        <SelectItem value="CA">Cadastrado</SelectItem>
-        <SelectItem value="TS">Aguardando aceite</SelectItem>
-        <SelectItem value="MV">Movimentado</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-</div>
-
-{/* Código CSV */}
-<div className="grid gap-3 w-full">
-  <Label htmlFor="csv_cod">Estado de conservação</Label>
-  <div className="flex items-center gap-3">
-    <Select
-      value={data.csv_cod || ""}
-      onValueChange={(value) => handleChange('csv_cod', value)}
-      disabled={!!patrimonio}
-    >
-      <SelectTrigger id="csv_cod" className="w-full">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="BM">Bom</SelectItem>
-        <SelectItem value="AE">Anti-Econômico</SelectItem>
-        <SelectItem value="IR">Irrecuperável</SelectItem>
-        <SelectItem value="OC">Ocioso</SelectItem>
-        <SelectItem value="RE">Recuperável</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-</div>
-
-      {/* Valor */}
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="bem_val">Valor</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="bem_val"
-            type="text"
-            className="w-full"
-            value={data.bem_val}
-            disabled={!!patrimonio}
-            onChange={(e) => handleChange('bem_val', e.target.value)}
-          />
-        </div>
-      </div>
-
-        {/* Código TRE */}
-       {data.tre_cod && (
-         <div className="grid gap-3 w-full">
-         <Label htmlFor="tre_cod">Termo de resp.</Label>
-         <div className="flex items-center gap-3">
-           <Input
-             id="tre_cod"
-             type="text"
-             className="w-full"
-             value={data.tre_cod}
-             disabled={data.tre_cod !== ""}
-             onChange={(e) => handleChange('tre_cod', e.target.value)}
-           />
-         </div>
-       </div>
-       )}
-
-      
-                  </div>
-
-                   {/* Código TRE */}
-                   <div className={`flex gap-4 w-full flex-col lg:flex-row `}>
-                   <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Unidade geral</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="uge_nom"
-            type="text"
-            className="w-full"
-            value={data.uge_nom}
-           
-         onClick={() => onOpen('search-loc-nom')}
-            onChange={(e) => handleChange('uge_nom', e.target.value)}
-          />
-          
-        </div>
-      </div>
-
-
+   
+      setLoadingMessage(" Estamos criando o registro, gerando o catálogo e enviando as imagens.");
+  
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage("Estamos quase lá, continue aguardando...");
+      }, 5000));
+  
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage("Só mais um pouco...");
+      }, 10000));
+  
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage("Está demorando mais que o normal... estamos tentando enviar tudo.");
+      }, 15000));
+  
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage("Estamos empenhados em concluir, aguarde só mais um pouco");
+      }, 15000));
     
-        <div className="grid gap-3 w-full">
-        <Label htmlFor="tre_cod">Local de guarda</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="loc_nom"
-            type="text"
-            className="w-full"
-            value={data.loc_nom}
-           
-         onClick={() => onOpen('search-loc-nom')}
-            onChange={(e) => handleChange('loc_nom', e.target.value)}
-          />
-          
-        </div>
-      </div>
-
-                    {/* Descrição Completa */}
-                   
-      </div>
-
-                   {/* Descrição Completa */}
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="bem_dsc_com">Descrição </Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="bem_dsc_com"
-         type="text"
-            className="w-full"
-            value={data.bem_dsc_com}
-            disabled={!!patrimonio}
-            onChange={(e) => handleChange('bem_dsc_com', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-3 w-full">
-        <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
-        <div className="flex items-center gap-3">
-       {data.pes_nome && (
-         <Avatar className=" rounded-md  h-10 w-10 border dark:border-neutral-800">
-         <AvatarImage className={'rounded-md h-10 w-10'} src={`ResearcherData/Image?name=${data.pes_nome}`} />
-         <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
-       </Avatar>
-       )}
-          <Input
-            id="pes_nome"
-         type="text"
-            className="w-full"
-            value={data.pes_nome}
-            disabled={!!patrimonio}
-            onChange={(e) => handleChange('pes_nome', e.target.value)}
-          />
-        </div>
-      </div>
-                  </div>
-                </div>
-             </div>
-
-                <div className="flex  items-center justify-between">
-<div className="flex items-start gap-0 flex-col">
-                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
-                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
-</div>
-
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => setTab('6')}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-             </div>
-          </TabsContent>
+  
+    return () => {
+      // Limpa os timeouts ao desmontar ou quando isOpen mudar
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
 
 
-          
-            <TabsContent value="6" className="m-0">
-             <div className="h-full m-0 flex flex-col w-full justify-between">
-              <div className="flex flex-1 flex-col">
-               <h1 className=" text-4xl font-medium max-w-[600px]">
-               Estamos finalizando, insira as fotos do patrimônio
-                </h1>
-
-                <Separator className="my-8"/>
-
-                 <div className="grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8">
-                  <div className="flex gap-2">
-                    <ImageDown size={24}/>
-                    <div>
-                      <p className="font-medium">Passo 1</p>
-                      <p className="text-gray-500 text-sm">Imagem frontal do patrimônio</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Barcode size={24}/>
-                    <div>
-                      <p className="font-medium">Passo 2</p>
-                      <p className="text-gray-500 text-sm">Imagem com a idetificação do item (caso houver)</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <PanelRightOpen size={24}/>
-                    <div>
-                      <p className="font-medium">Passo 3</p>
-                      <p className="text-gray-500 text-sm">Imagem lateral ou traseira</p>
-                    </div>
-                  </div>
-
-                   <div className="flex gap-2">
-                    <ScanEye size={24}/>
-                    <div>
-                      <p className="font-medium">Passo 4</p>
-                      <p className="text-gray-500 text-sm">Imagem com detalhe da condição</p>
-                    </div>
-                  </div>
-                </div>
-
-                  <Separator className="my-8"/>
-
-                <div className="flex gap-2 w-full mb-8">
- <div className="w-full ">
-     <div className="grid grid-cols-4 w-full gap-2">
-  {Array.from({ length: 4 }).map((_, index) => {
-    const image = images[index];
-
+  // Tela de LOADING (finalização)
+  if (isFinishing) {
     return (
-      <div key={index} className="relative group">
-        {image ? (
-          <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
-            <img
-              className="aspect-square w-full rounded-md object-cover "
-              src={image}
-              alt={`Upload ${index + 1}`}
-            />
-            <Button
-              onClick={() => handleRemoveImage(index)}
-              variant="destructive"
-              className="absolute  z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-              size="icon"
-            >
-              <Trash size={16} />
-            </Button>
-          </div>
-        ) : (
-          <button
-            onClick={() => openUploadDialog()} // agora passando o index
-            className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
-          >
-            <Plus className="h-6 w-6 text-gray-400" />
-          </button>
-        )}
+      <div className="flex justify-center items-center h-full">
+      <div className="w-full flex flex-col items-center justify-center h-full">
+        <div className="text-eng-blue mb-4 animate-pulse">
+          <LoaderCircle size={108} className="animate-spin" />
+        </div>
+        <p className="font-medium text-lg max-w-[500px] text-center">
+          {loadingMessage}
+        </p>
       </div>
-    );
-  })}
-</div>
-
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileUpload}
-        className="hidden"
-        multiple
-      />
-
-      {/* Dialog de Opções de Upload */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent>
-             <DialogHeader>
-        <DialogTitle className="text-2xl  mb-2 font-medium max-w-[450px]">
-      Adicionar imagem
-          </DialogTitle>
-          <DialogDescription className=" text-zinc-500">
-         Você pode capturar uma nova imagem com a câmera ou escolher um arquivo já existente do seu computador.  
-          </DialogDescription>
-            </DialogHeader>
-         
-          <div className="flex flex-col space-y-3">
-            <Button onClick={openCameraDialog} className="flex items-center justify-center space-x-2">
-              <Camera size={20} />
-              <span>Tirar Foto</span>
-            </Button>
-            <Button onClick={openFileDialog} variant="outline" className="flex items-center justify-center space-x-2">
-              <Image size={20} />
-              <span>Escolher do Computador</span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-       {/* Dialog da Câmera */}
-      <Dialog open={showCameraDialog} onOpenChange={closeCameraDialog}>
-        <DialogContent className="max-w-lg">
-            <DialogHeader>
-        <DialogTitle className="text-2xl  mb-2 font-medium max-w-[450px]">
-      Capturar foto
-          </DialogTitle>
-         <DialogDescription className="text-zinc-500">
-  Fotografe o item patrimonial com atenção à boa iluminação e enquadramento.  
-  Essa foto será utilizada para registrar e exibir o item no sistema Vitrine Patrimônio.
-</DialogDescription>
-            </DialogHeader>
-          
-          {!showPhotoPreview ? (
-            <div className="space-y-4">
-              {/* Seleção de Câmera */}
-              <div>
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium mb-2 block">
-                  Câmeras Disponíveis <Badge variant='outline'>{availableCameras.length}</Badge>
-                </label>
-
-                 {/* Botões adicionais para gerenciar câmeras */}
-              <div className="flex justify-center space-x-2">
-                <Button 
-                  onClick={getCameras} 
-                  variant='outline' 
-                  size="sm"
-                  className="text-xs"
-                >
-                  <RefreshCcw size={16}/> Atualizar Câmeras
-                </Button>
-              
-              </div>
-                </div>
-                <div className="space-y-2">
-                  <Select 
-                    value={selectedCamera} 
-                    onValueChange={(value) => {
-                      setSelectedCamera(value);
-                      // Auto-iniciar nova câmera quando selecionada
-                      setTimeout(() => startCamera(), 100);
-                    }}
-                  >
-                    <SelectContent>
-                    {availableCameras.map((camera, index) => {
-                      const cameraName = camera.label || `Câmera ${index + 1}`;
-                      const isDefault = camera.deviceId === selectedCamera;
-                      
-                      return (
-                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                          {cameraName} {isDefault && '(Ativa)'}
-                        </SelectItem>
-                      );
-                    })}
-                    </SelectContent>
-                  </Select>
-                  
-                  {/* Informações da câmera selecionada */}
-                  {selectedCamera && (
-                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                      <strong>Câmera Ativa:</strong> {
-                        availableCameras.find(c => c.deviceId === selectedCamera)?.label || 
-                        `Câmera ${availableCameras.findIndex(c => c.deviceId === selectedCamera) + 1}`
-                      }
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Preview da Câmera */}
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full rounded-lg bg-black"
-                  style={{ maxHeight: '300px' }}
-                />
-                <canvas ref={canvasRef} className="hidden" />
-                
-                {/* Overlay com informações */}
-                <div className="absolute top-2 left-2 flex gap-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                 <Camera size={16}/> {stream ? 'Ao vivo' : 'Iniciando...'}
-                </div>
-              </div>
-              
-              {/* Controles */}
-              <div className="flex justify-center space-x-3">
-                  <Button onClick={closeCameraDialog} className="w-full" variant="outline">
-                 <ArrowUUpLeft size={16} className="" />  Cancelar
-                </Button>
-                <Button 
-                  onClick={capturePhoto} 
-                  disabled={!stream}
-                  className="w-full"
-                >
-                  <Camera size={16} />
-                  <span>Capturar Foto</span>
-                </Button>
-             
-              </div>
-              
-             
-            </div>
-          ) : (
-            <div className="space-y-4">
-            
-              <div className="relative">
-                <img 
-                  src={capturedPhoto ?? ''} 
-                  alt="Foto capturada" 
-                  className="w-full rounded-lg"
-                  style={{ maxHeight: '300px', objectFit: 'cover' }}
-                />
-              </div>
-              
-              <div className="flex justify-center space-x-3">
-               
-                <Button onClick={retakePhoto} variant="outline" className="w-full">
-                  <ArrowUUpLeft size={16} className="" />
-                  <span>Tirar Outra</span>
-                </Button>
-                <Button onClick={confirmPhoto} className="w-full">
-                  <Check size={16} />
-                  <span>Usar Esta Foto</span>
-                </Button>
-               
-              </div>
-              
-            
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
-                </div>
+    );
+  }
+
+  // Tela de SUCESSO (após finalizar)
+  if (finished) {
+    return (
+      <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+           <div className="flex gap-2">
+             <div className="flex justify-between items-center h-fit mt-2 w-8">
+               <p className="text-lg">{idx + 1}</p>
+               <ArrowRight size={16} />
              </div>
+             <h1 className="mb-10 text-4xl font-semibold max-w-[700px]">
+               Parabéns, cadastro concluído!
+             </h1>
+           </div>
+     
+           {/* PREVIEW */}
+           <div className="ml-8">
+          <div className="grid gap-4">
+          <Alert className="flex items-center gap-8">
+  <div className="flex gap-2 flex-1">
+    <Barcode size={24} className="" />
+    <div>
+      <p className="font-medium">Plaqueta de identificação</p>
+      <p className="text-gray-500 text-sm">
+        Como o bem foi registrado sem número de plaqueta, esta será utilizada como
+        identificação provisória. Você pode baixar o arquivo em formato <strong>.pdf</strong>.
+      </p>
+    </div>
+  </div>
+  <Button className="h-8 w-8" variant={"ghost"} size={"icon"}>
+    <Download size={16} />
+  </Button>
+</Alert>
 
-                <div className="flex  items-center justify-between">
-<div className="flex items-start gap-0 flex-col">
-                      <p className="text-sm">Se já cadastrou algum item, você pode</p>
-                    <Link to={''}>  <Button variant={'link'} className="text-eng-blue p-0 h-fit">acessar o painel</Button></Link>
-</div>
+<Alert className="flex items-center gap-8 ">
+  <div className="flex gap-2 flex-1">
+    <File size={24} className="" />
+    <div>
+      <p className="font-medium">Documento de comprovação</p>
+      <p className="text-gray-500 text-sm">
+  Comprovante de submissão do item para avaliação na plataforma.  
+  Este documento confirma o envio, mas não substitui a documentação oficial do bem.
+</p>
 
-                    <div className="flex gap-2 items-center">
-                      <Button size={'lg'} onClick={() => setTab('2')}>Continuar <ArrowRight size={16}/></Button>
-                    </div>
-                </div>
-             </div>
-          </TabsContent>
+    </div>
+  </div>
+  <Button className="h-8 w-8" variant={"ghost"} size={"icon"}>
+    <Download size={16} />
+  </Button>
+</Alert>
+          </div>
 
-        </Tabs>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <Button onClick={resetToNewForm}><Plus size={16} />Cadastrar outro item</Button>
+
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+           <LayoutDashboard size={16} /> Ir para o dashboard
+          </Button>
         </div>
 
-            <div className="lg:w-[400px] rounded-lg bg-eng-blue  w-full">
 
             </div>
-       </main>
-     </div>
-  )
+            </div>
+    );
+  }
+
+  // Wizard normal
+  return (
+    <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
+      <Helmet>
+        <title>Anunciar item | Vitrine Patrimônio</title>
+        <meta name="description" content={`Anunciar item | Vitrine Patrimônio`} />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
+
+      <Progress className="absolute top-0 left-0  h-1 z-[5]" value={pct} />
+
+      <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
+        <div className="w-full flex flex-col gap-8">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                const path = location.pathname;
+                const hasQuery = location.search.length > 0;
+                if (hasQuery) navigate(path);
+                else {
+                  const seg = path.split("/").filter(Boolean);
+                  if (seg.length > 1) { seg.pop(); navigate("/" + seg.join("/")); }
+                  else navigate("/");
+                }
+              }}
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Voltar</span>
+            </Button>
+
+            <h1 className="text-xl font-semibold tracking-tight">Anunciar item</h1>
+          </div>
+
+          <div className="flex flex-col h-full w-full gap-8">
+            <Tabs
+              value={active}
+              onValueChange={(v) => {
+                const targetIndex = STEPS.findIndex((s) => s.key === (v as StepKey));
+                if (targetIndex !== -1 && canActivateIndex(targetIndex)) setActive(v as StepKey);
+              }}
+              className="h-full"
+            >
+              {STEPS.map((s) => (
+                <TabsContent key={s.key} value={s.key} className="m-0 h-full">
+                  {s.key === "inicio" && <InicioStep    {...attachCommon("inicio")} step={idx + 1} />}
+                  {s.key === "informacoes" && <InformacoesStep  {...attachCommon("informacoes")}  step={idx + 1} />}
+
+                  {s.key === "pesquisa" && (
+                    <PesquisaStep
+                      {...attachCommon("pesquisa")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "formulario" && (
+                    <FormularioStep
+                      {...attachCommon("formulario")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      initialData={wizard.formulario}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "formulario-sp" && (
+                    <FormularioSpStep
+                      {...attachCommon("formulario-sp")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      initialData={wizard["formulario-sp"]}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "trocar-local" && (
+                    <TrocarLocalStep {...attachCommon("trocar-local")} step={idx + 1} />
+                  )}
+
+                  {s.key === "informacoes-adicionais" && (
+                    <InformacoesAdicionaisStep {...attachCommon("informacoes-adicionais")} step={idx + 1}/>
+                  )}
+
+                  {s.key === "estado" && <EstadoStep {...attachCommon("estado")} step={idx + 1}/>}
+
+                  {s.key === "imagens" && (
+                    <ImagemStep
+                      {...attachCommon("imagens")}
+                      imagens={wizard.imagens?.images_wizard}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "final" && <FinalStep {...attachCommon("final")} allData={wizard} step={idx + 1} />}
+                </TabsContent>
+              ))}
+            </Tabs>
+
+            <div className="flex justify-between items-center h-fit">
+              <div>
+                {STEPS.slice(0, idx + 1).map((s) => (
+                  <span key={s.key} className={cn("mr-2", valid[s.key] ? "text-emerald-600" : "text-amber-600")}>●</span>
+                ))}
+              </div>
+
+              <div className="flex items-center">
+                <Button variant="outline" size="lg" className="rounded-r-none" onClick={goPrev} disabled={idx === 0}>
+                  <ArrowLeft size={16} /> Anterior
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-l-none"
+                  onClick={isLast ? handleFinish : goNext}
+                  disabled={isLast ? !canFinish : !canGoNext}
+                >
+                  {isLast ? <>Finalizar <Check size={16} /></> : <>Próximo <ArrowRight size={16} /></>}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

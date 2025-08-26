@@ -70,7 +70,7 @@ export function SearchModal() {
           className="border-0  flex-1 p-0 w-auto inline-block"
         />
             </div>
-
+1
         <div className="w-fit">
             <Button onClick={() => handlePesquisaFinal()}  className={` text-white border-0 z-[9999] `} size={'icon'}>
        <Funnel size={16} className="" /> 

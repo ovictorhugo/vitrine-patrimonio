@@ -16,7 +16,8 @@ import {  PainelGeral } from "../dashboard/painel-usuario/painel";
 import { Assinaturee } from "../dashboard/assinaturee";
 import { ItensDesfazimento } from "../dashboard/itens-desfazimento/itens-desfazimento";
 import { Transferencia } from "../dashboard/transferencia/transferencia";
-import { EditItemVitrine } from "../dashboard/novo-item/edit-item-vitrine";
+import { EditItemVitrine } from "../dashboard/edit-item/edit-item";
+import { CreateTempAsset } from "../dashboard/create-temp-asset/create-temp-asset";
 
 
 
@@ -47,6 +48,8 @@ const ModalContent = () => {
       return <Transferencia/>
     case 'editar-item':
       return <EditItemVitrine/>
+      case 'create-temp-asset':
+        return <CreateTempAsset/>
     default:
       return null;
   }

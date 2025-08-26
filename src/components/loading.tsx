@@ -3,8 +3,7 @@ import { useTheme } from 'next-themes';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/context';
-import { LogoConectee } from './svg/LogoConectee';
-import { LogoConecteeWhite } from './svg/LogoConecteeWhite';
+
 import { SymbolEEWhite } from './svg/SymbolEEWhite';
 import { LogoVitrineWhite } from './svg/LogoVitrineWhite';
 import { SymbolEE } from './svg/SymbolEE';
@@ -54,7 +53,7 @@ urlGeral
 
     const fetchUser = async (token: string) => {
       try {
-        const response = await fetch(`${urlGeral}s/user`, {
+        const response = await fetch(`${urlGeral}users/my`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

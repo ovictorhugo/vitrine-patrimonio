@@ -7,6 +7,8 @@ interface ModalData {
   id?: string,
   name?: string,
 
+  workflow_status?: string,
+
   nome?: string;
   latitude?: number;
   longitude?: number;

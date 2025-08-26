@@ -29,7 +29,7 @@ import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
 import { SearchPatrimonio } from "../../search/search-patrimonio";
-import { FiltersModal } from "../../busca-patrimonio/busca-patrimonio";
+
 import { DataTableModal } from "../../componentsModal/data-table";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from 'xlsx';

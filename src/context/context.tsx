@@ -3,31 +3,27 @@ import { Item } from "../components/item-page/item-page";
 import { ItemsSelecionados, PatrimoniosSelecionados } from "../App";
 
 interface User {
-  institution_id: string
-  user_id: string
-  gp_count:number
-  dp_count:number
+  id: string;                // corresponde a "id" no JSON
+  institution_id: string;    // corresponde a "institution_id"
 
-  username: string
+  username: string;          // corresponde a "username"
+  email: string;             // corresponde a "email"
+  provider: string;          // corresponde a "provider"
 
-  photo_url: string
-  background_url:string
+  linkedin: string;          // corresponde a "linkedin"
+  lattes_id: string;         // corresponde a "lattes_id"
+  orcid: string;             // corresponde a "orcid"
+  ramal: string;             // corresponde a "ramal"
 
-  dep_id: string
+  photo_url: string;         // corresponde a "photo_url"
+  background_url: string;    // corresponde a "background_url"
 
-  email: string
-  linkedin: string
-  lattes_id: string
-  registration: string
-  orcid:string
-  ramal:string
-  number:string
-  visible:boolean
+  matricula: string;         // corresponde a "matricula"
+  verify: boolean;           // corresponde a "verify"
+
   roles: Roles[]
-
-  provider: string
-  verify: boolean
 }
+
 
 interface Roles {
   id:string
