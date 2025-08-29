@@ -605,21 +605,23 @@ export function NovoItem() {
            {/* PREVIEW */}
            <div className="ml-8">
           <div className="grid gap-4">
-          <Alert className="flex items-center gap-8">
-  <div className="flex gap-2 flex-1">
-    <Barcode size={24} className="" />
-    <div>
-      <p className="font-medium">Plaqueta de identificação</p>
-      <p className="text-gray-500 text-sm">
-        Como o bem foi registrado sem número de plaqueta, esta será utilizada como
-        identificação provisória. Você pode baixar o arquivo em formato <strong>.pdf</strong>.
-      </p>
-    </div>
-  </div>
-  <Button className="h-8 w-8" variant={"ghost"} size={"icon"}>
-    <Download size={16} />
-  </Button>
-</Alert>
+         {flow === 'desfazimento' && (
+            <Alert className="flex items-center gap-8">
+            <div className="flex gap-2 flex-1">
+              <Barcode size={24} className="" />
+              <div>
+                <p className="font-medium">Plaqueta de identificação</p>
+                <p className="text-gray-500 text-sm">
+                  Como o bem foi registrado sem número de plaqueta, esta será utilizada como
+                  identificação provisória. Você pode baixar o arquivo em formato <strong>.pdf</strong>.
+                </p>
+              </div>
+            </div>
+            <Button className="h-8 w-8" variant={"ghost"} size={"icon"}>
+              <Download size={16} />
+            </Button>
+          </Alert>
+         )}
 
 <Alert className="flex items-center gap-8 ">
   <div className="flex gap-2 flex-1">

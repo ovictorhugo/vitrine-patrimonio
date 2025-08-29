@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { StepBaseProps, FlowMode } from "../novo-item";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Barcode, Plus } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Alert } from "../../../ui/alert";
+import { Separator } from "../../../ui/separator";
+import { Button } from "../../../ui/button";
 
 type InicioProps = StepBaseProps<"inicio"> & {
   initialData?: { flowShort?: FlowMode }; // já vem do pai via stepProps.inicio
@@ -55,6 +57,27 @@ export function InicioStep({
     }
   };
 
+  const generateBars = (): JSX.Element[] => {
+    const bars: JSX.Element[] = [];
+    const widths = [1, 2, 3]; // larguras das barras em pixels
+    
+    for (let i = 0; i < 80; i++) {
+      const width = widths[Math.floor(Math.random() * widths.length)];
+      const isBlack = Math.random() > 0.5;
+      bars.push(
+        <div
+          key={i}
+          className={`h-8 ${isBlack ? 'bg-neutral-300' : 'bg-transparent'}`}
+          style={{ width: `${width}px` }}
+        />
+      );
+    }
+    return bars;
+  };
+
+  const [isOpen, setIsOpen] = useState(false);
+  const toggleOpen = () => setIsOpen(!isOpen);
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -68,6 +91,43 @@ export function InicioStep({
       </div>
 
       <div className="ml-8">
+      <Alert className="mb-8 flex gap-2 flex-col cursor-pointer"  onClick={toggleOpen} >
+ <div className="flex  gap-2 ">
+ <div>   <Barcode size={16}/></div>
+  <p className="text-gray-500 text-sm">
+ Não sabe o que é uma plaqueta? Visualizar
+</p>
+ </div>
+
+
+{isOpen && (
+  <div className="mt-2 flex gap-4">
+  <div className="p-2 border w-min rounded-xl flex flex-col items-center border-neutral-300 ">
+<p className="whitespace-nowrap font-bold text-sm uppercase px-4 text-neutral-300">UFMG - Patrimônio</p>
+<div className="px-2 py-1 w-full">
+<div className="flex items-center justify-center ">
+            {generateBars()}
+          </div>
+  </div>
+<p className="whitespace-nowrap font-bold text- uppercase text-neutral-300">xxxxxxxx-x</p>
+ 
+  </div>
+
+ <div className="border border-neutral-300  p-2">
+ <div className=" border border-neutral-300  w-min rounded-xl flex flex-col items-center">
+<div className="px-10  flex flex-col items-center">
+<p className="whitespace-nowrap font-bold text-neutral-300">UFMG</p>
+<p className="whitespace-nowrap font-medium text-neutral-300 text-sm">Patrimônio</p>
+</div>
+<Separator className="border-neutral-300 dark:bg-neutral-300 "/>
+<div className="px-8 py-2">
+  <p className="whitespace-nowrap font-medium text-sm text-neutral-300">XXXX XXXXX X</p>
+</div>
+  </div>
+ </div>
+</div>
+)}
+   </Alert>
       <div className="flex gap-2 mb-8">
   <Plus size={24}/>
   <div>
@@ -77,8 +137,12 @@ export function InicioStep({
       no processo de <span className="font-semibold">desfazimento</span> ou na
       <span className="font-semibold"> vitrine de patrimônio</span>.
     </p>
+   
+ 
   </div>
 </div>
+
+
         <ToggleGroup
           type="single"
           value={flowShort}

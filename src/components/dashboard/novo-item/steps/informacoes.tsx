@@ -38,7 +38,7 @@ export function InformacoesStep({
     <div>
       <p className="font-medium">Dados de patrimônio</p>
       <p className="text-gray-500 text-sm">
-        Informe corretamente aos dados do bem quando necessário. Essas informações serão utilizadas para validação na plataforma.
+        Informe corretamente os dados do bem quando necessário. Essas informações serão utilizadas para validação na plataforma.
       </p>
     </div>
   </div>

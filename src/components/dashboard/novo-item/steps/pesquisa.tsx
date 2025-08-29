@@ -205,7 +205,7 @@ export function PesquisaStep({
           <ArrowRight size={16} />
         </div>
         <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
-          Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
+          Pesquise pelo identificador ou ATM do patrimônio:
         </h1>
       </div>
 
