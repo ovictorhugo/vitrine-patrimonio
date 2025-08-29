@@ -12,23 +12,37 @@ import { DisplayItemVitrine } from "../components/display-item-vitrine";
 import { Button } from "../../ui/button";
 import { useNavigate } from "react-router-dom";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
-import { BlockItem } from "./block-itens";
-import { Skeleton } from "../../ui/skeleton";
-import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
-import { MagnifyingGlass } from "phosphor-react";
-import { Alert } from "../../ui/alert";
-import { EsperandoAprovacao } from "./esperando-aprovacao";
-import { toast } from "sonner";
-import { Anunciados } from "./anunciados";
-import { BlockItemsVitrine } from "../commission/block-items-tinder";
 
 
 export function ItensVitrine() {
-   
+     const navigate = useNavigate();
           
     return(
       <main  className="flex flex-1 flex-col  ">
-        <BlockItemsVitrine/>
+       <div className="w-full flex flex-col gap-8 justify-between">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const path = location.pathname;
+                      const hasQuery = location.search.length > 0;
+                      if (hasQuery) navigate(path);
+                      else {
+                        const seg = path.split("/").filter(Boolean);
+                        if (seg.length > 1) { seg.pop(); navigate("/" + seg.join("/")); }
+                        else navigate("/");
+                      }
+                    }}
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="sr-only">Voltar</span>
+                  </Button>
+      
+                  <h1 className="text-xl font-semibold tracking-tight">Itens do vitrine</h1>
+                </div>
+                </div>
             </main>
 
     )

@@ -42,7 +42,7 @@ import {
 import { Badge } from "../ui/badge";
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ItensOciosos } from "../modal/itens-ociosos";
+
 
 const useQuery = () => {
   return new URLSearchParams(useLocation().search);
@@ -342,15 +342,7 @@ const data = patrimonio.map((item) => {
               <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                 {sala}
               </h1>
-              {total.map((props) => {
-            return props.unique_values.map((item) => {
-              return (
-                <Badge variant="outline" className="ml-auto sm:ml-0" >
-                  {item.loc_cod}
-                </Badge>
-              );
-            });
-          })}
+              
 
                 
             

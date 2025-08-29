@@ -16,7 +16,6 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { ItemPatrimonio } from "./components/item-patrimonio";
 import { Search } from "../search/search";
 
-import { BlockItem } from "../dashboard/itens-vitrine/block-itens";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { AuroraBackground } from "../ui/aurora-background";
 import { toast } from "sonner";

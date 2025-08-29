@@ -162,11 +162,19 @@ export function TrocarLocalStep({
   const agencyReqIdRef = useRef(0);
   const sectorReqIdRef = useRef(0);
 
+  const token = localStorage.getItem("jwt_token");
+
   /* ===== Fetchers ===== */
   const fetchUnits = useCallback(async () => {
     setLoading(p => ({ ...p, units: true }));
     try {
-      const res = await fetch(`${baseUrl}/units`);
+      const res = await fetch(`${baseUrl}/units/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const json: { units: Unit[] } = await res.json();
       const list = Array.isArray(json?.units) ? json.units.filter(u => hasValidId(u?.id)) : [];
       setUnits(list);
@@ -175,14 +183,20 @@ export function TrocarLocalStep({
     } finally {
       setLoading(p => ({ ...p, units: false }));
     }
-  }, [baseUrl]);
-
+  }, [baseUrl, token]);
+  
   const fetchAgenciesByUnit = useCallback(async (unitId: string) => {
     if (!hasValidId(unitId)) return;
     const myReq = ++unitReqIdRef.current; // versão desta chamada
     setLoading(p => ({ ...p, agencies: true }));
     try {
-      const res = await fetch(`${baseUrl}/agencies?unit_id=${encodeURIComponent(unitId)}`);
+      const res = await fetch(`${baseUrl}/agencies/?unit_id=${encodeURIComponent(unitId)}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const json: { agencies: Agency[] } = await res.json();
       if (unitReqIdRef.current !== myReq) return; // resposta antiga → ignora
       const list = Array.isArray(json?.agencies) ? json.agencies.filter(a => hasValidId(a?.id)) : [];
@@ -192,14 +206,20 @@ export function TrocarLocalStep({
     } finally {
       if (unitReqIdRef.current === myReq) setLoading(p => ({ ...p, agencies: false }));
     }
-  }, [baseUrl]);
-
+  }, [baseUrl, token]);
+  
   const fetchSectorsByAgency = useCallback(async (agencyId: string) => {
     if (!hasValidId(agencyId)) return;
     const myReq = ++agencyReqIdRef.current;
     setLoading(p => ({ ...p, sectors: true }));
     try {
-      const res = await fetch(`${baseUrl}/sectors?agency_id=${encodeURIComponent(agencyId)}`);
+      const res = await fetch(`${baseUrl}/sectors/?agency_id=${encodeURIComponent(agencyId)}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const json: { sectors: Sector[] } = await res.json();
       if (agencyReqIdRef.current !== myReq) return;
       const list = Array.isArray(json?.sectors) ? json.sectors.filter(s => hasValidId(s?.id)) : [];
@@ -209,14 +229,20 @@ export function TrocarLocalStep({
     } finally {
       if (agencyReqIdRef.current === myReq) setLoading(p => ({ ...p, sectors: false }));
     }
-  }, [baseUrl]);
-
+  }, [baseUrl, token]);
+  
   const fetchLocationsBySector = useCallback(async (sectorId: string) => {
     if (!hasValidId(sectorId)) return;
     const myReq = ++sectorReqIdRef.current;
     setLoading(p => ({ ...p, locations: true }));
     try {
-      const res = await fetch(`${baseUrl}/locations?sector_id=${encodeURIComponent(sectorId)}`);
+      const res = await fetch(`${baseUrl}/locations/?sector_id=${encodeURIComponent(sectorId)}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const json: { locations: Location[] } = await res.json();
       if (sectorReqIdRef.current !== myReq) return;
       const list = Array.isArray(json?.locations) ? json.locations.filter(l => hasValidId(l?.id)) : [];
@@ -226,8 +252,8 @@ export function TrocarLocalStep({
     } finally {
       if (sectorReqIdRef.current === myReq) setLoading(p => ({ ...p, locations: false }));
     }
-  }, [baseUrl]);
-
+  }, [baseUrl, token]);
+  
   // Montagem: unidades
   useEffect(() => { fetchUnits(); }, [fetchUnits]);
 

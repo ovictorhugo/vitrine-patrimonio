@@ -4,13 +4,14 @@ import { Alert } from "../../ui/alert";
 
 import {
   Carousel,
+  CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
 } from "../../ui/carousel";
 import { CardContent } from "../../ui/card";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../../context/context";
 import { Badge } from "../../ui/badge";
 import { Switch } from "../../ui/switch";
@@ -89,6 +90,9 @@ type Props = CatalogEntry & {
   viewCount?: number;
   onPromptDelete: () => void;  // abre diálogo de deletar no pai
   onPromptMove: () => void;    // abre diálogo de movimentar no pai
+/** NOVO: controle externo do slide */
+currentSlide?: number;                  // índice atual vindo do pai
+onSlideChange?: (index: number) => void; // notifica o pai quando o usuário troca
 };
 
 export function ItemPatrimonio(props: Props) {
@@ -131,6 +135,35 @@ export function ItemPatrimonio(props: Props) {
     }
   };
 
+   // Embla API para controlar o carrossel
+   const [api, setApi] = useState<CarouselApi | null>(null);
+
+   // Quando o usuário troca de slide, avisar o pai
+   useEffect(() => {
+     if (!api) return;
+ 
+     const emit = () => {
+       const idx = api.selectedScrollSnap();
+       props.onSlideChange?.(idx);
+     };
+ 
+     api.on("select", emit);
+     // chama uma vez para sincronizar na montagem
+     emit();
+     return () => {
+       api.off("select", emit);
+     };
+   }, [api, props]);
+ 
+   // Se o pai mandar um índice diferente, forçar o carrossel a ir para lá
+   useEffect(() => {
+     if (api == null) return;
+     if (typeof props.currentSlide !== "number") return;
+     // scrollTo silencioso/sem animação pode usar jump (dependendo da sua versão do embla)
+   
+   }, [api, props.currentSlide]);
+ 
+
   return (
     <div
       className="group cursor-pointer"
@@ -143,7 +176,8 @@ export function ItemPatrimonio(props: Props) {
         <div className="absolute w-full z-[1] gap-2 flex justify-end p-3">
           <div className="flex gap-2 w-full justify-between">
             {/* Badge de tempo (se houver created_at) */}
-            {diff && (
+           <div>
+           {diff && (
               <Badge className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}>
                 {diff.months > 0
                   ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
@@ -151,6 +185,7 @@ export function ItemPatrimonio(props: Props) {
               </Badge>
             )}
 
+           </div>
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono) */}
               {(props.user.id === user?.id) && (
@@ -208,7 +243,12 @@ export function ItemPatrimonio(props: Props) {
         </div>
 
         {/* Imagens */}
-        <Carousel className="w-full flex items-center">
+        <Carousel
+          className="w-full flex items-center"
+          setApi={setApi}
+          // Opcionalmente garantir o índice inicial na 1ª montagem:
+          opts={{ startIndex: props.currentSlide ?? 0 }}
+        >
           <CarouselContent>
             {props.images?.map((img, index) => {
               const bg = buildImgUrl(img.file_path);
@@ -226,6 +266,7 @@ export function ItemPatrimonio(props: Props) {
               );
             })}
           </CarouselContent>
+
           <div className="w-full hidden absolute justify-between group-hover:flex p-3">
             <CarouselPrevious variant={"secondary"} />
             <CarouselNext variant={"secondary"} />

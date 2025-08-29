@@ -1,6 +1,6 @@
 // src/pages/item/index.tsx
 import { useContext, useEffect, useMemo, useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
@@ -8,10 +8,15 @@ import { Badge } from "../ui/badge";
 import { Alert } from "../ui/alert";
 import { Separator } from "../ui/separator";
 import { Card, Carousel } from "../ui/apple-cards-carousel";
-import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil} from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2} from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { ArrowUUpLeft } from "phosphor-react";
+import { SymbolEEWhite } from "../svg/SymbolEEWhite";
+import { LogoVitrineWhite } from "../svg/LogoVitrineWhite";
+import { SymbolEE } from "../svg/SymbolEE";
+import { LogoVitrine } from "../svg/LogoVitrine";
+import { useTheme } from "next-themes";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -82,7 +87,7 @@ interface CatalogImageDTO {
   catalog_id: string;
   file_path: string;
 }
-interface CatalogResponseDTO {
+ export interface CatalogResponseDTO {
   id: string;
   situation: ApiSituation;
   conservation_status: string;
@@ -98,7 +103,6 @@ interface CatalogResponseDTO {
 }
 
 /* ===================== Utils ===================== */
-const buildImageUrl = (base: string, imageId: string) => `${base}uploads/${imageId}.jpg`;
 
 const situationToText: Record<ApiSituation, string> = {
   UNUSED: "Ocioso",
@@ -138,6 +142,16 @@ export function ItemPage() {
   const { urlGeral } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
+  const buildImgUrl = (p: string) => {
+    try {
+      const cleanPath = p.startsWith("/") ? p.slice(1) : p;
+      return `${urlGeral}${cleanPath}`;
+    } catch {
+      const cleanPath = p.startsWith("/") ? p.slice(1) : p;
+      return `${urlGeral}${cleanPath}`;
+    }
+  };
+
   const catalogId = query.get("id") || ""; // <-- novo: pega ?id= da URL
 
   const [loading, setLoading] = useState(true);
@@ -169,9 +183,9 @@ export function ItemPage() {
     return (catalog?.images ?? []).slice(0, 4).map((img) => ({
       category: "",
       title: "",
-      src: buildImageUrl(urlGeral, img.id),
+      src: buildImgUrl(img.file_path),
     }));
-  }, [catalog?.images, urlGeral]);
+  }, [catalog?.images]);
 
   const cards = useMemo(
     () => images.map((card, index) => <Card key={card.src} card={card} index={index} layout={true} />),
@@ -182,7 +196,7 @@ export function ItemPage() {
 
   const handleEdit = () => {
     if (!catalog) return;
-    navigate(`/edit-item-vitrine?id=${catalog.id}`);
+    navigate(`/dashboard/edit-item-vitrine?id=${catalog.id}`);
   };
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -212,20 +226,105 @@ export function ItemPage() {
     }
   };
 
+  const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+  
+    useEffect(() => {
+      let timeouts: NodeJS.Timeout[] = [];
+    
+     
+        setLoadingMessage(" Estamos criando o registro, gerando o catálogo e enviando as imagens.");
+    
+        timeouts.push(setTimeout(() => {
+          setLoadingMessage("Estamos quase lá, continue aguardando...");
+        }, 5000));
+    
+        timeouts.push(setTimeout(() => {
+          setLoadingMessage("Só mais um pouco...");
+        }, 10000));
+    
+        timeouts.push(setTimeout(() => {
+          setLoadingMessage("Está demorando mais que o normal... estamos tentando enviar tudo.");
+        }, 15000));
+    
+        timeouts.push(setTimeout(() => {
+          setLoadingMessage("Estamos empenhados em concluir, aguarde só mais um pouco");
+        }, 15000));
+      
+    
+      return () => {
+        // Limpa os timeouts ao desmontar ou quando isOpen mudar
+        timeouts.forEach(clearTimeout);
+      };
+    }, []);
+  
+const {theme} = useTheme()
+
+const location = useLocation();
+
+
+const handleVoltar = () => {
+
+  const currentPath = location.pathname;
+  const hasQueryParams = location.search.length > 0;
+  
+  if (hasQueryParams) {
+    // Se tem query parameters, remove apenas eles
+    navigate(currentPath);
+  } else {
+    // Se não tem query parameters, remove o último segmento do path
+    const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+    
+    if (pathSegments.length > 1) {
+      pathSegments.pop();
+      const previousPath = '/' + pathSegments.join('/');
+      navigate(previousPath);
+    } else {
+      // Se estiver na raiz ou com apenas um segmento, vai para raiz
+      navigate('/');
+    }
+  }
+};
 
   if (loading) {
     return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <LoaderCircle className="animate-spin" size={48} />
-      </main>
+      <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
     );
   }
 
   if (!catalog) {
     return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <Alert>Item não encontrado.</Alert>
-      </main>
+      <div
+      className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
+      
+    >
+    
+          
+
+      <div className="w-full flex flex-col items-center justify-center">
+      <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
+          (⊙_⊙)
+        </p>
+        <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+          Não foi possível acessar as <br/>  informações deste item.
+        </h1>
+       
+
+        <div className="flex gap-3 mt-8">
+                <Button  onClick={handleVoltar} variant={'ghost'}><Undo2 size={16}/> Voltar</Button>
+                 <Link to={'/'}> <Button><Home size={16}/> Página Inicial</Button></Link>
+
+                </div>
+      </div>
+    </div>
     );
   }
 
@@ -272,11 +371,7 @@ export function ItemPage() {
 
       {/* Imagens */}
       <div className="grid grid-cols-1">
-        {cards.length > 0 ? (
-          <Carousel items={cards} />
-        ) : (
-          <Alert>Nenhuma imagem enviada para este item.</Alert>
-        )}
+      <Carousel items={cards} />
 
         <div className="flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8">
           {/* Coluna principal */}

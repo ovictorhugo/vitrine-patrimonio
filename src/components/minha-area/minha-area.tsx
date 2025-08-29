@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { ChartLine, Cube, Shield, SignOut } from "phosphor-react";
 import { UserContext } from "../../context/context";
 import { Tabs, TabsContent } from "../ui/tabs";
-import { SegurancaMinhaArea } from "./seguranca-minha-area";
+
 
 import { auth } from '../../lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -232,7 +232,7 @@ console.log(urlTermPesquisadores)
                     </TabsContent>
 
                     <TabsContent value="seg" className="w-full">
-                    <SegurancaMinhaArea/>
+        
                     </TabsContent>
 
                     <TabsContent value="lin" className="w-full">

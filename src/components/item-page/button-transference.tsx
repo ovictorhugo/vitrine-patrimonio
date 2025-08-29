@@ -38,7 +38,7 @@ setLocNom(loc_nom || '')
             {
                 ofertante: props.ofertante,
                 loc_ofertante: props.loc_ofertante,
-                solicitante: user?.user_id,
+                solicitante: user?.id,
                 loc_solicitante: locNom,
                 patrimonio_id:props.patrimonio_id
             }

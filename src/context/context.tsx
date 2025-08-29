@@ -1,6 +1,7 @@
 import { createContext } from "react";
-import { Item } from "../components/item-page/item-page";
+
 import { ItemsSelecionados, PatrimoniosSelecionados } from "../App";
+import { CatalogResponseDTO } from "../components/item-page/item-page";
 
 interface User {
   id: string;                // corresponde a "id" no JSON
@@ -43,8 +44,8 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 
  
-  bens: Item[] , 
-  setBens: React.Dispatch<React.SetStateAction<Item[]>>,
+  bens: CatalogResponseDTO[] , 
+  setBens: React.Dispatch<React.SetStateAction<CatalogResponseDTO[]>>,
 
 
   role:string, 

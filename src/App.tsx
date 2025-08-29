@@ -12,9 +12,10 @@ import { Admin } from './pages/Admin';
 
 import { Notification } from './pages/notification';
 import LoadingWrapper from './components/loading';
-import { Item } from './components/item-page/item-page';
+
 import { AuthenticationToken } from './pages/Authentication-token';
 import { FavoriteProvider } from './context/favorite-context';
+import { CatalogResponseDTO } from './components/item-page/item-page';
 
 
 
@@ -81,7 +82,7 @@ function App() {
   const [mode, setMode] = useState('user')
 
   const [urlGeral, setUrlGeral] = useState(import.meta.env.VITE_BACKEND_URL || '');
-  const [bens, setBens] = useState<Item[]>([]); 
+  const [bens, setBens] = useState<CatalogResponseDTO[]>([]); 
   const [role, setRole] = useState('')
   const [permission , setPermission] = useState<Permission[]>([])
   const [itemsSelecionados , setItensSelecionados] = useState<ItemsSelecionados[]>([])

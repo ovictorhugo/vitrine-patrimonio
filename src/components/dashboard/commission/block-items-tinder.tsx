@@ -443,23 +443,13 @@ export function BlockItemsVitrine(props: Props) {
                   <SwipeCard onSwiped={handleSwiped} onCancel={() => {}}>
                     {({ progress }) => (
                       <div className="select-none rounded-xl border bg-background shadow-sm overflow-hidden">
-                        <ItemPatrimonioTinder
-                          {...item}
-                          progress={progress}
-                          onPromptDelete={() => openDelete(item.id)}
-                          onPromptMove={() => openMove(item.id)}
-                        />
+                       
                       </div>
                     )}
                   </SwipeCard>
                 ) : (
                   <div className="select-none rounded-xl border bg-background shadow-sm overflow-hidden opacity-90">
-                    <ItemPatrimonioTinder
-                      {...item}
-                      progress={0}
-                      onPromptDelete={() => openDelete(item.id)}
-                      onPromptMove={() => openMove(item.id)}
-                    />
+                   
                   </div>
                 )}
               </div>

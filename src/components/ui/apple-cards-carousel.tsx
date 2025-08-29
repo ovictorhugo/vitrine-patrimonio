@@ -256,16 +256,17 @@ export const Card = ({
             layoutId={layout ? `category-${card.category}` : undefined}
             className="text-white z-[9] text-sm md:text-base font-medium font-sans text-left"
           >
-            {card.category}
+      
           </motion.p>
         
         </div>
         <BlurImage
-          src={card.src}
-          alt={card.title}
-          fill
-          className="object-cover absolute  inset-0"
-        />
+  src={card.src}
+  alt={card.title}
+  height={400} // add height property
+  width={600} // add width property
+  className="object-cover absolute  inset-0"
+/>
       </motion.button>
     </>
   );
@@ -294,7 +295,7 @@ export const BlurImage = ({
       height={height}
       loading="lazy"
       decoding="async"
-      alt={alt || "Background of a beautiful view"}
+    
       {...rest}
     />
   );

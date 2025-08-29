@@ -5,7 +5,7 @@ import { HomeInicial } from "../homepage/home-initial";
 
 import { BuscaPatrimonio } from "../busca-patrimonio/busca-patrimonio";
 import { useModalHomepage } from "../hooks/use-modal-homepage";
-import { Join } from "../invite-join/join";
+
 import { ItemPage } from "../item-page/item-page";
 
 
@@ -17,8 +17,6 @@ const ModalContent = () => {
       return <HomeInicial />;
     case "busca-patrimonio":
       return <BuscaPatrimonio />;
-      case "join-sala":
-      return <Join />;
     case 'item-page':
       return <ItemPage/>
     default:

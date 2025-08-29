@@ -200,8 +200,8 @@ export function BlockItemsVitrine(props: Props) {
     if (legalGuardianId) queryUrl.set("legal_guardian_id", legalGuardianId);
     else queryUrl.delete("legal_guardian_id");
 
-    if (props.workflow) queryUrl.set("workflow", props.workflow);
-    else queryUrl.delete("workflow");
+    if (props.workflow) queryUrl.set("workflow__status", props.workflow);
+    else queryUrl.delete("workflow__status");
 
     navigate({ pathname: location.pathname, search: queryUrl.toString() });
 
@@ -227,7 +227,7 @@ export function BlockItemsVitrine(props: Props) {
         const url = new URL(`${urlGeral}catalog/`);
         if (materialId) url.searchParams.set("material_id", materialId);
         if (legalGuardianId) url.searchParams.set("legal_guardian_id", legalGuardianId);
-        if (props.workflow) url.searchParams.set("workflow", props.workflow);
+        if (props.workflow) url.searchParams.set("workflow__status", props.workflow);
         url.searchParams.set("offset", String(offset));
         url.searchParams.set("limit", String(limit));
 
@@ -287,6 +287,17 @@ export function BlockItemsVitrine(props: Props) {
     }
   ]
 
+   // === Estado para “lembrar” o slide atual de cada item ===
+   const [carouselIndexById, setCarouselIndexById] = useState<Record<string, number>>({});
+
+   const getSlide = useCallback((id: string) => {
+     return carouselIndexById[id] ?? 0;
+   }, [carouselIndexById]);
+ 
+   const handleSlideChange = useCallback((id: string, index: number) => {
+     setCarouselIndexById(prev => (prev[id] === index ? prev : { ...prev, [id]: index }));
+   }, []);
+
   return (
     <div ref={containerRef}>
 
@@ -313,6 +324,8 @@ export function BlockItemsVitrine(props: Props) {
                 // o filho só dispara os diálogos do pai:
                 onPromptDelete={() => openDelete(item.id)}
                 onPromptMove={() => openMove(item.id)}
+                currentSlide={getSlide(item.id)}
+                onSlideChange={(idx) => handleSlideChange(item.id, idx)}
               />
             ))}
           </Masonry>
