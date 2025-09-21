@@ -224,10 +224,10 @@ export function BlockItemsVitrine(props: Props) {
         setLoading(true);
         setError(null);
 
-        const url = new URL(`${urlGeral}catalog/`);
+        const url = new URL(`${urlGeral}catalog/?workflow_status=${props.workflow}`);
         if (materialId) url.searchParams.set("material_id", materialId);
         if (legalGuardianId) url.searchParams.set("legal_guardian_id", legalGuardianId);
-        if (props.workflow) url.searchParams.set("workflow__status", props.workflow);
+     
         url.searchParams.set("offset", String(offset));
         url.searchParams.set("limit", String(limit));
 

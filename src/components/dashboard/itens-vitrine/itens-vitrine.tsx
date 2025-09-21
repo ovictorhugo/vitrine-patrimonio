@@ -9,6 +9,8 @@ import {
   Trash,
   ArrowUpRight,
   SlidersHorizontal,
+  Download,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +20,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -54,6 +57,8 @@ import {
 import { Alert } from "../../ui/alert";
 import { MagnifyingGlass } from "phosphor-react";
 import { CardItemDropdown } from "./card-item-dropdown";
+import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 
 /* =========================
    Tipos vindos do backend
@@ -140,7 +145,7 @@ type WorkflowHistoryItem = {
     institution_id: UUID;
   };
   catalog_id: UUID;
-  created_at: string; // ISO-ish
+  created_at: string; // pode vir com microssegundos, mas NÃO vamos parsear
 };
 
 type CatalogImage = {
@@ -258,23 +263,16 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
 };
 
 /* =========================
-   Utilidades
+   Utilidades (NÃO depende de date parsing)
 ========================= */
 
-const robustLastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
+// Pega o ÚLTIMO elemento do array workflow_history.
+// Isso garante que, quando adicionamos um novo workflow no FINAL,
+// ele é considerado "o último" instantaneamente.
+const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
-
-  const byTime = [...hist].sort((a, b) => {
-    const da = new Date(a.created_at).getTime();
-    const db = new Date(b.created_at).getTime();
-    const va = Number.isNaN(da) ? 0 : da;
-    const vb = Number.isNaN(db) ? 0 : db;
-    if (va !== vb) return vb - va;
-    return (b.created_at || "").localeCompare(a.created_at || "");
-  });
-
-  return byTime[0];
+  return hist[hist.length - 1];
 };
 
 const groupByLastWorkflow = (
@@ -282,18 +280,18 @@ const groupByLastWorkflow = (
   columns: { key: string; name: string }[]
 ) => {
   const map: Record<string, CatalogEntry[]> = {};
-  const validKeys = new Set(columns.map(c => (c.key ?? "").trim()));
+  const valid = new Set(columns.map(c => (c.key ?? "").trim()));
   for (const col of columns) map[(col.key ?? "").trim()] = [];
 
   for (const entry of data) {
-    const lastStatusRaw = robustLastWorkflow(entry)?.workflow_status ?? "";
-    const lastStatus = (lastStatusRaw ?? "").trim();
-    if (validKeys.has(lastStatus)) {
-      map[lastStatus].push(entry);
+    const lw = lastWorkflow(entry);
+    const key = (lw?.workflow_status ?? "").trim();
+    if (valid.has(key)) {
+      map[key].push(entry);
     } else {
-      map[columns[0].key].push(entry);
-      if (lastStatusRaw) {
-        console.warn(`[Board] Status não mapeado: "${lastStatusRaw}". Caiu na 1ª coluna.`);
+      // Status não pertence ao board atual: omite neste board
+      if (key) {
+        console.warn(`[Board] Status fora do board atual: "${key}". Item omitido nesta aba.`);
       }
     }
   }
@@ -617,21 +615,23 @@ export function ItensVitrine() {
     const prevBoard = board;
     const prevEntries = entries;
 
-    // 2) Atualização OTIMISTA: adiciona history com destino e move visualmente
+    // 2) Atualização OTIMISTA:
+    //    - adiciona NOVO workflow no FINAL do array
+    //    - move o item de 'from' para 'to' no board
     const optimisticHistory: WorkflowHistoryItem = {
       id: crypto.randomUUID(),
       catalog_id: entry.id,
       user: entry.user,
       workflow_status: toKey,
       detail: {},
-      created_at: new Date().toISOString(),
-    };
-    const optimisticEntry: CatalogEntry = {
-      ...entry,
-      workflow_history: [...(entry.workflow_history ?? []), optimisticHistory],
+      created_at: new Date().toISOString(), // ISO válido, mas não dependemos dele
     };
 
-    // tira do from e coloca no topo do to
+    const optimisticEntry: CatalogEntry = {
+      ...entry,
+      workflow_history: [...(entry.workflow_history ?? []), optimisticHistory], // <<< FINAL
+    };
+
     const newFrom = Array.from(prevBoard[fromKey] ?? []);
     const idx = newFrom.findIndex((x) => x.id === entry.id);
     if (idx >= 0) newFrom.splice(idx, 1);
@@ -719,6 +719,145 @@ export function ItensVitrine() {
     if (expandedColumn !== null) resetExpandedPagination();
   }, [expandedColumn]);
 
+  // Gera CSV simples (com cabeçalho) e baixa
+// ---- CSV: flatten completo de catalog (inclui user, location, images, etc), EXCETO workflow_history ----
+const getItemsForExport = (colKey?: string, onlyVisible = false) => {
+  let items: CatalogEntry[] = [];
+
+  if (colKey) {
+    const all = board[colKey] ?? [];
+    const isExpanded = expandedColumn === colKey;
+    items = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+  } else {
+    // fallback: todos os itens filtrados no board atual
+    items = filteredEntries;
+  }
+
+  // Remove workflow_history para ficar “só os itens”
+  return items.map(({ workflow_history, ...rest }) => rest);
+};
+// + adiciona colunas derivadas: codigo, last_status, last_status_at, images_count
+const handleDownloadJson = (colKey?: string, onlyVisible = false) => {
+  try {
+    const jsonData = getItemsForExport(colKey, onlyVisible); // <<< SÓ ITENS
+    const csvData = convertJsonToCsv(jsonData);
+    const blob = new Blob([csvData], { type: 'text/csv;charset=windows-1252;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const colName =
+      (colKey && (columns.find(c => c.key === colKey)?.name || colKey)) || 'todos';
+    link.download = `itens_${colName.replace(/\s+/g,'_').toLowerCase()}${onlyVisible ? '_visiveis' : ''}.csv`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
+    toast.error('Falha ao gerar CSV');
+  }
+};
+
+// Remove workflow_history do objeto raiz (se existir)
+const stripWorkflow = (obj: any) => {
+  if (obj && typeof obj === "object" && "workflow_history" in obj) {
+    const { workflow_history, ...rest } = obj;
+    return rest;
+  }
+  return obj;
+};
+
+// Achata profundamente usando "chave.subchave.outrachave"
+const flattenObject = (
+  obj: any,
+  prefix = "",
+  out: Record<string, any> = {}
+): Record<string, any> => {
+  if (obj == null) return out;
+
+  if (Array.isArray(obj)) {
+    // Arrays:
+    // - se todos são primitivos: junta com "|"
+    // - se for "images": une file_path com "|"
+    // - caso misto/objetos: salva como JSON
+    const key = prefix.slice(0, -1);
+    if (obj.every(v => typeof v !== "object" || v === null)) {
+      out[key] = obj.join("|");
+    } else if (/(\.|^)images$/.test(key)) {
+      out[key] = obj.map((it: any) => it?.file_path ?? JSON.stringify(it)).join("|");
+    } else {
+      out[key] = JSON.stringify(obj);
+    }
+    return out;
+  }
+
+  if (typeof obj === "object") {
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "workflow_history") continue; // EXCLUI
+      flattenObject(v, `${prefix}${k}.`, out);
+    }
+    return out;
+  }
+
+  // Primitivo
+  out[prefix.slice(0, -1)] = obj;
+  return out;
+};
+
+// Converte a lista de objetos para CSV com ; como separador
+const convertJsonToCsv = (data: any[]): string => {
+  const flattened = data.map((d) => flattenObject(stripWorkflow(d)));
+
+  // Cabeçalho: união de todas as chaves, ordenadas
+  const headerSet = new Set<string>();
+  flattened.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
+  const headers = Array.from(headerSet).sort();
+
+  const esc = (val: unknown) => {
+    const s = String(val ?? "");
+    // usa aspas se tiver ; , " ou quebra de linha
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const lines = [
+    headers.join(";"),
+    ...flattened.map(row => headers.map(h => esc((row as any)[h])).join(";")),
+  ];
+  return lines.join("\n");
+};
+
+        // Componente principal
+              const scrollAreaRef = useRef<HTMLDivElement>(null);
+              const [canScrollLeft, setCanScrollLeft] = useState(false);
+              const [canScrollRight, setCanScrollRight] = useState(true);
+              
+              // Adicione estas funções:
+              const checkScrollability = () => {
+                if (scrollAreaRef.current) {
+                  const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
+                  setCanScrollLeft(scrollLeft > 0);
+                  setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+                }
+              };
+              
+              const scrollLeft = () => {
+                if (scrollAreaRef.current) {
+                  scrollAreaRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+                }
+              };
+              
+              const scrollRight = () => {
+                if (scrollAreaRef.current) {
+                  scrollAreaRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+                }
+              };
+              
+              // Adicione este useEffect:
+              useEffect(() => {
+                checkScrollability();
+                const handleResize = () => checkScrollability();
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+              }, []);
+
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
@@ -726,7 +865,7 @@ export function ItensVitrine() {
         <meta name="description" content="Movimentação temporário | Vitrine Patrimônio" />
       </Helmet>
 
-      <main className="flex flex-col gap-6">
+      <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex gap-2 items-center">
@@ -754,7 +893,7 @@ export function ItensVitrine() {
             <h1 className="text-xl font-semibold tracking-tight">Movimentação</h1>
           </div>
 
-          <div className="flex gap-2 items-center">
+          <div className="hidden gap-2 items-center xl:flex">
             <Button
               size="sm"
               variant="outline"
@@ -803,8 +942,23 @@ export function ItensVitrine() {
 
         {/* Filtros */}
         {showFilters && (
-          <div>
-            <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative grid grid-cols-1">
+
+                  <Button
+        variant='outline'
+        size="sm"
+        className={`absolute left-0 z-10 h-10 w-10 p-0  ${
+          !canScrollLeft ? 'opacity-30 cursor-not-allowed' : ''
+        }`}
+        onClick={scrollLeft}
+        disabled={!canScrollLeft}
+      >
+        <ChevronLeft size={16} />
+      </Button>
+
+       <div className=" mx-14 ">
+ <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide scrollbar-hide" onScroll={checkScrollability}>
+ <div className="flex  gap-3 items-center ">
               <Alert className="w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
                 <div>
                   <MagnifyingGlass size={16} className="text-gray-500" />
@@ -836,16 +990,35 @@ export function ItensVitrine() {
                 <Trash size={16} /> Limpar filtros
               </Button>
             </div>
-          </div>
+ </div>
+ </div>
+
+  {/* Botão Direita */}
+      <Button
+        variant='outline'
+        size="sm"
+        className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md  ${
+          !canScrollRight ? 'opacity-30 cursor-not-allowed' : ''
+        }`}
+        onClick={scrollRight}
+        disabled={!canScrollRight}
+      >
+        <ChevronRight size={16} />
+      </Button>
+      </div>
+           
+   
         )}
+
 
         {/* Board / Expandido */}
         {expandedColumn === null ? (
           // BOARD com scroll horizontal
-          <div className="relative">
-            <div className="overflow-x-auto pb-2">
+         <div className={`relative flex-1 ${showFilters ? ('max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]'):('max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] ')}`}>
+  <div className="h-full overflow-x-auto overflow-y-hidden pb-2">
               <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-4 min-w-[980px]">
+                   <div className="flex gap-4 min-w-[980px] h-full">
+
                   {columns.map((col) => {
                     const items = board[col.key] ?? [];
                     const take = visibleByCol[col.key] ?? PAGE_SIZE;
@@ -854,7 +1027,7 @@ export function ItensVitrine() {
                     return (
                       <Alert
                         key={col.key}
-                        className="w-[320px] min-w-[320px] flex flex-col"
+                    className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0"
                       >
                         <div className="flex items-center justify-between gap-8 mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -879,39 +1052,41 @@ export function ItensVitrine() {
 
                         <Separator className="mb-2" />
 
-                        <Droppable droppableId={col.key}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`flex flex-col gap-2 min-h-[120px] transition-all ${
-                                snapshot.isDraggingOver
-                                  ? "bg-neutral-200 dark:bg-neutral-800 rounded-md p-2"
-                                  : ""
-                              }`}
-                            >
-                              {loading && !items.length ? (
-                                <>
-                                  <Skeleton className="h-20 w-full rounded-md aspect-square" />
-                                  <Skeleton className="h-20 w-full rounded-md aspect-square" />
-                                </>
-                              ) : null}
+                     <Droppable droppableId={col.key}>
+  {(provided, snapshot) => (
+    <div className="flex-1 min-h-0">
+      <div
+        ref={provided.innerRef}
+        {...provided.droppableProps}
+        className={`flex flex-col gap-2 h-full overflow-y-auto pr-1 transition-all ${
+          snapshot.isDraggingOver
+            ? "bg-neutral-200 dark:bg-neutral-800 rounded-md p-2"
+            : ""
+        }`}
+      >
+        {loading && !items.length ? (
+          <>
+            <Skeleton className="h-20 w-full rounded-md aspect-square" />
+            <Skeleton className="h-20 w-full rounded-md aspect-square" />
+          </>
+        ) : null}
 
-                              {slice.map((entry, idx) => (
-                                <CardItemDropdown key={entry.id} entry={entry} index={idx} />
-                              ))}
-                              {provided.placeholder}
+        {slice.map((entry, idx) => (
+          <CardItemDropdown key={entry.id} entry={entry} index={idx} />
+        ))}
+        {provided.placeholder}
 
-                              {items.length > slice.length ? (
-                                <div className="pt-2">
-                                  <Button variant="outline" size="sm" onClick={() => showMoreCol(col.key)}>
-                                    Mostrar mais
-                                  </Button>
-                                </div>
-                              ) : null}
-                            </div>
-                          )}
-                        </Droppable>
+        {items.length > slice.length ? (
+          <div className="pt-2">
+            <Button variant="outline" className="w-full" onClick={() => showMoreCol(col.key)}>
+              <Plus size={16}/> Mostrar mais
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )}
+</Droppable>
                       </Alert>
                     );
                   })}
@@ -936,60 +1111,35 @@ export function ItensVitrine() {
                       </h2>
                       <Badge variant="outline">{items.length}</Badge>
                     </div>
-                    <Button variant="outline" onClick={() => setExpandedColumn(null)}>
+
+                    <div className="flex gap-3">
+                       <Button variant="outline"  onClick={() => handleDownloadJson(col.key)}>
+<Download size={16}/>      Baixar resultado
+    </Button>
+                    <Button onClick={() => setExpandedColumn(null)}>
                       <ChevronLeft className="" size={16} />
                       Voltar ao quadro
                     </Button>
+                    </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {slice.map((entry) => (
-                      <Card key={entry.id} className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-semibold">
-                              {entry.asset?.asset_description || "Sem descrição"}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {codeFrom(entry)} •{" "}
-                              {entry.asset?.material?.material_name ?? "—"} •{" "}
-                              {entry.asset?.legal_guardian?.legal_guardians_name ?? "—"}
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/item/${entry.id}`} title="Abrir item">
-                              <ArrowUpRight className="h-4 w-4" />
-                            </Link>
-                          </Button>
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5  gap-4">
+                             {items.map((item) => (
+                               <ItemPatrimonio
+                                 key={item.id}
+                                 {...item}
+                                 // o filho só dispara os diálogos do pai:
+                                 onPromptDelete={() => openDelete(item.id)}
+                                 onPromptMove={() => openMove(item.id)}
+                               
+                               />
+                             ))}
                         </div>
-                        <Separator />
-                        <div className="text-sm whitespace-pre-wrap">
-                          {entry.description || "—"}
-                        </div>
-                        {entry.images?.length ? (
-                          <div className="grid grid-cols-4 gap-2">
-                            {entry.images.map((img) => (
-                              <div
-                                key={img.id}
-                                className="aspect-square rounded-md overflow-hidden border bg-muted"
-                              >
-                                <img
-                                  src={img.file_path}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-                      </Card>
-                    ))}
-                  </div>
 
                   {items.length > slice.length ? (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="outline" onClick={showMoreExpanded}>
-                        Mostrar mais
+                    <div className="flex justify-center mt-8">
+                      <Button  onClick={showMoreExpanded}>
+                     <Plus size={16}/>     Mostrar mais
                       </Button>
                     </div>
                   ) : null}
@@ -998,6 +1148,7 @@ export function ItensVitrine() {
             })}
           </div>
         )}
+      
       </main>
 
       {/* Modal de mudança de workflow (justificativa/extra fields) */}

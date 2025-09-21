@@ -114,7 +114,7 @@ function handlePesquisaChange(term: string) {
       </div>
 
       <div className=" w-full md:px-8 gap-8 flex flex-col px-4">
-<BlockItemsVitrine workflow=""/>
+<BlockItemsVitrine workflow="VITRINE"/>
       </div>
 </div>
 

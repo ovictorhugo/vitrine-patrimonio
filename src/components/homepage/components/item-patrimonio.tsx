@@ -68,7 +68,7 @@ interface WorkflowHistory {
   id: string;
   workflow_status: string;
   catalog_id: string;
-  user_id: string;
+  user_id?: string;
   detail: { message: string };
 }
 interface CatalogEntry {
