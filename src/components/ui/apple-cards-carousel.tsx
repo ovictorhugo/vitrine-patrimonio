@@ -21,6 +21,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useOutsideClick } from "./use-outside-click";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { Button } from "./button";
+import { Dialog, DialogContent, DialogTrigger } from "./dialog";
 
 interface CarouselProps {
   items: JSX.Element[];
@@ -172,106 +173,61 @@ export const Card = ({
   layout?: boolean;
 }) => {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { onCardClose, currentIndex } = useContext(CarouselContext);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        handleClose();
-      }
-    }
-
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
-  useOutsideClick(containerRef, () => handleClose());
-
-  const handleOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    onCardClose(index);
-  };
+  const { onCardClose } = useContext(CarouselContext);
 
   return (
-    <>
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 h-screen   overflow-auto">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="bg-black/80 backdrop-blur-lg h-full w-full fixed inset-0"
-            />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              ref={containerRef}
-              layoutId={layout ? `card-${card.title}` : undefined}
-              className="max-w-5xl mx-auto z-[1] bg-white dark:bg-neutral-900 h-fit   my-10 p-4 md:p-10 rounded-3xl font-sans relative"
-            >
-              <button
-                className="sticky top-4 h-8 w-8 right-0 ml-auto bg-black dark:bg-white rounded-full flex items-center justify-center"
-                onClick={handleClose}
-              >
-                <X className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
-              </button>
-              <motion.p
-                layoutId={layout ? `category-${card.title}` : undefined}
-                className="text-base font-medium text-black dark:text-white"
-              >
-                {card.category}
-              </motion.p>
-              <motion.p
-                layoutId={layout ? `title-${card.title}` : undefined}
-                className="text-2xl z-[3] md:text-5xl font-semibold text-neutral-700 mt-4 dark:text-white"
-              >
-                {card.title}
-              </motion.p>
-             
-            </motion.div>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) onCardClose(index);
+      }}
+    >
+      {/* Thumb / botão que abre o Dialog */}
+      <DialogTrigger asChild>
+        <motion.button
+          type="button"
+          layoutId={layout ? `card-${card.title}` : undefined}
+          className="rounded-lg bg-gray-100 dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden relative group focus:outline-none "
+          aria-label={`Abrir imagem: ${card.title}`}
+        >
+          <div className="absolute z-[3] h-full top-0 inset-x-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
+          <div className="relative p-4 z-[3]">
+            {/* espaço para tags/título sobre a thumb, se quiser */}
           </div>
-        )}
-      </AnimatePresence>
-      <motion.button
-        layoutId={layout ? `card-${card.title}` : undefined}
-      
-        className="rounded-lg bg-gray-100  dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden flex flex-col items-start justify-start relative "
+
+          <BlurImage
+            src={card.src}
+            alt={card.title}
+            height={400}
+            width={600}
+            className="object-cover absolute inset-0 transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+        </motion.button>
+      </DialogTrigger>
+
+      {/* Conteúdo do Dialog */}
+      <DialogContent
+        // remove padding padrão e aumenta largura
+        className="p-0  overflow-hidden w-auto "
       >
-        <div className="absolute  z-[3] h-full top-0 inset-x-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
-        <div className="relative  p-8 z-[3]">
-          <motion.p
-            layoutId={layout ? `category-${card.category}` : undefined}
-            className="text-white z-[9] text-sm md:text-base font-medium font-sans text-left"
-          >
-      
-          </motion.p>
-        
-        </div>
-        <BlurImage
-  src={card.src}
-  alt={card.title}
-  height={400} // add height property
-  width={600} // add width property
-  className="object-cover absolute  inset-0"
-/>
-      </motion.button>
-    </>
+        {/* Botão de fechar flutuante */}
+     
+
+     
+
+        {/* Área da imagem */}
+        <div className="w-full max-h-[85vh] flex items-center justify-center ">
+    <img
+      src={card.src}
+      alt={card.title}
+      className="max-h-[85vh] max-w-full object-contain"
+    />
+  </div>
+      </DialogContent>
+    </Dialog>
   );
 };
-
 export const BlurImage = ({
   height,
   width,

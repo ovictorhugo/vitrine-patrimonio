@@ -281,23 +281,9 @@ export function BlockItemsVitrine(props: Props) {
       value: 'REVIEW_REQUESTED_COMISSION',
       name: 'Revisão para Comissão'
     },
-    {
-      value: 'REVIEW_REQUESTED_COMISSION',
-      name: 'Aprovação desfazimento'
-    }
   ]
 
-   // === Estado para “lembrar” o slide atual de cada item ===
-   const [carouselIndexById, setCarouselIndexById] = useState<Record<string, number>>({});
-
-   const getSlide = useCallback((id: string) => {
-     return carouselIndexById[id] ?? 0;
-   }, [carouselIndexById]);
- 
-   const handleSlideChange = useCallback((id: string, index: number) => {
-     setCarouselIndexById(prev => (prev[id] === index ? prev : { ...prev, [id]: index }));
-   }, []);
-
+   
   return (
     <div ref={containerRef}>
 
@@ -315,8 +301,7 @@ export function BlockItemsVitrine(props: Props) {
 
       {/* Grid */}
       {!loading && (
-        <ResponsiveMasonry columnsCountBreakPoints={breakpoints}>
-          <Masonry gutter="16px">
+       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5  gap-4">
             {items.map((item: CatalogEntry) => (
               <ItemPatrimonio
                 key={item.id}
@@ -324,12 +309,10 @@ export function BlockItemsVitrine(props: Props) {
                 // o filho só dispara os diálogos do pai:
                 onPromptDelete={() => openDelete(item.id)}
                 onPromptMove={() => openMove(item.id)}
-                currentSlide={getSlide(item.id)}
-                onSlideChange={(idx) => handleSlideChange(item.id, idx)}
+              
               />
             ))}
-          </Masonry>
-        </ResponsiveMasonry>
+       </div>
       )}
 
       {/* Controle "itens por página" */}

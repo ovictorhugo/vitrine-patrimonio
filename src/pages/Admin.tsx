@@ -24,6 +24,7 @@ export function Admin() {
     "/dashboard/transferencias": "transferencia",
     "/dashboard/editar-item": "editar-item",
     "/dashboard/criar-patrimonio-temporario": "create-temp-asset",
+     "/dashboard/patrimonio-temporario": "temp-asset",
   };
 
   useEffect(() => {

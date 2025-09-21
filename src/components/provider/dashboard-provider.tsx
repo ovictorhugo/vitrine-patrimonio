@@ -18,6 +18,7 @@ import { ItensDesfazimento } from "../dashboard/itens-desfazimento/itens-desfazi
 
 import { EditItemVitrine } from "../dashboard/edit-item/edit-item";
 import { CreateTempAsset } from "../dashboard/create-temp-asset/create-temp-asset";
+import { HomepageListTempAsset } from "../dashboard/create-temp-asset/homepage-list-temp-asset";
 
 
 
@@ -44,6 +45,8 @@ const ModalContent = () => {
       return <EditItemVitrine/>
       case 'create-temp-asset':
         return <CreateTempAsset/>
+      case 'temp-asset':
+        return <HomepageListTempAsset/>
     default:
       return null;
   }

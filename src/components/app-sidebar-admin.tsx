@@ -75,7 +75,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           },
           {
             title: "Patrimonio temporário",
-            url: "/dashboard/criar-patrimonio-temporario",
+            url: "/dashboard/patrimonio-temporario",
             icon: TimerReset
           },
           {

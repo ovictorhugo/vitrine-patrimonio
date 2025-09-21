@@ -24,6 +24,7 @@ module.exports = {
   	screens: {
   		sm: '640px',
   		md: '768px',
+		mg: '900px',
   		lg: '1024px',
   		xl: '1280px',
   		'2xl': '1920px'
@@ -62,7 +63,7 @@ module.exports = {
   		},
   		colors: {
   			'eng-blue': '#559FB8',
-  			'eng-dark-blue': '#024A60',
+  			'eng-dark-blue': '#014B76',
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',

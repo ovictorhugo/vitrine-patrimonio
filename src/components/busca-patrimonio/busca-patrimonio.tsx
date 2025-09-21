@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ArrowLeft, ArrowRight, RefreshCcw } from "lucide-react";
 import { Tabs, TabsContent } from "../ui/tabs";
 import { Progress } from "../ui/progress";
 import { Button } from "../ui/button";
 import { cn } from "../../lib";
 
 // Reuso dos seus steps
-
-import { FormularioStep as FormularioStepView, Patrimonio } from "../dashboard/novo-item/steps/formulario"; 
+import { FormularioStep as FormularioStepView, Patrimonio } from "../dashboard/novo-item/steps/formulario";
 import { PesquisaStepCB } from "../dashboard/create-etiqueta/steps/pesquisa";
+import { useQuery } from "../authentication/signIn";
 
 type StepKey = "pesquisa" | "formulario";
 type StepDef = { key: StepKey; label: string };
@@ -36,13 +36,24 @@ const shallowEqual = (a: any, b: any) => {
   return true;
 };
 
+const eqPesquisa = (
+  a?: { value_item?: string; type?: "cod" | "atm" },
+  b?: { value_item?: string; type?: "cod" | "atm" }
+) => (a?.value_item ?? "") === (b?.value_item ?? "") && (a?.type ?? "") === (b?.type ?? "");
+
 export function BuscaPatrimonio() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const query = useQuery();
+  const bem_cod = query.get("bem_cod") ?? undefined;
+  const bem_dgv = query.get("bem_dgv") ?? undefined;
+  const bem_num_atm = query.get("bem_num_atm") ?? undefined;
+
   const [active, setActive] = useState<StepKey>("pesquisa");
   const [valid, setValid] = useState<ValidMap>({});
   const [wizard, setWizard] = useState<WizardState>({});
+  const [resetKey, setResetKey] = useState(0); // força re-mount dos passos
 
   const idx = useMemo(() => STEPS.findIndex((s) => s.key === active), [active]);
   const total = STEPS.length;
@@ -54,7 +65,7 @@ export function BuscaPatrimonio() {
     setValid((prev) => {
       const next: ValidMap = { ...prev };
       for (const s of STEPS) {
-        if (next[s.key] === undefined) next[s.key] = s.key === "pesquisa" ? false : undefined;
+        if (next[s.key] === undefined) next[s.key] = s.key === "pesquisa" ? false : (undefined as any);
       }
       return next;
     });
@@ -67,10 +78,14 @@ export function BuscaPatrimonio() {
     });
   }, []);
 
+  // Só atualiza wizard se conteúdo mudar de verdade
   const setWizardIfChanged = useCallback((producer: (prev: WizardState) => WizardState) => {
     setWizard((prev) => {
       const next = producer(prev);
-      return shallowEqual(prev, next) ? prev : next;
+      if (eqPesquisa(prev.pesquisa, next.pesquisa) && prev.formulario === next.formulario) {
+        return prev;
+      }
+      return next;
     });
   }, []);
 
@@ -113,6 +128,48 @@ export function BuscaPatrimonio() {
     }
   };
 
+  // Preenche automaticamente a pesquisa com base nos query params
+  useEffect(() => {
+    // prioriza ATM se existir; senão tenta COD-DGV
+    if (bem_num_atm && bem_num_atm.trim()) {
+      setWizardIfChanged(prev => ({
+        ...prev,
+        pesquisa: { value_item: bem_num_atm.trim(), type: "atm" }
+      }));
+      setValidIfChanged(prev => ({ ...prev, pesquisa: true }));
+      return;
+    }
+
+    if (bem_cod && bem_dgv && `${bem_cod}`.trim() && `${bem_dgv}`.trim()) {
+      const composed = `${bem_cod.trim()}-${bem_dgv.trim()}`;
+      setWizardIfChanged(prev => ({
+        ...prev,
+        pesquisa: { value_item: composed, type: "cod" }
+      }));
+      setValidIfChanged(prev => ({ ...prev, pesquisa: true }));
+    }
+  }, [bem_num_atm, bem_cod, bem_dgv, setWizardIfChanged, setValidIfChanged]);
+
+  // Reinicia tudo e volta para o primeiro passo
+  const resetAll = useCallback(() => {
+    // limpa URL de possíveis query params
+    navigate(location.pathname, { replace: true });
+
+    // volta para o step inicial
+    setActive("pesquisa");
+
+    // limpa estados do wizard e validade
+    setWizard({});
+    setValid(() => {
+      const next: ValidMap = {};
+      for (const s of STEPS) (next as any)[s.key] = s.key === "pesquisa" ? false : undefined;
+      return next;
+    });
+
+    // força re-mount dos componentes de passo (zera estados internos)
+    setResetKey((k) => k + 1);
+  }, [location.pathname, navigate]);
+
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
       <Helmet>
@@ -134,6 +191,7 @@ export function BuscaPatrimonio() {
 
           <div className="flex flex-col h-full w-full gap-8">
             <Tabs
+              key={resetKey}
               value={active}
               onValueChange={(v) => {
                 const targetIndex = STEPS.findIndex((s) => s.key === (v as StepKey));
@@ -145,6 +203,7 @@ export function BuscaPatrimonio() {
                 <TabsContent key={s.key} value={s.key} className="m-0 h-full">
                   {s.key === "pesquisa" && (
                     <PesquisaStepCB
+                      key={`pesquisa-${resetKey}`}
                       value={"pesquisa" as any}
                       onValidityChange={onValidityChangeFactory("pesquisa")}
                       onStateChange={onStateChangePesquisa as any}
@@ -156,6 +215,7 @@ export function BuscaPatrimonio() {
 
                   {s.key === "formulario" && (
                     <FormularioStepView
+                      key={`formulario-${resetKey}`}
                       value={"formulario" as any}
                       onValidityChange={onValidityChangeFactory("formulario")}
                       onStateChange={onStateChangeFormulario as any}
@@ -169,7 +229,6 @@ export function BuscaPatrimonio() {
               ))}
             </Tabs>
 
-            {/* Barra inferior: some no último passo */}
             {!isLast && (
               <div className="flex justify-between items-center h-fit">
                 <div>
@@ -191,6 +250,15 @@ export function BuscaPatrimonio() {
                     Próximo <ArrowRight size={16} />
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {isLast && (
+              <div className="flex justify-end items-center h-fit">
+                <Button size="lg" onClick={resetAll}>
+                  <RefreshCcw size={16} className="" />
+                  Fazer nova busca
+                </Button>
               </div>
             )}
           </div>

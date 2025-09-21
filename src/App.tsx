@@ -155,7 +155,7 @@ function App() {
     <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
     <Route path='/dashboard/novo-item' element={<Admin/>}/>
     <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
-        
+            <Route path='/dashboard/patrimonio-temporario' element={<Admin/>}/>
       </Routes>
       </LoadingWrapper>
       </DefaultLayout>

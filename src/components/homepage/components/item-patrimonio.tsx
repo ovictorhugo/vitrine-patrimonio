@@ -1,4 +1,4 @@
-import { Eye, Heart, Pencil, Trash, Repeat, Barcode } from "lucide-react";
+import { Eye, Heart, Pencil, Trash, Repeat, Barcode, ArrowRightLeft, Calendar, User } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Alert } from "../../ui/alert";
 
@@ -16,6 +16,8 @@ import { UserContext } from "../../../context/context";
 import { Badge } from "../../ui/badge";
 import { Switch } from "../../ui/switch";
 import { LikeButton } from "./like-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 
 /* ===== Tipos (compatíveis com o Block) ===== */
 interface Unit { id: string; unit_name: string; unit_code: string; unit_siaf: string; }
@@ -91,13 +93,27 @@ type Props = CatalogEntry & {
   onPromptDelete: () => void;  // abre diálogo de deletar no pai
   onPromptMove: () => void;    // abre diálogo de movimentar no pai
 /** NOVO: controle externo do slide */
-currentSlide?: number;                  // índice atual vindo do pai
-onSlideChange?: (index: number) => void; // notifica o pai quando o usuário troca
+ // notifica o pai quando o usuário troca
 };
 
 export function ItemPatrimonio(props: Props) {
   const { urlGeral, loggedIn, user } = useContext(UserContext);
   const isFavorite = !!props.isFavorite;
+
+  const formatDateTimeBR = (iso?: string) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+ 
+      // exemplo: 18/09/2025 12:37
+    }).format(d);
+  } catch {
+    return iso;
+  }
+};
+
 
   const calculateDifference = (createdAt: string) => {
     const createdDate = new Date(createdAt);
@@ -108,7 +124,7 @@ export function ItemPatrimonio(props: Props) {
     const days = daysDiff % 30;
 
     let bgColor = "";
-    if (months < 3) bgColor = "bg-green-500";
+    if (months < 3) bgColor = "bg-green-700";
     else if (months < 6) bgColor = "bg-yellow-500";
     else bgColor = "bg-red-500";
 
@@ -138,31 +154,19 @@ export function ItemPatrimonio(props: Props) {
    // Embla API para controlar o carrossel
    const [api, setApi] = useState<CarouselApi | null>(null);
 
-   // Quando o usuário troca de slide, avisar o pai
-   useEffect(() => {
-     if (!api) return;
+
  
-     const emit = () => {
-       const idx = api.selectedScrollSnap();
-       props.onSlideChange?.(idx);
-     };
- 
-     api.on("select", emit);
-     // chama uma vez para sincronizar na montagem
-     emit();
-     return () => {
-       api.off("select", emit);
-     };
-   }, [api, props]);
- 
-   // Se o pai mandar um índice diferente, forçar o carrossel a ir para lá
-   useEffect(() => {
-     if (api == null) return;
-     if (typeof props.currentSlide !== "number") return;
-     // scrollTo silencioso/sem animação pode usar jump (dependendo da sua versão do embla)
-   
-   }, [api, props.currentSlide]);
- 
+     
+  const qualisColor: Record<string, string> = {
+    BM: "bg-green-500",
+    AE: "bg-red-500",
+    IR: "bg-yellow-500",
+    OC: "bg-blue-500",
+    RE: "bg-purple-500",
+  };
+  
+
+ const csvCodTrimmed = (props.asset.csv_code || "").trim();
 
   return (
     <div
@@ -177,13 +181,24 @@ export function ItemPatrimonio(props: Props) {
           <div className="flex gap-2 w-full justify-between">
             {/* Badge de tempo (se houver created_at) */}
            <div>
-           {diff && (
-              <Badge className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}>
+          <div>
+                {diff && (
+              <Badge className={`text-white h-6 py-1 text-xs  group-hover:hidden font-medium ${diff.bgColor}`}>
                 {diff.months > 0
                   ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
                   : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
               </Badge>
             )}
+
+             {diff && (
+              <Badge className={`text-white h-6 py-1 hidden group-hover:flex text-xs font-medium ${diff.bgColor}`}>
+                    {formatDateTimeBR(props.created_at)}
+              </Badge>
+            )}
+
+         
+          </div>
+
 
            </div>
             <div className="flex gap-2 items-center">
@@ -213,7 +228,7 @@ export function ItemPatrimonio(props: Props) {
                   variant="outline"
                   className="h-8 w-8 group-hover:flex hidden transition-all"
                 >
-                  <Repeat size={16} />
+                  <ArrowRightLeft size={16} />
                 </Button>
               )}
 
@@ -245,9 +260,7 @@ export function ItemPatrimonio(props: Props) {
         {/* Imagens */}
         <Carousel
           className="w-full flex items-center"
-          setApi={setApi}
-          // Opcionalmente garantir o índice inicial na 1ª montagem:
-          opts={{ startIndex: props.currentSlide ?? 0 }}
+       
         >
           <CarouselContent>
             {props.images?.map((img, index) => {
@@ -256,7 +269,7 @@ export function ItemPatrimonio(props: Props) {
                 <CarouselItem key={img.id ?? index}>
                   <div>
                     <Alert
-                      className="bg-center bg-cover bg-no-repeat"
+                      className="bg-center rounded-b-none border-b-0 bg-cover bg-no-repeat"
                       style={{ backgroundImage: `url(${bg})` }}
                     >
                       <CardContent className="flex aspect-square justify-end p-0" />
@@ -275,23 +288,38 @@ export function ItemPatrimonio(props: Props) {
       </div>
 
       {/* Rodapé: material + código */}
-      <div className="mt-2 flex justify-between items-center">
-        <div>
-          <p className="font-medium truncate">{materialNome}</p>
-          <p className="text-sm text-gray-500 flex items-center gap-1">
+      <Alert className="rounded-none p-3 flex justify-between items-center">
+        <div className="w-full">
+       <div className="flex mb-1 justify-between">
+           <p className="font-medium truncate">{materialNome}</p>
+
+ <div className="flex items-center gap-2">
+   <p className="text-sm  flex items-center gap-1">
           <Barcode size={16}/>  {assetCode}{assetDgv ? `-${assetDgv}` : ""}
           </p>
+
+             <Avatar onClick={(event) => {
+       event.stopPropagation();
+      window.open(`/user?id=${props.user.id}`, "_blank");
+    }} className="h-6 w-6 rounded-md">
+  <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
+  <AvatarFallback><User size={12} /></AvatarFallback>
+</Avatar>
+
+
+ </div>
+       </div>
+          <p className="text-sm line-clamp-1 text-gray-500 ">
+          {props.description}
+          </p>
+        
         </div>
 
-        {/* Contagem (opcional) */}
-        {typeof props.viewCount === "number" && (
-          <div className="flex gap-2 items-center">
-            <div className="text-sm text-gray-500 flex items-center gap-1">
-              <Eye size={16} /> {props.viewCount}
-            </div>
-          </div>
-        )}
-      </div>
+    
+      </Alert>
+      <div className={`h-2 border rounded-b-md border-t-0 ${
+                qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
+              }`}></div>
     </div>
   );
 }
