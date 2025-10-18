@@ -7,6 +7,7 @@ import { BuscaPatrimonio } from "../busca-patrimonio/busca-patrimonio";
 import { useModalHomepage } from "../hooks/use-modal-homepage";
 
 import { ItemPage } from "../item-page/item-page";
+import { Informacoes } from "../info/informacoes";
 
 
 const ModalContent = () => {
@@ -19,6 +20,8 @@ const ModalContent = () => {
       return <BuscaPatrimonio />;
     case 'item-page':
       return <ItemPage/>
+    case 'informacoes':
+      return <Informacoes/>
     default:
       return null;
   }

@@ -20,7 +20,7 @@ import { CatalogResponseDTO } from './components/item-page/item-page';
 
 
 interface User {
-  id: string;                // corresponde a "id" no JSON
+  id: string;                // corresponde a "id"
   institution_id: string;    // corresponde a "institution_id"
 
   username: string;          // corresponde a "username"
@@ -38,13 +38,21 @@ interface User {
   matricula: string;         // corresponde a "matricula"
   verify: boolean;           // corresponde a "verify"
 
-  roles: Roles[]
+  roles: Role[];             // lista de papéis vinculados ao usuário
+
+  system_identity: {
+    id: string;              // id do objeto system_identity
+    legal_guardian: {
+      id: string;                    // id do responsável legal
+      legal_guardians_code: string;  // código do responsável legal
+      legal_guardians_name: string;  // nome do responsável legal
+    };
+  };
 }
-
-
-interface Roles {
-  id:string
-  role_id:string
+interface Role {
+  id: string;
+  name: string;
+  description: string;
 }
 
 interface Permission {
@@ -126,17 +134,22 @@ function App() {
         <Route path='/' element={<Home/>}/>
         <Route path='/buscar-patrimonio' element={<Home/>}/>
         <Route path='/item' element={<Home/>}/>
-        <Route path='/join-room' element={<Notification/>}/>
+     <Route path='/informacoes' element={<Home/>}/>
         <Route path='/dashboard' element={<Admin/>}/>
         <Route path='/dashboard/administrativo' element={<Admin/>}/>
         <Route path='/dashboard/patrimonios' element={<Admin/>}/>
        
         <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
-        <Route path='/dashboard/visao-sala' element={<Admin/>}/>
+        <Route path='/dashboard/sala' element={<Admin/>}/>
         <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
         <Route path='/dashboard/itens-desfazimento' element={<Admin/>}/>
         <Route path='/dashboard/transferencias' element={<Admin/>}/>
         <Route path='/dashboard/editar-item' element={<Admin/>}/>
+           <Route path='/dashboard/inventario' element={<Admin/>}/>
+
+    <Route path='/dashboard/cargos-funcoes' element={<Admin/>}/>
+        <Route path='/dashboard/desfazimento' element={<Admin/>}/>
+
 
 
         <Route path='/dashboard/empenhos' element={<Admin/>}/>
@@ -145,6 +158,14 @@ function App() {
         <Route path='/dashboard/assinaturee' element={<Admin/>}/>
 
 
+ <Route path='/termo-uso' element={<Admin/>}/>
+  <Route path='/politica-privacidade' element={<Admin/>}/>
+   <Route path='/bens-particulares' element={<Admin/>}/>
+   <Route path='/doacoes' element={<Admin/>}/>
+    <Route path='/transferencia-outras-unidades' element={<Admin/>}/>
+ <Route path='/emprestimo-outras-unidades' element={<Admin/>}/>
+
+ <Route path='/manutencao-bens-permanentes' element={<Admin/>}/>
 
         <Route
         path='/signIn'
@@ -156,6 +177,11 @@ function App() {
     <Route path='/dashboard/novo-item' element={<Admin/>}/>
     <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
             <Route path='/dashboard/patrimonio-temporario' element={<Admin/>}/>
+       <Route path='/dashboard/movimentacao' element={<Admin/>}/>
+        <Route path='/dashboard/busca-avancada' element={<Admin/>}/>
+    <Route path='/dashboard/comissao-permanente' element={<Admin/>}/>
+    <Route path='/dashboard/alienacao' element={<Admin/>}/>
+
       </Routes>
       </LoadingWrapper>
       </DefaultLayout>

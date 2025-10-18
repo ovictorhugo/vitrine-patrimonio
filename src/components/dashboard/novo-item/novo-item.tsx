@@ -147,7 +147,7 @@ const qrUrlFrom = (d: Patrimonio) => {
   const code = fullCodeFrom(d);
   return code
     ? `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${d.asset_code}&bem_dgv=${d.asset_check_digit}`
-    : d.atm_number || (d as any)?.id || "Vitrine Patrimônio";
+    : d.atm_number || (d as any)?.id || "Sistema Patrimônio";
 };
 
 /* Variantes de etiqueta (iguais às do componente Etiqueta) */
@@ -1086,8 +1086,8 @@ export function NovoItem() {
 return (
   <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
     <Helmet>
-      <title>Anunciar item | Vitrine Patrimônio</title>
-      <meta name="description" content={`Anunciar item | Vitrine Patrimônio`} />
+      <title>Anunciar item | Sistema Patrimônio</title>
+      <meta name="description" content={`Anunciar item | Sistema Patrimônio`} />
       <meta name="robots" content="index, follow" />
     </Helmet>
 

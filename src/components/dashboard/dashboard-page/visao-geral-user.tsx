@@ -1,23 +1,33 @@
-import { ChevronLeft, ChevronRight, DoorClosed, Home, Store, Trash } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, DoorClosed, Home, MailIcon, Package, Recycle, Shield, Store, Trash, Upload, User } from "lucide-react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useQuery } from "../novo-item/search-bar";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../ui/button";
-import { Tabs, TabsContent } from "../../ui/tabs";
-import { ScrollArea } from "../../ui/scroll-area";
-import { Salas } from "./tabs/salas";
-import { Vitrine } from "./tabs/vitrine";
+import { Tabs, TabsContent, TabsList } from "../../ui/tabs";
+import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
+
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { UserContext } from "../../../context/context";
+import { toast } from "sonner";
+import { Homepage } from "./tabs/homepage";
+import { Patrimonios } from "./tabs/patrimonios";
+import { Anunciados } from "./tabs/anunciados";
+import { PerfilSegurancaDashboard } from "./tabs/perfil-seguranca";
+
+
 export function VisaoGeralUser() {
 
   const tabs = [
              
     { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "salas", label: "Minhas Salas", icon: DoorClosed },
-    { id: "itens_vitrine", label: "Itens Vitrine", icon: Store,  },
-    { id: "itens_desfazimento", label: "Itens Desfazimento", icon: Trash,  },
-   
+    { id: "bens", label: "Patrimônios", icon: Package },
+   { id: "anunciados", label: "Vitrine e desfazimento", icon: Recycle },
+    { id: "perfil_seguranca", label: "Perfil e segurança", icon: Shield },
   ];
+
+      const { user, urlGeral } = useContext(UserContext);
+    const history = useNavigate();
 
   const [isOn, setIsOn] = useState(true);
   const queryUrl = useQuery();
@@ -84,145 +94,309 @@ export function VisaoGeralUser() {
       }
     };
 
+
+    const token = localStorage.getItem('jwt_token');
+
+     type UploadFolder = "profile" | "background";
+    
+                    
+                           
+    const [urlBackground, setUrlBackground] = useState(
+      `${urlGeral}user/upload/${user?.id}/cover`
+    );
+    
+    const [urlPerfil, setUrlPerfil] = useState(
+      `${urlGeral}user/upload/${user?.id}/icon`
+    );
+    
+    useEffect(() => {
+    setUrlBackground(
+          `${urlGeral}user/upload/${user?.id}/cover`
+        );
+        setUrlPerfil(
+          `${urlGeral}user/upload/${user?.id}/icon`
+        );
+    }, [user]);
+    
+    const handleUpload = (folder: UploadFolder, programId: string) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+    
+    
+      input.onchange = async (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          toast("Parece que os campos estão vazios", {
+            description: "Selecione um arquivo de imagem para enviar.",
+            action: { label: "Fechar", onClick: () => {} },
+          });
+          return;
+        }
+    
+        const form = new FormData();
+        // O backend (FastAPI) espera exatamente 'file' como campo:
+        form.append("file", file, file.name);
+    
+        const endpoint =
+          folder === "profile"
+            ? `${urlGeral}user/upload/${user?.id}/icon`
+            : `${urlGeral}user/upload/${user?.id}/cover`;
+    
+        try {
+          const res = await fetch(endpoint, {
+               mode: 'cors',
+            method: "POST",
+            body: form,
+            headers: {
+            'Authorization': `Bearer ${token}`,
+      'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Methods': 'POST',
+    
+                         
+            },
+          credentials: "include",
+          });
+    
+          if (!res.ok) {
+            let desc = `HTTP ${res.status}`;
+            try {
+              const j = await res.json();
+              desc = JSON.stringify(j);
+            } catch {
+              try { desc = await res.text(); } catch {}
+            }
+    
+            toast.error("Falha no upload", {
+              description: desc,
+              action: { label: "Fechar", onClick: () => {} },
+            });
+            return;
+          }
+    
+          if (folder === "profile") {
+            setUrlPerfil(
+              `${urlGeral}user/upload/${user?.id}/icon`
+            );
+          } else {
+            setUrlBackground(
+              `${urlGeral}user/upload/${user?.id}/cover`
+            );
+          }
+    
+          toast(folder === "profile" ? "Ícone atualizado" : "Capa atualizada", {
+            description: "Upload realizado com sucesso.",
+            action: { label: "Fechar", onClick: () => {} },
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Erro desconhecido";
+          toast.error("Erro de rede", {
+            description: message,
+            action: { label: "Fechar", onClick: () => {} },
+          });
+        } finally {
+          input.value = "";
+        }
+      };
+    
+      input.click();
+    };
+    
+
     return(
       <main className=" w-full grid grid-cols-1 ">
         <Helmet>
-               <title>Dashboard | Vitrine Patrimônio</title>
-               <meta name="description" content={`Dashboard | Vitrine Patrimônio`} />
+               <title>Dashboard | Sistema Patrimônio</title>
+               <meta name="description" content={`Dashboard | Sistema Patrimônio`} />
                <meta name="robots" content="index, follow" />
              </Helmet>
        
-             <div className="w-full  gap-4 p-4 md:p-8 ">
-                    <div className="flex items-center gap-4">
-                  
-                    <Button onClick={handleVoltar } variant="outline" size="icon" className="h-7 w-7">
-                        <ChevronLeft className="h-4 w-4" />
-                        <span className="sr-only">Voltar</span>
-                      </Button>
-                  
-                      <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                      Dashboard
-                      </h1>
-                     
-        
-                        
-                    
-                      <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                      
-                       
-                  
+             <main className="grid grid-cols-1 ">
+                <Tabs defaultValue={tabs[0].id} value={value} className="">
+                    <div className="md:p-8 p-4 pb-0">
+                      <div    style={{ backgroundImage: `url(${urlBackground})` }} className="bg-eng-blue bg-no-repeat bg-center bg-cover border dark:border-neutral-800 w-full rounded-md h-[300px]">
+<div className={`w-full h-full rounded-md bg-black/25 pb-0 md:pb-0 p-4 md:p-8 flex-col flex justify-between `}>
+                            <div
+                                className="
+                    flex flex-col items-center gap-4 justify-between
 
-                      </div>
-                    </div>
-        
-                    </div>
+                    md:flex-row
+                  "
+                            >
+                                <div className="flex gap-2">
+                                    <Button onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7 text-eng-blue hover:text-eng-blue">
+                                        <ChevronLeft className="h-4 w-4" />
+                                        <span className="sr-only">Voltar</span>
+                                    </Button>
+                                    <div
+                                        className="
+                        flex flex-col gap-2
+
+                        md:flex-col
+
+                        lg:flex-row
+                      "
+                                    >
+                                        <h1 className="flex-1 shrink-0 text-white whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+                                            Dashboard
+                                        </h1>
+                                    </div>
+                                </div>
+
+                                <div
+                                    className="
+                      flex items-center gap-2 flex-wrap
+                    "
+                                >
 
 
-                    <main className="h-full w-full flex flex-col relative">
-           <Tabs defaultValue="articles" value={value} className="relative ">
-             <div className="sticky top-[68px]  z-[2] supports-[backdrop-filter]:dark:bg-neutral-900/60 supports-[backdrop-filter]:bg-neutral-50/60 backdrop-blur ">
-              <div className={`w-full ${isOn ? 'px-8' : 'px-4'} border-b border-b-neutral-200 dark:border-b-neutral-800`}>
-                {isOn && (
-                  <div className="w-full pt-4  flex justify-between items-center">
-                   
-                  </div>
-                )}
-                <div className={`flex pt-2 gap-8 justify-between  ${isOn ? '' : ''} `}>
-                  <div className="flex items-center gap-2">
-                  <div className="relative grid grid-cols-1">
-
-                  <Button
-        variant='outline'
-        size="sm"
-        className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${
-          !canScrollLeft ? 'opacity-30 cursor-not-allowed' : ''
-        }`}
-        onClick={scrollLeft}
-        disabled={!canScrollLeft}
-      >
-        <ChevronLeft size={16} />
+ <Button variant="outline" size="sm" onClick={() => handleUpload("background", user?.id || '')} className="h-8 text-eng-blue hover:text-eng-blue">
+          <Upload size={16} /> Alterar imagem
       </Button>
 
- <div className=" mx-10 ">
- <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide scrollbar-hide" onScroll={checkScrollability}>
-   <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
-      {tabs.map(
-        ({ id, label, icon: Icon}) =>
-          <div
-        key={id}
-        className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
-          value === id ? "border-b-[#719CB8]" : "border-b-transparent"
-        }`}
-        onClick={() => {
-          setValue(id)
-          queryUrl.set("page", '1');
+                                </div>
+                            </div>
 
-navigate({
-pathname: location.pathname,
-search: queryUrl.toString(),
-});
+                            <div className="flex justify-end items-end flex-1 w-full ">
+                                <div className="flex justify-between w-full gap-8">
 
-        }}
-      >
-        <Button variant="ghost" className="m-0">
-          <Icon size={16} />
-          {label}
-        </Button>
-      </div>
-      )}
-    </div>
-   </div>
- </div>
-  
+                                    <div className="absolute">
+                                        <div className="relative group">
+                                              <Avatar className=" rounded-lg  h-24 w-24 relative -top-12 xl:top-0">
+                                            <AvatarImage className={'rounded-md h-24 w-24'} src={urlPerfil} />
+                                            <AvatarFallback className="flex items-center justify-center"><User size={24} /></AvatarFallback>
+                                          </Avatar>
+                                         <div
+                                                  className="aspect-square backdrop-blur rounded-md h-24 group-hover:flex bg-black/20 items-center justify-center absolute hidden -top-12 xl:top-0  z-[1] cursor-pointer"
+                                                  onClick={() => handleUpload("profile", user?.id || '')}
+                                                >
+                                                  <Upload size={20} />
+                                                </div>
+                                                </div>
+                                    </div>
+                                    <div className="  w-24 min-w-24">
 
- 
-      {/* Botão Direita */}
-      <Button
-        variant='outline'
-        size="sm"
-        className={`absolute right-0 z-10 h-8 w-8 p-0 rounded-md  top-1 ${
-          !canScrollRight ? 'opacity-30 cursor-not-allowed' : ''
-        }`}
-        onClick={scrollRight}
-        disabled={!canScrollRight}
-      >
-        <ChevronRight size={16} />
-      </Button>
-</div>
+                                    </div>
 
-       
-                   
-                  </div>
-                  <div className="hidden xl:flex xl:flex-nowrap gap-2">
-                <div className="md:flex md:flex-nowrap gap-2">
-
-                </div>
-
-               
-              </div>
-
-              
-                </div>
-              </div>
-            
-            </div>
+                                    <div className="relative  grid-cols-1 hidden xl:grid">
+                                        <ScrollArea className="relative overflow-x-auto">
+                                            <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent">
+                                                {tabs.map(
+                                                    ({ id, label, icon: Icon, }) =>
+                                                    (
+                                                       <div
+                                                                key={id}
+                                                                className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-white" : "border-b-transparent"
+                                                                    }`}
+                                                                onClick={() => setValue(id)}
+                                                            >
+                                                                <Button variant="ghost" className={`m-0 text-white hover:text-eng-blue ${value === id ? "bg-white text-eng-blue" : ""}`}>
+                                                                    <Icon size={16} />
+                                                                    {label}
+                                                                </Button>
+                                                            </div>
+                                                    )
 
 
-            <ScrollArea className="h-full">
-            <div className="px-8">
+                                                )}
+                                            </TabsList>
+                                            <ScrollBar orientation="horizontal" />
+                                        </ScrollArea>
 
-            <TabsContent value="salas">
-            <Salas />
-  </TabsContent>
+                                        <div>
 
-  <TabsContent value="itens_vitrine">
-            <Vitrine />
-  </TabsContent>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
 
-</div>
-</ScrollArea>
-            </Tabs>
-            </main>
+                    <div className="grid grid-cols-1 gap-4 md:gap-8  z-[2] pt-8 md:p-0">
+
+                        <div className="flex justify-between  md:px-8 items-center ">
+                            <div className="flex flex-col  gap-6 mt-8 px-8">
+
+
+                                <div>
+                                    <h1 className="text-2xl mb-2 max-w-[800px] font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
+                                        {user?.username}
+                                    </h1>
+
+                                    <p className="max-w-[750px] text-lg font-light text-foreground">
+                                        <div className="flex flex-wrap gap-4 ">
+                                           
+
+                                            {user?.email && (
+                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"><MailIcon size={12} />{user?.email}</div>
+                                            )}
+                                        </div>
+                                    </p>
+
+
+
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="px-8 md:px-8">
+                                <div className="relative grid grid-cols-1 xl:hidden">
+                                    <ScrollArea className="relative w-full overflow-x-auto">
+                                        <div className="flex w-full gap-2">
+                                            <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent border pt-2 px-2 dark:bg-neutral-800 w-full">
+                                                {tabs.map(({ id, label, icon: Icon}) => (
+                                                  (
+                                                        <div
+                                                            key={id}
+                                                            className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-[#719CB8]" : "border-b-transparent"
+                                                                }`}
+                                                            onClick={() => setValue(id)}
+                                                        >
+                                                            <Button variant="ghost" className="m-0">
+                                                                <Icon size={16} />
+                                                                {label}
+                                                            </Button>
+                                                        </div>
+                                                    )
+
+                                                ))}
+                                            </TabsList>
+                                        </div>
+                                        <ScrollBar orientation="horizontal" />
+                                    </ScrollArea>
+                                    <div></div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
+
+                        <TabsContent value="visao_geral" className="m-0">
+                          <Homepage/>
+                        </TabsContent>
+
+                          <TabsContent value="bens" className="m-0">
+                          <Patrimonios
+                          type={'user'}
+                          />
+                        </TabsContent>
+
+                         <TabsContent value="anunciados" className="m-0">
+                          <Anunciados/>
+                        </TabsContent>
+
+                         <TabsContent value="perfil_seguranca" className="m-0">
+                          <PerfilSegurancaDashboard/>
+                        </TabsContent>
+                        </div>
+                        </Tabs>
+                        </main>
+
 
 
         </main>

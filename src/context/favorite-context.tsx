@@ -62,7 +62,7 @@ export const FavoriteProvider: React.FC<StarsProviderProps> = ({ children }) => 
       }
     } catch (err) {
       console.error("Erro ao buscar favoritos:", err);
-      toast.error("Erro ao carregar favoritos");
+
     } finally {
       setIsLoading(false);
     }

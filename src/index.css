@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
 .elementPesquisador::-webkit-scrollbar {
     height: 10px; 
     width: 0;              /* width of the entire scrollbar */
@@ -132,3 +134,4 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+

@@ -8,7 +8,7 @@ import { Badge } from "../ui/badge";
 import { Alert } from "../ui/alert";
 import { Separator } from "../ui/separator";
 import { Card, Carousel } from "../ui/apple-cards-carousel";
-import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft} from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft, XCircle, Wrench, Users, Store, Clock} from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -24,6 +24,7 @@ import { ButtonTransference } from "./button-transference";
 import { useModal } from "../hooks/use-modal-store";
 import QRCode from "react-qr-code";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
+import { LikeButton } from "./like-button";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -107,6 +108,7 @@ type WorkflowStatus =
 
 type WorkflowEvent = {
   id: string;
+   detail?: Record<string, any>;
   workflow_status: string;
   created_at: string; // ISO
   user?: {
@@ -131,8 +133,58 @@ type WorkflowEvent = {
   location?: LocationDTO | null; // localização ATUAL do item no catálogo
   images: CatalogImageDTO[];
   workflow_history?: WorkflowEvent[]; 
+  transfer_requests: TransferRequest[]
 }
 
+export type TransferRequest = {
+  id: string;
+  status: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string;
+    lattes_id: string;
+    orcid: string;
+    ramal: string;
+    photo_url: string;
+    background_url: string;
+    matricula: string;
+    verify: boolean;
+    institution_id: string;
+  };
+  location: {
+    legal_guardian_id: string;
+    sector_id: string;
+    location_name: string;
+    location_code: string;
+    id: string;
+    sector: {
+      agency_id: string;
+      sector_name: string;
+      sector_code: string;
+      id: string;
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: string;
+        id: string;
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: string;
+        };
+      };
+    };
+    legal_guardian: {
+      legal_guardians_code: string;
+      legal_guardians_name: string;
+      id: string;
+    };
+  };
+};
 /* ===================== Utils ===================== */
 
 const situationToText: Record<ApiSituation, string> = {
@@ -147,26 +199,40 @@ const WORKFLOW_STATUS_META: Record<
   string,
   { Icon: LucideIcon; colorClass: string }
 > = {
-  STARTED: { Icon: LoaderCircleIcon, colorClass: "text-sky-500" },
-  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
-  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Undo2, colorClass: "text-violet-500" },
-  VALIDATION_REJECTED: { Icon: XIcon, colorClass: "text-red-500" },
-  VALIDATION_APPROVED: { Icon: CheckCircle, colorClass: "text-green-600" },
-  PUBLISHED: { Icon: CheckIcon, colorClass: "text-emerald-600" },
-  ARCHIVED: { Icon: Archive, colorClass: "text-zinc-500" },
+  // ---------------- Vitrine ----------------
+  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },   // Revisão
+  ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },             // Ajustes
+  VITRINE: { Icon: Store, colorClass: "text-green-600" },                        // Publicados
+  AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },      // Aguardando Transferência
+  TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },                  // Finalizados
+
+  // --------------- Desfazimento ---------------
+  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" }, // Revisão
+  ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },           // Ajustes
+  REVIEW_REQUESTED_COMISSION: { Icon: Users, colorClass: "text-purple-500" },       // Revisão Comissão
+  REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },               // Rejeitados
+  DESFAZIMENTO: { Icon: Recycle, colorClass: "text-green-600" },                    // Desfazimento concluído
 };
+
 
 export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   STARTED: "Iniciado",
-  REVIEW_REQUESTED_VITRINE: "Em validação (Vitrine)",
-  REVIEW_REQUESTED_DESFAZIMENTO: "Desfazendo validação",
-  VALIDATION_REJECTED: "Reprovado na validação",
-  VALIDATION_APPROVED: "Aprovado na validação",
-  PUBLISHED: "Publicado",
-  ARCHIVED: "Arquivado",
+
+  // Vitrine
+  REVIEW_REQUESTED_VITRINE: "Revisão para Vitrine",
+  ADJUSTMENT_VITRINE: "Ajustes Vitrine",
+  VITRINE: "Anunciados na Vitrine",
+  AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
+  TRANSFERIDOS: "Transferidos",
+
+  // Desfazimento
+  REVIEW_REQUESTED_DESFAZIMENTO: "Revisão para Desfazimento",
+  ADJUSTMENT_DESFAZIMENTO: "Ajustes Desfazimento",
+  REVIEW_REQUESTED_COMISSION: "Revisão Comissão",
+  REJEITADOS_COMISSAO: "Rejeitados pela Comissão",
+  DESFAZIMENTO: "Desfazimento Concluído",
 
 };
-
 
 const money = (v?: string) => {
   const n = Number(v ?? 0);
@@ -230,7 +296,7 @@ export function ItemPage() {
     } finally {
       setLoading(false);
     }
-  }, [catalogId, urlGeral, token]);
+  }, [catalogId]);
 
   useEffect(() => {
     fetchCatalog();
@@ -512,7 +578,7 @@ const formatDateTimeBR = (iso?: string) => {
     const days = daysDiff % 30;
 
     let bgColor = "";
-    if (months < 3) bgColor = "bg-green-500";
+    if (months < 3) bgColor = "bg-green-700";
     else if (months < 6) bgColor = "bg-yellow-500";
     else bgColor = "bg-red-500";
 
@@ -536,9 +602,17 @@ const qrUrlFrom = (d: CatalogResponseDTO) => {
   const code = fullCodeFrom(d);
   return code
     ? `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
-    : d?.asset?.atm_number || d?.id || "Vitrine Patrimônio";
+    : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
 };
 
+const lastWorkflow = useMemo(() => {
+  const hist = catalog?.workflow_history ?? [];
+  if (!hist.length) return null;
+  // pega o mais recente por created_at
+  return hist.reduce((a, b) =>
+    new Date(a.created_at) > new Date(b.created_at) ? a : b
+  );
+}, [catalog?.workflow_history]);
 
 
 const fullCode = fullCodeFrom(catalog || ({} as CatalogResponseDTO));
@@ -592,7 +666,7 @@ if(catalog) {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <Helmet>
-        <title>{titulo} | Vitrine Patrimônio</title>
+        <title>{titulo} | Sistema Patrimônio</title>
         <meta name="description" content={`Detalhes do item ${asset?.asset_code}-${asset?.asset_check_digit}`} />
       </Helmet>
 
@@ -611,9 +685,27 @@ if(catalog) {
           {asset?.atm_number && asset?.atm_number !== "None" && (
             <Badge variant="outline">ATM: {asset.atm_number}</Badge>
           )}
+
+          {lastWorkflow && (
+            <Badge
+              variant="outline"
+              className={`flex items-center gap-1 
+              
+              `}
+              title={formatDateTimeBR(lastWorkflow.created_at)}
+            >
+              {(() => {
+                const Meta = WORKFLOW_STATUS_META[lastWorkflow.workflow_status];
+                const IconCmp = Meta?.Icon ?? HelpCircle;
+                return <IconCmp size={14} />;
+              })()}
+              {getStatusLabel(lastWorkflow.workflow_status as WorkflowStatus)}
+            </Badge>
+          )}
         </h1>
 
         <div className="hidden md:flex items-center gap-2">
+        
            <Button onClick={() => onOpen('workflow')} variant='outline' size="sm">
             <ArrowRightLeft size={16} /> Mover
           </Button>
@@ -625,6 +717,8 @@ if(catalog) {
           <Button onClick={openDelete} variant="destructive" size="sm" disabled={deleting}>
   <Trash size={16} /> Excluir
 </Button>
+
+  <LikeButton id={catalog.id} />
         </div>
       </div>
 
@@ -640,7 +734,7 @@ if(catalog) {
              <div className="flex justify-between w-full">
                <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">{titulo}</h2>
 
-                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
                   <Calendar size={16}/>{formatDateTimeBR(catalog.created_at)}
                  
                  {diff && (
@@ -811,31 +905,9 @@ if(catalog) {
                 <Separator className="my-4" />
                <div className="space-y-2">
   {/* Localização do Catálogo (sempre mostra) */}
-  <div className="flex items-center gap-2 flex-wrap">
+   <div className="flex items-center gap-2 flex-wrap">
         <MapPin size={16} />
-    <p className="text-sm uppercase font-bold">Local de tombamento:</p>
-
-    {locCatalogoParts.length ? (
-      <div className="flex items-center gap-2 flex-wrap">
-        {locCatalogoParts.map((p, i) => (
-          <div
-            key={i}
-            className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-          >
-            {i > 0 && <ChevronRight size={14} />} {p}
-          </div>
-        ))}
-      </div>
-    ) : (
-      <span className="text-sm text-gray-500">Não definido.</span>
-    )}
-  </div>
-
-  {/* Localização do Asset (só mostra se for diferente) */}
-  {!isSameLocation && (
-    <div className="flex items-center gap-2 flex-wrap">
-        <MapPin size={16} />
-      <p className="text-sm uppercase font-bold">Local atual:</p>
+      <p className="text-sm uppercase font-bold">Local de tombamento:</p>
     
       {locAssetParts.length ? (
         <div className="flex items-center gap-2 flex-wrap">
@@ -852,10 +924,38 @@ if(catalog) {
         <span className="text-sm text-gray-500">Não definido.</span>
       )}
     </div>
+
+  {/* Localização do Asset (só mostra se for diferente) */}
+  {!isSameLocation && (
+      <div className="flex items-center gap-2 flex-wrap">
+        <MapPin size={16} />
+    <p className="text-sm uppercase font-bold">Local atual:</p>
+
+    {locCatalogoParts.length ? (
+      <div className="flex items-center gap-2 flex-wrap">
+        {locCatalogoParts.map((p, i) => (
+          <div
+            key={i}
+            className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+          >
+            {i > 0 && <ChevronRight size={14} />} {p}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <span className="text-sm text-gray-500">Não definido.</span>
+    )}
+  </div>
+   
   )}
 </div>
               </Alert>
+
+
+              
             </div>
+
+            
 
             {/* Material / Metadados rápidos */}
             <Separator className="mt-8 mb-2" />
@@ -876,7 +976,8 @@ if(catalog) {
         Nenhum evento de workflow.
       </div>
     ) : (
-     catalog.workflow_history?.map((ev, idx) => {
+     catalog.workflow_history?.slice()
+    .reverse().map((ev, idx) => {
         const meta =
           WORKFLOW_STATUS_META[ev.workflow_status] ??
           { Icon: HelpCircle, colorClass: "text-zinc-500" };
@@ -895,7 +996,7 @@ if(catalog) {
            <div className="flex flex-col items-center">
              <Alert className="flex w-14 h-14 items-center justify-center">
           <div>
-                <Icon className={`s ${meta.colorClass}`} size={16}/>
+                <Icon className={``} size={16}/>
           </div>
             </Alert>
 
@@ -910,8 +1011,15 @@ if(catalog) {
                 {getStatusLabel(ev.workflow_status)}
               </p>
 
+  {ev.detail?.justificativa && (
+<p className="text-sm  dark:text-gray-300 font-normal">
+                    {ev.detail.justificativa }
+                  </p>
+  ) }
+                
+
               {/* linha com avatar + user + data */}
-              <div className="flex gap-3 mt-2 flex-wrap items-center">
+              <div className="flex gap-3 mt-2 flex-wrap items-center justify-between ">
                 <div className="flex gap-1 items-center">
                   <Avatar className="rounded-md h-5 w-5">
                     {ev.user?.photo_url ? (
@@ -954,10 +1062,27 @@ if(catalog) {
           <div className="lg:w-[420px] flex flex-col gap-8 lg:min-w-[420px] w-full">
            <ButtonTransference catalog={catalog}/>
            
+           <Alert className="p-8">
+             <div className="flex gap-3 items-center">
+                                <Avatar className="rounded-md h-12 w-12">
+                                  <AvatarImage className={""} src={`${urlGeral}user/upload/${catalog.user?.id}/icon`} alt={`${catalog.user?.username}`} />
+                                  <AvatarFallback className="flex items-center justify-center">
+                                    <User size={10} />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm w-fit text-gray-500">Anunciante</p>
+                                  <p className="text-black dark:text-white font-medium text-lg truncate">
+                                    {catalog.user?.username}
+                                 
+                                  </p>
+                                </div>
+                              </div>
+           </Alert>
            
           <Link to={`/buscar-patrimonio?bem_cod=${asset?.asset_code}&bem_dgv=${asset?.asset_check_digit}`}>
           <div className={`flex   `} >
-      <div className="w-3 min-w-3 rounded-l-md  border dark:border-neutral-800  border-r-0 bg-eng-blue min-h-full" />
+      <div className="w-2 min-w-2 rounded-l-md  border dark:border-neutral-800  border-r-0 bg-eng-blue min-h-full" />
       <Alert className=" border  rounded-l-none items-center flex gap-4 p-8 rounded-r-md">
         <div className="w-fit">
           <QRCode fgColor={theme == 'dark'? '#FFFFFF': '#000000'} bgColor={!(theme == 'dark')? '#FFFFFF': '#000000'} size={96} value={qrValue} />
@@ -977,26 +1102,27 @@ if(catalog) {
       </div>
 
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-  <DialogContent>
-    <DialogHeader className="pt-8 px-6 flex flex-col items-center">
-      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-        <strong className="bg-red-500 text-white px-1 rounded">Deletar</strong> item {titulo}
-      </DialogTitle>
-      <DialogDescription className="text-zinc-500 text-center">
-        Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
-      </DialogDescription>
-    </DialogHeader>
+          <DialogContent>
+            <DialogHeader >
+              <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+             Deletar item {titulo} do catálogo
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500 ">
+                Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão
+                perdidas.
+              </DialogDescription>
+            </DialogHeader>
 
-    <DialogFooter className="py-4">
-      <Button variant="ghost" onClick={closeDelete}>
-        <ArrowUUpLeft size={16} /> Cancelar
-      </Button>
-      <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
-        <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+            <DialogFooter className="">
+              <Button variant="ghost" onClick={closeDelete}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+                <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     </main>
   )
 };

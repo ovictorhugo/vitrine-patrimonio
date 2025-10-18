@@ -1,211 +1,148 @@
 import { Alert } from "../ui/alert";
-
-interface Patrimonio {
-    bem_cod:string
-    bem_dgv:string
-    bem_num_atm:string
-    csv_cod:string
-    bem_serie:string
-    bem_sta:string
-    bem_val:string
-    tre_cod:string
-    bem_dsc_com:string
-    uge_cod:string
-    uge_nom:string
-    org_cod:string
-    uge_siaf:string
-    org_nom:string
-    set_cod:string
-    set_nom:string
-    loc_cod:string
-    loc_nom:string
-    ite_mar:string
-    ite_mod:string
-    tgr_cod:string
-    grp_cod:string
-    ele_cod:string
-    sbe_cod:string
-    mat_cod:string
-    mat_nom:string
-    pes_cod:string
-    pes_nome:string
-}
-
-import { Archive, Barcode, HelpCircle, Hourglass, Locate, Maximize2, MoveRight, User } from "lucide-react";
-import logo_eng from '../../assets/logo_eng.png';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ArrowRight, Camera, Check, Funnel, Info, MagnifyingGlass, X, MapPin } from "phosphor-react";
-import { Button } from "../ui/button";
+import { Archive, HelpCircle, Hourglass, Maximize2, MoveRight, User, X, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useModal } from "../hooks/use-modal-store";
 import { Badge } from "../ui/badge";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { Images } from "../modal/patrimonio-modal";
+import { Button } from "../ui/button";
+import { useContext, useState } from "react";
+import { useModal } from "../hooks/use-modal-store";
 import { UserContext } from "../../context/context";
+import { Asset } from "../homepage/components/item-patrimonio";
 
-export const qualisColor = {
-  'BM': 'bg-green-500',
-  'AE': 'bg-red-500',
-  'IR': 'bg-yellow-500',
-  'OC': 'bg-blue-500',
-  'RE': 'bg-purple-500'
+export const qualisColor: Record<string, string> = {
+  BM: "bg-green-500",
+  AE: "bg-red-500",
+  IR: "bg-yellow-500",
+  OC: "bg-blue-500",
+  RE: "bg-purple-500",
 };
 
-export const csvCodToText = {
-  'BM': 'Bom',
-  'AE': 'Anti-Econômico',
-  'IR': 'Irrecuperável',
-  'OC': 'Ocioso',
-  'RE': 'Recuperável'
+export const csvCodToText: Record<string, string> = {
+  BM: "Bom",
+  AE: "Anti-Econômico",
+  IR: "Irrecuperável",
+  OC: "Ocioso",
+  RE: "Recuperável",
 };
 
-export function PatrimonioItem(props: Patrimonio) {
- 
-  
-    // Verificar se props está definido
-    if (!props) {
-      return null; // Ou qualquer comportamento desejado se props for indefinido
-    }
-  
-    // Verificar se props.csv_cod está definido antes de usar .trim()
-    const csvCodTrimmed = props.csv_cod ? props.csv_cod.trim() : '';
-  
-    // Verificar se props.bem_sta está definido antes de usar .trim()
-    const bemStaTrimmed = props.bem_sta ? props.bem_sta.trim() : '';
-  
-    const conectee = import.meta.env.VITE_BACKEND_CONECTEE || ''
-    
-const {onOpen} = useModal()
+export function PatrimonioItem(props: any) {
+  if (!props) return null;
 
-const statusMap = {
-  NO: { text: "Normal", icon: <Check size={12} className="" /> },
-  NI: { text: "Não inventariado", icon: <HelpCircle size={12} className="" /> },
-  CA: { text: "Cadastrado", icon: <Archive size={12} className="" /> },
-  TS: { text: "Aguardando aceite", icon: <Hourglass size={12} className="" /> },
-  MV: { text: "Movimentado", icon: <MoveRight size={12} className="" /> },
-  BX:{ text: "Baixado", icon: <X size={12} className="" /> },
-};
+  const csvCodTrimmed = (props.csv_code || "").toString().trim();
+  const bemStaTrimmed = (props.asset_status || "").toString().trim();
 
-const status = statusMap[bemStaTrimmed];
+  const conectee = import.meta.env.VITE_BACKEND_CONECTEE || "";
+  const { onOpen } = useModal();
+  const { urlGeral } = useContext(UserContext);
 
-const {urlGeral} = useContext(UserContext)
- const [images, setImages] = useState<Images[]>([])
- const [imagesLoaded, setImagesLoaded] = useState(false);
- const url = useMemo(() => {
-  return `${urlGeral}/patrimonio_imagens?bem_dgv=${props.bem_dgv}&bem_cod=${props.bem_cod}`;
-}, []);
+  const statusMap: Record<
+    string,
+    { text: string; icon: JSX.Element }
+  > = {
+    NO: { text: "Normal", icon: <Check size={12} /> },
+    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
+    CA: { text: "Cadastrado", icon: <Archive size={12} /> },
+    TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
+    MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
+    BX: { text: "Baixado", icon: <X size={12} /> },
+  };
 
-      useEffect(() => {
-        const fetchData = async () => {
-          if (imagesLoaded) return; 
-          try {
-            const response = await fetch(url, {
-              mode: "cors",
-              headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET",
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Max-Age": "3600",
-                "Content-Type": "text/plain",
-              },
-            });
-            const data = await response.json();
-            if (data) {
-              setImages(data)
-              setImagesLoaded(true); // marca como carregado
-            }
-          } catch (err) {
-            console.log(err);
-          
-          }
-        };
-        fetchData();
-      }, [imagesLoaded]);
+  const status = statusMap[bemStaTrimmed];
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
-    return (
-        <div className="flex group">
-          <div className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border  border-neutral-200 border-r-0 ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]} min-h-full relative `}></div>
-  
-          <Alert className="flex flex-col flex-1 h-fit  rounded-l-none p-0 ">
-            <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-            <p className="font-semibold flex gap-3 items-center text-left mb-4  flex-1">
-                {props.bem_cod?.trim()} - {props.bem_dgv}
+  const materialName = props.material?.material_name || "Sem nome";
+  const legalGuardianName = props.legal_guardian?.legal_guardians_name || "";
+  const hasAtm = !!(props.atm_number && props.atm_number !== "None" && props.atm_number !== "");
 
-             {(props.bem_num_atm != '' && props.bem_num_atm != 'None') && (
-                 <Badge variant={'outline'}>ATM: {props.bem_num_atm}</Badge>
-             )}
-              </p>
+  return (
+    <div className="flex group cursor-pointer"  onClick={(event) => {
+            event.stopPropagation();
+            onOpen("patrimonio", { ...props }); // envia o Asset direto para o modal
+          }}>
+  <div
+    className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+      qualisColor[csvCodTrimmed] || "bg-neutral-300"
+    } min-h-full relative`}
+  />
+  <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
+    {/* HEADER */}
+    <div className="flex items-center gap-3 p-4 pb-0">
+      {/* Código + dígito (sempre juntos e sem quebrar) */}
+     <div className="flex items-center gap-2 mb-4">
+       <p className="font-semibold text-left  whitespace-nowrap shrink-0">
+        {props.asset_code?.toString().trim()} - {props.asset_check_digit}
+      </p>
 
-              <div className="flex items-start justify-end min-w-20   gap-3">
-              <Button
-                 onClick={(event) => {
-                  event.stopPropagation();
-                  onOpen('patrimonio', {...props})
-                 }}
-                 variant="outline"
-                 size={'icon'}
-                 className=" hidden group-hover:flex text-sm h-8 w-8 text-gray-500 dark:text-gray-300"
-               >
-                 <Maximize2 size={16} />
-               </Button>
-              </div>
-             
-             
-            </div>
-            <div className="flex flex-col p-4 pt-0 justify-between">
-              <div>
-                <div className="text-lg mb-2 font-bold">{props.mat_nom || 'Sem nome'}</div>
-                <p className="text-left mb-4 uppercase">
-                  {props.bem_dsc_com} 
-                </p>
-
-                <div className="flex  flex-wrap gap-3">
-                {(props.csv_cod != 'None' && props.csv_cod != '' && props.csv_cod != null) && (
-                  <div className=" text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                  <div className={`w-4 h-4 rounded-md ${qualisColor[csvCodTrimmed as keyof typeof qualisColor]}`}></div>
-                  {csvCodToText[csvCodTrimmed as keyof typeof csvCodToText]}
-                </div>
-                )}
-
-                
-                {status && (
-                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-      {status.icon}
-      {status.text}
-      </div>
-  ) }
-                
-
-                {(props.pes_nome != '' && props.pes_nome  != 'None' && props.pes_nome  != null) && (
-                  <div className="flex gap-1 items-center ">
-                  <Avatar className=" rounded-md  h-5 w-5">
-                                <AvatarImage className={'rounded-md h-5 w-5'} src={`${conectee}ResearcherData/Image?name=${props.pes_nome}`} />
-                                <AvatarFallback className="flex items-center justify-center"><User size={10} /></AvatarFallback>
-                              </Avatar>
-                    <p className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">{props.pes_nome}</p>
-                  </div>
-                )}
-                </div>
-              </div>
-  
-              {images.length > 0 && (
-                <div className="flex gap-3 mt-6">
-                {images?.[0]?.imagens?.map((props) => {
-                  return(
-                    <Alert
-                    className="bg-center bg-cover bg-no-repeat p-0 h-14 w-14 "
-                    style={{ backgroundImage: `url(${urlGeral}imagem/${props})` }}
-                  />
-                  )})}
-              
-                </div>
-              )}
-            </div>
-
-           
-          </Alert>
+      {/* ATM ao lado, truncando automaticamente */}
+      {hasAtm && (
+        <div className="min-w-0 flex-1">
+          <Badge
+            variant="outline"
+            className="truncate min-w-0"
+            title={props.atm_number || ''}
+          >
+            ATM: {props.atm_number}
+          </Badge>
         </div>
+      )}
+     </div>
+
    
-    );
-  }
-  
+    </div>
+
+    {/* BODY */}
+    <div className="flex flex-col p-4 pt-0 justify-between">
+      <div className="min-w-0">
+        <div className="text-lg mb-2 font-bold">{materialName}</div>
+        <p className="text-left mb-4 uppercase">{props.asset_description || ""}</p>
+
+        <div className="flex flex-wrap gap-3 min-w-0">
+          {!!csvCodTrimmed && (
+            <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              <div
+                className={`w-4 h-4 rounded-md ${
+                  qualisColor[csvCodTrimmed] || "bg-neutral-300"
+                }`}
+              />
+              {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+            </div>
+          )}
+
+          {status && (
+            <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+              {status.icon}
+              {status.text}
+            </div>
+          )}
+
+          {!!legalGuardianName && (
+            <div className="flex gap-1 items-center min-w-0">
+              <Avatar className="rounded-md h-5 w-5 shrink-0">
+                <AvatarImage
+                  className="rounded-md h-5 w-5"
+                  src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
+                    legalGuardianName
+                  )}`}
+                />
+                <AvatarFallback className="flex items-center justify-center">
+                  <User size={10} />
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Nome ocupa espaço natural, só trunca se não couber */}
+              <p
+                className="text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                title={legalGuardianName}
+              >
+                {legalGuardianName}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </Alert>
+</div>
+
+
+  );
+}

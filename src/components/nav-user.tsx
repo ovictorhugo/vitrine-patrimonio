@@ -72,7 +72,7 @@ const history = useNavigate();
      className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
    >
      <Avatar className="h-8 w-8 rounded-lg">
-       <AvatarImage src={`${urlGeral}UserData/Image?photo_url=${userContext?.photo_url}`} alt={user.name} />
+       <AvatarImage src={`${urlGeral}user/upload/${userContext?.id}/icon`} alt={user.name} />
        <AvatarFallback className="rounded-lg"><User size={16}/></AvatarFallback>
      </Avatar>
      <div className="grid flex-1 text-left text-sm leading-tight">
@@ -89,14 +89,14 @@ const history = useNavigate();
             sideOffset={4}
           >
   <DropdownMenuLabel className="p-0 font-normal">
-           <div className="bg-eng-blue rounded-sm h-[100px] bg- bg-cover bg-center bg-no-repeat"  style={{ backgroundImage: `url(${urlGeral}UserData/Image?background_url=${userContext?.background_url}) ` }}>
+           <div className="bg-eng-blue rounded-sm h-[100px] bg- bg-cover bg-center bg-no-repeat"  style={{ backgroundImage: `url(${urlGeral}user/upload/${userContext?.id}/cover) ` }}>
             
            </div>
 
            <div className="flex items-center  flex-col  px-1 py-1.5 text-left text-sm">
                <div>
                <Avatar className="h-16 w-16 rounded-lg -top-8 relative">
-                  <AvatarImage src={`${urlGeral}UserData/Image?photo_url=${userContext?.photo_url}`} alt={user.name} />
+                  <AvatarImage src={`${urlGeral}user/upload/${userContext?.id}/icon`}  alt={user.name} />
                   <AvatarFallback className="rounded-lg"><User size={16}/></AvatarFallback>
                 </Avatar>
                </div>

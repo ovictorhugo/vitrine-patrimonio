@@ -1,7 +1,98 @@
+import { useContext, useState } from "react";
+import { Button } from "../../ui/button";
+import { Helmet } from "react-helmet";
+import { useLocation, useNavigate } from "react-router-dom";
+import { UserContext } from "../../../context/context";
+import { ChevronLeft } from "lucide-react";
+
+import { Tabs, TabsContent } from "../../ui/tabs";
+import { ListaFinalDesfazimento } from "./tabs/lista-final-desfazimento";
+import { MeusItens } from "./tabs/meus-itens";
 export function Comission() {
+      const { urlGeral } = useContext(UserContext);
+      const navigate = useNavigate();
+      const location = useLocation();
+
+        const [tab, setTab] = useState("meus-itens");
+
     return(
-        <div>
-          
-        </div>
+         <div className=" gap-8 flex flex-col h-full">
+              <Helmet>
+                <title>Comissão de desfazimento | Sistema Patrimônio</title>
+                <meta name="description" content="Comissão de desfazimento | Sistema Patrimônio" />
+              </Helmet>
+        
+              <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
+                {/* Header */}
+                 <div className="flex p-8 pb-0 items-center justify-between flex-wrap gap-3">
+                          <div className="flex gap-2 items-center">
+                            <Button
+                              onClick={() => {
+                                const path = location.pathname;
+                                const hasQuery = location.search.length > 0;
+                                if (hasQuery) navigate(path);
+                                else {
+                                  const seg = path.split("/").filter(Boolean);
+                                  if (seg.length > 1) {
+                                    seg.pop();
+                                    navigate("/" + seg.join("/"));
+                                  } else navigate("/");
+                                }
+                              }}
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                              <span className="sr-only">Voltar</span>
+                            </Button>
+                
+                            <h1 className="text-xl font-semibold tracking-tight">Comissão de desfazimento</h1>
+                          </div>
+                
+                          <div className="hidden gap-2 items-center xl:flex">
+                       
+                            <div className="flex">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                              setTab('meus-itens')
+                                }}
+                                variant={tab !== "lfd" ? "default" : "outline"}
+                                className="rounded-r-none"
+                              >
+                               
+                                Meus itens para avaliação
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setTab('lfd')
+                                }}
+                                size="sm"
+                                variant={tab === "lfd" ? "default" : "outline"}
+                                className="rounded-l-none"
+                              >
+                               
+                                Lista Final de desfazimento
+                              </Button>
+                            </div>
+                
+                           
+                          </div>
+                        </div>
+
+                        <Tabs defaultValue={tab} value={tab} className="w-full">
+                            <TabsContent value="meus-itens" className="m-0 p-0">
+                             <MeusItens/>
+                          </TabsContent>
+                          <TabsContent value='lfd' className="m-0 p-0">
+                              <ListaFinalDesfazimento/>
+                          </TabsContent>
+                        </Tabs>
+
+
+                       
+                        </main>
+                        </div>
     )
 }

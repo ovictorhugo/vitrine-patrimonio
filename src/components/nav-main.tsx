@@ -72,7 +72,7 @@ export function NavMain({
         </SidebarMenuSubButton>
       ) : (
         <SidebarMenuSubButton asChild className={` ${subItem.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue  hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
-          <Link to={subItem.url!}>
+          <Link to={subItem.url!} title={subItem.title}>
             <span className="flex z-[99] items-center gap-1 truncate">
               {subItem.icon && <subItem.icon className="h-4 min-h-4" />} 
               <p className="truncate"> {subItem.title}</p>

@@ -6,10 +6,10 @@ import { Input } from "../../../ui/input";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 
-import { useQuery } from "../../../modal/search-modal-patrimonio";
 import { UserContext } from "../../../../context/context";
 import { StepBaseProps } from "../../novo-item/novo-item";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "../../../authentication/signIn";
 
 export interface PatrimoniosSelecionados {
   term: string;

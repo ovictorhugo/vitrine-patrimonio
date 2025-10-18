@@ -4,7 +4,7 @@ import { ItemsSelecionados, PatrimoniosSelecionados } from "../App";
 import { CatalogResponseDTO } from "../components/item-page/item-page";
 
 interface User {
-  id: string;                // corresponde a "id" no JSON
+  id: string;                // corresponde a "id"
   institution_id: string;    // corresponde a "institution_id"
 
   username: string;          // corresponde a "username"
@@ -22,18 +22,28 @@ interface User {
   matricula: string;         // corresponde a "matricula"
   verify: boolean;           // corresponde a "verify"
 
-  roles: Roles[]
+  roles: Role[];             // lista de papéis vinculados ao usuário
+
+  system_identity: {
+    id: string;              // id do objeto system_identity
+    legal_guardian: {
+      id: string;                    // id do responsável legal
+      legal_guardians_code: string;  // código do responsável legal
+      legal_guardians_name: string;  // nome do responsável legal
+    };
+  };
 }
-
-
-interface Roles {
-  id:string
-  role_id:string
+interface Role {
+  id: string;
+  name: string;
+  description: string;
 }
 
 interface Permission {
-  permission:string
   id:string
+  name:string
+  code:string
+  description:string
 }
 
 

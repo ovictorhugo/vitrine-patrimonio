@@ -1,256 +1,219 @@
-import { ArrowUUpLeft, FileCsv, FileXls, Upload } from "phosphor-react";
+import { ArrowUUpLeft, FileXls, Upload } from "phosphor-react";
 import { useModal } from "../hooks/use-modal-store";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { useCallback, useContext, useState } from "react";
-import { toast } from "sonner"
+import { useCallback, useContext, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { UserContext } from "../../context/context";
-import * as XLSX from 'xlsx';
-import {useDropzone} from 'react-dropzone'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-
-import {
-  Sheet,
-  SheetContent,
-
-} from "../../components/ui/sheet"
-import { LoaderCircle, X } from "lucide-react";
-import { ScrollArea } from "../ui/scroll-area";
-import { DataTableModal } from "../componentsModal/data-table";
-import { columnsPatrimonio } from "../componentsModal/columns-patrimonio";
+import { useDropzone } from "react-dropzone";
+import { LoaderCircle } from "lucide-react";
+import { Separator } from "../ui/separator";
 
 interface Patrimonio {
-    bem_cod:string
-    bem_dgv:string
-    bem_num_atm:string
-    csv_cod:string
-    bem_serie:string
-    bem_sta:string
-    bem_val:string
-    tre_cod:string
-    bem_dsc_com:string
-    uge_cod:string
-    uge_nom:string
-    org_cod:string
-    uge_siaf:string
-    org_nom:string
-    set_cod:string
-    set_nom:string
-    loc_cod:string
-    loc_nom:string
-    ite_mar:string
-    ite_mod:string
-    tgr_cod:string
-    grp_cod:string
-    ele_cod:string
-    sbe_cod:string
-    mat_cod:string
-    mat_nom:string
-    pes_cod:string
-    pes_nome:string
+  bem_cod: string;
+  bem_dgv: string;
+  bem_num_atm: string;
+  csv_cod: string;
+  bem_serie: string;
+  bem_sta: string;
+  bem_val: string;
+  tre_cod: string;
+  bem_dsc_com: string;
+  uge_cod: string;
+  uge_nom: string;
+  org_cod: string;
+  uge_siaf: string;
+  org_nom: string;
+  set_cod: string;
+  set_nom: string;
+  loc_cod: string;
+  loc_nom: string;
+  ite_mar: string;
+  ite_mod: string;
+  tgr_cod: string;
+  grp_cod: string;
+  ele_cod: string;
+  sbe_cod: string;
+  mat_cod: string;
+  mat_nom: string;
+  pes_cod: string;
+  pes_nome: string;
 }
 
 export function ImportCsv() {
-    const { onClose, isOpen, type: typeModal } = useModal();
-    
-    const isModalOpen = (isOpen && typeModal === 'import-csv')|| (isOpen && typeModal === 'import-csv-morto')
+  const { onClose, isOpen, type: typeModal } = useModal();
+  const isModalOpen = (isOpen && typeModal === "import-csv") || (isOpen && typeModal === "import-csv-morto");
 
-    const {urlGeral} = useContext(UserContext)
-    const [fileInfo, setFileInfo] = useState({ name: '', size: 0 });
+  const { urlGeral } = useContext(UserContext);
 
-    const [data, setData] = useState<Patrimonio[]>([]);
+  const [fileInfo, setFileInfo] = useState({ name: "", size: 0 });
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-    const onDrop = useCallback((acceptedFiles:any) => {
-      handleFileUpload(acceptedFiles);
-    }, []);
-  
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-      onDrop,
-     
-    });
-  
+  const token = localStorage.getItem("jwt_token");
 
-  
-    const [file, setFile] = useState<File | null>(null);
+  // Headers genéricos para JSON (se você precisar para outras requisições)
+  const jsonHeaders = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
 
-    const handleFileUpload = (files: any) => {
-      const uploadedFile = files[0];
-      if (uploadedFile) {
-        setFile(uploadedFile); // salva o arquivo
-        setFileInfo({
-          name: uploadedFile.name,
-          size: uploadedFile.size,
+  // Headers específicos para upload: NÃO definir Content-Type
+  const uploadHeaders = useMemo(
+    () => ({
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
+
+  const handleFilePicked = (files: File[]) => {
+    const uploadedFile = files?.[0];
+    if (!uploadedFile) return;
+
+    // validações simples
+    const ext = uploadedFile.name.toLowerCase();
+    if (!ext.endsWith(".xls") && !ext.endsWith(".xlsx") && !ext.endsWith(".csv")) {
+      toast("Arquivo inválido", {
+        description: "Use .xls, .xlsx ou .csv.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+      return;
+    }
+
+    setFile(uploadedFile);
+    setFileInfo({ name: uploadedFile.name, size: uploadedFile.size });
+  };
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    handleFilePicked(acceptedFiles);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    maxFiles: 1,
+    multiple: false,
+    accept: {
+      "application/vnd.ms-excel": [".xls"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "text/csv": [".csv"],
+    },
+  });
+
+  const handleSubmitPatrimonio = async () => {
+    try {
+      if (!file) {
+        toast("Erro: Nenhum arquivo selecionado", {
+          description: "Por favor, selecione um .xls, .xlsx ou .csv.",
+          action: { label: "Fechar", onClick: () => {} },
         });
+        return;
       }
-    };
 
+      setUploading(true);
 
-   
-  
+      const formData = new FormData();
+      formData.append("file", file); // nome do campo deve ser 'file'
 
-    const [uploadProgress, setUploadProgress] = useState(false);
+      // garante a / entre base e caminho
+      const base = urlGeral.endsWith("/") ? urlGeral : `${urlGeral}/`;
+      const urlPatrimonioInsert = `${base}assets/upload`;
 
+      const response = await fetch(urlPatrimonioInsert, {
+        method: "POST",
+        headers: uploadHeaders, // sem Content-Type aqui!
+        body: formData,
+      });
 
-
-    const handleSubmitPatrimonio = async () => {
-      try {
-        if (!fileInfo.name) {
-          toast("Erro: Nenhum arquivo selecionado", {
-            description: "Por favor, selecione um arquivo .xls para enviar.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-          return;
-        }
-    
-        if (!file) {
-          toast("Erro: Nenhum arquivo encontrado", {
-            description: "Tente selecionar o arquivo novamente.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-          return;
-        }
-    
-        setUploadProgress(true);
-    
-        const formData = new FormData();
-        formData.append('file', file); // 'file' é o nome que o servidor espera
-    
-        let urlPatrimonioInsert = `${urlGeral}insertPatrimonio`;
-    
-        const response = await fetch(urlPatrimonioInsert, {
-          method: 'POST',
-          body: formData,
+      if (response.ok) {
+        toast("Arquivo enviado com sucesso", {
+          description: "O arquivo foi enviado para o servidor.",
+          action: { label: "Fechar", onClick: () => {} },
         });
-    
-        if (response.ok) {
-          toast("Arquivo enviado com sucesso", {
-            description: "O arquivo foi enviado para o servidor.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-
-        } else {
-          toast("Erro no envio", {
-            description: "O servidor retornou um erro.",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-        }
-    
+        // limpa estado
         setFile(null);
-        setFileInfo({ name: '', size: 0 });
-        setUploadProgress(false);
-    
-      } catch (error) {
-        console.error('Erro ao processar a requisição:', error);
-        toast("Erro ao processar a requisição", {
-          description: "Tente novamente mais tarde.",
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
+        setFileInfo({ name: "", size: 0 });
+        onClose();
+      } else {
+        const maybeJson = await response.json().catch(() => null);
+        const detail =
+          (maybeJson && JSON.stringify(maybeJson)) ||
+          `${response.status} ${response.statusText}`;
+        toast("Erro no envio", {
+          description: detail,
+          action: { label: "Fechar", onClick: () => {} },
         });
-        setUploadProgress(false);
       }
-    };
+    } catch (error: any) {
+      toast("Erro ao processar a requisição", {
+        description: error?.message || "Tente novamente mais tarde.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
-    console.log(data)
-  
-    return(
-      <Sheet open={isModalOpen} onOpenChange={onClose}>
-      <SheetContent className={`p-0 dark:bg-neutral-900 dark:border-gray-600 min-w-[50vw]`}>
-      <DialogHeader className="h-[50px] px-4 justify-center border-b dark:border-b-neutral-600">
+  return (
+    <Dialog open={isModalOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+            Atualizar patrimônios
+          </DialogTitle>
+          <DialogDescription className="text-zinc-500">
+            Envie um arquivo (.xls, .xlsx ou .csv) para atualizar os registros.
+          </DialogDescription>
+        </DialogHeader>
 
-<div className="flex items-center gap-3">
-<TooltipProvider>
-<Tooltip>
-<TooltipTrigger asChild>
-<Button className="h-8 w-8" variant={'outline'}  onClick={() => onClose()} size={'icon'}><X size={16}/></Button>
-</TooltipTrigger>
-<TooltipContent> Fechar</TooltipContent>
-</Tooltip>
-</TooltipProvider>
+        <Separator className="my-4" />
 
-<div className="flex ml-auto items-center w-full justify-between">
+       <div className="mb-4">
+         <div
+          {...getRootProps()}
+          className="border-dashed h-full mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        >
+          <input {...getInputProps()} />
+          <div className="p-4 border rounded-md">
+            <FileXls size={24} className="whitespace-nowrap" />
+          </div>
+          {isDragActive ? (
+            <p>Solte o arquivo aqui…</p>
+          ) : (
+            <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+          )}
+        </div>
 
- <div className="flex ml-auto items-center gap-3">
+        {fileInfo.name && (
+          <div className="justify-center flex items-center gap-3">
+            <FileXls size={16} />
+            <p className="text-center text-zinc-500 text-sm">
+              Arquivo selecionado: <strong>{fileInfo.name}</strong> (
+              {(fileInfo.size / 1024).toFixed(2)} KB)
+            </p>
+          </div>
+        )}
 
+        <div className="flex items-center justify-between mt-2">
+          <div className="text-sm text-gray-500">
+            {uploading ? "Enviando… não feche a página." : ""}
+          </div>
+        </div>
+       </div>
 
-    </div>
-</div>
+        <DialogFooter>
+          <Button onClick={onClose} variant={"ghost"}>
+            <ArrowUUpLeft size={16} /> Cancelar
+          </Button>
 
-</div>
-
-</DialogHeader>
-
-<ScrollArea className="relative pb-4 whitespace-nowrap h-[calc(100vh-50px)] p-8 ">
-        <div className="mb-8">
-                      <p className="max-w-[750px] mb-2 text-lg font-light text-foreground">
-                      Patrimômio
-                        </p>
-
-                        <h1 className="max-w-[500px] text-3xl font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
-                          {typeModal == 'import-csv' ? ('Atualizar patrimônios'):('Importar patrimônios baixados')}
-                        </h1>
-                        
-                      </div>
-
-               <div className="flex flex-1 flex-col ">
-               <div {...getRootProps()} className="border-dashed h-full mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm  cursor-pointer transition-all gap-3  w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-4">
-                        <input {...getInputProps()} />
-                        <div className="p-4  border rounded-md">
-                            <FileXls size={24} className=" whitespace-nowrap" />
-                        </div>
-                        {isDragActive ? (
-                            <p>Solte os arquivos aqui ...</p>
-                        ) : (
-                            <p>Arraste e solte o arquivo .xls aqui ou clique para selecionar o arquivo</p>
-                        )}
-                    </div>
-
-    <div >
-    {fileInfo.name && (
-                            <div className="justify-center flex items-center gap-3">
-                                <FileXls size={16} />
-                                <p className=" text-center  text-zinc-500 text-sm">
-                                    Arquivo selecionado: <strong>{fileInfo.name}</strong> ({(fileInfo.size / 1024).toFixed(2)} KB)
-                                </p>
-                            </div>
-                        )}
-    </div>
-
-
-<div className="flex items-center justify-between">
-    <div className="text-sm font-gray-500">
-    {uploadProgress ? ('Isso pode demorar bastante, não feche a página.'):('')}
-    </div>
-<Button onClick={() => handleSubmitPatrimonio()} className="ml-auto flex mt-3">
-                        {uploadProgress ? (<LoaderCircle size={16} className="an animate-spin" />):(<Upload size={16} className="" />)}  {uploadProgress ? ('Atualizando dados'):('Atualizar dados')} 
-                    </Button>
-
-</div>
-               </div>
-
-</ScrollArea>
-               <DialogFooter>
-                <Button onClick={() => onClose()} variant={'ghost'}><ArrowUUpLeft size={16} className="" />Cancelar</Button>
-            
-
-                </DialogFooter>
-
-    
-
-               </SheetContent>
-               </Sheet>
-    )
+          <Button onClick={handleSubmitPatrimonio} disabled={uploading || !file}>
+            {uploading ? <LoaderCircle size={16} className="animate-spin" /> : <Upload size={16} />}
+            <span className="ml-2">{uploading ? "Atualizando dados" : "Atualizar dados"}</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

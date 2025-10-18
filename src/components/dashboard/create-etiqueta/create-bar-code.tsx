@@ -12,6 +12,7 @@ import { PesquisaStepCB } from "./steps/pesquisa";
 
 import { EtiquetaStepCB } from "./steps/etiqueta";
 import { FormularioStep, Patrimonio } from "../novo-item/steps/formulario";
+import { PesquisaStep } from "../novo-item/steps/pesquisa";
 
 type StepKey = "pesquisa" | "formulario" | "etiqueta";
 type StepDef = { key: StepKey; label: string };
@@ -120,8 +121,8 @@ export function CreateBarCode() {
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
       <Helmet>
-        <title>Criar etiqueta | Vitrine Patrimônio</title>
-        <meta name="description" content="Criar etiqueta | Vitrine Patrimônio" />
+        <title>Criar etiqueta | Sistema Patrimônio</title>
+        <meta name="description" content="Criar etiqueta | Sistema Patrimônio" />
       </Helmet>
 
       <Progress className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1 z-[5]" value={pct} />
@@ -148,7 +149,7 @@ export function CreateBarCode() {
               {STEPS.map((s) => (
                 <TabsContent key={s.key} value={s.key} className="m-0 h-full">
                   {s.key === "pesquisa" && (
-                    <PesquisaStepCB
+                    <PesquisaStep
                       value={"pesquisa" as any}
                       onValidityChange={onValidityChangeFactory("pesquisa")}
                       onStateChange={onStateChangePesquisa as any}

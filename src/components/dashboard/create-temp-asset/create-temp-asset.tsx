@@ -322,8 +322,8 @@ export function CreateTempAsset() {
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
       <Helmet>
-        <title>Criar patrimônio temporário | Vitrine Patrimônio</title>
-        <meta name="description" content="Criar patrimônio temporário | Vitrine Patrimônio" />
+        <title>Criar patrimônio temporário | Sistema Patrimônio</title>
+        <meta name="description" content="Criar patrimônio temporário | Sistema Patrimônio" />
       </Helmet>
 
       {/* progresso */}

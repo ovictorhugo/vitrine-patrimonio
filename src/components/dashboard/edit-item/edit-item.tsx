@@ -1,11 +1,11 @@
 // src/pages/edit-item-vitrine/index.tsx
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent } from "../../ui/tabs";
 import { Progress } from "../../ui/progress";
 import { Button } from "../../ui/button";
-import { ArrowLeft, ArrowRight, Check, ChevronLeft, LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronLeft, Home, LoaderCircle, Undo2 } from "lucide-react";
 import { cn } from "../../../lib";
 import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
@@ -295,27 +295,109 @@ export function EditItemVitrine() {
     }
   }, [catalogData, wizard, urlGeral, token]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <LoaderCircle size={64} className="animate-spin text-eng-blue" />
-      </div>
-    );
-  }
+  const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+      
+          useEffect(() => {
+            let timeouts: NodeJS.Timeout[] = [];
+          
+           
+              setLoadingMessage("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Estamos quase lá, continue aguardando...");
+              }, 5000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Só mais um pouco...");
+              }, 10000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo.");
+              }, 15000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco");
+              }, 15000));
+            
+          
+            return () => {
+              // Limpa os timeouts ao desmontar ou quando isOpen mudar
+              timeouts.forEach(clearTimeout);
+            };
+          }, []);
+
+          const location = useLocation()
+
+            const handleVoltar = () => {
+  
+      const currentPath = location.pathname;
+      const hasQueryParams = location.search.length > 0;
+      
+      if (hasQueryParams) {
+        // Se tem query parameters, remove apenas eles
+        navigate(currentPath);
+      } else {
+        // Se não tem query parameters, remove o último segmento do path
+        const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+        
+        if (pathSegments.length > 1) {
+          pathSegments.pop();
+          const previousPath = '/' + pathSegments.join('/');
+          navigate(previousPath);
+        } else {
+          // Se estiver na raiz ou com apenas um segmento, vai para raiz
+          navigate('/');
+        }
+      }
+    };
+
+        if (loading) {
+            return (
+              <div className="flex justify-center items-center h-full">
+              <div className="w-full flex flex-col items-center justify-center h-full">
+                <div className="text-eng-blue mb-4 animate-pulse">
+                  <LoaderCircle size={108} className="animate-spin" />
+                </div>
+                <p className="font-medium text-lg max-w-[500px] text-center">
+                  {loadingMessage}
+                </p>
+              </div>
+            </div>
+            );
+          }
 
   if (!catalogData) {
     return (
-      <div className="p-8">
-        <p className="text-center">Catálogo não encontrado.</p>
-      </div>
+     <div
+                className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
+                
+              >
+           
+          
+                <div className="w-full flex flex-col items-center justify-center">
+                <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                   X﹏X
+                  </p>
+                  <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                    Não foi possível acessar as <br/>  informações deste item.
+                  </h1>
+                 
+          
+                  <div className="flex gap-3 mt-8">
+                          <Button  onClick={handleVoltar} variant={'ghost'}><Undo2 size={16}/> Voltar</Button>
+                           <Link to={'/'}> <Button><Home size={16}/> Página Inicial</Button></Link>
+          
+                          </div>
+                </div>
+              </div>
     );
   }
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
-        <title>Editar item | Vitrine Patrimônio</title>
-        <meta name="description" content="Edição de item da Vitrine Patrimônio" />
+        <title>Editar item | Sistema Patrimônio</title>
+        <meta name="description" content="Edição de item da Sistema Patrimônio" />
       </Helmet>
 
       <Progress className="absolute top-0 left-0  h-1 z-[5]" value={pct} />

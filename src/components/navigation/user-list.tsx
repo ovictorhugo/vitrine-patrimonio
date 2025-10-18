@@ -42,9 +42,9 @@ export function AccountSwitcher() {
   const teams = (
     Array.isArray(user?.roles) && user.roles.length > 0
       ? user.roles
-          .filter((rola) => rola?.role_id && rola?.id) // evita valores null/undefined
+          .filter((rola) => rola?.id && rola?.id) // evita valores null/undefined
           .map((rola) => ({
-            name: rola.role_id,
+            name: rola.name,
             id: rola.id,
             plan: "Administrativo",
           }))

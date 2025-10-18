@@ -174,23 +174,39 @@ export function ImagemStepEdit({
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const files = event.target.files;
-      if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
-      setBusy(true);
-      // envia todos (sem limitar a 4 — o backend manda a real)
-      for (const f of Array.from(files)) await uploadBlob(f, f.name);
-      await refreshImages();
-      setShowUploadDialog(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      toast("Imagens enviadas!");
-    } catch (e: any) {
-      toast("Erro ao carregar arquivo", { description: e?.message || String(e) });
-    } finally {
-      setBusy(false);
+ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  try {
+    const files = event.target.files;
+    if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
+
+    // percorre todos os arquivos já no momento do "submit"
+    for (const f of Array.from(files)) {
+      // limite de 2 MB = 2 * 1024 * 1024 bytes
+      if (f.size > 2 * 1024 * 1024) {
+        toast("Arquivo muito grande!", { 
+          description: `${f.name} excede o limite de 2 MB.` 
+        });
+        // limpa o input para permitir escolher de novo
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return; // sai da função sem enviar nada
+      }
     }
-  };
+
+    setBusy(true);
+    for (const f of Array.from(files)) {
+      await uploadBlob(f, f.name);
+    }
+
+    await refreshImages();
+    setShowUploadDialog(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    toast("Imagens enviadas!");
+  } catch (e: any) {
+    toast("Erro ao carregar arquivo", { description: e?.message || String(e) });
+  } finally {
+    setBusy(false);
+  }
+};
 
   const confirmPhoto = async () => {
     if (!capturedPhoto) return;
@@ -351,7 +367,7 @@ export function ImagemStepEdit({
                 <DialogHeader>
                   <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Capturar foto</DialogTitle>
                   <DialogDescription className="text-zinc-500">
-                    Fotografe o item com boa iluminação. Esta foto será usada no Vitrine Patrimônio.
+                    Fotografe o item com boa iluminação. Esta foto será usada no Sistema Patrimônio.
                   </DialogDescription>
                 </DialogHeader>
 

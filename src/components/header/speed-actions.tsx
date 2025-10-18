@@ -47,13 +47,13 @@ export function SpeedActions() {
             </DropdownMenuItem>
           </Link>
 
-          <Link to="https://vitrinepatrimonio.eng.ufmg.br/" target="_blank">
+          <Link to="https://patrimonio.eng.ufmg.br/" target="_blank">
             <DropdownMenuItem className="flex flex-col justify-center px-2 py-4 cursor-pointer">
               <div className="h-8 mb-4">
                 {theme === "dark" ? <SymbolEEWhite /> : <SymbolEE />}
               </div>
               <div className="flex text-xs font-medium max-w-[70px] truncate text-center">
-                Vitrine Patrimônio
+                Sistema Patrimônio
               </div>
             </DropdownMenuItem>
           </Link>

@@ -1,574 +1,276 @@
-import { Funnel, MagnifyingGlass } from "phosphor-react";
-import { useModal } from "../hooks/use-modal-store";
-import { Alert } from "../ui/alert";
-import { Button } from "../ui/button";
 import { Dialog, DialogContent } from "../ui/dialog";
+import { Alert } from "../ui/alert";
 import { Input } from "../ui/input";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef, useState } from "react";
-import { Play, Plus, Search, Trash, X } from "lucide-react";
-import { collection, getDocs, getFirestore, where, query, or, and, limit, updateDoc, doc } from "firebase/firestore";
-import { PatrimoniosSelecionados } from "../../App";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import { Button } from "../ui/button";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
-import { toast } from "sonner";
-import { UserContext } from "../../context/context";
-import { SelectTypeSearch } from "../search/select-type-search";
 
-interface Csv {
-  bem_cod: string
-  bem_dgv: string
-  bem_num_atm: string
-  mat_nom:string
-  type: 'cod' | 'atm' | 'nom' | 'dsc' | 'pes' | 'loc';
-  pes_nome:string
-  loc_nom:string
-  bem_dsc_com:string[]
-}
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import { MagnifyingGlass, X } from "phosphor-react";
+import { Play, Trash } from "lucide-react";
+
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { UserContext } from "../../context/context";
+import { useModal } from "../hooks/use-modal-store";
+import { useLocation } from "react-router-dom";
+
+// ========= Tipos =========
+type Kind = "cod" | "atm";
+type Picked = { kind: Kind; id: string; label: string };
+
+// Helpers
+const normalize = (v: string) =>
+  String(v || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9-\s]/g, "")
+    .trim();
+
+// cores por tipo (chip + botão pesquisar)
+const KIND_BG: Record<Kind, string> = {
+  cod: "bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700",
+  atm: "bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700",
+};
 
 export const useQuery = () => {
     return new URLSearchParams(useLocation().search);
   }
 
 export function SearchModalPatrimonio() {
-  const queryUrl = useQuery();
-  const {searchType, setSearchType, patrimoniosSelecionados, setPatrimoniosSelecionados} = useContext(UserContext)
+  const { urlGeral } = useContext(UserContext);
+  const baseUrl = useMemo(() => (urlGeral || "").replace(/\/+$/, ""), [urlGeral]);
 
-     const navigate = useNavigate();
-     const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([])
-    const { onClose, isOpen, type } = useModal();
-    const isModalOpen = isOpen && type === "search-patrimonio";
-    const type_search = queryUrl.get('type_search');
-    const terms = queryUrl.get('terms');
-    const location = useLocation();
-    const [input, setInput] = useState("");
+  const { onClose, onOpen, isOpen, type, data } = useModal();
+  const isModalOpen = isOpen && type === "search-patrimonio";
 
-    let bemCod = parseInt(input.split('-')[0], 10).toString();
-    let bemDgv = input.split('-')[1];
+  // barra
+  const [input, setInput] = useState("");
+  const term = normalize(input);
+  // apenas UM item selecionado (cod ou atm)
+  const [picked, setPicked] = useState<Picked | null>(null);
 
-    const handleChange = (value:any) => {
+  // resultados
+  const [codList, setCodList] = useState<string[]>([]);
+  const [atmList, setAtmList] = useState<string[]>([]);
 
-        // Remover caracteres não numéricos
-        value = value.replace(/[^0-9]/g, '');
-    
-        if (value.length > 1) {
-          // Inserir "-" antes do último caractere
-          value = value.slice(0, -1) + "-" + value.slice(-1);
-        }
-    
-        setInput(value);
-      };
+  // headers (JWT opcional)
+  const token = localStorage.getItem("jwt_token") || "";
+  const baseHeaders: HeadersInit = useMemo(() => {
+    const h: Record<string, string> = { Accept: "application/json" };
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  }, [token]);
 
-        let TypeSearch = type_search ?? ''
-       let Terms = terms ?? ''
+  // ======= API helpers =======
+  const API_BASE = `${baseUrl}/assets/search`;
 
-      const handlePesquisaFinal = () => {
-        if (itemsSelecionadosPopUp.length == 0 && input.length == 0) {
-          toast("Tente novamente", {
-            description: "Selecione ou digite um patrimônio para pesquisa",
-            action: {
-              label: "Fechar",
-              onClick: () => console.log("Fechar"),
-            },
-          });
-          return
-        }
+  async function fetchArrayByKey(url: string, key: "asset_identifier" | "atm_number"): Promise<string[]> {
+    try {
+      const res = await fetch(url, { headers: baseHeaders });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const arr = json?.[key];
+      return Array.isArray(arr) ? arr.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
 
-        if (itemsSelecionadosPopUp.length > 0) {
-          setInput('')
-          TypeSearch = searchType
-          Terms = itemsSelecionadosPopUp.map(item => item.term).join(';');
+  const searchAssetIdentifier = (q: string) =>
+    fetchArrayByKey(`${API_BASE}/asset-identifier?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "asset_identifier");
 
+  const searchAtmNumber = (q: string) =>
+    fetchArrayByKey(`${API_BASE}/atm-number?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "atm_number");
 
-          queryUrl.set('terms', Terms.replace(/[()]/g, ''));
-          queryUrl.set('type_search', searchType);
-
-          navigate({
-            pathname: location.pathname,
-            search: queryUrl.toString(),
-          });
-
-          onClose()
-        } else {
-          if (input.length > 0) {
-            queryUrl.set('terms', input);
-            queryUrl.set('type_search', searchType);
-  
-            navigate({
-              pathname: location.pathname,
-              search: queryUrl.toString(),
-            });
-  
-            setInput('')
-            onClose()
-          }
-        }
-      };
-
-      useEffect(() => {
-        if (terms) {
-          const termList: PatrimoniosSelecionados[] = terms
-            .split(';')
-            .filter(t => t.trim() !== '')
-            .map(t => ({
-              term: t.trim(),
-              type: searchType
-            }));
-        
-          setItensSelecionadosPopUp(termList);
-        }
-      }, [terms]);
-
-      const handleEnterPress = (event:any) => {
-        if (event.key === "Enter") {
-          handlePesquisaFinal()
-        }
-      };
-
-      const normalizeInput = (value: string): string => {
-        // Remove acentos e diacríticos
-        value = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        // Converte para minúsculas
-        value = value.toLowerCase();
-        // Remove caracteres especiais, mantendo letras, números e espaços
-        value = value.replace(/[^a-z0-9\s]/g, "");
-        return value;
-      };
-    
-
-      const handleChangeInput = (value: string) => {
-        const normalizedValue = normalizeInput(value);
-        console.log(value)
-        searchFilesByTermPrefix(value)
-        setInput(value)
+  // ======= Buscar sugestões quando digitar (>=1 char) =======
+  useEffect(() => {
+    let abort = false;
+    (async () => {
+      if (!isModalOpen) return;
+      if (term.length < 1) {
+        setCodList([]);
+        setAtmList([]);
+        return;
       }
-
-      const [filteredItems, setFilteredItems] = useState<Csv[]>([]);
-      const db = getFirestore();
-
-     
-     
-      const searchFilesByTermPrefix = async (input: string) => {
-        if (input.length < 3) return;
-      
-        try {
-          const filesRef = collection(db, import.meta.env.VITE_BANCO_FIREBASE_SEARCH);
-          let results: Csv[] = [];
-      
-          if (input.includes('-')) {
-            const [cod, dgv] = input.split('-');
-            const q = query(
-              filesRef,
-              where('bem_cod', '==', cod),
-              where('bem_dgv', '==', dgv),
-              limit(100)
-            );
-            const snapshot = await getDocs(q);
-            results = snapshot.docs.map(doc => ({
-              ...(doc.data() as Csv),
-              type: 'cod'
-            }));
-          } else {
-            const normalizedInput = normalizeInput(input).toUpperCase();
-      
-            const searchParams: {
-              field: keyof Csv;
-              value: string;
-              type: Csv['type'];
-              operator?: 'array-contains' | '>=';
-            }[] = [
-              { field: 'bem_cod', value: input, type: 'cod', operator: '>=' },
-              { field: 'bem_num_atm', value: normalizedInput, type: 'atm', operator: '>=' },
-              { field: 'mat_nom', value: normalizedInput, type: 'nom', operator: '>=' },
-              { field: 'loc_nom', value: normalizedInput, type: 'loc', operator: '>=' },
-              { field: 'bem_dsc_com', value: normalizedInput, type: 'dsc', operator: 'array-contains' },
-              { field: 'pes_nome', value: normalizedInput, type: 'pes', operator: '>=' }
-            ];
-      
-            const uniqueByKey = new Set<string>();
-            const combinedMap = new Map<string, Csv>();
-      
-            for (let { field, value, type, operator } of searchParams) {
-              let q;
-      
-              if (operator === 'array-contains') {
-                q = query(filesRef, where(field, 'array-contains', value), limit(5000));
-              } else {
-                q = query(
-                  filesRef,
-                  where(field, '>=', value),
-                  where(field, '<=', value + '\uf8ff'),
-                  limit(type === 'nom' ? 5000 : 100)
-                );
-              }
-      
-              const snapshot = await getDocs(q);
-      
-              snapshot.docs.forEach(doc => {
-                const data = doc.data() as Csv;
-                const key =
-                  type === 'nom'
-                    ? `${data.mat_nom}`
-                    : type === 'dsc'
-                    ? `${data.bem_dsc_com}`
-                    : type === 'pes'
-                    ? `${data.pes_nome}`
-                    : type === 'loc'
-                    ? `${data.loc_nom}`
-                    : `${data.bem_cod}-${data.bem_dgv}`;
-      
-                if (!uniqueByKey.has(key)) {
-                  uniqueByKey.add(key);
-                  combinedMap.set(key, { ...data, type });
-                }
-              });
-            }
-      
-            results = Array.from(combinedMap.values());
-          }
-      
-          const mappedFiles = results.map(file => ({
-            bem_num_atm: file.bem_num_atm,
-            bem_dgv: file.bem_dgv,
-            bem_cod: file.bem_cod,
-            bem_dsc_com: file.bem_dsc_com,
-            mat_nom: file.mat_nom,
-            type: file.type,
-            loc_nom: file.loc_nom,
-            pes_nome: file.pes_nome,
-           
-          }));
-      
-          setFilteredItems(mappedFiles);
-        } catch (error) {
-          console.error('Erro ao buscar arquivos:', error);
-          return [];
-        }
-      };
-      
-      
-      
-      
-      console.log(filteredItems)
-
-      const [showInput, setShowInput] = useState(true);
-      const inputRef = useRef<HTMLInputElement>(null);
-  
-      useEffect(() => {
-        if (isModalOpen && inputRef.current) {
-          inputRef.current.focus();  // Foca no input quando o modal for aberto
-        }
-      }, [isModalOpen]);  // Este efeito será executado sempre que isModalOpen mudar
-    
-      const handlePesquisa = (value: string, type: string) => {
-        setInput('');
-       
-        setShowInput(false)
-       if (type == searchType) {
-        setItensSelecionadosPopUp(prev => [...prev, { term: value, type }]);
-       } else {
-        setSearchType(type)
-        setItensSelecionadosPopUp([{ term: value, type }]);
-       }
+      const [cods, atms] = await Promise.all([searchAssetIdentifier(term), searchAtmNumber(term)]);
+      if (!abort) {
+        setCodList(cods.slice(0, 30));
+        setAtmList(atms.slice(0, 30));
       }
+    })();
+    return () => {
+      abort = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [term, isModalOpen]);
 
-        //itens selecionados 
-  const handleRemoveItem = (index: number) => {
-    const newItems = [...itemsSelecionadosPopUp];
-    newItems.splice(index, 1);
-    setItensSelecionadosPopUp(newItems);
+  // ======= Hidratar seleção inicial a partir de data do modal (se vier pré-carregado) =======
+  useEffect(() => {
+    if (!isModalOpen) return;
+    // Se vierem campos no data, prioriza COD > ATM
+    const preCod = String((data as any)?.asset_code || "");
+    const preDgv = String((data as any)?.asset_check_digit || "");
+    const preAtm = String((data as any)?.atm_number || "");
+
+    if (preCod) {
+      const label = preDgv ? `${preCod}-${preDgv}` : preCod;
+      setPicked({ kind: "cod", id: label, label });
+      setInput("");
+      return;
+    }
+    if (preAtm) {
+      setPicked({ kind: "atm", id: preAtm, label: preAtm });
+      setInput("");
+      return;
+    }
+    setPicked(null);
+  }, [isModalOpen, data]);
+
+  // ======= Selecionar item =======
+  const choose = (k: Kind, value: string) => {
+    const label = value;
+    setPicked({ kind: k, id: value, label });
+    setInput("");
   };
 
-  const normalizeTerm = (term: string) => 
-    term
-      .normalize("NFD") // Separa acentos das letras
-      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-      .replace(/[^\w\s]/gi, "") // Remove caracteres especiais
-      .toLowerCase(); // Converte para minúsculas
+  // ======= Aplicar no data do modal (Zustand) =======
+  const apply = () => {
+    // Mescla no data atual e fecha
+    if (picked) {
+      if (picked.kind === "cod") {
+        const [asset_code, asset_check_digit = ""] = String(picked.id).split("-");
+        onOpen("search-patrimonio", {
+          ...(data || {}),
+          asset_code,
+          asset_check_digit,
+          atm_number: undefined, // limpa outro campo
+        });
+      } else {
+        onOpen("search-patrimonio", {
+          ...(data || {}),
+          atm_number: picked.id,
+          asset_code: undefined,
+          asset_check_digit: undefined,
+        });
+      }
+    }
+    onClose();
+  };
 
+  const clearPicked = () => setPicked(null);
 
-      const handleChangeInputCod = (value: any) => {
-        // Remover caracteres não numéricos
-        let cleanValue = value.replace(/[^0-9]/g, '');
-      
-        // Remover zeros à esquerda
-        const originalValue = cleanValue;
-        cleanValue = cleanValue.replace(/^0+/, '');
-      
-        // Exibir toast se zeros à esquerda forem removidos
-        if (originalValue !== cleanValue) {
-          toast.info("Zeros à esquerda foram removidos.");
-        }
-      
-        // Aplicar formatação com hífen antes do último caractere, se necessário
-        let formattedValue = cleanValue;
-        if (cleanValue.length > 1) {
-          formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
-        }
-      
-        // Usar o valor limpo para a busca
-        searchFilesByTermPrefix(cleanValue);
-      
-        // Usar o valor formatado para exibir no input
-        setInput(formattedValue);
-      };
-      
-      
+  // teclado
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (isModalOpen && inputRef.current) inputRef.current.focus();
+  }, [isModalOpen]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") apply();
+  };
 
-    return(
-        <Dialog open={isModalOpen} onOpenChange={onClose}  >
-        <DialogContent   className="p-0 border-none min-w-[60vw] bg-transparent dark:bg-transparent">
-        <Alert onKeyDown={handleEnterPress}  className="h-14 bg-white p-2 flex items-center gap-3 justify-between">
-        <div className="flex items-center gap-2 w-full flex-1">
-        <div className="w-10 min-w-10">
-        <Play size={16} className=" whitespace-nowrap w-10" />
-        </div>
+  const btnColor = picked ? KIND_BG[picked.kind] : "bg-eng-blue hover:bg-eng-dark-blue dark:bg-eng-blue dark:hover:bg-eng-dark-blue";
+  const showSuggestions = normalize(input).length >= 1;
 
-        <SelectTypeSearch />
-        <ScrollArea className="max-h-[40px] w-full">
-        <div className='flex w-full whitespace-nowrap gap-2 items-center'>
-        {itemsSelecionadosPopUp.map((valor, index) => (
-           <div key={index} className="flex whitespace-nowrap gap-2 items-center">
-            <div
-  className={`flex gap-2 items-center h-10 p-2 px-4 capitalize rounded-md text-xs ${
-    valor.type === 'cod'
-      ? 'bg-teal-600'
-      : valor.type === 'atm'
-      ? 'bg-amber-600'
-      : valor.type === 'pes'
-      ? 'bg-red-600'
-      : valor.type === 'loc'
-      ? 'bg-lime-600'
-       : valor.type === 'dsc'
-      ? 'bg-fuchsia-600'
-      : 'bg-indigo-600'
-  } text-white border-0`}
->
+  return (
+    <Dialog open={isModalOpen} onOpenChange={onClose}>
+      <DialogContent onKeyDown={onKeyDown} className="p-0 border-none min-w-[63vw] px-4 mx-auto md:px-0 bg-transparent dark:bg-transparent">
+        {/* Barra */}
+        <Alert className="h-14 bg-white p-2 min-w-[40%] flex items-center gap-3 justify-between">
+          <div className="flex items-center gap-2 w-full flex-1">
+            <Play size={16} className="hidden md:block whitespace-nowrap w-10" />
+            <div className="flex gap-2 w-full items-center">
+              <div className="flex flex-1 w-full">
+                <ScrollArea className="max-h-[40px] w-full">
+                  <div className="flex whitespace-nowrap gap-2 items-center">
+                    {picked && (
+                      <div
+                        className={`flex gap-2 items-center h-10 p-2 px-4 rounded-md text-xs text-white ${
+                          KIND_BG[picked.kind]
+                        }`}
+                      >
+                        {picked.label}
+                        <X size={12} onClick={clearPicked} className="cursor-pointer" />
+                      </div>
+                    )}
 
-                      {valor.term.replace(/[|;]/g, '')}
-                      <X size={12} onClick={() => handleRemoveItem(index)} className="cursor-pointer" />
-                    </div>
-           </div>
-        ))}
-     
-        {(itemsSelecionadosPopUp.length >= 1 && !showInput) && (
-                  <div
-                    className="rounded-full cursor-pointer flex items-center justify-center whitespace-nowrap h-8 w-8 bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 transition-all"
-                    onClick={() => setShowInput(true)}
-                  >
-                    <Plus size={16} className="" />
+                    {!picked && (
+                      <Input
+                        ref={inputRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        type="text"
+
+                        className="border-0 w-full bg-transparent max-h-[40px] h-[40px] flex-1 p-0 inline-block"
+                      />
+                    )}
                   </div>
-                )}
-       {(showInput || itemsSelecionadosPopUp.length == 0) && (
-                <Input
-                onChange={(e) => {
-                  if(searchType == 'cod') {
-                    handleChangeInputCod(e.target.value)
-                  } else {
-                    handleChangeInput(e.target.value)
-                  }
-                }}
-                  type="text"
-                  ref={inputRef}
-                  value={input}
-                  className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
-                />
-              )}
-</div>
-<ScrollBar orientation='horizontal'/>
-              </ScrollArea>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </div>
             </div>
+          </div>
 
-        <div className="w-fit flex gap-2">
-        {itemsSelecionadosPopUp.length > 0 && (
-              <Button size={'icon'} variant={'ghost'} onClick={() => {
-                setItensSelecionadosPopUp([])
-              }}><Trash size={16} /></Button>
+          <div className="w-fit flex gap-2">
+            {picked && (
+              <Button size={"icon"} variant={"ghost"} onClick={clearPicked}>
+                <Trash size={16} />
+              </Button>
             )}
-
-<Button
-  onClick={() => handlePesquisaFinal()}
-  className={`${
-    searchType === 'cod'
-      ? 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700'
-      : searchType === 'atm'
-      ? 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700'
-      : searchType === 'pes'
-      ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
-      : searchType === 'loc'
-      ? 'bg-lime-600 hover:bg-lime-700 dark:bg-lime-600 dark:hover:bg-lime-700'
-       : searchType === 'dsc'
-      ? 'bg-fuchsia-600 hover:bg-fuchsia-700 dark:bg-fuchsia-600 dark:hover:bg-fuchsia-700'
-      : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700'
-  } text-white border-0 z-[9999]`}
-  size={'icon'}
->
-  <Search size={16} className="" />
-</Button>
-
-            </div>
+            <Button onClick={apply} variant="outline" className={`${btnColor} hover:text-white text-white border-0`} size={"icon"}>
+              <MagnifyingGlass size={16} />
+            </Button>
+          </div>
         </Alert>
 
-        {((input.length >= 3 && filteredItems.length != 0)) && (
-             <Alert className="w-full">
-    <ResponsiveMasonry
-              columnsCountBreakPoints={{
-                350: 1,
-                750: 2,
-                900: 2,
-                1200: 2
-              }}
-            >
-              <Masonry className="max-h-[80vh] md:overflow-y-auto overflow-y-scroll" gutter="20px">
-   {filteredItems.filter(item => item.type === 'cod').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Número de patrimônio</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'cod')
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.bem_cod}-${props.bem_dgv}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.bem_cod}-{props.bem_dgv}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
+        {/* Sugestões – a partir de 1+ caractere */}
+        {showSuggestions && (codList.length > 0 || atmList.length > 0) && (
+          <Alert className="w-full border-t-0">
+          <div className="max-h-[70vh] gap-8 grid md:overflow-y-auto overflow-y-scroll">
+                {codList.length > 0 && (
+                  <div>
+                    <p className="uppercase font-medium text-xs mb-3">Identificador (código-dígito)</p>
+                    <div className="flex flex-wrap gap-3">
+                      {codList.slice(0, 30).map((v) => (
+                        <div
+                          key={v}
+                          onClick={() => choose("cod", v)}
+                          className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                        >
+                          {v}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-{filteredItems.filter(item => item.type === 'atm').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Código ATM</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'atm')
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.bem_num_atm}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.bem_num_atm}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'nom').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Tipo de patrimônio</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'nom')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.mat_nom) === normalizeTerm(value.mat_nom)
-          ))
-        )
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.mat_nom}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.mat_nom}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'pes').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Responsável</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'pes')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.pes_nome) === normalizeTerm(value.pes_nome)
-          ))
-        )
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.pes_nome}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.pes_nome}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'loc').length !== 0 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Local de guarda</p>
-    <div className="flex flex-wrap gap-3">
-      {filteredItems
-        .filter(item => item.type === 'loc')
-        .filter((value, index, self) => 
-          index === self.findIndex((t) => (
-            normalizeTerm(t.loc_nom) === normalizeTerm(value.loc_nom)
-          ))
-        )
-        .slice(0, 15)
-        .map((props, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(`${props.loc_nom}`, props.type)}
-            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {props.loc_nom}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-{filteredItems.filter(item => item.type === 'dsc').length !== 0 && input.length >= 3 && (
-  <div>
-    <p className="uppercase font-medium text-xs mb-3">Palavras da descrição</p>
-    <div className="flex flex-wrap gap-3">
-      {Array.from(
-        new Set(
-          filteredItems
-          .filter(item => item.type === 'dsc')
-          .flatMap(item => item.bem_dsc_com)
-          .flatMap(desc => normalizeTerm(desc).split(/\s+/))
-          .filter(word => word.length > 2 && normalizeTerm(word).includes(normalizeTerm(input)))
-        )
-      )
-        .slice(0, 30)
-        .map((word, index) => (
-          <div
-            key={index}
-            onClick={() => handlePesquisa(word, 'dsc')}
-            className="flex gap-2 min-h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-          >
-            {word}
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-
-
-
-            </Masonry>
-            </ResponsiveMasonry>
-             </Alert>
+                {atmList.length > 0 && (
+                  <div>
+                    <p className="uppercase font-medium text-xs mb-3">Código ATM</p>
+                    <div className="flex flex-wrap gap-3">
+                      {atmList.slice(0, 30).map((v) => (
+                        <div
+                          key={v}
+                          onClick={() => choose("atm", v)}
+                          className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                        >
+                          {v}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+          </Alert>
         )}
-            </DialogContent>
-        </Dialog>
-    )
+
+        {/* Vazio */}
+        {showSuggestions && codList.length === 0 && atmList.length === 0 && (
+          <Alert className="w-full border-t-0">
+            <div className="text-sm text-muted-foreground">
+              Nenhuma sugestão para “<b>{input}</b>”. Digite o identificador (ex.: 12345-6) ou o código ATM.
+            </div>
+          </Alert>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }

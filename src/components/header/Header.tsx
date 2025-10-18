@@ -51,6 +51,7 @@ import { useModal } from "../hooks/use-modal-store";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ModeToggle } from "../mode-toggle";
 import { SpeedActions } from "./speed-actions";
+import { Notifications } from "./notifications";
 
 export function Header() {
   const {loggedIn, user, permission} = useContext(UserContext)
@@ -133,13 +134,6 @@ export function Header() {
 
 
 
-{(loggedIn && permission.length > 0) && (
-  <Link to={'/dashboard'}>
-  <Button variant='outline' size="sm"  className="h-8 px-2" >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Minha área
-                </Button></Link>
-)}
 
 <Link to={'/informacoes'}>
           <Button  variant='outline' size="icon" className="h-8 w-8" >
@@ -151,6 +145,9 @@ export function Header() {
 
 
              
+              {loggedIn && (
+                <Notifications/>
+              )}
 
  <SpeedActions/>
     

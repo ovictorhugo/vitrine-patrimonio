@@ -12,19 +12,25 @@ export function Admin() {
 
   const routeMap: Record<string, ModalType> = {
     "/dashboard": "visao-geral-user",
-    "/dashboard/patrimonios": "lista-patrimonio",
-    "/dashboard/visao-sala": "visao-sala",
+    "/dashboard/busca-avancada": "temp-asset",
+    "/dashboard/sala": "visao-sala",
     "/dashboard/novo-item": "novo-item",
-    "/dashboard/itens-vitrine": "itens-vitrine",
+    "/dashboard/movimentacao": "itens-vitrine",
     "/dashboard/empenhos": "empenhos",
     "/dashboard/criar-etiqueta": "create-bar-bode",
+     "/dashboard/administrativo": "administrativo-page",
+      "/dashboard/inventario": "inventario",
+    
     "/dashboard/painel": "painel",
+     "/dashboard/cargos-funcoes": "cargos-funcoes",
+      "/dashboard/desfazimento": "desfazimento",
     "/dashboard/assinaturee": "assinar-documento",
-    "/dashboard/itens-desfazimento": "itens-desfazimento",
     "/dashboard/transferencias": "transferencia",
     "/dashboard/editar-item": "editar-item",
-    "/dashboard/criar-patrimonio-temporario": "create-temp-asset",
-     "/dashboard/patrimonio-temporario": "temp-asset",
+    "/dashboard/criar-patrimonio-temporario": "create-temp-asset",     
+     "/dashboard/comissao-permanente": "commission",
+          "/dashboard/alienacao": "alienacao",
+          
   };
 
   useEffect(() => {

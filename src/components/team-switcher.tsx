@@ -34,7 +34,7 @@ export function TeamSwitcher({
   const { isMobile } = useSidebar()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
 
-    const {user,   setPermission,  setRole, role, loggedIn, urlGeral} = React.useContext(UserContext)
+    const {user,   setPermission, urlGeral, setRole, role, loggedIn} = React.useContext(UserContext)
     const { theme } = useTheme()
   
   
@@ -51,10 +51,10 @@ export function TeamSwitcher({
       }
     }, [teams]); // Executa novamente se a lista de teams mudar
   
-  
+    const token = localStorage.getItem('jwt_token');
   
   const fetchDataPerm = async (role_id:any) => {
-    let urlPermission = urlGeral + `s/permission?role_id=${role_id.id}`
+    let urlPermission = urlGeral + `roles/${role_id.id}/permissions`
        console.log(urlPermission)
 
        if (role_id.id == '') {
@@ -70,6 +70,7 @@ export function TeamSwitcher({
       const response = await fetch(urlPermission , {
         mode: "cors",
         headers: {
+          'Authorization': `Bearer ${token}`,
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET",
           "Access-Control-Allow-Headers": "Content-Type",
@@ -101,8 +102,8 @@ export function TeamSwitcher({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={!loggedIn && (teams.length > 0)}>
+        <DropdownMenu  >
+          <DropdownMenuTrigger  asChild disabled={!loggedIn && (teams.length == 0)}>
             <SidebarMenuButton
               size="lg"
               className=" data-[state=open]:text-sidebar-accent-foreground"
@@ -134,7 +135,7 @@ export function TeamSwitcher({
             </DropdownMenuLabel>
             {teams.map((team) => (
               <DropdownMenuItem
-                key={team.name}
+                key={team.id}
                 onClick={() => {
                   fetchDataPerm(team);
                   localStorage.setItem("role", JSON.stringify(team.name));
@@ -144,10 +145,8 @@ export function TeamSwitcher({
                   role === team.name ? "bg-neutral-50 dark:bg-neutral-700" : ""
                 }`}
               >
-                <Button className="w-6 h-6" variant={'outline'} size={'icon'}>
-                <GalleryVerticalEnd className="size-4 shrink-0" />
-                </Button>
-                {team.name}
+              
+                <p className="truncate">{team.name}</p>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

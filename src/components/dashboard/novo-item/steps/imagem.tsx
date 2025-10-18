@@ -58,28 +58,41 @@ export function ImagemStep({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const files = event.target.files;
-      if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
+const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  try {
+    const files = event.target.files;
+    if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
 
-      // cria objectURLs e limita a 4 slots
-      const newUrls = Array.from(files).map((f) => URL.createObjectURL(f));
-      const availableSlots = Math.max(4 - images.length, 0);
-      const toAdd = newUrls.slice(0, availableSlots);
-
-      setImages((prev) => [...prev, ...toAdd]);
-      setShowUploadDialog(false);
-
-      // limpa o input para poder re-selecionar o mesmo arquivo depois
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (e: any) {
-      toast("Erro ao carregar arquivo", {
-        description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => {} },
-      });
+    // verifica tamanho antes de gerar preview
+    for (const f of Array.from(files)) {
+      if (f.size > 2 * 1024 * 1024) {
+        toast("Arquivo muito grande!", {
+          description: `${f.name} excede o limite de 2 MB.`,
+          action: { label: "Fechar", onClick: () => {} },
+        });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return; // bloqueia todo o lote se tiver um arquivo inválido
+      }
     }
-  };
+
+    // cria objectURLs e limita a 4 slots
+    const newUrls = Array.from(files).map((f) => URL.createObjectURL(f));
+    const availableSlots = Math.max(4 - images.length, 0);
+    const toAdd = newUrls.slice(0, availableSlots);
+
+    setImages((prev) => [...prev, ...toAdd]);
+    setShowUploadDialog(false);
+
+    // limpa o input para poder re-selecionar o mesmo arquivo depois
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  } catch (e: any) {
+    toast("Erro ao carregar arquivo", {
+      description: e?.message || String(e),
+      action: { label: "Fechar", onClick: () => {} },
+    });
+  }
+};
+
 
   const handleRemoveImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -321,7 +334,7 @@ export function ImagemStep({
                       Capturar foto
                     </DialogTitle>
                     <DialogDescription className="text-zinc-500">
-                      Fotografe o item com boa iluminação. Esta foto será usada no Vitrine Patrimônio.
+                      Fotografe o item com boa iluminação. Esta foto será usada no Sistema Patrimônio.
                     </DialogDescription>
                   </DialogHeader>
   

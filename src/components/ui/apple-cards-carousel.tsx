@@ -185,12 +185,12 @@ export const Card = ({
     >
       {/* Thumb / botão que abre o Dialog */}
       <DialogTrigger asChild>
-        <motion.button
-          type="button"
-          layoutId={layout ? `card-${card.title}` : undefined}
-          className="rounded-lg bg-gray-100 dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden relative group focus:outline-none "
-          aria-label={`Abrir imagem: ${card.title}`}
-        >
+       <motion.button
+  type="button"
+  layoutId={layout ? `card-${card.title}-${index}` : undefined}
+  className="rounded-lg bg-gray-100 dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden relative group focus:outline-none "
+  aria-label={`Abrir imagem: ${card.title}`}
+>
           <div className="absolute z-[3] h-full top-0 inset-x-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
           <div className="relative p-4 z-[3]">
             {/* espaço para tags/título sobre a thumb, se quiser */}

@@ -6,7 +6,7 @@ import { GeralProvider } from "../components/provider/geral-provider";
 import { useModalHomepage } from "../components/hooks/use-modal-homepage";
 import { useLocation } from "react-router-dom";
 import { useModalBackground } from "../components/hooks/use-modal-background";
-
+import SimpleLayout from "../layout/simple-layout";
 export function Home() {
     const { onOpen } = useModalHomepage();
     const { onOpen:onOpenBg } = useModalBackground();
@@ -24,6 +24,9 @@ export function Home() {
         } else if(location.pathname == '/item') {
             onOpen('item-page')
       
+        } else if(location.pathname == '/informacoes') {
+            onOpen('informacoes')
+      
         } 
     }, [location]);
 
@@ -35,14 +38,14 @@ export function Home() {
 
     return(
         <>
-        <SearchLayout
+        <SimpleLayout
          defaultLayout={defaultLayout}
          defaultCollapsed={isCollapsed}
          navCollapsedSize={navCollapsedSize}
         >
             <GeralProvider/>
 
-        </SearchLayout>
+        </SimpleLayout>
         </>
     )
 }

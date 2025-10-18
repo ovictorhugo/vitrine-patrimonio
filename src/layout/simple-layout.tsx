@@ -24,7 +24,7 @@ interface MailProps {
   navCollapsedSize: number
   children:React.ReactNode
 }
-export default function SearchLayout({
+export default function SimpleLayout({
 
   defaultLayout = [265, 440, 655],
   defaultCollapsed = true,

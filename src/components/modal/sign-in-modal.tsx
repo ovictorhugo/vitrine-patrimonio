@@ -1,0 +1,57 @@
+import { ArrowUUpLeft, FileXls, Upload } from "phosphor-react";
+import { useModal } from "../hooks/use-modal-store";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { useCallback, useContext, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { UserContext } from "../../context/context";
+import { useDropzone } from "react-dropzone";
+import { LoaderCircle } from "lucide-react";
+import { Separator } from "../ui/separator";
+import { Alert } from "../ui/alert";
+import { MUfmg } from "../svg/MUfmg";
+
+
+export function SignInModal() {
+      const { onClose, isOpen, type: typeModal } = useModal();
+  const isModalOpen = (isOpen && typeModal === "sign-in") 
+
+    const [uploading, setUploading] = useState(false);
+    return (
+        <Dialog open={isModalOpen} onOpenChange={onClose}>
+      <DialogContent className="p-0  max-w-4xl grid grid-cols-2 h-[60vh]">
+        <Alert className="rounded-r-none border-0 bg-eng-blue">
+
+        </Alert>
+       <div className="p-4">
+         <DialogHeader>
+          <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+           Fazer login
+          </DialogTitle>
+          <DialogDescription className="text-zinc-500">
+           Faça login com sua conta Minha UFMG.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Separator className="my-4" />
+
+          <div className="mb-4">
+                               <a href={`https://conectee.eng.ufmg.br/v2/api/auth/shibboleth/login`}><Button className=" w-full" variant={'outline'} ><div className="h-[12px]"><MUfmg /></div>Login com Minha UFMG
+                         <div className="relative float-right top-0 right-0">
+                             <div className="bg-[#719CB8] w-2 rounded-full h-2 animate-ping float-right flex right-0">
+                             </div><div className="bg-[#719CB8] w-2 rounded-full h-2"></div></div></Button></a>
+          </div>
+
+
+          <DialogFooter>
+          <Button onClick={onClose} variant={"ghost"}>
+            <ArrowUUpLeft size={16} /> Cancelar
+          </Button>
+
+     
+        </DialogFooter>
+       </div>
+      </DialogContent>
+      </Dialog>
+    )
+}

@@ -18,15 +18,90 @@ import { Switch } from "../../ui/switch";
 import { LikeButton } from "./like-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { useModal } from "../../hooks/use-modal-store";
 
-/* ===== Tipos (compatíveis com o Block) ===== */
-interface Unit { id: string; unit_name: string; unit_code: string; unit_siaf: string; }
-interface Agency { id: string; agency_name: string; agency_code: string; unit_id: string; unit: Unit; }
-interface Sector { id: string; sector_name: string; sector_code: string; agency_id: string; agency: Agency; }
-interface Location { id: string; location_name: string; location_code: string; sector_id: string; sector: Sector; }
-interface Material { id: string; material_name: string; material_code: string; }
-interface LegalGuardian { id: string; legal_guardians_name: string; legal_guardians_code: string; }
-interface Asset {
+/* ========= Básicos ========= */
+export interface Unit {
+  id: string;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+}
+
+export interface Agency {
+  id: string;
+  agency_name: string;
+  agency_code: string;
+  unit_id: string;
+  unit: Unit;
+}
+
+export interface Sector {
+  id: string;
+  sector_name: string;
+  sector_code: string;
+  agency_id: string;
+  agency: Agency;
+}
+
+export interface LegalGuardian {
+  id: string;
+  legal_guardians_name: string;
+  legal_guardians_code: string;
+}
+
+export interface Material {
+  id: string;
+  material_name: string;
+  material_code: string;
+}
+
+/* ========= Usuário ========= */
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  provider: string;
+  linkedin: string | null;
+  lattes_id: string | null;
+  orcid: string | null;
+  ramal: string | null;
+  photo_url: string | null;
+  background_url: string | null;
+  matricula: string | null;
+  verify: boolean;
+  institution_id: string;
+}
+
+/* ========= Inventário por Local ========= */
+export interface Inventory {
+  key: string;
+  avaliable: boolean; // (sic) segue o JSON
+  id: string;
+  created_by: User;
+}
+
+export interface LocationInventory {
+  id: string;
+  assets: string[];          // lista de IDs/códigos em string
+  inventory: Inventory;
+  filled: boolean;
+}
+
+/* ========= Local ========= */
+export interface Location {
+  id: string;
+  location_name: string;
+  location_code: string;
+  sector_id: string;
+  legal_guardian_id: string;
+  sector: Sector;
+  legal_guardian: LegalGuardian;
+  location_inventories: LocationInventory[];
+}
+
+/* ========= Patrimônio (Asset) ========= */
+export interface Asset {
   id: string;
   asset_code: string;
   asset_check_digit: string;
@@ -44,44 +119,57 @@ interface Asset {
   expense_element_code: string;
   subelement_code: string;
   is_official: boolean;
-  material?: Material;
-  legal_guardian?: LegalGuardian;
-  location?: Location;
+
+  material: Material;
+  legal_guardian: LegalGuardian;
+  location: Location;
 }
-interface User {
+
+/* ========= Mídias ========= */
+export interface Image {
   id: string;
-  username: string;
-  email: string;
-  provider: string;
-  linkedin: string | null;
-  lattes_id: string | null;
-  orcid: string | null;
-  ramal: string | null;
-  photo_url: string | null;
-  background_url: string | null;
-  matricula: string | null;
-  verify: boolean;
-  institution_id: string;
+  catalog_id: string;
+  file_path: string;
 }
-interface Image { id: string; catalog_id: string; file_path: string; }
-interface WorkflowHistory {
+
+/* ========= Transferência ========= */
+export interface TransferRequest {
+  id: string;
+  status: string;
+  user: User;
+  location: Location;
+}
+
+/* ========= Histórico de Workflow ========= */
+export interface WorkflowHistory {
   id: string;
   workflow_status: string;
+  detail: Record<string, unknown>; // aceita qualquer payload
   catalog_id: string;
-  user_id?: string;
-  detail: { message: string };
+  user: User;
+  transfer_requests: TransferRequest[];
+  created_at: string; // ISO
 }
-interface CatalogEntry {
+
+/* ========= Catálogo ========= */
+export interface CatalogEntry {
   id: string;
-  situation: string;
+  situation: string;            // no JSON veio "UNUSED"; deixar aberto para outros status
   conservation_status: string;
   description: string;
+
   asset: Asset;
   user: User;
   location: Location;
   images: Image[];
   workflow_history: WorkflowHistory[];
-  created_at?: string;
+
+  created_at?: string;          // presente no JSON; deixar opcional por segurança
+}
+
+/* ========= Payload do endpoint ========= */
+export interface CatalogEntriesResponse {
+  catalog_entries: CatalogEntry[];
 }
 
 /** Props extras: o filho só dispara os diálogos do pai */
@@ -90,11 +178,12 @@ type Props = CatalogEntry & {
   onToggleFavorite?: (patrimonioId: string) => void;
   handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
   viewCount?: number;
-  onPromptDelete: () => void;  // abre diálogo de deletar no pai
-  onPromptMove: () => void;    // abre diálogo de movimentar no pai
+  onPromptDelete?: () => void;  // abre diálogo de deletar no pai
+  onPromptMove?: () => void;    // abre diálogo de movimentar no pai
 /** NOVO: controle externo do slide */
  // notifica o pai quando o usuário troca
 };
+
 
 export function ItemPatrimonio(props: Props) {
   const { urlGeral, loggedIn, user } = useContext(UserContext);
@@ -168,11 +257,12 @@ export function ItemPatrimonio(props: Props) {
 
  const csvCodTrimmed = (props.asset.csv_code || "").trim();
 
+ const {onOpen} = useModal()
   return (
     <div
       className="group cursor-pointer"
       onClick={() => {
-        window.open(`/item?id=${props.id}`, "_blank");
+       onOpen('catalog-modal', {...props})
       }}
     >
       <div className="relative">
@@ -210,34 +300,20 @@ export function ItemPatrimonio(props: Props) {
                     window.open(`/dashboard/editar-item?id=${props.id}`, "_blank");
                   }}
                   size="icon"
-                  variant="secondary"
+                  variant='outline'
                   className="h-8 w-8 group-hover:flex hidden transition-all"
                 >
                   <Pencil size={16} />
                 </Button>
               )}
 
-              {/* Movimentar (somente dono) */}
-              {(props.user.id === user?.id) && (
-                <Button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    props.onPromptMove();
-                  }}
-                  size="icon"
-                  variant="outline"
-                  className="h-8 w-8 group-hover:flex hidden transition-all"
-                >
-                  <ArrowRightLeft size={16} />
-                </Button>
-              )}
-
+           
               {/* Deletar (somente dono) */}
-              {(props.user.id === user?.id) && (
+              {(props.user.id === user?.id && props.onPromptDelete) && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
-                    props.onPromptDelete();
+                    props.onPromptDelete?.();
                   }}
                   className="h-8 w-8 group-hover:flex hidden transition-all"
                   variant="destructive"
@@ -281,8 +357,8 @@ export function ItemPatrimonio(props: Props) {
           </CarouselContent>
 
           <div className="w-full hidden absolute justify-between group-hover:flex p-3">
-            <CarouselPrevious variant={"secondary"} />
-            <CarouselNext variant={"secondary"} />
+            <CarouselPrevious variant={'outline'} />
+            <CarouselNext variant={'outline'} />
           </div>
         </Carousel>
       </div>
@@ -290,25 +366,32 @@ export function ItemPatrimonio(props: Props) {
       {/* Rodapé: material + código */}
       <Alert className="rounded-none p-3 flex justify-between items-center">
         <div className="w-full">
-       <div className="flex mb-1 justify-between">
-           <p className="font-medium truncate">{materialNome}</p>
+     <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
+      {/* Título: único que pode encolher */}
+      <p
+        className="font-medium truncate min-w-0"
+        title={materialNome}
+      >
+        {materialNome}
+      </p>
 
- <div className="flex items-center gap-2">
-   <p className="text-sm  flex items-center gap-1">
-          <Barcode size={16}/>  {assetCode}{assetDgv ? `-${assetDgv}` : ""}
-          </p>
+      {/* Código patrimonial: não encolhe nem quebra */}
+      <p className="text-sm flex items-center gap-1 whitespace-nowrap shrink-0">
+        <Barcode size={16} /> {assetCode}{assetDgv ? `-${assetDgv}` : ""}
+      </p>
 
-             <Avatar onClick={(event) => {
-       event.stopPropagation();
-      window.open(`/user?id=${props.user.id}`, "_blank");
-    }} className="h-6 w-6 rounded-md">
-  <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
-  <AvatarFallback><User size={12} /></AvatarFallback>
-</Avatar>
-
-
- </div>
-       </div>
+      {/* Avatar: não encolhe */}
+      <Avatar
+        onClick={(event) => {
+          event.stopPropagation();
+          window.open(`/user?id=${props.user.id}`, "_blank");
+        }}
+        className="h-6 w-6 rounded-md shrink-0"
+      >
+        <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
+        <AvatarFallback><User size={12} /></AvatarFallback>
+      </Avatar>
+    </div>
           <p className="text-sm line-clamp-1 text-gray-500 ">
           {props.description}
           </p>
