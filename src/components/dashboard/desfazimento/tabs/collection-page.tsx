@@ -1,3 +1,4 @@
+// src/pages/desfazimento/CollectionPage.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../../ui/button";
 import { Helmet } from "react-helmet";
@@ -15,9 +16,9 @@ import {
   Home,
   Undo2,
   LoaderCircle,
-  User,
-  Edit,
-
+  Pencil,
+  PackageOpen,
+  CheckCircle,
 } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
@@ -45,8 +46,10 @@ import { useQuery } from "../../../authentication/signIn";
 import { PatrimonioItemCollection } from "../components/patrimonio-item-inventario";
 import { CardHeader, CardTitle, CardContent } from "../../../ui/card";
 import { CollectionDTO } from "../../collection/collection-page";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { AddToCollectionDrawer } from "../components/add-collection";
+import { Label } from "../../../ui/label";
+import { Textarea } from "../../../ui/textarea";
+import { ArrowUUpLeft } from "phosphor-react";
 
 // ================== Types ==================
 type UUID = string;
@@ -271,11 +274,11 @@ export function CollectionPage() {
         const [matRes, guardRes] = await Promise.all([
           fetch(`${urlGeral}materials/`, {
             method: "GET",
-            headers: authHeaders, // ✅ cabeçalho com token
+            headers: authHeaders,
           }),
           fetch(`${urlGeral}legal-guardians/`, {
             method: "GET",
-            headers: authHeaders, // ✅ cabeçalho com token
+            headers: authHeaders,
           }),
         ]);
 
@@ -355,78 +358,77 @@ export function CollectionPage() {
     fetchCollectionItems();
   }, [fetchCollectionItems]);
 
-  // ====== Fetch listas hierarquia (compartilhadas) ======
-// carregar unidades
-useEffect(() => {
-  (async () => {
-    try {
-      const res = await fetch(`${urlGeral}units/`, {
-        method: "GET",
-        headers: authHeaders, // ✅ inclui token
-      });
-      const json = await res.json();
-      setUnits(json?.units ?? []);
-    } catch {
-      setUnits([]);
-    }
-  })();
-}, [urlGeral, authHeaders]);
+  // carregar unidades
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${urlGeral}units/`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setUnits(json?.units ?? []);
+      } catch {
+        setUnits([]);
+      }
+    })();
+  }, [urlGeral, authHeaders]);
 
-// carregar agências
-const fetchAgencies = useCallback(
-  async (uid: UUID) => {
-    if (!uid) return setAgencies([]);
-    try {
-      const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ inclui token
-      });
-      const json = await res.json();
-      setAgencies(json?.agencies ?? []);
-    } catch {
-      setAgencies([]);
-    }
-  },
-  [urlGeral, authHeaders]
-);
+  // carregar agências
+  const fetchAgencies = useCallback(
+    async (uid: UUID) => {
+      if (!uid) return setAgencies([]);
+      try {
+        const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setAgencies(json?.agencies ?? []);
+      } catch {
+        setAgencies([]);
+      }
+    },
+    [urlGeral, authHeaders]
+  );
 
-// carregar setores
-const fetchSectors = useCallback(
-  async (aid: UUID) => {
-    if (!aid) return setSectors([]);
-    try {
-      const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ inclui token
-      });
-      const json = await res.json();
-      setSectors(json?.sectors ?? []);
-    } catch {
-      setSectors([]);
-    }
-  },
-  [urlGeral, authHeaders]
-);
+  // carregar setores
+  const fetchSectors = useCallback(
+    async (aid: UUID) => {
+      if (!aid) return setSectors([]);
+      try {
+        const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setSectors(json?.sectors ?? []);
+      } catch {
+        setSectors([]);
+      }
+    },
+    [urlGeral, authHeaders]
+  );
 
-// carregar locais de guarda
-const fetchLocations = useCallback(
-  async (sid: UUID) => {
-    if (!sid) return setLocations([]);
-    try {
-      const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ inclui token
-      });
-      const json = await res.json();
-      setLocations(json?.locations ?? []);
-    } catch {
-      setLocations([]);
-    }
-  },
-  [urlGeral, authHeaders]
-);
+  // carregar locais
+  const fetchLocations = useCallback(
+    async (sid: UUID) => {
+      if (!sid) return setLocations([]);
+      try {
+        const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setLocations(json?.locations ?? []);
+      } catch {
+        setLocations([]);
+      }
+    },
+    [urlGeral, authHeaders]
+  );
 
-  // encadeamento filtros (lista principal)
+  // encadeamento filtros
   useEffect(() => {
     setAgencyId(null);
     setSectorId(null);
@@ -455,7 +457,7 @@ const fetchLocations = useCallback(
     fetchCollectionItems();
   }, [unitId, agencyId, sectorId, locationId, qMain, materialIdMain, guardianIdMain, fetchCollectionItems]);
 
-  // Scroll da barra de filtros (lista principal)
+  // Scroll filtros
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -487,10 +489,9 @@ const fetchLocations = useCallback(
     setGuardianIdMain(null);
   };
 
-  // ==================== POP-UP (Drawer separado) ====================
+  // Drawer adicionar
   const [openAdd, setOpenAdd] = useState(false);
 
-  // seleção + inclusão sem refetch (append local)
   const handleItemsAdded = (newItems: CollectionItem[]) => {
     setItems((prev) => {
       const ids = new Set(prev.map((p) => p.id));
@@ -499,12 +500,11 @@ const fetchLocations = useCallback(
     });
   };
 
-  // ======= Cards contadores (true/false) =======
   const fmt = (n: number) => n.toLocaleString("pt-BR");
   const countDesfazimento = useMemo(() => items.filter((i) => i.status === true).length, [items]);
   const countNaoDesfazimento = useMemo(() => items.filter((i) => i.status === false).length, [items]);
 
-  ///GET COLLECTION
+  // GET COLLECTION
   const type_search = queryUrl.get("collection_id");
   const [collection, setCollection] = useState<CollectionDTO | null>(null);
 
@@ -521,7 +521,6 @@ const fetchLocations = useCallback(
         throw new Error(text || `Falha ao carregar coleção (HTTP ${res.status}).`);
       }
 
-      // ✅ backend retorna um único objeto
       const data: CollectionDTO = await res.json();
       setCollection(data);
       setLoadingList(false);
@@ -542,56 +541,93 @@ const fetchLocations = useCallback(
 
   useEffect(() => {
     let timeouts: NodeJS.Timeout[] = [];
-
     setLoadingMessage("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
-
-    timeouts.push(
-      setTimeout(() => {
-        setLoadingMessage("Estamos quase lá, continue aguardando...");
-      }, 5000)
-    );
-
-    timeouts.push(
-      setTimeout(() => {
-        setLoadingMessage("Só mais um pouco...");
-      }, 10000)
-    );
-
-    timeouts.push(
-      setTimeout(() => {
-        setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo.");
-      }, 15000)
-    );
-
-    timeouts.push(
-      setTimeout(() => {
-        setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco");
-      }, 15000)
-    );
-
-    return () => {
-      timeouts.forEach(clearTimeout);
-    };
+    timeouts.push(setTimeout(() => setLoadingMessage("Estamos quase lá, continue aguardando..."), 5000));
+    timeouts.push(setTimeout(() => setLoadingMessage("Só mais um pouco..."), 10000));
+    timeouts.push(setTimeout(() => setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo."), 15000));
+    timeouts.push(setTimeout(() => setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco"), 15000));
+    return () => { timeouts.forEach(clearTimeout); };
   }, []);
 
   const handleVoltar = () => {
     const currentPath = location.pathname;
     const hasQueryParams = location.search.length > 0;
-
     if (hasQueryParams) {
       navigate(currentPath);
     } else {
       const pathSegments = currentPath.split("/").filter((segment) => segment !== "");
-
       if (pathSegments.length > 1) {
         pathSegments.pop();
         const previousPath = "/" + pathSegments.join("/");
         navigate(previousPath);
-      } else {
-        navigate("/");
-      }
+      } else navigate("/");
     }
   };
+
+  // ------------------ Dialogs: Editar / Deletar ------------------
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [newName, setNewName] = useState<string>("");
+  const [newDescription, setNewDescription] = useState<string>("");
+
+  // Pré-carrega os campos quando abrir o Editar ou quando collection mudar
+  useEffect(() => {
+    if (collection) {
+      setNewName(collection.name ?? "");
+      setNewDescription(collection.description ?? "");
+    }
+  }, [collection]);
+
+  const handleUpdateCollection = async () => {
+    try {
+      setUpdateLoading(true);
+      const res = await fetch(`${urlGeral}collections/${collection_id}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify({ name: newName, description: newDescription }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erro ao atualizar a coleção.");
+      }
+      // Atualiza estado local sem refazer fetch
+      setCollection((prev) => (prev ? { ...prev, name: newName, description: newDescription } : prev));
+      toast.success("Coleção atualizada com sucesso!");
+      setEditOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao atualizar a coleção.");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleDeleteCollection = async () => {
+    try {
+      setDeleteLoading(true);
+      const res = await fetch(`${urlGeral}collections/${collection_id}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao deletar a coleção.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // ----- handler robusto para remoção de item -----
+  const handleItemDeleted = useCallback((deletedId: UUID) => {
+    setItems((prev) => {
+      const next = prev.filter((it) => it.id !== deletedId);
+      // fallback: se nada saiu localmente, re-sincroniza com o backend
+      if (next.length === prev.length) {
+        fetchCollectionItems();
+      }
+      return next;
+    });
+  }, [fetchCollectionItems]);
 
   if (loadingList && !collection) {
     return (
@@ -666,14 +702,22 @@ const fetchLocations = useCallback(
           </div>
 
           <div className="flex items-center gap-2">
-            {/* botão abrir pop-up */}
+            {/* editar / deletar */}
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil size={16}  /> Editar
+            </Button>
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash size={16} /> Deletar
+            </Button>
+
+            {/* botão abrir pop-up adicionar item */}
             <Button onClick={() => setOpenAdd(true)}>
-              <Plus size={16} className="" /> Adicionar item
+              <Plus size={16}  /> Adicionar item
             </Button>
           </div>
         </div>
 
-        <Alert className=" dark:text-neutral-50 w-full h-72 bg-eng-blue dark:bg-eng-blue p-0 md:flex-row gap-8 flex-col flex">
+        <Alert className="dark:text-neutral-50 w-full h-72 bg-eng-blue dark:bg-eng-blue p-0 md:flex-row gap-8 flex-col flex">
           <div className="md:w-1/2 w-full gap-1 flex flex-col h-full justify-center p-8">
             <p className="font-semibold text-2xl text-white">{collection.name}</p>
             <p className=" text-white">{collection.description}</p>
@@ -685,7 +729,7 @@ const fetchLocations = useCallback(
           <Alert className="p-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Coletados</CardTitle>
-              <Recycle className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{fmt(countDesfazimento)}</div>
@@ -846,6 +890,14 @@ const fetchLocations = useCallback(
                           )
                         );
                       }}
+
+                      // ✅ remove o item da lista após DELETE OK (id vem do filho)
+                      onDeleted={(deletedId) => {
+                        const next = items.filter((it) => it.id !== deletedId);
+                        if (!(next.length === items.length)) {
+                          setItems(next);
+                        } 
+                      }}
                     />
                   ))}
                 </div>
@@ -855,13 +907,70 @@ const fetchLocations = useCallback(
         </Accordion>
       </main>
 
+      {/* =================== Dialog EDITAR =================== */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Editar coleção</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Altere o nome e a descrição da coleção.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Separator className="my-4" />
+
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Descrição</Label>
+              <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>
+               <ArrowUUpLeft size={16} />  Cancelar
+            </Button>
+            <Button onClick={handleUpdateCollection} disabled={updateLoading}>
+              {updateLoading ? <Loader2 className="animate-spin " size={16} /> : <Pencil size={16} className="" />}
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* =================== Dialog DELETAR =================== */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">Deletar coleção</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Tem certeza que deseja excluir esta coleção? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+             <ArrowUUpLeft size={16} />    Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteCollection} disabled={deleteLoading}>
+              {deleteLoading ? <Loader2 className="animate-spin " size={16} /> : <Trash size={16}  />}
+              Deletar coleção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* =================== Drawer Adicionar (componente separado) =================== */}
       <AddToCollectionDrawer
         open={openAdd}
         onOpenChange={(o) => setOpenAdd(o)}
         baseUrl={urlGeral}
         headers={authHeaders}
-        collectionId={String(collection_id) || null} // se nulo, o Drawer mostra seletor de coleções
+        collectionId={String(collection_id) || null}
         onItemsAdded={handleItemsAdded}
       />
     </div>

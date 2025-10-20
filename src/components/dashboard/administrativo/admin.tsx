@@ -110,8 +110,8 @@ export function Admin() {
   return (
     <div className="flex flex-col h-full">
       <Helmet>
-        <title>Patrimônio temporário | Sistema Patrimônio</title>
-        <meta name="description" content="Patrimônio temporário | Sistema Patrimônio" />
+        <title>Administrativo | Sistema Patrimônio</title>
+       
       </Helmet>
 
       <main className="flex flex-col ">

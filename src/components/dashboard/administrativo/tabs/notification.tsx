@@ -1,9 +1,12 @@
-import { ListChecks, Plus, Loader2, Trash, User, Send, Bell, X, ArrowRight } from "lucide-react";
+import {
+  ListChecks, Plus, Loader2, Trash, User, Send, Bell, X, ArrowRight,
+  ChevronLeft, ChevronRight
+} from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import { Input } from "../../../ui/input";
 import { Label } from "../../../ui/label";
-import { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../../../../context/context";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
@@ -25,7 +28,7 @@ import { Separator } from "../../../ui/separator";
 import { Textarea } from "../../../ui/textarea";
 import IconPicker from "../components/icon-picker";
 import { NotificationItem } from "../components/notification-item";
-import { notificationsTypes } from "../../../header/notifications";
+import { Notifications, notificationsTypes } from "../../../header/notifications";
 import { Checkbox } from "../../../ui/checkbox";
 import { Badge } from "../../../ui/badge";
 import {
@@ -38,6 +41,8 @@ import {
 } from "../../../ui/select";
 import { Tabs, TabsContent } from "../../../ui/tabs";
 import { UsersResponse } from "../../cargos-funcoes/tabs/roles";
+import { useLocation, useNavigate } from "react-router-dom";
+import { NotificationItemAdmin } from "../components/notification-item-admin";
 
 // ===== Tipos da API =====
 export type RoleDTO = { id: string; name: string; description: string };
@@ -89,14 +94,45 @@ export type NotificationDetailDTO = {
   [key: string]: any;
 };
 
+export type RecipientEntry = {
+  id: string;                   // id do registro recipient
+  read_at: string | null;       // quando aquele alvo leu
+  target_user: {
+    id: string;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string | null;
+    lattes_id: string | null;
+    orcid: string | null;
+    ramal: string | null;
+    photo_url: string | null;
+    background_url: string | null;
+    matricula: string | null;
+    verify: boolean;
+    institution_id: string;
+    roles: Array<{
+      id: string;
+      name: string;
+      description: string;
+      permissions: Array<any>;
+    }>;
+    system_identity: any | null;
+  };
+};
+
+
+// 🔁 estenda seu NotificationDTO para conter opcionalmente recipients
 export type NotificationDTO = {
   id: string;
   type: string;
   detail: NotificationDetailDTO;
   read_at: string | null;
   created_at: string;
-  source_user: SourceUserDTO;
+  source_user?: SourceUserDTO;     // (opcional – para compat)
+  recipients?: RecipientEntry[];   // +++ AQUI
 };
+
 
 export type NotificationsResponse = { notifications: NotificationDTO[] };
 
@@ -108,6 +144,20 @@ const MESSAGE_TEMPLATES: Template[] = [
   { id: "atualizacao", label: "Atualização de sistema", title: "Atualização disponível", description: "Lançamos novas funcionalidades. Veja as notas da versão no link.", link: "/changelog", icon: "sparkles" },
   { id: "manutencao", label: "Janela de manutenção", title: "Manutenção programada", description: "O sistema ficará indisponível hoje das 22h às 23h59 (BRT) para melhorias.", icon: "wrench" },
 ];
+
+// ===== Tipagem do novo endpoint /notifications/sent =====
+type SentItem = {
+  id: string;
+  read_at: string | null;
+  created_at: string;
+  notification: {
+    id: string;
+    type: string;
+    detail: NotificationDetailDTO;
+    source_user: SourceUserDTO;
+  };
+};
+type SentResponse = { notifications: SentItem[] };
 
 export function Notification() {
   const [key, setKey] = useState("");
@@ -147,20 +197,63 @@ export function Notification() {
     [token]
   );
 
-  // ===== buscas =====
-  const fetchInventories = async () => {
-    try {
-      setLoadingList(true);
-      const res = await fetch(`${urlGeral}notifications/`, { method: "GET", headers: authHeaders });
-      if (!res.ok) throw new Error((await res.text().catch(() => "")) || `Falha ao carregar notificações (HTTP ${res.status}).`);
-      const data: NotificationsResponse = await res.json();
-      setNotification(Array.isArray(data?.notifications) ? data.notifications : []);
-    } catch (e: any) {
-      toast("Erro ao carregar notificações", { description: e?.message || String(e), action: { label: "Fechar", onClick: () => {} } });
-    } finally {
-      setLoadingList(false);
-    }
+  // ===== navegação & paginação por querystring =====
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qs = new URLSearchParams(location.search);
+  const initialOffset = Number(qs.get("offset") || "0");
+  const initialLimit = Number(qs.get("limit") || "24");
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
+
+  const isFirstPage = offset === 0;
+  // isLastPage: se a página atual retornou menos que o limit
+  const isLastPage = notification.length < limit;
+
+  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+    const params = new URLSearchParams(location.search);
+    params.set("offset", String(newOffset));
+    params.set("limit", String(newLimit));
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
   };
+
+  useEffect(() => {
+    handleNavigate(offset, limit, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, limit]);
+
+  // ===== buscas =====
+  // 🔁 Novo: buscar em /notifications/sent com paginação
+const fetchInventories = async () => {
+  try {
+    setLoadingList(true);
+    const res = await fetch(
+      `${urlGeral}notifications/sent?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`,
+      { method: "GET", headers: authHeaders }
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        (await res.text().catch(() => "")) ||
+        `Falha ao carregar notificações (HTTP ${res.status}).`
+      );
+    }
+
+    const raw = await res.json();
+    const normalized: NotificationDTO[] = Array.isArray(raw?.notifications)
+      ? raw.notifications
+      : [];
+
+    setNotification(normalized);
+  } catch (e: any) {
+    toast("Erro ao carregar notificações", {
+      description: e?.message || String(e),
+      action: { label: "Fechar", onClick: () => {} },
+    });
+  } finally {
+    setLoadingList(false);
+  }
+};
 
   const fetchUsers = async () => {
     try {
@@ -176,7 +269,10 @@ export function Notification() {
     }
   };
 
-  useEffect(() => { fetchInventories(); /* eslint-disable-next-line */ }, [urlGeral]);
+  useEffect(() => {
+    fetchInventories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlGeral, offset, limit]);
 
   // ===== templates =====
   const applyTemplate = (templateId: string) => {
@@ -199,7 +295,6 @@ export function Notification() {
     try {
       if (!key.trim()) {
         toast("Informe o título da notificação", { description: "O campo 'Título' está vazio.", action: { label: "Fechar", onClick: () => {} } });
-        // foca no passo de conteúdo se estiver no segundo
         setWizardStep("conteudo");
         return;
       }
@@ -232,11 +327,13 @@ export function Notification() {
       // reset
       setKey(""); setDescription(""); setLink(""); setIcon(undefined);
       setSelectedUsers([]); setSendToAll(true); setIsOpen(false);
+      // Recarrega a página 1 para o usuário ver o item novo
+      setOffset(0);
+      await fetchInventories();
     } catch (e: any) {
       toast("Erro ao enviar notificação", { description: e?.message || String(e), action: { label: "Fechar", onClick: () => {} } });
     } finally {
       setCreating(false);
-      await fetchInventories();
     }
   };
 
@@ -251,6 +348,7 @@ export function Notification() {
     if (!deleteTarget) return;
     try {
       setDeleting(true);
+      // TODO: se sua API exigir `notifications/sent/:id`, troque a URL abaixo.
       const res = await fetch(`${urlGeral}notifications/${deleteTarget.id}`, { method: "DELETE", headers: authHeaders });
       if (!res.ok) throw new Error((await res.text().catch(() => "")) || `Falha ao excluir notificação (HTTP ${res.status}).`);
 
@@ -264,17 +362,10 @@ export function Notification() {
     }
   };
 
-  const formatDateTimeBR = (iso?: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(d);
-    } catch { return iso; }
-  };
-
-  const confirmEnabled = deleteTarget && deleteText.trim() === deleteTarget.key;
   const [isOpen, setIsOpen] = useState(false);
   const baseUrl = `${urlGeral}notifications`;
+
+  console.log(notification)
 
   return (
     <div className="p-8 gap-8 flex flex-col">
@@ -333,7 +424,7 @@ export function Notification() {
               {/* Título */}
               <div className="flex flex-col space-y-1.5 w-full">
                 <Label htmlFor="notif-title">Título</Label>
-                <Input id="notif-title"  value={key} onChange={(e) => setKey(e.target.value)} />
+                <Input id="notif-title" value={key} onChange={(e) => setKey(e.target.value)} />
               </div>
 
               {/* Ícone + Link */}
@@ -360,9 +451,9 @@ export function Notification() {
               <div className="space-y-3 mb-4">
                 <Alert className="mb-4">
                   <div className="flex items-center gap-2 ">
-                  <Checkbox id="sendToAll" checked={sendToAll} onCheckedChange={(v) => setSendToAll(Boolean(v))} />
-                  <Label htmlFor="sendToAll">Enviar para todos os usuários</Label>
-                </div>
+                    <Checkbox id="sendToAll" checked={sendToAll} onCheckedChange={(v) => setSendToAll(Boolean(v))} />
+                    <Label htmlFor="sendToAll">Enviar para todos os usuários</Label>
+                  </div>
                 </Alert>
 
                 {!sendToAll && (
@@ -400,29 +491,26 @@ export function Notification() {
           </Tabs>
 
           <DialogFooter>
-           
-
-             {wizardStep === "conteudo" && (
+            {wizardStep === "conteudo" && (
               <DialogClose asChild>
-              <Button variant="ghost">
-                <ArrowUUpLeft size={16} /> Cancelar
-              </Button>
-            </DialogClose>
+                <Button variant="ghost">
+                  <ArrowUUpLeft size={16} /> Cancelar
+                </Button>
+              </DialogClose>
             )}
-
 
             {wizardStep === "destinatarios" && (
               <Button variant="ghost" onClick={() => setWizardStep("conteudo")}>
-              <ArrowUUpLeft size={16} />    Voltar
+                <ArrowUUpLeft size={16} /> Voltar
               </Button>
             )}
 
             {wizardStep === "conteudo" ? (
               <Button
                 onClick={() => setWizardStep("destinatarios")}
-                disabled={!key.trim()} // opcional: só deixa avançar se tiver título
+                disabled={!key.trim()}
               >
-          <ArrowRight size={16} className="" />      Próximo 
+                <ArrowRight size={16} /> Próximo
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={creating}>
@@ -478,7 +566,6 @@ export function Notification() {
                         <p className="font-medium truncate">{u.username}</p>
                         <div className="text-xs text-gray-500 font-normal truncate">({u.email})</div>
                       </div>
-                     
                     </button>
                   ))}
                 </div>
@@ -492,7 +579,6 @@ export function Notification() {
             <DialogClose asChild>
               <Button variant="ghost"><ArrowUUpLeft size={16} /> Concluir</Button>
             </DialogClose>
-           
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -516,16 +602,16 @@ export function Notification() {
             ) : (
               <div className="grid gap-3">
                 {notification.map((n) => (
-                  <Alert key={n.id} className="flex items-center p-0 pr-6 group">
+                  <Alert key={n.id} className="flex  p-0 pr-4 group">
                     <div className="flex-1">
-                      <NotificationItem
+                      <NotificationItemAdmin
                         notification={n}
                         baseUrl={baseUrl}
                         token={token!}
                         notificationsTypes={notificationsTypes}
                       />
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex flex-col items-end gap-2 shrink-0 mt-4">
                       <Button
                         variant='destructive'
                         size="icon"
@@ -533,10 +619,8 @@ export function Notification() {
                         onClick={() => openDeleteDialog(n.id, n?.detail?.title || n.id)}
                         title="Excluir notificação"
                       >
-                        <Trash size={16} className="" />
-                    
+                        <Trash size={16} />
                       </Button>
-                   
                     </div>
                   </Alert>
                 ))}
@@ -545,6 +629,52 @@ export function Notification() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* ===== Paginação ===== */}
+      <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+        <span className="text-sm text-muted-foreground">Itens por página:</span>
+        <Select
+          value={limit.toString()}
+          onValueChange={(value) => {
+            const newLimit = parseInt(value);
+            setOffset(0);
+            setLimit(newLimit);
+            handleNavigate(0, newLimit);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Itens" />
+          </SelectTrigger>
+          <SelectContent>
+            {[12, 24, 36, 48, 84, 162].map((val) => (
+              <SelectItem key={val} value={val.toString()}>
+                {val}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="w-full flex justify-center items-center gap-10 mt-8">
+        <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+            disabled={isFirstPage}
+          >
+            <ChevronLeft size={16} className="mr-2" />
+            Anterior
+          </Button>
+
+          <Button
+            onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+            disabled={isLastPage}
+          >
+            Próximo
+            <ChevronRight size={16} className="ml-2" />
+          </Button>
+        </div>
+      </div>
 
       {/* ===== Dialog de confirmação de exclusão ===== */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -580,7 +710,7 @@ export function Notification() {
             >
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={!confirmEnabled || deleting}>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={!(deleteTarget && deleteText.trim() === deleteTarget.key) || deleting}>
               {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               <Trash size={16} /> Confirmar exclusão
             </Button>

@@ -1,8 +1,10 @@
-import { memo } from "react";
+import { memo, useContext } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../../../ui/alert";
-import { Calendar } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import { icons as LucideMap } from "lucide-react";
 import type { NotificationDTO } from "../tabs/notification"; // ajuste o caminho se necessário
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
+import { UserContext } from "../../../../context/context";
 
 type NotificationItemProps = {
   notification: NotificationDTO;
@@ -47,7 +49,7 @@ async function patchRead(baseUrl: string, id: string, token: string) {
   const res = await fetch(`${baseUrl}/${id}`, {
     method: "PATCH",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ read: true }),
@@ -58,15 +60,23 @@ async function patchRead(baseUrl: string, id: string, token: string) {
 }
 
 function resolveTypeInfo(
-  type: string,
+  type: string | undefined,
   notificationsTypes: Array<{ type: string; icon: any; bg_color: string }>
 ) {
+  if (!type) return { icon: (LucideMap as any).bell, bg_color: "bg-gray-100" };
   const found = notificationsTypes.find((t) => t.type === type);
   return found ?? { icon: (LucideMap as any).bell, bg_color: "bg-gray-100" };
 }
 
 const hasHttp = (url?: string) => !!url && /^https?:\/\//i.test(url);
 const isInternal = (url?: string) => !!url && url.startsWith("/");
+
+// Obtém o remetente considerando as duas estruturas possíveis:
+// - achatada: notification.source_user
+// - aninhada: notification.notification.source_user
+function getSender(n: any) {
+  return n?.source_user ?? n?.notification?.source_user ?? null;
+}
 
 /* ===================== Componente ===================== */
 
@@ -78,7 +88,28 @@ export const NotificationItem = memo(function NotificationItem({
   onMarkedRead,
   className,
 }: NotificationItemProps) {
-  const { type, detail, created_at, id } = notification;
+  const { urlGeral } = useContext(UserContext);
+
+  // Campos principais (considera estrutura achatada ou aninhada)
+  const type = (notification as any).type ?? (notification as any).notification?.type;
+  const detail =
+    (notification as any).detail ?? (notification as any).notification?.detail ?? {};
+  const created_at =
+    (notification as any).created_at ??
+    (notification as any).notification?.created_at ??
+    new Date().toISOString();
+  const id = (notification as any).id;
+
+  // Remetente
+  const sender = getSender(notification);
+  const senderName: string =
+    sender?.username || sender?.name || sender?.email || "—";
+  const senderEmail: string | undefined = sender?.email;
+
+  const avatarUrl =
+    sender?.id && urlGeral
+      ? `${urlGeral.replace(/\/+$/, "")}/user/upload/${sender.id}/icon`
+      : undefined;
 
   // 1) ícone pelo detail.icon (lucide map)
   const IconFromDetail = getIconFromDetail(detail?.icon);
@@ -91,7 +122,7 @@ export const NotificationItem = memo(function NotificationItem({
   const IconComp = IconFromDetail ?? FallbackIcon;
 
   // Link behavior
-  const link = detail?.link;
+  const link: string | undefined = detail?.link;
   const clickable = !!link;
   const external = hasHttp(link);
   const internal = isInternal(link);
@@ -139,15 +170,15 @@ export const NotificationItem = memo(function NotificationItem({
       }`}
     >
       {/* barrinha lateral */}
-      <div className={`${bgColor}  w-2 rounded-l-md border`} />
+      <div className={`${bgColor} w-2 rounded-l-md border`} />
 
       <Alert
-        className={` w-full border-l-0 rounded-l-none border-0  dark:text-white transition-all ${
+        className={`w-full border-l-0 rounded-l-none border-0 dark:text-white transition-all ${
           clickable ? "hover:opacity-90" : ""
         }`}
       >
         <div className="flex items-start gap-3">
-          <IconComp className="h-5 w-5" />
+          <IconComp className="h-5 w-5 shrink-0" />
           <div className="flex-1 min-w-0">
             <AlertTitle className="text-sm font-medium truncate">
               {detail?.title ?? "Notificação"}
@@ -159,14 +190,31 @@ export const NotificationItem = memo(function NotificationItem({
               </AlertDescription>
             )}
 
-            <div className="flex items-center gap-2 mt-2">
-              <Calendar size={12} className="text-gray-400" />
-              <p className="text-xs text-gray-500">{formatDate(created_at)}</p>
+            {/* Linha de metadata: data + remetente */}
+            <div className="flex flex-wrap items-center mt-8 gap-3 ">
+              {/* Data */}
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <Calendar size={12} className="text-gray-400" />
+                <span>{formatDate(created_at)}</span>
+              </div>
 
-              {/* etiqueta opcional para sinalizar externo */}
-              {external && (
-                <span className="ml-auto text-[10px] text-gray-500">externo</span>
-              )}
+              {/* Remetente */}
+              <div className="flex items-center gap-2 text-xs ">
+                <Avatar className="rounded-md h-4 w-4 shrink-0">
+                  {avatarUrl ? (
+                    <AvatarImage className="rounded-md h-5 w-5" src={avatarUrl} />
+                  ) : (
+                    <AvatarImage className="rounded-md h-5 w-5" src="" />
+                  )}
+                  <AvatarFallback className="flex items-center justify-center">
+                    <User size={10} />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-gray-500 truncate max-w-[10rem]" title={senderName}>
+                  {senderName}
+                </span>
+               
+              </div>
             </div>
           </div>
         </div>

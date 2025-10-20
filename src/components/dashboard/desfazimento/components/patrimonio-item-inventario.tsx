@@ -1,8 +1,8 @@
-// PatrimonioItemCollection.tsx
+// src/pages/desfazimento/components/PatrimonioItemCollection.tsx
 import { Alert } from "../../../ui/alert";
 import {
   Archive, HelpCircle, Hourglass, MoveRight, User, X, Check, Loader2,
-  RefreshCcw,
+  RefreshCcw, Trash,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Badge } from "../../../ui/badge";
@@ -14,12 +14,13 @@ import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "../../../ui/carousel";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "../../../ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Input } from "../../../ui/input";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
+import { ArrowUUpLeft } from "phosphor-react";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -41,9 +42,9 @@ type Props = {
   invId: string;
   entry: CatalogEntry;
 
-  // 👇 novos props para update
+  // novos props para operações da collection
   collectionId: string;     // /collections/{collection_id}
-  itemId: string;           // /items/{item_id}
+  itemId: string;           // /collections/{collection_id}/items/{item_id}
 
   // valores iniciais vindos do pai
   sel: string;              // "true" | "false"
@@ -53,6 +54,9 @@ type Props = {
 
   // callback para atualizar o item no estado do pai sem refetch
   onUpdated?: (patch: { status?: boolean; comment?: string }) => void;
+
+  // callback para o pai remover o item da lista, após DELETE com sucesso (passa o id deletado)
+  onDeleted?: (deletedId: string) => void;
 
   // legados (não usados mais, mantidos por compat se houver chamadas antigas)
   onStatusChange?: (value: string) => void;
@@ -67,6 +71,7 @@ export function PatrimonioItemCollection({
   comm,
   isLocked,
   onUpdated,
+  onDeleted,
 }: Props) {
   if (!entry) return null;
 
@@ -174,6 +179,50 @@ export function PatrimonioItemCollection({
       setUpdating(false);
     }
   }, [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral]);
+
+  // =========== DELETE item da coleção ===========
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = useCallback(async (e: MouseEvent) => {
+    e.stopPropagation();
+
+    if (!collectionId || !itemId) {
+      toast("IDs insuficientes para deletar.");
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      const token = localStorage.getItem("jwt_token");
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const url = `${urlGeral}collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}`;
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `Falha ao deletar (HTTP ${res.status}).`);
+      }
+
+      toast.success("Item removido da coleção.");
+      setDeleteOpen(false);
+
+      // ✅ sinaliza para o pai remover da lista, passando o id correto do CollectionItem
+      onDeleted?.(itemId);
+    } catch (err: any) {
+      toast("Erro ao deletar item", { description: err?.message || String(err) });
+    } finally {
+      setDeleting(false);
+    }
+  }, [collectionId, itemId, onDeleted, urlGeral]);
 
   return (
     <>
@@ -287,8 +336,7 @@ export function PatrimonioItemCollection({
                         >
                           {url ? (
                             <Alert
-                               style={{ backgroundImage: `url(${url})` }}
-                           
+                              style={{ backgroundImage: `url(${url})` }}
                               className="absolute inset-0 h-full w-full object-cover bg-center bg-cover bg-no-repeat"
                               onClick={(e) => openImageDialog(e, url)}
                               draggable={false}
@@ -311,7 +359,7 @@ export function PatrimonioItemCollection({
             </div>
           </Alert>
 
-          {/* Barra de edição (status/comment + atualizar) */}
+          {/* Barra de edição (status/comment + atualizar + deletar) */}
           <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
             <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
               <p>Coleta:</p>
@@ -323,10 +371,10 @@ export function PatrimonioItemCollection({
                 className="flex gap-2"
                 variant={"outline"}
               >
-                <ToggleGroupItem       onClick={stop} className="w-10 h-10 " value="true" aria-label="OK">
+                <ToggleGroupItem onClick={stop} className="w-10 h-10 " value="true" aria-label="OK">
                   <Check size={16} />
                 </ToggleGroupItem>
-                <ToggleGroupItem       onClick={stop} className="w-10 h-10 " value="false" aria-label="Com problema">
+                <ToggleGroupItem onClick={stop} className="w-10 h-10 " value="false" aria-label="Com problema">
                   <X size={16} />
                 </ToggleGroupItem>
               </ToggleGroup>
@@ -343,10 +391,19 @@ export function PatrimonioItemCollection({
               <Button
                 onClick={handleUpdate}
                 disabled={updating || isLocked}
-                variant='outline'
+                variant="outline"
               >
-                {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-             <RefreshCcw size={16}/>   Atualizar
+                {updating ? <Loader2 size={16} className=" animate-spin" /> : <RefreshCcw size={16} />}
+                Atualizar
+              </Button>
+
+              <Button
+                variant="destructive"
+                onClick={(e) => { stop(e); setDeleteOpen(true); }}
+                disabled={isLocked || deleting}
+                size={'icon'}
+              >
+                {deleting ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16}  />}
               </Button>
             </div>
           </Alert>
@@ -355,8 +412,7 @@ export function PatrimonioItemCollection({
 
       {/* Dialog de imagem */}
       <Dialog open={openImage} onOpenChange={setOpenImage}>
-        <DialogContent className="max-w-5xl P-0" onClick={stop}>
-         
+        <DialogContent className="max-w-5xl" onClick={stop}>
           <div className="w-full">
             <div className="relative w-full max-h-[80vh]">
               {selectedImg ? (
@@ -373,6 +429,28 @@ export function PatrimonioItemCollection({
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmação de DELETE */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent onClick={stop}>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Remover item da coleção</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Tem certeza que deseja remover este item da coleção de desfazimento? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16} className="" />}
+              Remover
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

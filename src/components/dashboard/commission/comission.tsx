@@ -8,6 +8,7 @@ import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsContent } from "../../ui/tabs";
 import { ListaFinalDesfazimento } from "./tabs/lista-final-desfazimento";
 import { MeusItens } from "./tabs/meus-itens";
+import AdmComission from "./tabs/adm-comission";
 export function Comission() {
       const { urlGeral } = useContext(UserContext);
       const navigate = useNavigate();
@@ -16,10 +17,10 @@ export function Comission() {
         const [tab, setTab] = useState("meus-itens");
 
     return(
-         <div className=" gap-8 flex flex-col h-full">
+         <div className=" gap-4 flex flex-col h-full">
               <Helmet>
-                <title>Comissão de desfazimento | Sistema Patrimônio</title>
-                <meta name="description" content="Comissão de desfazimento | Sistema Patrimônio" />
+                <title>Comissão permanente | Sistema Patrimônio</title>
+             
               </Helmet>
         
               <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
@@ -47,7 +48,7 @@ export function Comission() {
                               <span className="sr-only">Voltar</span>
                             </Button>
                 
-                            <h1 className="text-xl font-semibold tracking-tight">Comissão de desfazimento</h1>
+                            <h1 className="text-xl font-semibold tracking-tight">Comissão permanente</h1>
                           </div>
                 
                           <div className="hidden gap-2 items-center xl:flex">
@@ -58,11 +59,23 @@ export function Comission() {
                                 onClick={() => {
                               setTab('meus-itens')
                                 }}
-                                variant={tab !== "lfd" ? "default" : "outline"}
+                                variant={tab == "meus-itens" ? "default" : "outline"}
                                 className="rounded-r-none"
                               >
                                
                                 Meus itens para avaliação
+                              </Button>
+
+                                  <Button
+                                size="sm"
+                                onClick={() => {
+                              setTab('adm')
+                                }}
+                                variant={tab == "adm" ? "default" : "outline"}
+                                className="rounded-l-none rounded-r-none"
+                              >
+                               
+                              Administração da comissão
                               </Button>
                               <Button
                                 onClick={() => {
@@ -87,6 +100,10 @@ export function Comission() {
                           </TabsContent>
                           <TabsContent value='lfd' className="m-0 p-0">
                               <ListaFinalDesfazimento/>
+                          </TabsContent>
+
+                              <TabsContent value='adm' className="m-0 p-0">
+                              <AdmComission/>
                           </TabsContent>
                         </Tabs>
 

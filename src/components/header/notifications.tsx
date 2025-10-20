@@ -16,13 +16,8 @@ import { UserContext } from "../../context/context";
 import {
   Bell,
   AlertCircle,
-  BadgePlus,
-  Heart,
-  RefreshCcw,
-  UserPlus,
   MessageCircle,
   LogIn,
-  CalendarClock,
 } from "lucide-react";
 
 import {
@@ -30,15 +25,40 @@ import {
   NotificationsResponse,
 } from "../dashboard/administrativo/tabs/notification";
 import { NotificationItem } from "../dashboard/administrativo/components/notification-item";
-import { Drop } from "phosphor-react";
 import { Separator } from "../ui/separator";
+
+/* ========================= Tipos auxiliares ========================= */
+// Formato que a API está devolvendo agora (resumo relevante)
+type ApiNotificationItem = {
+  id: string;
+  read_at?: string | null;
+  created_at?: string;
+  notification?: {
+    id: string;
+    type?: string;
+    detail?: any;
+    source_user?: any;
+  };
+};
+
+// Formato “achatado” para manter compatibilidade com seu NotificationItem
+type FlatNotification = {
+  id: string;
+  read_at?: string | null;
+  created_at?: string;
+  type?: string;
+  detail?: any;
+  source_user?: any;
+  // Mantemos o raw caso precise em algum ponto
+  __raw?: ApiNotificationItem;
+};
 
 // Tipagem da prévia flutuante
 export type NotificationPreview = {
   id: string;
   title: string;
   description?: string;
-  type: string;
+  type?: string;
   show: boolean;
 };
 
@@ -48,6 +68,25 @@ export const notificationsTypes = [
   { type: "MESSAGE", icon: MessageCircle, bg_color: "bg-purple-100" },
   { type: "SYSTEM", icon: AlertCircle, bg_color: "bg-eng-blue" },
 ];
+
+/* ========================= Helpers ========================= */
+function flattenApiItem(item: ApiNotificationItem): FlatNotification {
+  // Garante id estável: prioriza o id do envelope (pois é ele que marca leitura)
+  const out: FlatNotification = {
+    id: item.id,
+    read_at: item.read_at ?? null,
+    created_at: item.created_at,
+    type: item.notification?.type,
+    detail: item.notification?.detail,
+    source_user: item.notification?.source_user,
+    __raw: item,
+  };
+  return out;
+}
+
+function isArray<T = any>(v: any): v is T[] {
+  return Array.isArray(v);
+}
 
 export function Notifications() {
   const { urlGeral } = useContext(UserContext);
@@ -65,7 +104,7 @@ export function Notifications() {
   })();
 
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
+  const [notifications, setNotifications] = useState<FlatNotification[]>([]);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const [notificationPreview, setNotificationPreview] =
     useState<NotificationPreview | null>(null);
@@ -78,10 +117,10 @@ export function Notifications() {
     ? `notifications_${authToken.substring(0, 10)}`
     : null;
 
-  const saveToStorage = (items: NotificationDTO[]) => {
+  const saveToStorage = (items: FlatNotification[]) => {
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(items));
   };
-  const loadFromStorage = (): NotificationDTO[] => {
+  const loadFromStorage = (): FlatNotification[] => {
     if (!storageKey) return [];
     const stored = localStorage.getItem(storageKey);
     return stored ? JSON.parse(stored) : [];
@@ -91,18 +130,30 @@ export function Notifications() {
   };
 
   const checkForNewNotifications = (
-    fresh: NotificationDTO[],
-    old: NotificationDTO[]
+    fresh: FlatNotification[],
+    old: FlatNotification[]
   ) => {
     const oldIds = new Set(old.map((n) => n.id));
     const newOnes = fresh.filter((n) => !oldIds.has(n.id));
     if (newOnes.length > 0) {
       setHasNewNotifications(true);
       const first = newOnes[0];
+      // tenta puxar título da detail; se não existir, usa um genérico
+      const title =
+        first.detail?.title ??
+        first.detail?.message ??
+        first.detail?.texto ??
+        "Notificação";
+      const description =
+        first.detail?.description ??
+        first.detail?.descricao ??
+        first.detail?.body ??
+        undefined;
+
       setNotificationPreview({
         id: first.id,
-        title: first.detail?.title ?? "Notificação",
-        description: first.detail?.description,
+        title,
+        description,
         type: first.type,
         show: true,
       });
@@ -139,16 +190,16 @@ export function Notifications() {
         throw new Error(`Erro ao buscar notificações (${res.status})`);
       }
 
-      // Ajuste caso sua API retorne array direto
-      const payload: NotificationsResponse | NotificationDTO[] = await res
-        .json()
-        .catch(() => ({} as NotificationsResponse));
-
-      const list = Array.isArray((payload as NotificationsResponse)?.notifications)
-        ? (payload as NotificationsResponse).notifications
-        : Array.isArray(payload)
-        ? (payload as NotificationDTO[])
+      // A API agora devolve { notifications: [...] } — mas mantemos fallback p/ array direto
+      const payload: any = await res.json().catch(() => ({}));
+      const rawList: ApiNotificationItem[] = isArray(payload?.notifications)
+        ? payload.notifications
+        : isArray(payload)
+        ? payload
         : [];
+
+      // Achata p/ manter compatibilidade com NotificationItem
+      const list: FlatNotification[] = rawList.map(flattenApiItem);
 
       if (!isInitial) {
         const old = loadFromStorage();
@@ -303,8 +354,9 @@ export function Notifications() {
           ) : (
             notifications.map((n) => (
               <Alert key={n.id} className="p-0">
+                {/* Cast para NotificationDTO apenas p/ satisfazer o tipo do componente filho */}
                 <NotificationItem
-                  notification={n}
+                  notification={n as unknown as NotificationDTO}
                   baseUrl={baseUrl}
                   token={authToken!}
                   notificationsTypes={notificationsTypes}

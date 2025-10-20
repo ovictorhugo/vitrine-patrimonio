@@ -133,16 +133,18 @@ async function assertOk(res: Response, fallbackMsg = "Falha na requisição") {
 }
 
 type RolesProps = {
-  /** controla a abertura do diálogo "Criar permissão" */
   openCreatePerm: boolean;
-  /** setter vindo do pai para abrir/fechar o diálogo "Criar permissão" */
   setOpenCreatePerm: (open: boolean) => void;
+
+  // NOVO: controle do modal de listar permissões vindo do pai
+  openListPerm: boolean;
+  setOpenListPerm: (open: boolean) => void;
 };
 
 /* ============================
    Component
    ============================ */
-export function Roles({ openCreatePerm, setOpenCreatePerm }: RolesProps) {
+export function Roles({ openCreatePerm, setOpenCreatePerm, openListPerm, setOpenListPerm }: RolesProps) {
   // criação de role
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -554,6 +556,72 @@ export function Roles({ openCreatePerm, setOpenCreatePerm }: RolesProps) {
 
   const membersCount = (roleId: string) => roleUsers[roleId]?.length ?? 0;
 
+  /* ===== Permissões: listar & deletar (modal global) ===== */
+useEffect(() => {
+  if (openListPerm) {
+    // quando abrir, garantir catálogo atualizado
+    fetchPermissions();
+  } else {
+    // limpamos a busca quando fechar
+    setPermSearch("");
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [openListPerm]);
+
+
+const [permSearch, setPermSearch] = useState("");
+const [deletingGlobalPermId, setDeletingGlobalPermId] = useState<string | null>(null);
+
+// abrir modal e garantir que as permissões estejam carregadas
+const openPermissionsModal = async (open: boolean) => {
+  setOpenListPerm(open);
+  if (open) {
+    // Recarrega catálogo quando abrir (útil se houve mudanças)
+    await fetchPermissions();
+  } else {
+    setPermSearch("");
+  }
+};
+
+// exclusão global de permissão
+const handleDeleteGlobalPermission = async (permissionId: string) => {
+  try {
+    setDeletingGlobalPermId(permissionId);
+    const res = await fetch(`${urlGeral}roles/permissions/${permissionId}`, {
+      method: "DELETE",
+      headers: authHeaders,
+    });
+    await assertOk(res, "Falha ao excluir permissão");
+
+    // ✅ Só atualiza o estado local se deu certo
+    setAllPermissions((prev) => prev.filter((p) => p.id !== permissionId));
+
+    toast("Permissão excluída", {
+      description: "A permissão foi removida do catálogo global.",
+      action: { label: "Fechar", onClick: () => {} },
+    });
+  } catch (e: any) {
+    toast("Erro ao excluir permissão", {
+      description: e?.message || String(e),
+      action: { label: "Fechar", onClick: () => {} },
+    });
+  } finally {
+    setDeletingGlobalPermId(null);
+  }
+};
+
+// lista filtrada para o modal
+const filteredAllPermissions = useMemo(() => {
+  if (!permSearch.trim()) return allPermissions;
+  const q = permSearch.toLowerCase();
+  return allPermissions.filter(
+    (p) =>
+      p.name?.toLowerCase().includes(q) ||
+      p.code?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q)
+  );
+}, [allPermissions, permSearch]);
+
   return (
     <div className="p-8 gap-8 flex flex-col">
       <div className="w-full">
@@ -844,7 +912,7 @@ export function Roles({ openCreatePerm, setOpenCreatePerm }: RolesProps) {
                                   </DialogTrigger>
                                   <DialogContent>
                                     <DialogHeader>
-                                      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Escolher usuário</DialogTitle>
+                                      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar usuário</DialogTitle>
                                       <DialogDescription className="text-zinc-500 ">
                                         Todos os usuários cadastrados no sistema
                                       </DialogDescription>
@@ -1056,6 +1124,93 @@ export function Roles({ openCreatePerm, setOpenCreatePerm }: RolesProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal: Listar & Deletar Permissões Globais */}
+<Dialog  open={openListPerm}
+  onOpenChange={(open) => setOpenListPerm(open)} >
+  <DialogContent className="">
+    <DialogHeader>
+      <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">
+        Permissões do catálogo
+      </DialogTitle>
+      <DialogDescription className="text-zinc-500">
+        Pesquise, visualize e exclua permissões do catálogo global.
+      </DialogDescription>
+    </DialogHeader>
+
+    <Separator className="my-4" />
+
+    {/* Busca */}
+    <Alert className="p-0 flex gap-2 items-center px-4 h-12">
+      <div><MagnifyingGlass size={16} /></div>
+      <Input
+        className="border-0"
+    
+        value={permSearch}
+        onChange={(e) => setPermSearch(e.target.value)}
+      />
+    </Alert>
+
+    {/* Lista */}
+    <div className="max-h-[420px] overflow-y-auto elementBarra mt-4 space-y-2">
+      {loadingPerms ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : filteredAllPermissions.length === 0 ? (
+        <div className="text-sm text-center text-gray-500 py-6">
+          Nenhuma permissão encontrada.
+        </div>
+      ) : (
+        filteredAllPermissions.map((p) => (
+          <Alert key={p.id} className="px-3 py-2">
+            <div className="group flex items-center justify-between gap-3">
+              <div className="flex flex-col min-w-0">
+                <div className="font-medium truncate">{p.name}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {p.code} {p.description ? "— " + p.description : ""}
+                </div>
+              </div>
+
+              <Button
+                size="icon"
+                variant="destructive"
+                className="w-8 h-8"
+                onClick={() => handleDeleteGlobalPermission(p.id)}
+                disabled={deletingGlobalPermId === p.id}
+                title="Excluir permissão"
+              >
+                {deletingGlobalPermId === p.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </div>
+          </Alert>
+        ))
+      )}
+    </div>
+
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button variant="ghost">
+          <ArrowUUpLeft size={16} /> Cancelar
+        </Button>
+      </DialogClose>
+
+        <Button onClick={() => {
+          setOpenListPerm(false)
+        setOpenCreatePerm(true)
+        }}>
+          <Plus size={16} /> Adicionar permissão
+        </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </div>
   );
 }

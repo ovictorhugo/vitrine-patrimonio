@@ -110,7 +110,7 @@ export function RelatarBug() {
             }
 
 
-            let urlProgram = urlGeral + 's/feedback'
+            let urlProgram = urlGeral + 'feedback/'
 
             const token = localStorage.getItem('jwt_token');
             const fetchData = async () => {
@@ -200,12 +200,12 @@ export function RelatarBug() {
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex flex-col gap-2 w-full md:w-1/2">
                                     <Label>Nome completo*</Label>
-                                    <Input className="w-full" value={nome} onChange={(e) => setNome(e.target.value)} type="text" />
+                                    <Input className="w-full" disabled={loggedIn} value={nome} onChange={(e) => setNome(e.target.value)} type="text" />
                                 </div>
 
                                 <div className="flex flex-col gap-2 w-full md:w-1/2">
                                     <Label>Email*</Label>
-                                    <Input className="w-full" value={email} defaultValue={loggedIn ? (user?.email) : ('')} onChange={(e) => setEmail(e.target.value)} type="text" />
+                                    <Input className="w-full" disabled={loggedIn} value={email} defaultValue={loggedIn ? (user?.email) : ('')} onChange={(e) => setEmail(e.target.value)} type="text" />
                                 </div>
                             </div>
 

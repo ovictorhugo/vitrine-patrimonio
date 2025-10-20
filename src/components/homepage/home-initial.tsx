@@ -20,9 +20,10 @@ import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { AuroraBackground } from "../ui/aurora-background";
 import { toast } from "sonner";
 import { BlockItemsVitrine } from "./components/block-items-vitrine";
-import { BackgroundRippleEffect } from "../ui/background-ripple-effect";
+
 import { useTheme } from "next-themes";
 import { useModal } from "../hooks/use-modal-store";
+import { BackgroundAvatarGrid } from "../ui/background-ripple-effect";
 
 export function HomeInicial() {
   const [words, setWords] = useState<string[]>([]);
@@ -70,12 +71,13 @@ const {theme} = useTheme()
     </Helmet>
      <div className="absolute top-0 left-0 flex min-h-screen w-full z-[0] ">
     {/* ocupa 100% da largura do pai, altura 320px, quadrados de 48px */}
-<BackgroundRippleEffect 
+<BackgroundAvatarGrid
 height="80vh" 
 cellSize={48} 
-maxColoredCells={20}
- borderColor={theme === "dark" ? "#52565b" : "#c7d0dd"}
 
+ borderColor={theme === "dark" ? "#292a2d" : "#d8e1ef"}
+  maxAvatars={12}
+  intervalMs={3000}
 />
      
     </div>
@@ -87,7 +89,7 @@ maxColoredCells={20}
 
           <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
   Encontre, disponibilize e contribua para a reutilização de <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">bens patrimoniais</strong>
-</h1>  <Button className="z-[9999]" onClick={()=> onOpen('sign-in')}>sd</Button>
+</h1>  
           <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
           <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
@@ -129,7 +131,7 @@ maxColoredCells={20}
         
       </div>
 
-      <div className=" w-full md:px-8 gap-8 flex flex-col px-4">
+      <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
 <BlockItemsVitrine workflow="VITRINE"/>
       </div>
 </div>

@@ -24,6 +24,7 @@ import { InventarioPage } from "../dashboard/inventario/inventario-page";
 import { Desfazimento } from "../dashboard/desfazimento/desfazimento";
 import { CargosFuncoes } from "../dashboard/cargos-funcoes/cargos-funcoes";
 import { Alienacao } from "../dashboard/alienacao/alienacao";
+import { DepartamentPage } from "../dashboard/departament/departament-page";
 
 
 
@@ -62,6 +63,8 @@ const ModalContent = () => {
       return <CargosFuncoes/>
       case 'alienacao':
         return <Alienacao/>
+      case 'departamento':
+        return <DepartamentPage/>
     default:
       return null;
   }

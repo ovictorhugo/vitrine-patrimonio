@@ -32,7 +32,7 @@ export function MeusItens() {
         const fetchInventories = async () => {
           try {
             setLoadingList(true);
-            const res = await fetch(`${urlGeral}catalog/`, {
+            const res = await fetch(`${urlGeral}catalog/?reviewer_id=${user?.id}`, {
               method: "GET",
               headers: authHeaders,
             });

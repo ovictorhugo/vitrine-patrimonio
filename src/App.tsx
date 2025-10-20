@@ -16,6 +16,9 @@ import LoadingWrapper from './components/loading';
 import { AuthenticationToken } from './pages/Authentication-token';
 import { FavoriteProvider } from './context/favorite-context';
 import { CatalogResponseDTO } from './components/item-page/item-page';
+import ProtectedRoute from './components/ProtectedRoute';
+import { Unauthorized } from './components/errors/Unauthorized';
+import { Error404 } from './components/errors/404';
 
 
 
@@ -56,9 +59,12 @@ interface Role {
 }
 
 interface Permission {
-  permission:string
   id:string
+  name:string
+  code:string
+  description:string
 }
+
 
 export interface ItemsSelecionados {
   term:string
@@ -105,6 +111,13 @@ function App() {
 
     }
   }, []);
+
+
+
+  //PERMISSÕES
+   const hasCriarEtiqueta = permission.some(
+    (p) => p.code === "CRIAR_ETIQUETA"
+  );
 
 
   return (
@@ -157,15 +170,10 @@ function App() {
         <Route path='/dashboard/painel' element={<Admin/>}/>
         <Route path='/dashboard/assinaturee' element={<Admin/>}/>
 
+   <Route path='/dashboard/departamento' element={<Admin/>}/>
 
  <Route path='/termo-uso' element={<Admin/>}/>
   <Route path='/politica-privacidade' element={<Admin/>}/>
-   <Route path='/bens-particulares' element={<Admin/>}/>
-   <Route path='/doacoes' element={<Admin/>}/>
-    <Route path='/transferencia-outras-unidades' element={<Admin/>}/>
- <Route path='/emprestimo-outras-unidades' element={<Admin/>}/>
-
- <Route path='/manutencao-bens-permanentes' element={<Admin/>}/>
 
         <Route
         path='/signIn'
@@ -173,7 +181,16 @@ function App() {
         />
 
     <Route path='/authentication' element={<AuthenticationToken />} />
-    <Route path='/dashboard/criar-etiqueta' element={<Admin/>}/>
+   
+
+        <Route path="/dashboard/criar-etiqueta" element={
+           <ProtectedRoute
+            element={<Admin />}
+            hasPermission={hasCriarEtiqueta}
+        />
+        } />
+    
+
     <Route path='/dashboard/novo-item' element={<Admin/>}/>
     <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
             <Route path='/dashboard/patrimonio-temporario' element={<Admin/>}/>
@@ -181,6 +198,12 @@ function App() {
         <Route path='/dashboard/busca-avancada' element={<Admin/>}/>
     <Route path='/dashboard/comissao-permanente' element={<Admin/>}/>
     <Route path='/dashboard/alienacao' element={<Admin/>}/>
+
+
+
+                                    <Route path='/unauthorized' element={<Unauthorized />} />
+
+                                    <Route path='*' element={<Error404 />} />
 
       </Routes>
       </LoadingWrapper>

@@ -184,6 +184,12 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
         url: "/dashboard/alienacao",
         icon: Coins,
       },
+
+        {
+        name: "Departamento",
+        url: "/dashboard/departamento",
+        icon: Building2,
+      },
      
       
     ],

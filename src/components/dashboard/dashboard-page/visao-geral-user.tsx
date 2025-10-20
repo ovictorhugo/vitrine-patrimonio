@@ -140,8 +140,8 @@ export function VisaoGeralUser() {
     
         const endpoint =
           folder === "profile"
-            ? `${urlGeral}user/upload/${user?.id}/icon`
-            : `${urlGeral}user/upload/${user?.id}/cover`;
+            ? `${urlGeral}user/upload/icon`
+            : `${urlGeral}user/upload/cover`;
     
         try {
           const res = await fetch(endpoint, {

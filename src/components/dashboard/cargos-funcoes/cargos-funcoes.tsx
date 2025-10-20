@@ -1,4 +1,4 @@
-import { Briefcase, BriefcaseBusiness, ChevronLeft, ChevronRight, GitBranchPlus, Shield, Users } from "lucide-react";
+import { Briefcase, BriefcaseBusiness, ChevronLeft, ChevronRight, GitBranchPlus, Plus, Shield, Users } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -52,14 +52,13 @@ export function CargosFuncoes() {
 
    // controla o diálogo "Criar permissão" mostrado dentro de <Roles />
   const [openCreatePerm, setOpenCreatePerm] = useState(false);
-
-
-
+const [openListPerm, setOpenListPerm] = useState(false);
+ 
     return (
          <div className="flex flex-col h-full">
               <Helmet>
-                <title>Desfazimento | Sistema Patrimônio</title>
-                <meta name="description" content="Comissão de desfazimento | Sistema Patrimônio" />
+                <title>Cargos e funções | Sistema Patrimônio</title>
+           
               </Helmet>
         
               <main className="flex flex-col gap-8  flex-1 min-h-0 overflow-hidden">
@@ -163,7 +162,12 @@ export function CargosFuncoes() {
 
                 <div className="hidden xl:flex xl:flex-nowrap gap-2">
                   <div className="md:flex md:flex-nowrap gap-2">
-                    {value == 'roles' && ( <Button onClick={() => setOpenCreatePerm(true)}><GitBranchPlus size={16} />Adicionar permissão</Button>)}
+                     {value === "roles" && (
+      <Button variant={"ghost"} onClick={() => setOpenListPerm(true)}>
+        <GitBranchPlus size={16} />Permissões
+      </Button>
+    )}
+                    {value == 'roles' && ( <Button onClick={() => setOpenCreatePerm(true)}><Plus size={16} />Criar permissão</Button>)}
                   </div>
                 </div>
               </div>
@@ -172,9 +176,11 @@ export function CargosFuncoes() {
 
           <TabsContent value="roles">
   <Roles
-   openCreatePerm={openCreatePerm}
-        setOpenCreatePerm={setOpenCreatePerm}
-
+    openCreatePerm={openCreatePerm}
+    setOpenCreatePerm={setOpenCreatePerm}
+    openListPerm={openListPerm}
+    setOpenListPerm={setOpenListPerm}
+    
         />
           </TabsContent>
 

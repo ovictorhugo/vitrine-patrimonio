@@ -462,7 +462,8 @@ const fetchLocationsP = useCallback(
     try {
       setLoadingAddList(true);
       const params = new URLSearchParams();
-      params.set("only_uncollected", "false");
+      params.set("only_uncollected", "true");
+      params.set("workflow_status", "DESFAZIMENTO");
       if (q) params.set("q", q);
       if (materialId) params.set("material_id", materialId);
       if (guardianId) params.set("legal_guardian_id", guardianId);

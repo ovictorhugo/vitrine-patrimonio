@@ -463,6 +463,7 @@ export function UsersPage() {
                 onChange={(e) => handleFormChange("email", e.target.value)}
                 placeholder="user@example.com"
                 type="email"
+                disabled
               />
             </div>
 
@@ -505,12 +506,12 @@ export function UsersPage() {
           </div>
 
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              <ArrowUUpLeft size={16} />   Cancelar
             </Button>
             <Button onClick={onSubmit}>
-              <RefreshCcw size={16} className="mr-2" />
-              Salvar
+              <RefreshCcw size={16} className="" />
+              Salvar informações
             </Button>
           </DialogFooter>
         </DialogContent>
