@@ -18,6 +18,7 @@ import { Separator } from "../../../ui/separator";
 import { Plus, ChevronLeft, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PatrimonioItem } from "../components/patrimonio-item-inventario";
+import { AssetDTO } from "../../collection/collection-page";
 
 /* ===========================
    Types locais (conforme spec)
@@ -80,15 +81,7 @@ type InventoriesResponse = {
 };
 
 // Asset mínimo usado na UI (ajuste se precisar de mais campos)
-export type AssetDTO = {
-  id: string;
-  asset_code?: string;
-  asset_check_digit?: string;
-  name?: string;
-  description?: string;
-  asset_status?: string;
-  images?: Array<{ id?: string; file_path?: string }>;
-};
+
 
 // resposta do GET /inventories/:id/assets
 type InventoryAssetsResponse = {

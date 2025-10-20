@@ -4,13 +4,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Repeat, Trash } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { CatalogEntry, ItemPatrimonio } from "./item-patrimonio";
+import {  ItemPatrimonio } from "./item-patrimonio";
 import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { ArrowUUpLeft } from "phosphor-react";
 import { useQuery } from "../../authentication/signIn";
+import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
 
 
 /* ===== Resposta da API ===== */

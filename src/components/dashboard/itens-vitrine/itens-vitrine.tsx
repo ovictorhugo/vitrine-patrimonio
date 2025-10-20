@@ -367,7 +367,7 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
 const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
-  return hist[hist.length - 1];
+  return hist[0];
 };
 
 const groupByLastWorkflow = (data: CatalogEntry[], columns: { key: string; name: string }[]) => {
@@ -644,7 +644,7 @@ export function ItensVitrine() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-
+params.set("limit", '100000');
       const res = await fetch(`${urlGeral}catalog/?${params.toString()}`);
       if (!res.ok) throw new Error();
       const json: CatalogResponse = await res.json();
@@ -754,16 +754,18 @@ export function ItensVitrine() {
     const prevBoard = board;
     const prevEntries = entries;
 
-    const optimisticHistory: WorkflowHistoryItem = {
-      id: crypto.randomUUID(),
-      catalog_id: entry.id,
-      user: entry.user,
-      workflow_status: toKey,
-      detail: {},
-      created_at: new Date().toISOString(),
-    };
-    const optimisticEntry: CatalogEntry = { ...entry, workflow_history: [...(entry.workflow_history ?? []), optimisticHistory] };
-
+   const optimisticHistory: WorkflowHistoryItem = {
+  id: crypto.randomUUID(),
+  catalog_id: entry.id,
+  user: entry.user,
+  workflow_status: toKey,
+  detail: {},
+  created_at: new Date().toISOString(),
+};
+    const optimisticEntry: CatalogEntry = {
+  ...entry,
+  workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
+};
     const newFrom = Array.from(prevBoard[fromKey] ?? []);
     const idx = newFrom.findIndex((x) => x.id === entry.id);
     if (idx >= 0) newFrom.splice(idx, 1);
@@ -1249,7 +1251,7 @@ export function ItensVitrine() {
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {items.map((item) => (
-                      <ItemPatrimonio key={item.id} {...item} onPromptDelete={() => {}} />
+                      <ItemPatrimonio {...item}  />
                     ))}
                   </div>
 

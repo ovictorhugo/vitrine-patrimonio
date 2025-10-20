@@ -1,25 +1,24 @@
-// PatrimonioItemCollection.tsx
 import { Alert } from "../../../ui/alert";
 import {
   Archive, HelpCircle, Hourglass, MoveRight, User, X, Check, Loader2,
-  RefreshCcw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Badge } from "../../../ui/badge";
 import { useContext, useMemo, useState, MouseEvent, useCallback } from "react";
 import { useModal } from "../../../hooks/use-modal-store";
 import { UserContext } from "../../../../context/context";
-import { CatalogEntry } from "../../../homepage/components/item-patrimonio";
 import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "../../../ui/carousel";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "../../../ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
-import { Input } from "../../../ui/input";
+import { Textarea } from "../../../ui/textarea";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
+import { CatalogEntry } from "../../../dashboard/itens-vitrine/card-item-dropdown";
+import { Label } from "../../../ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../../ui/select";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -38,36 +37,23 @@ export const csvCodToText: Record<string, string> = {
 };
 
 type Props = {
-  invId: string;
   entry: CatalogEntry;
-
-  // 👇 novos props para update
-  collectionId: string;     // /collections/{collection_id}
-  itemId: string;           // /items/{item_id}
-
-  // valores iniciais vindos do pai
-  sel: string;              // "true" | "false"
-  comm: string;
-
-  isLocked?: boolean;
-
-  // callback para atualizar o item no estado do pai sem refetch
-  onUpdated?: (patch: { status?: boolean; comment?: string }) => void;
-
-  // legados (não usados mais, mantidos por compat se houver chamadas antigas)
-  onStatusChange?: (value: string) => void;
-  onCommentChange?: (value: string) => void;
+  /** Remover do pai sem refetch ao concluir o workflow */
+  onRemove?: (id: string) => void;
 };
 
-export function PatrimonioItemComission({
-  entry,
-  collectionId,
-  itemId,
-  sel,
-  comm,
-  isLocked,
-  onUpdated,
-}: Props) {
+type WorkflowTarget = "DESFAZIMENTO" | "REJEITADOS_COMISSAO";
+
+const JUSTIFICATIVAS = [
+  { id: "sicpat", label: "Número patrimonial baixado / não localizado no SICPAT" },
+  { id: "antigo", label: "Item antigo/depreciado (≥10 anos, IN RFB nº 1.700/2017)" },
+  { id: "quebrado", label: "Item danificado/quebrado (sem condições de uso)" },
+  { id: "fragmento", label: "Parte/fragmento de bem (resto de móvel/equipamento)" },
+  { id: "eletronico", label: "Equipamento eletrônico antigo/obsoleto e/ou quebrado" },
+  { id: "doacao", label: "Destinação: Doação" },
+];
+
+export function PatrimonioItemComission({ entry, onRemove }: Props) {
   if (!entry) return null;
 
   const { onOpen } = useModal();
@@ -92,17 +78,12 @@ export function PatrimonioItemComission({
   const statusInfo = statusMap[bemStaTrimmed];
   const materialName = asset.material?.material_name || "Sem nome";
   const legalGuardianName = asset.legal_guardian?.legal_guardians_name || "";
-  const hasAtm =
-    !!(asset.atm_number && asset.atm_number !== "None" && asset.atm_number !== "");
+  const hasAtm = !!(asset.atm_number && asset.atm_number !== "None" && asset.atm_number !== "");
 
   const buildImgUrl = (p: string) => {
     const cleanPath = p?.startsWith("/") ? p.slice(1) : p || "";
     return `${urlGeral}${cleanPath}`;
   };
-
-  // =========== estado local de edição ===========
-  const [statusValue, setStatusValue] = useState<"true" | "false">(sel === "true" ? "true" : "false");
-  const [commentValue, setCommentValue] = useState<string>(comm ?? "");
 
   // =========== dialog imagem ===========
   const [openImage, setOpenImage] = useState(false);
@@ -127,53 +108,64 @@ export function PatrimonioItemComission({
     [entry.images, urlGeral]
   );
 
-  // =========== PUT atualizar ===========
-  const [updating, setUpdating] = useState(false);
+  // =========== Dialog workflow (aceitar/recusar) ===========
+  const [wfOpen, setWfOpen] = useState(false);
+  const [wfTarget, setWfTarget] = useState<WorkflowTarget>("DESFAZIMENTO");
+  const [posting, setPosting] = useState(false);
+  const [preset, setPreset] = useState<string>("");
+  const [justTxt, setJustTxt] = useState<string>("");
 
-  const handleUpdate = useCallback(async (e: MouseEvent) => {
-    e.stopPropagation();
+  const fillPreset = (id: string) => {
+    const find = JUSTIFICATIVAS.find((p) => p.id === id);
+    if (!find) return;
+    // texto simples e genérico (você pode sofisticar como no exemplo do quadro)
+    const base = `${find.label}.`;
+    setJustTxt((curr) => (curr?.trim() ? curr : base));
+  };
 
-    if (!collectionId || !itemId) {
-      toast("IDs insuficientes para atualizar.");
-      return;
-    }
+  const handleClickAction = (target: WorkflowTarget) => {
+    setWfTarget(target);
+    setPreset("");
+    setJustTxt("");
+    setWfOpen(true);
+  };
 
+  const submitWorkflow = useCallback(async () => {
     try {
-      setUpdating(true);
-
+      setPosting(true);
       const token = localStorage.getItem("jwt_token");
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-
-      const payload = {
-        status: statusValue === "true",
-        comment: commentValue ?? "",
-      };
-
-      const url = `${urlGeral}collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}`;
-      const res = await fetch(url, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(payload),
+      const res = await fetch(`${urlGeral}catalog/${entry.id}/workflow`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          workflow_status: wfTarget,
+          detail: { justificativa: justTxt?.trim() || undefined, preset: preset || undefined },
+        }),
       });
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Falha ao atualizar (HTTP ${res.status}).`);
+        throw new Error(txt || `Falha ao movimentar (HTTP ${res.status}).`);
       }
 
-      // sucesso — atualiza o pai localmente (sem refetch)
-      onUpdated?.(payload);
+      toast.success(
+        wfTarget === "DESFAZIMENTO"
+          ? "Item aceito e movido para DESFAZIMENTO."
+          : "Item recusado e movido para REJEITADOS_COMISSAO."
+      );
 
-      toast.success("Item atualizado com sucesso.");
-    } catch (err: any) {
-      toast("Erro ao atualizar item", { description: err?.message || String(err) });
+      // remove da lista sem refetch
+      onRemove?.(entry.id);
+      setWfOpen(false);
+    } catch (e: any) {
+      toast("Erro ao movimentar item", { description: e?.message || String(e) });
     } finally {
-      setUpdating(false);
+      setPosting(false);
     }
-  }, [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral]);
+  }, [urlGeral, entry.id, wfTarget, justTxt, preset, onRemove]);
 
   return (
     <>
@@ -199,11 +191,7 @@ export function PatrimonioItemComission({
 
                   {hasAtm && (
                     <div className="min-w-0 flex-1">
-                      <Badge
-                        variant="outline"
-                        className="truncate min-w-0"
-                        title={asset.atm_number || ""}
-                      >
+                      <Badge variant="outline" className="truncate min-w-0" title={asset.atm_number || ""}>
                         ATM: {asset.atm_number}
                       </Badge>
                     </div>
@@ -223,9 +211,7 @@ export function PatrimonioItemComission({
                     {!!csvCodTrimmed && (
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                         <div
-                          className={`w-4 h-4 rounded-md ${
-                            qualisColor[csvCodTrimmed] || "bg-neutral-300"
-                          }`}
+                          className={`w-4 h-4 rounded-md ${qualisColor[csvCodTrimmed] || "bg-neutral-300"}`}
                         />
                         {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
                       </div>
@@ -243,9 +229,7 @@ export function PatrimonioItemComission({
                         <Avatar className="rounded-md h-5 w-5 shrink-0">
                           <AvatarImage
                             className="rounded-md h-5 w-5"
-                            src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                              legalGuardianName
-                            )}`}
+                            src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(legalGuardianName)}`}
                           />
                           <AvatarFallback className="flex items-center justify-center">
                             <User size={10} />
@@ -269,26 +253,17 @@ export function PatrimonioItemComission({
             <div className="p-4 w-full flex-1 max-w-[600px]">
               <div className="w-full select-none">
                 <Carousel className="w-full flex gap-4 items-center">
-                  {/* Prev/Next com stopPropagation */}
                   <div onClick={stop}>
                     <CarouselPrevious variant="outline" />
                   </div>
 
                   <CarouselContent>
                     {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
-                      <CarouselItem
-                        key={url ?? index}
-                        className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
-                      >
-                        {/* Wrapper com tamanho consistente */}
-                        <div
-                          className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
-                          onClick={stop}
-                        >
+                      <CarouselItem key={url ?? index} className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3">
+                        <div className="relative w-full aspect-square rounded-md overflow-hidden bg-muted" onClick={stop}>
                           {url ? (
                             <Alert
-                               style={{ backgroundImage: `url(${url})` }}
-                           
+                              style={{ backgroundImage: `url(${url})` }}
                               className="absolute inset-0 h-full w-full object-cover bg-center bg-cover bg-no-repeat"
                               onClick={(e) => openImageDialog(e, url)}
                               draggable={false}
@@ -311,42 +286,17 @@ export function PatrimonioItemComission({
             </div>
           </Alert>
 
-          {/* Barra de edição (status/comment + atualizar) */}
+          {/* Barra de ações (Aceitar/Recusar) */}
           <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
             <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
-              <p>Condição:</p>
+              <p className="text-sm mr-2">Ação da Comissão:</p>
 
-              <ToggleGroup
-                type="single"
-                value={statusValue}
-                onValueChange={(v) => v && setStatusValue(v as "true" | "false")}
-                className="flex gap-2"
-                variant={"outline"}
-              >
-                <ToggleGroupItem       onClick={stop} className="w-10 h-10 bg-green-700 text-white" value="true" aria-label="OK">
-                  <Check size={16} />
-                </ToggleGroupItem>
-                <ToggleGroupItem       onClick={stop} className="w-10 h-10 bg-red-700 text-white" value="false" aria-label="Com problema">
-                  <X size={16} />
-                </ToggleGroupItem>
-              </ToggleGroup>
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleClickAction("REJEITADOS_COMISSAO"); }}>
+                <X className="h-4 w-4" /> Recusar
+              </Button>
 
-              <Input
-                placeholder="Observações"
-                value={commentValue}
-                onChange={(e) => setCommentValue(e.target.value)}
-                className="min-w-[220px] flex-1"
-                disabled={isLocked}
-                onClick={stop}
-              />
-
-              <Button
-                onClick={handleUpdate}
-                disabled={updating || isLocked}
-                variant='outline'
-              >
-                {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-             <RefreshCcw size={16}/>   Atualizar
+              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleClickAction("DESFAZIMENTO"); }}>
+                <Check className="h-4 w-4" /> Aceitar
               </Button>
             </div>
           </Alert>
@@ -356,7 +306,6 @@ export function PatrimonioItemComission({
       {/* Dialog de imagem */}
       <Dialog open={openImage} onOpenChange={setOpenImage}>
         <DialogContent className="max-w-5xl P-0" onClick={stop}>
-         
           <div className="w-full">
             <div className="relative w-full max-h-[80vh]">
               {selectedImg ? (
@@ -367,12 +316,73 @@ export function PatrimonioItemComission({
                   draggable={false}
                 />
               ) : (
-                <div className="p-8 text-center text-sm text-gray-500">
-                  Nenhuma imagem selecionada
-                </div>
+                <div className="p-8 text-center text-sm text-gray-500">Nenhuma imagem selecionada</div>
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de workflow (Aceitar/Recusar) */}
+      <Dialog open={wfOpen} onOpenChange={setWfOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Confirmar {wfTarget === "DESFAZIMENTO" ? "ACEITE" : "RECUSA"} do item</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              {asset.material?.material_name} — {asset.asset_code}-{asset.asset_check_digit}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label>Modelos de justificativa (opcional)</Label>
+              <Select
+                value={preset}
+                onValueChange={(val) => {
+                  setPreset(val);
+                  fillPreset(val);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {JUSTIFICATIVAS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="just">Justificativa</Label>
+              <Textarea
+                id="just"
+                value={justTxt}
+                onChange={(e) => setJustTxt(e.target.value)}
+                placeholder="Descreva a justificativa…"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setWfOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitWorkflow} disabled={posting}>
+              {posting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Salvando…
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" /> Confirmar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

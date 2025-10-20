@@ -264,7 +264,7 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
 const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
-  return hist[hist.length - 1];
+  return hist[0];
 };
 
 const codeFrom = (e: CatalogEntry) => [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
@@ -273,12 +273,15 @@ const codeFrom = (e: CatalogEntry) => [e?.asset?.asset_code, e?.asset?.asset_che
 const lastReviewersDetail = (entry: CatalogEntry): string[] => {
   const hist = entry.workflow_history ?? [];
   const isTarget = (h: WorkflowHistoryItem) =>
-    (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A 
+    (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A;
 
-  const relevant = hist.filter(isTarget);
-  if (!relevant.length) return [];
-  const last = relevant[relevant.length - 1];
-  const reviewers = (last?.detail?.reviewers ?? []) as string[];
+  // antes:
+  // const relevant = hist.filter(isTarget);
+  // const last = relevant[relevant.length - 1];
+
+  // depois (pega o ATUAL = primeiro no array):
+  const first = hist.find(isTarget);
+  const reviewers = (first?.detail?.reviewers ?? []) as string[];
   return Array.isArray(reviewers) ? reviewers.filter(Boolean) : [];
 };
 
@@ -521,7 +524,7 @@ export function AdmComission() {
   const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(null);
 
   // Paginação
-  const PAGE_SIZE = 10000;
+  const PAGE_SIZE = 100;
   const [visibleByCol, setVisibleByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
@@ -697,25 +700,29 @@ export function AdmComission() {
     // Otimismo: atualiza reviewers no último histórico relevante
     const reviewersNew = toKey === COL_SEM_REVISOR ? [] : [toKey];
 
-    const patchEntry = (it: CatalogEntry): CatalogEntry => {
-      const hist = [...(it.workflow_history ?? [])];
-      // Procuramos a última ocorrência que carrega reviewers
-      const idx = [...hist]
-        .map((h, i) => ({ h, i }))
-        .filter(({ h }) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A)
-        .map(({ i }) => i)
-        .pop();
+   const patchEntry = (it: CatalogEntry): CatalogEntry => {
+  const hist = [...(it.workflow_history ?? [])];
 
-      if (idx == null) return it;
+  // antes (pegava o último índice relevante):
+  // const idx = [...hist]
+  //   .map((h, i) => ({ h, i }))
+  //   .filter(({ h }) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A)
+  //   .map(({ i }) => i)
+  //   .pop();
 
-      const last = hist[idx];
-      const newDetail = { ...(last.detail ?? {}), reviewers: reviewersNew };
-      const updated = { ...last, detail: newDetail };
-      hist[idx] = updated;
+  // depois (pega o PRIMEIRO índice relevante = atual)
+  const idx = hist.findIndex(
+    (h) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A
+  );
 
-      return { ...it, workflow_history: hist };
-    };
+  if (idx === -1) return it;
 
+  const current = hist[idx];
+  const newDetail = { ...(current.detail ?? {}), reviewers: reviewersNew };
+  hist[idx] = { ...current, detail: newDetail };
+
+  return { ...it, workflow_history: hist };
+};
     const patched = patchEntry(entry);
 
     // Remove da origem e adiciona no destino no board

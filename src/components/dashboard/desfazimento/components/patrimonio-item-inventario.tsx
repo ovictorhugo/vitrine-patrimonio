@@ -9,7 +9,7 @@ import { Badge } from "../../../ui/badge";
 import { useContext, useMemo, useState, MouseEvent, useCallback } from "react";
 import { useModal } from "../../../hooks/use-modal-store";
 import { UserContext } from "../../../../context/context";
-import { CatalogEntry } from "../../../homepage/components/item-patrimonio";
+
 import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "../../../ui/carousel";
@@ -21,6 +21,7 @@ import { Input } from "../../../ui/input";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 import { ArrowUUpLeft } from "phosphor-react";
+import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",

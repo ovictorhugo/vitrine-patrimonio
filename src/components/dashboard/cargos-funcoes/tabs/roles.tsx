@@ -305,14 +305,18 @@ export function Roles({ openCreatePerm, setOpenCreatePerm, openListPerm, setOpen
       });
       await assertOk(res, "Falha ao criar cargo");
       const created = await safeJson<RoleDTO>(res);
-
-      // ✅ Atualiza o front apenas se deu certo
-      if (created && created.id) {
-        setRoles((prev) => [...prev, { permissions: created.permissions ?? [], ...created }]);
-      } else {
-        // fallback: recarrega lista se API não retornou payload
-        await fetchRoles();
-      }
+      
+if (created && created.id) {
+  setRoles((prev) => [
+    ...prev,
+    {
+      ...created, // primeiro espalha o objeto vindo da API
+      permissions: created.permissions ?? [], // depois garante o fallback seguro
+    },
+  ]);
+} else {
+  await fetchRoles();
+}
 
       toast("Cargo criado com sucesso!", { description: `“${name.trim()}” foi adicionado.`, action: { label: "Fechar", onClick: () => {} } });
       setName(""); setDescription(""); setIsOpen(false);

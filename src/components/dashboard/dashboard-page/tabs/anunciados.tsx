@@ -177,7 +177,7 @@ const WORKFLOW_STATUS_META: Record<
 const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
-  return hist[hist.length - 1];
+  return hist[0];
 };
 
 const PAGE_SIZE = 24;

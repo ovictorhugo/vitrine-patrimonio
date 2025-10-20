@@ -24,7 +24,7 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { AddToCollectionDrawer } from "./components/add-collection";
 import { Search } from "../../search/search";
 import { BlockItemsVitrine } from "./components/block-items-vitrine";
-import { DragDropContext, DropResult, BeforeCapture } from "@hello-pangea/dnd";
+import { DragDropContext, DropResult, BeforeCapture, OnBeforeCaptureResponder } from "@hello-pangea/dnd";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
 import { CollectionItem } from "./components/collection-item";
@@ -165,12 +165,12 @@ export function Desfazimento() {
   };
 
   /* ============ DnD ============ */
-  const onBeforeCapture: BeforeCapture = (start) => {
-    if (!selectedIds.has(start.draggableId)) {
-      setSelectedIds(new Set([start.draggableId]));
-    }
-    draggingRef.current = true;
-  };
+ const onBeforeCapture: OnBeforeCaptureResponder = (start) => {
+  if (!selectedIds.has(start.draggableId)) {
+    setSelectedIds(new Set<string>([start.draggableId]));
+  }
+  draggingRef.current = true;
+};
 
   const onDragEnd = async (result: DropResult) => {
     draggingRef.current = false;

@@ -10,34 +10,36 @@ import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState }
 import { UserContext } from "../../../../context/context";
 import { Skeleton } from "../../../ui/skeleton";
 import { Alert } from "../../../ui/alert";
-import { CatalogResponseDTO } from "../../../item-page/item-page";
+
 import { toast } from "sonner";
 import axios from "axios";
-import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
+import { CatalogEntriesResponse, ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
 import { Button } from "../../../ui/button";
+import { CatalogEntry } from "../tabs/anunciados";
+
 
 export function Favoritos() {
   const { urlGeral } = useContext(UserContext);
   const token = (typeof window !== "undefined" && localStorage.getItem("jwt_token")) || "";
 
-  const [favorites, setFavorites] = useState<CatalogResponseDTO[]>([]);
+  const [favorites, setFavorites] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Normaliza payloads possíveis do endpoint
-  const normalizeFavorites = (data: any): CatalogResponseDTO[] => {
+  const normalizeFavorites = (data: any): CatalogEntry[] => {
     if (Array.isArray(data)) {
       if (data.length && typeof data[0] === "object" && data[0]?.item) {
-        return data.map((x: any) => x.item as CatalogResponseDTO);
+        return data.map((x: any) => x.item as CatalogEntry);
       }
-      return data as CatalogResponseDTO[];
+      return data as CatalogEntry[];
     }
 
     if (data && typeof data === "object" && Array.isArray(data.favorites)) {
       const favs = data.favorites;
       if (favs.length && typeof favs[0] === "object" && favs[0]?.item) {
-        return favs.map((x: any) => x.item as CatalogResponseDTO);
+        return favs.map((x: any) => x.item as CatalogEntry);
       }
-      return favs as CatalogResponseDTO[];
+      return favs as CatalogEntry[];
     }
 
     return [];

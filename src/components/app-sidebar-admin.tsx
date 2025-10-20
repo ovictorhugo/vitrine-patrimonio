@@ -66,8 +66,19 @@ import { useModal } from "./hooks/use-modal-store"
 // This is sample data.
 
 export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sidebar>) {
- const {urlGeral, user,  loggedIn} = useContext(UserContext)
+ const {urlGeral, user,  loggedIn, permission} = useContext(UserContext)
  const {onOpen} = useModal()  
+
+    const hasCriarEtiqueta = permission.some(
+    (p) => p.code === "CRIAR_ETIQUETA"
+  );
+
+      const hasAnunciarItem = permission.some(
+    (p) => p.code === "ANUNCIAR_ITEM"
+  );
+
+
+
   const data = {
     user: {
       name: user?.username || '',
@@ -82,16 +93,27 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
         icon: Wrench,
         isActive: true,
         items: [
-          {
+       
+             ...(hasCriarEtiqueta
+                        ? [
+                              {
             title: "Criar etiqueta",
             url: "/dashboard/criar-etiqueta",
             icon: Barcode
           },
-          {
+                        ]
+                        : []),
+
+                         ...(hasAnunciarItem
+                        ? [
+                                {
             title: "Anunciar item",
             url: "/dashboard/novo-item",
             icon: Plus
           },
+                        ]
+                        : []),
+       
            {
               title: "Busca patrimônio",
               url: "/buscar-patrimonio",

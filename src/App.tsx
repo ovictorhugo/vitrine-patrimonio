@@ -119,6 +119,11 @@ function App() {
     (p) => p.code === "CRIAR_ETIQUETA"
   );
 
+     const hasAnunciarItem = permission.some(
+    (p) => p.code === "ANUNCIAR_ITEM"
+  );
+
+
 
   return (
     <>
@@ -189,9 +194,14 @@ function App() {
             hasPermission={hasCriarEtiqueta}
         />
         } />
-    
 
-    <Route path='/dashboard/novo-item' element={<Admin/>}/>
+          <Route path='/dashboard/novo-item' element={
+           <ProtectedRoute
+            element={<Admin />}
+            hasPermission={hasAnunciarItem}
+        />
+        } />
+    
     <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
             <Route path='/dashboard/patrimonio-temporario' element={<Admin/>}/>
        <Route path='/dashboard/movimentacao' element={<Admin/>}/>

@@ -19,6 +19,7 @@ import { LikeButton } from "./like-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useModal } from "../../hooks/use-modal-store";
+import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
 
 /* ========= Básicos ========= */
 export interface Unit {
@@ -152,20 +153,6 @@ export interface WorkflowHistory {
 }
 
 /* ========= Catálogo ========= */
-export interface CatalogEntry {
-  id: string;
-  situation: string;            // no JSON veio "UNUSED"; deixar aberto para outros status
-  conservation_status: string;
-  description: string;
-
-  asset: Asset;
-  user: User;
-  location: Location;
-  images: Image[];
-  workflow_history: WorkflowHistory[];
-
-  created_at?: string;          // presente no JSON; deixar opcional por segurança
-}
 
 /* ========= Payload do endpoint ========= */
 export interface CatalogEntriesResponse {
