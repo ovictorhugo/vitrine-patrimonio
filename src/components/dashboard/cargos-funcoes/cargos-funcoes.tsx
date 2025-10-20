@@ -3,10 +3,12 @@ import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent } from "../../ui/tabs";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "../../authentication/signIn";
 import { RoleDTO, Roles, UserInRoleDTO } from "./tabs/roles";
 import { UsersPage } from "./tabs/users";
+import { UserContext } from "../../../context/context";
+import { usePermissions } from "../../permissions";
 
 
 export function CargosFuncoes() {
@@ -54,6 +56,10 @@ export function CargosFuncoes() {
   const [openCreatePerm, setOpenCreatePerm] = useState(false);
 const [openListPerm, setOpenListPerm] = useState(false);
  
+ const { hasPermissoes
+} = usePermissions();
+
+
     return (
          <div className="flex flex-col h-full">
               <Helmet>
@@ -167,7 +173,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
         <GitBranchPlus size={16} />Permissões
       </Button>
     )}
-                    {value == 'roles' && ( <Button onClick={() => setOpenCreatePerm(true)}><Plus size={16} />Criar permissão</Button>)}
+                    {(value == 'roles' && hasPermissoes) && ( <Button onClick={() => setOpenCreatePerm(true)}><Plus size={16} />Criar permissão</Button>)}
                   </div>
                 </div>
               </div>

@@ -46,6 +46,7 @@ import {
   CommandList,
 } from "../../../ui/command";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../ui/carousel";
+import { usePermissions } from "../../../permissions";
 
 /* ============================
    Types
@@ -199,7 +200,7 @@ export function Roles({ openCreatePerm, setOpenCreatePerm, openListPerm, setOpen
   const [roleUsers, setRoleUsers] = useState<Record<string, UserInRoleDTO[]>>({});
   const [loadingRoleUsers, setLoadingRoleUsers] = useState<Record<string, boolean>>({});
 
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, permission } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
   const authHeaders: HeadersInit = useMemo(
     () => ({
@@ -305,7 +306,7 @@ export function Roles({ openCreatePerm, setOpenCreatePerm, openListPerm, setOpen
       });
       await assertOk(res, "Falha ao criar cargo");
       const created = await safeJson<RoleDTO>(res);
-      
+
 if (created && created.id) {
   setRoles((prev) => [
     ...prev,
@@ -625,6 +626,10 @@ const filteredAllPermissions = useMemo(() => {
       p.description?.toLowerCase().includes(q)
   );
 }, [allPermissions, permSearch]);
+
+ const { hasPermissoes
+} = usePermissions();
+
 
   return (
     <div className="p-8 gap-8 flex flex-col">
@@ -1156,7 +1161,7 @@ const filteredAllPermissions = useMemo(() => {
     </Alert>
 
     {/* Lista */}
-    <div className="max-h-[420px] overflow-y-auto elementBarra mt-4 space-y-2">
+    <div className="max-h-[320px] overflow-y-auto elementBarra mt-4 space-y-2">
       {loadingPerms ? (
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -1205,12 +1210,14 @@ const filteredAllPermissions = useMemo(() => {
         </Button>
       </DialogClose>
 
-        <Button onClick={() => {
+    {hasPermissoes && (
+          <Button onClick={() => {
           setOpenListPerm(false)
         setOpenCreatePerm(true)
         }}>
           <Plus size={16} /> Adicionar permissão
         </Button>
+    )}
     </DialogFooter>
   </DialogContent>
 </Dialog>

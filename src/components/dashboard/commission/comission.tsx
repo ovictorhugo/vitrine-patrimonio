@@ -9,12 +9,16 @@ import { Tabs, TabsContent } from "../../ui/tabs";
 import { ListaFinalDesfazimento } from "./tabs/lista-final-desfazimento";
 import { MeusItens } from "./tabs/meus-itens";
 import AdmComission from "./tabs/adm-comission";
+import { usePermissions } from "../../permissions";
 export function Comission() {
       const { urlGeral } = useContext(UserContext);
       const navigate = useNavigate();
       const location = useLocation();
 
         const [tab, setTab] = useState("meus-itens");
+ 
+ const { hasAdministracaoDaComissao
+} = usePermissions();
 
     return(
          <div className=" gap-4 flex flex-col h-full">
@@ -65,7 +69,8 @@ export function Comission() {
                                
                                 Meus itens para avaliação
                               </Button>
-
+{hasAdministracaoDaComissao && (
+  
                                   <Button
                                 size="sm"
                                 onClick={() => {
@@ -77,6 +82,7 @@ export function Comission() {
                                
                               Administração da comissão
                               </Button>
+)}
                               <Button
                                 onClick={() => {
                                   setTab('lfd')
@@ -98,9 +104,11 @@ export function Comission() {
                             <TabsContent value="meus-itens" className="m-0 p-0">
                              <MeusItens/>
                           </TabsContent>
-                          <TabsContent value='lfd' className="m-0 p-0">
-                              <ListaFinalDesfazimento/>
+                         {
+                          hasAdministracaoDaComissao && <TabsContent value="lfd" className="m-0 p-0">
+                             <ListaFinalDesfazimento/>
                           </TabsContent>
+                         }
 
                               <TabsContent value='adm' className="m-0 p-0">
                               <AdmComission/>

@@ -19,6 +19,8 @@ import { CatalogResponseDTO } from './components/item-page/item-page';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Unauthorized } from './components/errors/Unauthorized';
 import { Error404 } from './components/errors/404';
+import { usePermissions } from './components/permissions';
+import { AppRoutes } from './AppRoutes';
 
 
 
@@ -114,14 +116,8 @@ function App() {
 
 
 
-  //PERMISSÕES
-   const hasCriarEtiqueta = permission.some(
-    (p) => p.code === "CRIAR_ETIQUETA"
-  );
+  
 
-     const hasAnunciarItem = permission.some(
-    (p) => p.code === "ANUNCIAR_ITEM"
-  );
 
 
 
@@ -148,74 +144,7 @@ function App() {
                <FavoriteProvider>
       <DefaultLayout>
       <LoadingWrapper>
-      <Routes>
-        <Route path='/' element={<Home/>}/>
-        <Route path='/buscar-patrimonio' element={<Home/>}/>
-        <Route path='/item' element={<Home/>}/>
-     <Route path='/informacoes' element={<Home/>}/>
-        <Route path='/dashboard' element={<Admin/>}/>
-        <Route path='/dashboard/administrativo' element={<Admin/>}/>
-        <Route path='/dashboard/patrimonios' element={<Admin/>}/>
-       
-        <Route path='/dashboard/desfazimento-bem' element={<Admin/>}/>
-        <Route path='/dashboard/sala' element={<Admin/>}/>
-        <Route path='/dashboard/itens-vitrine' element={<Admin/>}/>
-        <Route path='/dashboard/itens-desfazimento' element={<Admin/>}/>
-        <Route path='/dashboard/transferencias' element={<Admin/>}/>
-        <Route path='/dashboard/editar-item' element={<Admin/>}/>
-           <Route path='/dashboard/inventario' element={<Admin/>}/>
-
-    <Route path='/dashboard/cargos-funcoes' element={<Admin/>}/>
-        <Route path='/dashboard/desfazimento' element={<Admin/>}/>
-
-
-
-        <Route path='/dashboard/empenhos' element={<Admin/>}/>
-     
-        <Route path='/dashboard/painel' element={<Admin/>}/>
-        <Route path='/dashboard/assinaturee' element={<Admin/>}/>
-
-   <Route path='/dashboard/departamento' element={<Admin/>}/>
-
- <Route path='/termo-uso' element={<Admin/>}/>
-  <Route path='/politica-privacidade' element={<Admin/>}/>
-
-        <Route
-        path='/signIn'
-        element={loggedIn == false ? <Authentication/> : <Navigate to='/' />}
-        />
-
-    <Route path='/authentication' element={<AuthenticationToken />} />
-   
-
-        <Route path="/dashboard/criar-etiqueta" element={
-           <ProtectedRoute
-            element={<Admin />}
-            hasPermission={hasCriarEtiqueta}
-        />
-        } />
-
-          <Route path='/dashboard/novo-item' element={
-           <ProtectedRoute
-            element={<Admin />}
-            hasPermission={hasAnunciarItem}
-        />
-        } />
-    
-    <Route path='/dashboard/criar-patrimonio-temporario' element={<Admin/>}/>
-            <Route path='/dashboard/patrimonio-temporario' element={<Admin/>}/>
-       <Route path='/dashboard/movimentacao' element={<Admin/>}/>
-        <Route path='/dashboard/busca-avancada' element={<Admin/>}/>
-    <Route path='/dashboard/comissao-permanente' element={<Admin/>}/>
-    <Route path='/dashboard/alienacao' element={<Admin/>}/>
-
-
-
-                                    <Route path='/unauthorized' element={<Unauthorized />} />
-
-                                    <Route path='*' element={<Error404 />} />
-
-      </Routes>
+        <AppRoutes loggedIn={loggedIn} />
       </LoadingWrapper>
       </DefaultLayout>
       </FavoriteProvider>

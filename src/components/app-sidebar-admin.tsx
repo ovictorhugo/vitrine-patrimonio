@@ -63,19 +63,25 @@ import { useContext} from "react";
 import { AccountSwitcher } from "./navigation/user-list"
 import { DotsThree } from "phosphor-react"
 import { useModal } from "./hooks/use-modal-store"
+import { usePermissions } from "./permissions"
 // This is sample data.
 
 export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sidebar>) {
  const {urlGeral, user,  loggedIn, permission} = useContext(UserContext)
  const {onOpen} = useModal()  
 
-    const hasCriarEtiqueta = permission.some(
-    (p) => p.code === "CRIAR_ETIQUETA"
-  );
+    const { hasCriarEtiqueta, 
+     hasAdministrativo, 
+     hasAnunciarItem,
+     hasBuscaAvancada,
+     hasCargosFuncoes,
+     hasAlienacao,
+     hasDesfazimento,
+     hasMovimentacao,
+     hasComissaoPermanente
+   } = usePermissions();
 
-      const hasAnunciarItem = permission.some(
-    (p) => p.code === "ANUNCIAR_ITEM"
-  );
+
 
 
 
@@ -120,11 +126,17 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
               icon: SearchCheck,
             },
 
-           {
+              ...(hasBuscaAvancada
+                        ? [
+                             {
             title: "Busca avançada",
             url: "/dashboard/busca-avancada",
             icon: TextSearch
           },
+                        ]
+                        : []),
+
+          
        
         ],
       },
@@ -162,50 +174,86 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
               url: "/",
               icon: Home,
             },
+
+            
            
       {
         name: "Dashboard",
         url: "/dashboard",
         icon: LayoutDashboard,
       },
-      {
+
+        ...(hasAdministrativo
+                        ? [
+                    {
         name: "Administrativo",
         url: "/dashboard/administrativo",
         icon: SlidersHorizontal,
       },
+                        ]
+                        : []),
+     
 
-      {
+  ...(hasMovimentacao
+                        ? [
+                           {
         name: "Movimentação",
         url: "/dashboard/movimentacao",
         icon: ArrowRightLeft,
       },
+                        ]
+                        : []),
+
+    
 
 
-
-
-       {
+  ...(hasCargosFuncoes
+                        ? [
+                             {
         name: "Cargos e funções",
         url: "/dashboard/cargos-funcoes",
         icon: Users,
       },
+                        ]
+                        : []),
 
-      {
+        ...(hasComissaoPermanente
+                        ? [
+                          {
         name: "Comissão permanente",
         url: "/dashboard/comissao-permanente",
         icon: ClipboardCheck,
       },
+                        ]
+                        : []),
 
-       {
+
+     
+
+        ...(hasDesfazimento
+                        ? [
+                      {
         name: "Desfazimento",
         url: "/dashboard/desfazimento",
         icon: Trash2,
       },
+                        ]
+                        : []),
 
-        {
+                        
+        ...(hasAlienacao
+                        ? [
+                      {
         name: "Alienação",
         url: "/dashboard/alienacao",
         icon: Coins,
       },
+                        ]
+                        : []),
+
+     
+
+      
 
         {
         name: "Departamento",
