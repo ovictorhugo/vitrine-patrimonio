@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { CatalogEntriesResponse, ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
 import { Button } from "../../../ui/button";
-import { CatalogEntry } from "../tabs/anunciados";
+import { CatalogEntry } from "./anunciados";
 
 
 export function Favoritos() {
@@ -52,7 +52,7 @@ export function Favoritos() {
     const fetchCatalog = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${urlGeral}favorites/`, {
+        const res = await axios.get(`${urlGeral}favorites/?workflow_status=VITRINE`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });

@@ -7,6 +7,7 @@ import { CardContent } from "../../../ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "../../../authentication/signIn";
 import { useRef } from "react";
+import { usePermissions } from "../../../permissions";
 
 type CollectionItemProps = {
   props: CollectionDTO;
@@ -29,6 +30,11 @@ export function CollectionItem({ props, type, onEdit, onDelete }: CollectionItem
     navigate({ pathname: location.pathname, search: queryUrl.toString() });
   };
 
+     const { hasColecoes
+} = usePermissions();
+
+
+
   return (
     <Droppable droppableId={props.id} type="CATALOG_ITEM">
       {(provided, snapshot) => {
@@ -40,17 +46,16 @@ export function CollectionItem({ props, type, onEdit, onDelete }: CollectionItem
             ref={provided.innerRef}
             {...provided.droppableProps}
             data-collection-id={props.id}
-            className="collection-drop-target group relative rounded-md overflow-hidden border border-neutral-200 bg-white dark:bg-neutral-900"
+            className="collection-drop-target group relative  "
             style={{
-              // tamanho estável (sem “pular” ao arrastar)
-              minHeight: 180,
+          
               pointerEvents: "auto",
             }}
             onClick={() => handleOpen(props.id)}
           >
             {/* conteúdo clicável (mantém layout fixo) */}
             <div className="w-full">
-              <Alert className="bg-center cursor-pointer bg-cover bg-no-repeat">
+              <Alert className="bg-center cursor-pointer bg-cover bg-no-repeat p-2">
                 <CardContent className="flex aspect-square justify-between flex-col p-4">
                   <p className="font-medium uppercase flex items-center gap-1 text-xs text-gray-500">
                     {type}
@@ -75,7 +80,8 @@ export function CollectionItem({ props, type, onEdit, onDelete }: CollectionItem
             </div>
 
             {/* botões (não alteram o tamanho) */}
-            <div className="absolute top-2 right-2 hidden group-hover:flex gap-2 z-[2]">
+            {hasColecoes && (
+              <div className="absolute top-6 right-6 hidden group-hover:flex gap-2 z-[2]">
               <Button
                 size="icon"
                 variant="outline"
@@ -93,10 +99,11 @@ export function CollectionItem({ props, type, onEdit, onDelete }: CollectionItem
                 <Trash size={16} />
               </Button>
             </div>
+            )}
 
             {/* highlight azul cobrindo TODO o card, sem empurrar layout */}
             {snapshot.isDraggingOver && (
-              <div className="pointer-events-none absolute inset-0 rounded-md outline outline-2 outline-blue-600" />
+              <div className="pointer-events-none absolute inset-0 rounded-md boder border-2 border-eng-blue" />
             )}
 
             {/* IMPORTANTE: NÃO renderizar placeholder aqui

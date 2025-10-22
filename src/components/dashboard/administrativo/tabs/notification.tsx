@@ -27,8 +27,7 @@ import { ArrowUUpLeft, MagnifyingGlass } from "phosphor-react";
 import { Separator } from "../../../ui/separator";
 import { Textarea } from "../../../ui/textarea";
 import IconPicker from "../components/icon-picker";
-import { NotificationItem } from "../components/notification-item";
-import { Notifications, notificationsTypes } from "../../../header/notifications";
+import {  notificationsTypes } from "../../../header/notifications";
 import { Checkbox } from "../../../ui/checkbox";
 import { Badge } from "../../../ui/badge";
 import {

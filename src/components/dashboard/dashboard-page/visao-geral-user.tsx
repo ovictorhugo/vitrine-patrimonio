@@ -12,7 +12,7 @@ import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
 import { Homepage } from "./tabs/homepage";
 import { Patrimonios } from "./tabs/patrimonios";
-import { Anunciados } from "./tabs/anunciados";
+import { Anunciados } from "./components/anunciados";
 import { PerfilSegurancaDashboard } from "./tabs/perfil-seguranca";
 
 

@@ -2,7 +2,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserContext } from "../../../../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
 import { Button } from "../../../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
 import { Skeleton } from "../../../ui/skeleton";
@@ -10,6 +10,7 @@ import { useQuery } from "../../../authentication/signIn";
 import { ItemPatrimonio } from "./item-patrimonio";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { Portal } from "./portal";
+import { Alert } from "../../../ui/alert";
 
 export interface CatalogEntry {
   id: string;
@@ -33,7 +34,6 @@ interface Props {
   workflow: string;
   selectedIds: Set<string>;
   onChangeSelected: (s: Set<string>) => void;
-  /** registra um callback para remover itens da grade após POST bem-sucedido */
   registerRemove?: (fn: (ids: string[]) => void) => void;
 }
 
@@ -44,6 +44,10 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   else sp.delete(key);
 };
 
+type Pt = { x: number; y: number };
+const rectIntersects = (a: DOMRect, b: DOMRect) =>
+  !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+
 export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, registerRemove }: Props) {
   const { urlGeral } = useContext(UserContext);
   const baseUrl = useMemo(() => sanitizeBaseUrl(urlGeral), [urlGeral]);
@@ -51,9 +55,10 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
   const queryUrl = useQuery();
   const navigate = useNavigate();
   const location = useLocation();
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Filtros e paginação lidos da URL
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
   const initialQ = queryUrl.get("q") || "";
   const [q, setQ] = useState(initialQ);
 
@@ -79,7 +84,6 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     return h;
   }, [token]);
 
-  // Remoção local pós-POST
   const removeItemsById = (ids: string[]) => {
     if (!ids?.length) return;
     setItems((prev) => prev.filter((it) => !ids.includes(it.id)));
@@ -87,7 +91,6 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
   };
   useEffect(() => { registerRemove?.(removeItemsById); }, [registerRemove]); // eslint-disable-line
 
-  // Atualiza URL ao mudar offset/limit
   const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", newOffset.toString());
@@ -105,12 +108,10 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
   };
   useEffect(() => { handleNavigate(offset, limit, true); /* eslint-disable-next-line */ }, [offset, limit]);
 
-  // Sincroniza estado quando a URL muda (ex.: navegar por filtros fora daqui)
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const qUrl = sp.get("q") ?? "";
     if (qUrl !== q) setQ(qUrl);
-
     const setFirst = (setter: (v: string) => void, key: string) => setter(first(sp.get(key)));
     setFirst(setMaterialId, "material_ids");
     setFirst(setLegalGuardianId, "legal_guardian_ids");
@@ -118,15 +119,12 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     setFirst(setUnitId, "unit_ids");
     setFirst(setAgencyId, "agency_ids");
     setFirst(setSectorId, "sector_ids");
-
     const off = Number(sp.get("offset") ?? "0");
     const lim = Number(sp.get("limit") ?? String(limit));
     if (off !== offset) setOffset(off);
     if (lim !== limit) setLimit(lim);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
+  }, [location.search]); // eslint-disable-line
 
-  // GET /catalog com filtros e paginação
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
@@ -154,7 +152,6 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     return () => controller.abort();
   }, [baseUrl, baseHeaders, workflow, q, materialId, legalGuardianId, locationId, unitId, agencyId, sectorId, offset, limit]);
 
-  // ===== Seleção tipo Drive =====
   const indexById = useMemo(() => {
     const m = new Map<string, number>();
     items.forEach((it, i) => m.set(it.id, i));
@@ -165,16 +162,17 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
   const isSelected = (id: string) => selectedIds.has(id);
 
   const selectRange = (a: number, b: number) => {
-    const [i,j] = a < b ? [a,b] : [b,a];
-    const ids = items.slice(i, j+1).map((it)=>it.id);
+    const [i, j] = a < b ? [a, b] : [b, a];
+    const ids = items.slice(i, j + 1).map((it) => it.id);
     const next = new Set(selectedIds);
-    ids.forEach((id)=>next.add(id));
+    ids.forEach((id) => next.add(id));
     onChangeSelected(next);
   };
 
   const toggleSingle = (id: string) => {
     const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     onChangeSelected(next);
   };
 
@@ -188,16 +186,87 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     onChangeSelected(new Set([id])); setAnchorIndex(idx);
   };
 
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const selCount = Math.max(1, selectedIds.size);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [startPt, setStartPt] = useState<Pt | null>(null);
+  const [box, setBox] = useState<{ left:number; top:number; width:number; height:number } | null>(null);
+  const baseSelectionRef = useRef<Set<string>>(new Set());
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const suppressNextClickRef = useRef(false);
+
+  const registerItemRef = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) itemRefs.current.set(id, el); else itemRefs.current.delete(id);
+  };
+
+  const onGridMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    if (e.target !== e.currentTarget) return;
+    const grid = gridRef.current; if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const x = e.clientX - rect.left + grid.scrollLeft;
+    const y = e.clientY - rect.top + grid.scrollTop;
+    baseSelectionRef.current = new Set(selectedIds);
+    setStartPt({ x, y });
+    setBox({ left: x, top: y, width: 0, height: 0 });
+    setIsSelecting(true);
+    e.preventDefault();
+  };
+
+  const onGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSelecting || !startPt) return;
+    const grid = gridRef.current; if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const x = e.clientX - rect.left + grid.scrollLeft;
+    const y = e.clientY - rect.top + grid.scrollTop;
+    const left = Math.min(startPt.x, x);
+    const top = Math.min(startPt.y, y);
+    const width = Math.abs(x - startPt.x);
+    const height = Math.abs(y - startPt.y);
+    setBox({ left, top, width, height });
+    const selectionRect = new DOMRect(left, top, width, height);
+    let next = new Set<string>(e.ctrlKey || e.metaKey ? baseSelectionRef.current : []);
+    itemRefs.current.forEach((el, id) => {
+      const r = el.getBoundingClientRect();
+      const abs = new DOMRect(r.left - rect.left + grid.scrollLeft, r.top - rect.top + grid.scrollTop, r.width, r.height);
+      if (rectIntersects(selectionRect, abs)) next.add(id);
+      else if (!(e.ctrlKey || e.metaKey)) next.delete(id);
+    });
+    onChangeSelected(next);
+  };
+
+  const endSelecting = () => {
+    if (!isSelecting) return;
+    setIsSelecting(false);
+    setStartPt(null);
+    setBox(null);
+    suppressNextClickRef.current = true;
+  };
+
+  const onGridMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isSelecting) { endSelecting(); e.preventDefault(); e.stopPropagation(); }
+  };
+
+  const onGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (suppressNextClickRef.current) { suppressNextClickRef.current = false; e.preventDefault(); e.stopPropagation(); return; }
+    if (e.target === e.currentTarget) clearSelection();
+  };
+
+  useEffect(() => {
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
+      const grid = gridRef.current; if (!grid) return;
+      const clickedInsideGrid = grid.contains(e.target as Node);
+      if (!clickedInsideGrid && selectedIds.size > 0) onChangeSelected(new Set());
+    };
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && selectedIds.size > 0) onChangeSelected(new Set()); };
+    document.addEventListener("mousedown", onDocMouseDown, true);
+    window.addEventListener("keydown", onKeyDown);
+    return () => { document.removeEventListener("mousedown", onDocMouseDown, true); window.removeEventListener("keydown", onKeyDown); };
+  }, [selectedIds, onChangeSelected]);
 
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
 
-  const skeletons = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => <Skeleton key={i} className="w-full rounded-md aspect-square" />),
-    []
-  );
+  const skeletons = useMemo(() => Array.from({ length: 12 }, (_, i) => <Skeleton key={i} className="w-full rounded-md aspect-square" />), []);
 
   return (
     <div ref={containerRef}>
@@ -210,67 +279,62 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
       {!loading && (
         <>
           {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm">{selectedIds.size} selecionado(s)</span>
-              <Button variant="outline" size="sm" onClick={clearSelection}>Limpar seleção</Button>
-            </div>
+            <Alert className="flex items-center sticky mb-8 justify-between p-2 px-2 ">
+              <span className="text-xs font-medium ml-4">{selectedIds.size} selecionado(s)</span>
+              <Button variant="ghost" size="sm" onClick={clearSelection} className="px-2 h-8"><Trash size={16} />Limpar seleção</Button>
+            </Alert>
           )}
 
-          <Droppable
-            droppableId="CATALOG"
-            type="CATALOG_ITEM"
-            isDropDisabled
+          <Droppable droppableId="CATALOG" type="CATALOG_ITEM" isDropDisabled
             renderClone={(provided, snapshot, rubric) => {
               const entry = items[rubric.source.index];
               return (
                 <Portal>
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
+                  <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     className="pointer-events-none"
-                    style={{
-                      ...(provided.draggableProps.style || {}),
-                      zIndex: 9999,
-                    }}
-                  >
+                    style={{ ...(provided.draggableProps.style || {}), zIndex: 9999 }}>
                     <div className="w-[220px] rounded-lg overflow-hidden shadow-2xl ring-1 ring-black/10 bg-background">
                       <ItemPatrimonio {...(entry as any)} selected />
                     </div>
                   </div>
                 </Portal>
               );
-            }}
-          >
+            }}>
             {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
-                onClick={(e)=>{ if (e.target === e.currentTarget) clearSelection(); }}
-              >
-                {items.map((item, index) => (
-                  <Draggable draggableId={item.id} index={index} key={item.id}>
-                    {(prov, snap) => {
-                      if (snap.isDragging && draggingIndex !== index) setDraggingIndex(index);
-                      return (
+              <div className="relative">
+                <div
+                  ref={(el) => { provided.innerRef(el); gridRef.current = el; }}
+                  {...provided.droppableProps}
+                  className={`grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 ${isSelecting ? "select-none" : ""}`}
+                  onMouseDown={onGridMouseDown}
+                  onMouseMove={onGridMouseMove}
+                  onMouseUp={onGridMouseUp}
+                  onClick={onGridClick}
+                >
+                  {items.map((item, index) => (
+                    <Draggable draggableId={item.id} index={index} key={item.id}>
+                      {(prov, snap) => (
                         <div
-                          ref={prov.innerRef}
+                          ref={(el) => { prov.innerRef(el); registerItemRef(item.id)(el); }}
                           {...prov.draggableProps}
                           {...prov.dragHandleProps}
                           className={snap.isDragging ? "opacity-70 scale-[0.98]" : ""}
+                          data-item-id={item.id}
                         >
-                          <ItemPatrimonio
-                            {...(item as any)}
-                            selected={isSelected(item.id)}
-                            onItemClick={(e)=>handleItemClick(e, item.id)}
-                          />
+                          <ItemPatrimonio {...(item as any)} selected={isSelected(item.id)} onItemClick={(e)=>handleItemClick(e, item.id)} />
                         </div>
-                      );
-                    }}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+
+                {isSelecting && box && (
+                  <div
+                    className="absolute pointer-events-none border-2 border-primary/60 bg-primary/10 rounded"
+                    style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+                  />
+                )}
               </div>
             )}
           </Droppable>
@@ -281,10 +345,7 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
 
       <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
         <span className="text-sm text-muted-foreground">Itens por página:</span>
-        <Select
-          value={limit.toString()}
-          onValueChange={(v)=>{ const nl = parseInt(v); setOffset(0); setLimit(nl); handleNavigate(0, nl); }}
-        >
+        <Select value={limit.toString()} onValueChange={(v)=>{ const nl = parseInt(v); setOffset(0); setLimit(nl); handleNavigate(0, nl); }}>
           <SelectTrigger className="w-[100px]"><SelectValue placeholder="Itens" /></SelectTrigger>
           <SelectContent>{[12,24,36,48,84,162].map((val)=><SelectItem key={val} value={val.toString()}>{val}</SelectItem>)}</SelectContent>
         </Select>

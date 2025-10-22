@@ -119,31 +119,46 @@ export function BlockItemsVitrine(props: Props) {
   };
   const closeMove = () => { setIsMoveOpen(false); setMoveTargetId(null); setMoveStatus(""); setMoveObs(""); };
 
-  const handleConfirmMove = useCallback(async () => {
-    if (!moveTargetId || !moveStatus) return;
-    try {
-      setMoving(true);
-      const payload = {
-        workflow_status: moveStatus,
-        detail: { observation: { text: moveObs } },
-      };
-      const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
-        method: "POST",
-        headers: { ...baseHeaders },
-        body: JSON.stringify(payload),
-      });
-      if (!r.ok) {
-        const t = await r.text().catch(() => "");
-        throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
-      }
-      toast("Movimentação registrada!");
-      closeMove();
-    } catch (e: any) {
-      toast("Erro ao movimentar", { description: e?.message || "Tente novamente." });
-    } finally {
-      setMoving(false);
+const handleConfirmMove = useCallback(async () => {
+  if (!moveTargetId || !moveStatus) return;
+  try {
+    setMoving(true);
+    const payload = {
+      workflow_status: moveStatus,
+      detail: { observation: { text: moveObs } },
+    };
+    const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
+      method: "POST",
+      headers: { ...baseHeaders },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(() => "");
+      throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
     }
-  }, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders]);
+
+    // Se o destino for diferente do workflow do bloco atual, remove o item da lista
+    if (moveStatus !== props.workflow) {
+      setItems((prev) => prev.filter((it) => it.id !== moveTargetId));
+    }
+
+    // Emite o mesmo evento global (mantém consistência com o modal de item)
+    try {
+      window.dispatchEvent(
+        new CustomEvent("catalog:workflow-updated", {
+          detail: { id: moveTargetId, newStatus: moveStatus },
+        })
+      );
+    } catch {}
+
+    toast("Movimentação registrada!");
+    closeMove();
+  } catch (e: any) {
+    toast("Erro ao movimentar", { description: e?.message || "Tente novamente." });
+  } finally {
+    setMoving(false);
+  }
+}, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders, props.workflow]);
 
   // ===== Atualiza URL (mantendo PLURAL do modal) e scroll =====
   const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
@@ -265,6 +280,27 @@ export function BlockItemsVitrine(props: Props) {
     () => Array.from({ length: 12 }, (_, index) => <Skeleton key={index} className="w-full rounded-md aspect-square" />),
     []
   );
+
+  // Remover item da lista quando algum outro lugar mover o workflow
+useEffect(() => {
+  const handler = (e: any) => {
+    const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+    if (!detail?.id) return;
+    // Se o item está na lista atual e o novo status é diferente do filtro do bloco, remove
+    setItems((prev) => {
+      const has = prev.some((it) => it.id === detail.id);
+      if (!has) return prev;
+      if (detail.newStatus && detail.newStatus !== props.workflow) {
+        return prev.filter((it) => it.id !== detail.id);
+      }
+      return prev;
+    });
+  };
+
+  window.addEventListener("catalog:workflow-updated" as any, handler as any);
+  return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+}, [props.workflow]);
+
 
   return (
     <div ref={containerRef}>

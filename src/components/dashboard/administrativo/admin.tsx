@@ -14,10 +14,13 @@ import { useModal } from "../../hooks/use-modal-store";
 import { Notification } from "./tabs/notification";
 import { Feedback } from "./tabs/feedback";
 import { Configuration } from "./tabs/configuration";
+import { usePermissions } from "../../permissions";
 
 export type StatusCount = { status: string; count: number };
 
 export function Admin() {
+     const { hasConfiguracoes
+  } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, urlGeral } = useContext(UserContext);
@@ -26,7 +29,7 @@ export function Admin() {
     { id: "inventario", label: "Inventário", icon: ListChecks },
         { id: "notification", label: "Notificações", icon: Bell },
          { id: "feedback", label: "Feedback", icon:Bug },
-          { id: 'configuration', label: "Configurações", icon: Settings },
+          { id: 'configuration', label: "Configurações", icon: Settings, condition:!hasConfiguracoes },
   ];
 
   const [isOn, setIsOn] = useState(true);
@@ -107,6 +110,8 @@ export function Admin() {
   const fmt = (n: number) => (loadingStats ? "…" : String(n));
 
   const {onOpen} = useModal()
+
+
   return (
     <div className="flex flex-col h-full">
       <Helmet>
@@ -216,7 +221,7 @@ export function Admin() {
                     <div className=" mx-10 ">
                       <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide scrollbar-hide" onScroll={checkScrollability}>
                         <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                          {tabs.map(({ id, label, icon: Icon }) => (
+                          {tabs.map(({ id, label, icon: Icon, condition }) => !condition && (
                             <div
                               key={id}
                               className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
@@ -274,9 +279,11 @@ export function Admin() {
             <Feedback />
           </TabsContent>
 
-           <TabsContent value='configuration'>
+          {hasConfiguracoes && (
+             <TabsContent value='configuration'>
             <Configuration />
           </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

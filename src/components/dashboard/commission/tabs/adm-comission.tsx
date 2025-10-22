@@ -22,6 +22,7 @@ import {
   X,
   Loader,
   ListTodo,
+  User,
 } from "lucide-react";
 import {
   Select,
@@ -74,6 +75,7 @@ import { ScrollArea, ScrollBar } from "../../../ui/scroll-area";
 import { RoleMembers } from "../../cargos-funcoes/components/role-members";
 import { CardItemDropdown } from "../../itens-vitrine/card-item-dropdown";
 import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 
 /* =========================
    Tipos do backend
@@ -269,21 +271,24 @@ const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
 
 const codeFrom = (e: CatalogEntry) => [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
 
+// util defensivo
+const sortedHistoryDesc = (entry: CatalogEntry) =>
+  [...(entry.workflow_history ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+
 // Pega a *última* entrada relevante que contenha reviewers
 const lastReviewersDetail = (entry: CatalogEntry): string[] => {
-  const hist = entry.workflow_history ?? [];
+  const hist = sortedHistoryDesc(entry);
   const isTarget = (h: WorkflowHistoryItem) =>
     (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A;
 
-  // antes:
-  // const relevant = hist.filter(isTarget);
-  // const last = relevant[relevant.length - 1];
-
-  // depois (pega o ATUAL = primeiro no array):
-  const first = hist.find(isTarget);
+  const first = hist.find(isTarget); // agora com hist garantidamente em ordem decrescente
   const reviewers = (first?.detail?.reviewers ?? []) as string[];
   return Array.isArray(reviewers) ? reviewers.filter(Boolean) : [];
 };
+
 
 const groupByReviewer = (
   data: CatalogEntry[],
@@ -683,12 +688,21 @@ export function AdmComission() {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
-    const fromKey = (source.droppableId ?? "").trim();
-    const toKey = (destination.droppableId ?? "").trim();
-    if (fromKey === toKey) return;
+ const handleDragEnd = async (result: DropResult) => {
+  const { source, destination } = result;
+  if (!destination) return;
+
+  const fromKey = (source.droppableId ?? "").trim();
+  const toKey   = (destination.droppableId ?? "").trim();
+  if (fromKey === toKey) return;
+
+  // ✅ destino precisa ser SEM_REVISOR ou um id de usuário válido da comissão
+  const validTo =
+    toKey === COL_SEM_REVISOR || commissionUsers.some(u => (u.id ?? "").trim() === toKey);
+  if (!validTo) {
+    toast.error("Destino inválido para reatribuição.");
+    return;
+  }
 
     const fromList = board[fromKey] ?? [];
     const entry = fromList[source.index];
@@ -701,28 +715,20 @@ export function AdmComission() {
     const reviewersNew = toKey === COL_SEM_REVISOR ? [] : [toKey];
 
    const patchEntry = (it: CatalogEntry): CatalogEntry => {
-  const hist = [...(it.workflow_history ?? [])];
-
-  // antes (pegava o último índice relevante):
-  // const idx = [...hist]
-  //   .map((h, i) => ({ h, i }))
-  //   .filter(({ h }) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A)
-  //   .map(({ i }) => i)
-  //   .pop();
-
-  // depois (pega o PRIMEIRO índice relevante = atual)
+  const hist = sortedHistoryDesc(it);
   const idx = hist.findIndex(
     (h) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A
   );
-
   if (idx === -1) return it;
 
   const current = hist[idx];
   const newDetail = { ...(current.detail ?? {}), reviewers: reviewersNew };
-  hist[idx] = { ...current, detail: newDetail };
+  const newHist = [...hist];
+  newHist[idx] = { ...current, detail: newDetail };
 
-  return { ...it, workflow_history: hist };
+  return { ...it, workflow_history: newHist };
 };
+
     const patched = patchEntry(entry);
 
     // Remove da origem e adiciona no destino no board
@@ -859,6 +865,11 @@ export function AdmComission() {
     return out;
   };
 
+  const sortedHistoryDesc = (entry: CatalogEntry) =>
+  [...(entry.workflow_history ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   const convertJsonToCsv = (data: any[]): string => {
     const flattened = data.map((d) => flattenObject(stripWorkflow(d)));
     const headerSet = new Set<string>();
@@ -894,10 +905,16 @@ export function AdmComission() {
 
   // ====== token já usado acima ======
 
-  return (
-    <div className="p-4 md:p-8 pt-0 md:pt-0 gap-8 flex flex-col h-full">
+  useEffect(() => {
+  // quando colunas ou board mudarem, rechecamos
+  const t = setTimeout(checkScrollability, 0);
+  return () => clearTimeout(t);
+}, [columns, board]);
 
-      <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
+  return (
+    <div className="p-4 md:p-8  gap-8 flex flex-col h-full">
+
+        <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
    
 
         {/* Filtros */}
@@ -996,14 +1013,12 @@ export function AdmComission() {
 
         {/* Board / Expandido */}
         {expandedColumn === null ? (
-          <div
-            className={`relative flex-1 ${
-              showFilters ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]" : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
-            }`}
+            <div
+            className={`relative flex-1 `}
           >
-            <div className="h-full overflow-x-auto overflow-y-hidden pb-2">
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-4 min-w-[980px] h-full">
+             <div className="h-full overflow-x-auto overflow-y-hidden pb-2">
+                         <DragDropContext onDragEnd={handleDragEnd}>
+                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
                     const items = board[col.key] ?? [];
                     const take = visibleByCol[col.key] ?? PAGE_SIZE;
@@ -1012,69 +1027,72 @@ export function AdmComission() {
                     const { Icon } = meta;
 
                     return (
-                      <Alert key={col.key} className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Icon size={16} />
-                              <span title={col.name} className="font-semibold truncate">
-                                {col.name}
-                              </span>
-                            </div>
-                            <Badge variant="outline" className="shrink-0">
-                              {items.length}
-                            </Badge>
-                          </div>
-                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => setExpandedColumn(col.key)} title="Expandir coluna">
-                            <Maximize2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <Separator className="mb-2" />
-
-                        <Droppable droppableId={col.key}>
-                          {(provided, snapshot) => (
-                            <div className="flex-1 min-h-0">
-                              <ScrollArea
-                                className={`h-full relative flex ${
-                                  snapshot.isDraggingOver ? "bg-neutral-200 dark:bg-neutral-800 rounded-md" : ""
-                                } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                              >
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
-                                >
-                                  {loading && !items.length ? (
-                                    <>
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                    </>
-                                  ) : null}
-
-                                  {slice.map((entry, idx) => (
-                                    <div key={entry.id} className="min-w-0 w-full max-w-full overflow-hidden">
-                                      <CardItemDropdown entry={entry} index={idx} />
-                                    </div>
-                                  ))}
-
-                                  {provided.placeholder}
-
-                                  {items.length > slice.length ? (
-                                    <div className="pt-2">
-                                      <Button variant="outline" className="w-full" onClick={() => showMoreCol(col.key)}>
-                                        <Plus size={16} /> Mostrar mais
-                                      </Button>
-                                    </div>
-                                  ) : null}
-                                </div>
-
-                                <ScrollBar orientation="vertical" />
-                              </ScrollArea>
-                            </div>
-                          )}
-                        </Droppable>
-                      </Alert>
+                    <Alert key={col.key} className="w-[320px] min-w-[320px]  h-full flex flex-col min-h-0 overflow-hidden">
+                                            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                 <Avatar className="h-8 w-8 rounded-md">
+       <AvatarImage src={`${urlGeral}user/upload/${col.key}/icon`}  />
+       <AvatarFallback className=""><User className="h-4 w-4"/></AvatarFallback>
+     </Avatar>
+                                                  <span title={col.name} className="font-semibold truncate">
+                                                    {col.name}
+                                                  </span>
+                                                </div>
+                                                <Badge variant="outline" className="shrink-0">
+                                                  {items.length}
+                                                </Badge>
+                                              </div>
+                                              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0 border" onClick={() => setExpandedColumn(col.key)} title="Expandir coluna">
+                                                <Maximize2 className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                    
+                                            <Separator className="mb-2" />
+                    
+                                            <Droppable droppableId={col.key}>
+                                              {(provided, snapshot) => (
+                                                <div className="flex-1 min-h-0">
+                                                  <ScrollArea
+                                                    className={`relative flex h-[calc(100vh-348px)] ${
+                                                      snapshot.isDraggingOver ? "bg-neutral-200 dark:bg-neutral-800 rounded-md" : ""
+                                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                                  >
+                                                    <div
+                                                      ref={provided.innerRef}
+                                                      {...provided.droppableProps}
+                                                      className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
+                                                    >
+                                                      {loading && !items.length ? (
+                                                        <>
+                                                          <Skeleton className="aspect-square w-full rounded-md" />
+                                                          <Skeleton className="aspect-square w-full rounded-md" />
+                                                        </>
+                                                      ) : null}
+                    
+                                                      {slice.map((entry, idx) => (
+                                                        <div key={entry.id} className="min-w-0 w-full max-w-full overflow-hidden">
+                                                          <CardItemDropdown entry={entry} index={idx} />
+                                                        </div>
+                                                      ))}
+                    
+                                                      {provided.placeholder}
+                    
+                                                      {items.length > slice.length ? (
+                                                        <div className="pt-2">
+                                                          <Button variant="outline" className="w-full" onClick={() => showMoreCol(col.key)}>
+                                                            <Plus size={16} /> Mostrar mais
+                                                          </Button>
+                                                        </div>
+                                                      ) : null}
+                                                    </div>
+                    
+                                                    <ScrollBar orientation="vertical" />
+                                                  </ScrollArea>
+                                                </div>
+                                              )}
+                                            </Droppable>
+                                          </Alert>
                     );
                   })}
                 </div>
@@ -1094,7 +1112,10 @@ export function AdmComission() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon size={16} />
+                           <Avatar className="h-8 w-8 rounded-md">
+       <AvatarImage src={`${urlGeral}user/upload/${col.key}/icon`}  />
+       <AvatarFallback className=""><User className="h-4 w-4"/></AvatarFallback>
+     </Avatar>
                         <h2 className="text-lg font-semibold">{col.name}</h2>
                       </div>
 

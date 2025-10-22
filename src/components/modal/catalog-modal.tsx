@@ -46,6 +46,7 @@ import {
   Store,
   Clock,
   LoaderCircle,
+  ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -64,6 +65,9 @@ import { ScrollArea } from "../ui/scroll-area";
 import { LikeButton } from "../item-page/like-button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
+import { usePermissions } from "../permissions";
+import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
+import TransferTabCatalog from "../homepage/components/transfer-tab-catalog";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -209,8 +213,58 @@ export interface CatalogResponseDTO {
   location?: LocationDTO | null;
   images: CatalogImageDTO[];
   workflow_history?: WorkflowEvent[];
+    transfer_requests: TransferRequest[]
 }
 
+export type TransferRequest = {
+  id: string;
+  status: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string;
+    lattes_id: string;
+    orcid: string;
+    ramal: string;
+    photo_url: string;
+    background_url: string;
+    matricula: string;
+    verify: boolean;
+    institution_id: string;
+  };
+  location: {
+    legal_guardian_id: string;
+    sector_id: string;
+    location_name: string;
+    location_code: string;
+    id: string;
+    sector: {
+      agency_id: string;
+      sector_name: string;
+      sector_code: string;
+      id: string;
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: string;
+        id: string;
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: string;
+        };
+      };
+    };
+    legal_guardian: {
+      legal_guardians_code: string;
+      legal_guardians_name: string;
+      id: string;
+    };
+  };
+};
 /* ===================== Utils ===================== */
 
 const situationToText: Record<ApiSituation, string> = {
@@ -220,7 +274,7 @@ const situationToText: Record<ApiSituation, string> = {
   RECOVERABLE: "Recuperável",
 };
 
-const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
+export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
   // Vitrine
   REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
   ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
@@ -231,24 +285,26 @@ const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: strin
   // Desfazimento
   REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
   ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
-  REVIEW_REQUESTED_COMISSION: { Icon: Users, colorClass: "text-purple-500" },
+  REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
-  DESFAZIMENTO: { Icon: Recycle, colorClass: "text-green-600" },
+  DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+      DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
 };
 
 export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   STARTED: "Iniciado",
-  REVIEW_REQUESTED_VITRINE: "Revisão para Vitrine",
-  ADJUSTMENT_VITRINE: "Ajustes Vitrine",
-  VITRINE: "Anunciados na Vitrine",
+  REVIEW_REQUESTED_VITRINE: "Avaliação S. Patrimônio - Vitrine",
+  ADJUSTMENT_VITRINE: "Ajustes - Vitrine",
+  VITRINE: "Anunciados",
   AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
   TRANSFERIDOS: "Transferidos",
 
-  REVIEW_REQUESTED_DESFAZIMENTO: "Revisão para Desfazimento",
-  ADJUSTMENT_DESFAZIMENTO: "Ajustes Desfazimento",
-  REVIEW_REQUESTED_COMISSION: "Revisão Comissão",
-  REJEITADOS_COMISSAO: "Rejeitados pela Comissão",
-  DESFAZIMENTO: "Desfazimento Concluído",
+  REVIEW_REQUESTED_DESFAZIMENTO: "Avaliação S. Patrimônio - Desfazimento",
+  ADJUSTMENT_DESFAZIMENTO: "Ajustes - Desfazimento",
+  REVIEW_REQUESTED_COMISSION: "LTD - Lista Temporária de Desfazimento",
+  REJEITADOS_COMISSAO: "Recusados",
+  DESFAZIMENTO: "LFD - Lista Final de Desfazimento",
+  DESCARTADOS: "Processo Finalizado",
 };
 
 const money = (v?: string) => {
@@ -386,7 +442,7 @@ export function CatalogModal() {
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "catalog-modal";
 
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, user, loggedIn } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
   const { theme } = useTheme();
 
@@ -435,6 +491,8 @@ export function CatalogModal() {
     ACCEPTABLE: "bg-green-600",
     DECLINED: "bg-red-600",
   };
+
+  const {hasCatalogo} = usePermissions()
 
   // Ação: aceitar uma transferência => PUT /catalog/transfer/{transfer_id}?new_status=ACCEPTABLE
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -571,7 +629,7 @@ export function CatalogModal() {
   const qrUrlFrom = (d: CatalogResponseDTO) => {
     const code = fullCodeFrom(d);
     return code
-      ? `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
+      ? `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
       : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
   };
 
@@ -599,7 +657,7 @@ export function CatalogModal() {
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive },
-    { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft },
+    { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
   ];
 
   // Componente principal
@@ -635,6 +693,26 @@ export function CatalogModal() {
   }, []);
 
   const [value, setValue] = useState("visao_geral");
+
+
+  
+  // verifica se o primeiro workflow da lista é REVIEW_VITRINE
+  const workflowReview =
+    (Array.isArray(catalog?.workflow_history) &&
+     catalog?.workflow_history.length > 0 &&
+     catalog?.workflow_history[0].workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO") 
+     || catalog?.workflow_history[0].workflow_status === "REVIEW_REQUESTED_VITRINE"
+     || catalog?.workflow_history[0].workflow_status === "ADJUSTMENT_VITRINE"
+     || catalog?.workflow_history[0].workflow_status === "ADJUSTMENT_DESFAZIMENTO"
+  
+
+        const workflowAnunciados =
+       (Array.isArray(catalog?.workflow_history) &&
+        catalog?.workflow_history.length > 0 &&
+        catalog?.workflow_history[0].workflow_status === "ANUNCIADOS") 
+     
+     
+     
 
   const content = () => {
     if (!catalog) {
@@ -706,6 +784,7 @@ export function CatalogModal() {
                 <TooltipContent>Ir a página</TooltipContent>
               </Tooltip>
 
+  {(((catalog.user.id === user?.id) || hasCatalogo) && workflowReview) && (
               <Tooltip>
                 <TooltipTrigger>
                   <Link target="_blank" to={`/dashboard/editar-item?id=${catalog.id}`}>
@@ -716,7 +795,9 @@ export function CatalogModal() {
                 </TooltipTrigger>
                 <TooltipContent>Editar</TooltipContent>
               </Tooltip>
+  )}
 
+ {((((catalog.user.id === user?.id) || hasCatalogo) && workflowReview)) && (
               <Tooltip>
                 <TooltipTrigger>
                   <Button onClick={openDelete} variant="destructive" size="icon" disabled={deleting}>
@@ -725,9 +806,15 @@ export function CatalogModal() {
                 </TooltipTrigger>
                 <TooltipContent>Deletar</TooltipContent>
               </Tooltip>
+              )}
             </TooltipProvider>
 
-            <LikeButton id={catalog.id} />
+              {/* Favoritar (opcional) */}
+              {(loggedIn && workflowAnunciados) && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <LikeButton id={catalog?.id} />
+                </div>
+              )}
           </div>
         </div>
       </>
@@ -791,7 +878,7 @@ export function CatalogModal() {
                             onScroll={checkScrollability}
                           >
                             <div className="flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                              {tabs.map(({ id, label, icon: Icon }) => (
+                              {tabs.map(({ id, label, icon: Icon, condition }) => !condition && (
                                 <div
                                   key={id}
                                   className={`pb-2 border-b-2 transition-all text-black dark:text-white ${
@@ -1119,101 +1206,32 @@ export function CatalogModal() {
 
                     {/* ===== Transferência ===== */}
                     <TabsContent value="transferencia">
-                      <div className="space-y-4">
-                        {(!transfers || transfers.length === 0) && (
-                          <Alert className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Nenhuma transferência registrada em “VITRINE”.</p>
-                              <p className="text-sm text-muted-foreground">
-                                Quando houver pedidos, eles aparecem aqui.
-                              </p>
-                            </div>
-                          </Alert>
-                        )}
-
-                        {transfers?.map((tr) => {
-                          const requesterName =
-                            tr.user?.username || tr.user?.email?.split("@")[0] || "Usuário";
-                          const statusText = TRANSFER_STATUS_LABEL[tr.status] ?? tr.status;
-                          const color = TRANSFER_STATUS_COLOR[tr.status] ?? "bg-zinc-500";
-
-                          const cadeia = chain(tr.location);
-                          const isAccepting = acceptingId === tr.id;
-                          const alreadyAccepted = tr.status === "ACCEPTABLE";
-
-                          return (
-                            <div key={tr.id} className="flex">
-                              <div className={`w-2 min-w-2 rounded-l-md ${color}`} />
-                              <Alert className="flex-1 rounded-l-none">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div className="flex items-center gap-2">
-                                    <Archive className="size-4" />
-                                    <p className="font-medium">Pedido de Transferência</p>
-                                    <Badge variant="outline">#{tr.id.slice(0, 8)}</Badge>
-                                  </div>
-
-                                  <div className="flex gap-2 items-center">
-                                    <Badge className={`text-white ${color}`}>{statusText}</Badge>
-
-                                    <Button
-                                      variant={alreadyAccepted ? "outline" : "default"}
-                                      size="sm"
-                                      onClick={() => handleAcceptTransfer(tr)}
-                                      disabled={isAccepting || alreadyAccepted}
-                                      className="gap-2"
-                                    >
-                                      {isAccepting ? (
-                                        <>
-                                          <LoaderCircle className="animate-spin size-4" />
-                                          Processando…
-                                        </>
-                                      ) : (
-                                        <>
-                                          <CheckCircle className="size-4" />
-                                          Escolher esta transferência
-                                        </>
-                                      )}
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <Separator className="my-3" />
-
-                                <div className="grid gap-3">
-                                  <div className="flex items-center gap-2">
-                                    <Users className="size-4" />
-                                    <p className="text-sm text-muted-foreground">
-                                      Solicitante:{" "}
-                                      <span className="text-foreground font-medium">{requesterName}</span>
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <MapPin className="size-4" />
-                                    <p className="text-sm font-semibold uppercase">Destino:</p>
-                                    {cadeia.length ? (
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        {cadeia.map((p, i) => (
-                                          <div
-                                            key={i}
-                                            className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                          >
-                                            {i > 0 && <ChevronRight size={14} />}
-                                            {p}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <span className="text-sm text-muted-foreground">Local não informado</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </Alert>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <TransferTabCatalog
+    catalog={catalog}
+    urlGeral={urlGeral}
+    token={token}
+    onChange={() => {
+      // opcional: refetch do catálogo ou setState local, se quiser
+    }}
+  />
                     </TabsContent>
+
+  {/* ===== Movimentação ===== */}
+                    {hasCatalogo && (
+
+                    <TabsContent value="movimentacao">
+ <MovimentacaoModalCatalog
+    catalog={catalog}
+    urlGeral={urlGeral}
+    onUpdated={(updated) => {
+      // opcional: atualizar o estado local do CatalogModal com o catálogo atualizado
+      // por exemplo, se você guarda `catalog` em state, faça setCatalog(updated)
+      (catalog.workflow_history ??= []);
+      // Se o catalog vem de props/context, você pode ignorar ou forçar um refresh
+    }}
+  />
+                    </TabsContent>
+                    )}
                   </Tabs>
                 </div>
               </div>

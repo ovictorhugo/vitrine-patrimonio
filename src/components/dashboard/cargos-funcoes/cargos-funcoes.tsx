@@ -14,11 +14,15 @@ import { usePermissions } from "../../permissions";
 export function CargosFuncoes() {
       const navigate = useNavigate();
               const location = useLocation();
+              const {permission} = useContext(UserContext)
+ const { hasPermissoes, hasUsuarios
+} = usePermissions();
+
 
               
   const tabs = [
     { id: "roles", label: "Cargos", icon: BriefcaseBusiness },
-        { id: "users", label: "Usuários", icon: Users },
+        { id: "users", label: "Usuários", icon: Users, condition: !hasUsuarios },
   ];
 
   const [isOn, setIsOn] = useState(true);
@@ -56,9 +60,10 @@ export function CargosFuncoes() {
   const [openCreatePerm, setOpenCreatePerm] = useState(false);
 const [openListPerm, setOpenListPerm] = useState(false);
  
- const { hasPermissoes
-} = usePermissions();
-
+//volta pro inicio
+  useEffect(() => {
+    setValue(tabs[0].id);
+  }, [permission]);
 
     return (
          <div className="flex flex-col h-full">
@@ -67,7 +72,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
            
               </Helmet>
         
-              <main className="flex flex-col gap-8  flex-1 min-h-0 overflow-hidden">
+              <main className="flex flex-col gap-8  flex-1 ">
                 {/* Header */}
                  <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
                           <div className="flex gap-2 items-center">
@@ -107,7 +112,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
                          {/* CARROSSEL no PAI mapeando cada role */}
       
 
-                         <Tabs defaultValue="articles" value={value} className="relative ">
+                         <Tabs defaultValue={tabs[0].id} value={value} className="relative ">
           <div className="sticky top-[68px]  z-[2] supports-[backdrop-filter]:dark:bg-neutral-900/60 supports-[backdrop-filter]:bg-neutral-50/60 backdrop-blur ">
             <div className={`w-full ${isOn ? "px-8" : "px-4"} border-b border-b-neutral-200 dark:border-b-neutral-800`}>
               {isOn && <div className="w-full  flex justify-between items-center"></div>}
@@ -117,7 +122,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      className={`absolute left-0 z-2 h-8 w-8 p-0 top-1 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
                       onClick={scrollLeftBtn}
                       disabled={!canScrollLeft}
                     >
@@ -127,7 +132,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
                     <div className=" mx-10 ">
                       <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide scrollbar-hide" onScroll={checkScrollability}>
                         <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                          {tabs.map(({ id, label, icon: Icon }) => (
+                          {tabs.map(({ id, label, icon: Icon, condition }) => !condition && (
                             <div
                               key={id}
                               className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
@@ -155,7 +160,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute right-0 z-10 h-8 w-8 p-0 rounded-md  top-1 ${
+                      className={`absolute right-0 z-2 h-8 w-8 p-0 rounded-md  top-1 ${
                         !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
                       }`}
                       onClick={scrollRightBtn}
@@ -174,6 +179,7 @@ const [openListPerm, setOpenListPerm] = useState(false);
       </Button>
     )}
                     {(value == 'roles' && hasPermissoes) && ( <Button onClick={() => setOpenCreatePerm(true)}><Plus size={16} />Criar permissão</Button>)}
+                    
                   </div>
                 </div>
               </div>
@@ -190,9 +196,11 @@ const [openListPerm, setOpenListPerm] = useState(false);
         />
           </TabsContent>
 
-            <TabsContent value="users">
+        {hasUsuarios && (
+              <TabsContent value="users">
        <UsersPage/>
           </TabsContent>
+        )}
         </Tabs>
 
 

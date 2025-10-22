@@ -1,59 +1,96 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-
-import { useContext, useEffect, useRef, useState } from "react";
-import { UserContext } from "../../context/context";
-
-import {
-  Bell,
-  AlertCircle,
-  MessageCircle,
-  LogIn,
-} from "lucide-react";
-
-import {
-  NotificationDTO,
-  NotificationsResponse,
-} from "../dashboard/administrativo/tabs/notification";
-import { NotificationItem } from "../dashboard/administrativo/components/notification-item";
 import { Separator } from "../ui/separator";
 
-/* ========================= Tipos auxiliares ========================= */
-// Formato que a API está devolvendo agora (resumo relevante)
-type ApiNotificationItem = {
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { UserContext } from "../../context/context";
+
+import { Bell, AlertCircle, MessageCircle, LogIn } from "lucide-react";
+
+import type { NotificationDTO } from "../dashboard/administrativo/tabs/notification";
+import {  NotificationItemDialog } from "../dashboard/administrativo/components/notification-item";
+
+/* ========================= Tipos da NOVA API ========================= */
+type PermissionDTO = {
   id: string;
-  read_at?: string | null;
-  created_at?: string;
-  notification?: {
-    id: string;
-    type?: string;
-    detail?: any;
-    source_user?: any;
-  };
+  name: string;
+  code: string;
+  description: string;
 };
 
-// Formato “achatado” para manter compatibilidade com seu NotificationItem
-type FlatNotification = {
+type RoleDTO = {
+  id: string;
+  name: string;
+  description: string;
+  permissions: PermissionDTO[];
+};
+
+type LegalGuardianDTO = {
+  legal_guardians_code: string;
+  legal_guardians_name: string;
+  id: string;
+};
+
+type SystemIdentityDTO = {
+  id: string;
+  legal_guardian?: LegalGuardianDTO;
+};
+
+type SourceUserDTO = {
+  id: string;
+  username: string;
+  email: string;
+  provider?: string;
+  linkedin?: string;
+  lattes_id?: string;
+  orcid?: string;
+  ramal?: string;
+  photo_url?: string;
+  background_url?: string;
+  matricula?: string;
+  verify?: boolean;
+  institution_id?: string;
+  roles?: RoleDTO[];
+  system_identity?: SystemIdentityDTO;
+};
+
+type NotificationEnvelopeDTO = {
+  id: string; // <- id do ENVELOPE (é este que você marca como lido)
+  type?: string;
+  detail?: any; // pode variar por tipo
+  source_user?: SourceUserDTO;
+};
+
+export type ApiNotificationItem = {
+  id: string; // envelope id
+  read_at?: string | null;
+  created_at?: string;
+  notification?: NotificationEnvelopeDTO;
+};
+
+export type ApiNotificationPayload =
+  | { notifications: ApiNotificationItem[] }
+  | ApiNotificationItem[];
+
+/* ========================= Formato achatado (compatível) ========================= */
+export type FlatNotification = {
   id: string;
   read_at?: string | null;
   created_at?: string;
   type?: string;
   detail?: any;
-  source_user?: any;
-  // Mantemos o raw caso precise em algum ponto
+  source_user?: SourceUserDTO | any;
   __raw?: ApiNotificationItem;
 };
 
-// Tipagem da prévia flutuante
+/* ========================= Tipagem da prévia flutuante ========================= */
 export type NotificationPreview = {
   id: string;
   title: string;
@@ -62,7 +99,7 @@ export type NotificationPreview = {
   show: boolean;
 };
 
-// Fallback por TIPO (quando detail.icon não existir)
+/* ========================= Fallback por TIPO ========================= */
 export const notificationsTypes = [
   { type: "NEW_LOGIN", icon: LogIn, bg_color: "bg-gray-200" },
   { type: "MESSAGE", icon: MessageCircle, bg_color: "bg-purple-100" },
@@ -70,10 +107,20 @@ export const notificationsTypes = [
 ];
 
 /* ========================= Helpers ========================= */
+function isArray<T = any>(v: any): v is T[] {
+  return Array.isArray(v);
+}
+
+function resolveListFromData(data?: ApiNotificationPayload): ApiNotificationItem[] {
+  if (!data) return [];
+  if (isArray<ApiNotificationItem>(data)) return data;
+  if (isArray<ApiNotificationItem>(data.notifications)) return data.notifications;
+  return [];
+}
+
 function flattenApiItem(item: ApiNotificationItem): FlatNotification {
-  // Garante id estável: prioriza o id do envelope (pois é ele que marca leitura)
-  const out: FlatNotification = {
-    id: item.id,
+  return {
+    id: item.id, // importante: id do envelope
     read_at: item.read_at ?? null,
     created_at: item.created_at,
     type: item.notification?.type,
@@ -81,27 +128,36 @@ function flattenApiItem(item: ApiNotificationItem): FlatNotification {
     source_user: item.notification?.source_user,
     __raw: item,
   };
-  return out;
 }
 
-function isArray<T = any>(v: any): v is T[] {
-  return Array.isArray(v);
-}
+/* ========================= Props do componente ========================= */
+type NotificationsProps = {
+  /** Se você já tem o objeto retornado pela API (no formato novo), passe aqui para renderização controlada. */
+  data?: ApiNotificationPayload;
+  /** Desliga o polling (útil quando data é controlado por props). */
+  disablePolling?: boolean;
+  /** Intervalo do polling em ms (default: 60_000). */
+  pollIntervalMs?: number;
+};
 
-export function Notifications() {
+export function NotificationsHeader({
+  data,
+  disablePolling,
+  pollIntervalMs = 60_000,
+}: NotificationsProps) {
   const { urlGeral } = useContext(UserContext);
 
   // Token em state (reage quando for salvo/alterado no localStorage)
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   // URL segura, independente de barra final em urlGeral
-  const baseUrl = (() => {
+  const baseUrl = useMemo(() => {
     try {
       return new URL("notifications/my", urlGeral).toString();
     } catch {
       return `${(urlGeral || "").replace(/\/+$/, "")}/notifications/my`;
     }
-  })();
+  }, [urlGeral]);
 
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<FlatNotification[]>([]);
@@ -138,7 +194,6 @@ export function Notifications() {
     if (newOnes.length > 0) {
       setHasNewNotifications(true);
       const first = newOnes[0];
-      // tenta puxar título da detail; se não existir, usa um genérico
       const title =
         first.detail?.title ??
         first.detail?.message ??
@@ -190,15 +245,8 @@ export function Notifications() {
         throw new Error(`Erro ao buscar notificações (${res.status})`);
       }
 
-      // A API agora devolve { notifications: [...] } — mas mantemos fallback p/ array direto
       const payload: any = await res.json().catch(() => ({}));
-      const rawList: ApiNotificationItem[] = isArray(payload?.notifications)
-        ? payload.notifications
-        : isArray(payload)
-        ? payload
-        : [];
-
-      // Achata p/ manter compatibilidade com NotificationItem
+      const rawList: ApiNotificationItem[] = resolveListFromData(payload);
       const list: FlatNotification[] = rawList.map(flattenApiItem);
 
       if (!isInitial) {
@@ -216,8 +264,12 @@ export function Notifications() {
     }
   }
 
-  // Lê token inicialmente e observa mudanças (mesma aba e outras abas)
+  /* ========== Inicialização de token (somente se for usar fetch/polling) ========== */
   useEffect(() => {
+    if (data) {
+      // Modo controlado por props: não depende de token
+      return;
+    }
     try {
       const tk =
         typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
@@ -226,7 +278,6 @@ export function Notifications() {
       console.error("[notifications] erro lendo jwt_token:", e);
     }
 
-    // Observa mudanças no mesmo tab (ex.: login sobrescreve token)
     const interval = setInterval(() => {
       try {
         const tk = localStorage.getItem("jwt_token");
@@ -234,7 +285,6 @@ export function Notifications() {
       } catch {}
     }, 1000);
 
-    // Observa mudanças em outras abas
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === "jwt_token") {
         setAuthToken(ev.newValue);
@@ -246,10 +296,35 @@ export function Notifications() {
       clearInterval(interval);
       window.removeEventListener("storage", onStorage);
     };
-  }, []);
+  }, [data]);
 
-  // Polling de 1 em 1 minuto
+  /* ========== Carregamento via props (novo formato) ========== */
   useEffect(() => {
+    if (!data) return;
+    const rawList = resolveListFromData(data);
+    const list = rawList.map(flattenApiItem);
+
+    // Como é primeira carga quando vem por props
+    const old = []; // sem comparação local (ou poderia comparar com storage global, se quiser)
+    checkForNewNotifications(list, old);
+
+    setNotifications(list);
+    setHasNewNotifications(list.some((n) => !n.read_at));
+    setLoading(false);
+  }, [data]);
+
+  /* ========== Polling (somente quando NÃO há data e não está desabilitado) ========== */
+  useEffect(() => {
+    if (data || disablePolling) {
+      // Limpamos storage e timers se não vamos usar modo autônomo
+      clearStorage();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
     if (!authToken) {
       clearStorage();
       setNotifications([]);
@@ -264,12 +339,13 @@ export function Notifications() {
 
     const controller = new AbortController();
 
-    // Primeira carga
     fetchNotifications(true, controller.signal);
 
-    // Intervalo de 60.000 ms
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => fetchNotifications(false), 60_000);
+    intervalRef.current = setInterval(
+      () => fetchNotifications(false),
+      Math.max(15_000, pollIntervalMs) // sanidade
+    );
 
     return () => {
       controller.abort();
@@ -280,7 +356,7 @@ export function Notifications() {
       if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl, authToken]);
+  }, [baseUrl, authToken, data, disablePolling, pollIntervalMs]);
 
   // Marcar como lida localmente
   const handleMarkedRead = (id: string) => {
@@ -354,11 +430,11 @@ export function Notifications() {
           ) : (
             notifications.map((n) => (
               <Alert key={n.id} className="p-0">
-                {/* Cast para NotificationDTO apenas p/ satisfazer o tipo do componente filho */}
-                <NotificationItem
+                {/* Cast apenas p/ compatibilidade do NotificationItem já existente */}
+                <NotificationItemDialog
                   notification={n as unknown as NotificationDTO}
                   baseUrl={baseUrl}
-                  token={authToken!}
+                  token={authToken ?? ""} // token pode estar vazio no modo por props
                   notificationsTypes={notificationsTypes}
                   onMarkedRead={handleMarkedRead}
                 />

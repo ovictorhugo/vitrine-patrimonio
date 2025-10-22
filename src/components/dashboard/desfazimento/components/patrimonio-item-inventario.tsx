@@ -22,6 +22,7 @@ import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 import { ArrowUUpLeft } from "phosphor-react";
 import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
+import { usePermissions } from "../../../permissions";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -225,6 +226,10 @@ export function PatrimonioItemCollection({
     }
   }, [collectionId, itemId, onDeleted, urlGeral]);
 
+     const { hasColecoes
+} = usePermissions();
+
+
   return (
     <>
       <div className="flex group cursor-pointer" onClick={handleOpen}>
@@ -398,7 +403,8 @@ export function PatrimonioItemCollection({
                 Atualizar
               </Button>
 
-              <Button
+           {hasColecoes && (
+                <Button
                 variant="destructive"
                 onClick={(e) => { stop(e); setDeleteOpen(true); }}
                 disabled={isLocked || deleting}
@@ -406,6 +412,7 @@ export function PatrimonioItemCollection({
               >
                 {deleting ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16}  />}
               </Button>
+           )}
             </div>
           </Alert>
         </div>

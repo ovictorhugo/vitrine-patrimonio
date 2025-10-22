@@ -57,14 +57,8 @@ export function ItemPatrimonio(props: Props) {
   };
 
   return (
-    <div className="group cursor-pointer relative" onClick={props.onItemClick}>
-      {/* selecionado */}
-      {props.selected && (
-        <div className="absolute -top-2 left-2 z-[2]">
-          <Badge className="bg-blue-600 text-white h-6 py-1 text-xs font-medium">Selecionado</Badge>
-        </div>
-      )}
-
+    <div className={`group cursor-pointer  rounded-lg relative ${props.selected ? "border-2 border-eng-blue" : ""}`} onClick={props.onItemClick}>
+     
       <div className="relative">
         {/* Imagens */}
         <Carousel className="w-full flex items-center">
@@ -93,7 +87,7 @@ export function ItemPatrimonio(props: Props) {
       </div>
 
       {/* Rodapé */}
-      <Alert className={`rounded-none p-3 flex justify-between items-center ${props.selected ? "ring-2 ring-blue-600" : ""}`}>
+      <Alert className={`rounded-none p-3 flex justify-between items-center `}>
         <div className="w-full">
           <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
             <p className="font-medium truncate min-w-0" title={materialNome}>

@@ -258,42 +258,94 @@ export function EditItemVitrine() {
   const goNext = useCallback(() => { if (idx < total - 1) setActive(STEPS[idx + 1].key); }, [idx, STEPS]);
   const canFinish = useMemo(() => STEPS.slice(0, total - 1).every((s) => valid[s.key] === true), [STEPS, total, valid]);
 
+  const workflowFromEstado = (estado?: EstadoKind): string | null => {
+  switch (estado) {
+    case "ocioso":
+    case "recuperavel":
+      return "REVIEW_REQUESTED_VITRINE";
+    case "anti-economico":
+    case "quebrado":
+      return "REVIEW_REQUESTED_DESFAZIMENTO";
+    default:
+      return null;
+  }
+};
+
   /* ==== PUT /catalog/{id} ==== */
   const handleSave = useCallback(async () => {
-    if (!catalogData) return;
-    setSaving(true);
-    try {
-      const assetId = (wizard.formulario?.id as string) || (catalogData.asset?.id as string);
-      const locationId = pickLocationIdForPut(wizard, catalogData);
-      const situation = wizardSituationToApi(wizard.estado?.estado_previo);
-      const conservation_status = wizard["informacoes-adicionais"]?.situacao || "";
-      const description = wizard["informacoes-adicionais"]?.observacao || "";
+  if (!catalogData) return;
+  setSaving(true);
+  try {
+    const assetId = (wizard.formulario?.id as string) || (catalogData.asset?.id as string);
+    const locationId = pickLocationIdForPut(wizard, catalogData);
+    const situation = wizardSituationToApi(wizard.estado?.estado_previo);
+    const conservation_status = wizard["informacoes-adicionais"]?.situacao || "";
+    const description = wizard["informacoes-adicionais"]?.observacao || "";
 
-      if (!assetId) throw new Error("Asset ID ausente.");
-      if (!locationId) throw new Error("Localização não definida.");
+    if (!assetId) throw new Error("Asset ID ausente.");
+    if (!locationId) throw new Error("Localização não definida.");
 
-      const payload = { asset_id: assetId, location_id: locationId, situation, conservation_status, description };
+    const payload = { asset_id: assetId, location_id: locationId, situation, conservation_status, description };
 
-      const resp = await fetch(`${urlGeral}catalog/${catalogData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+    // 1) PUT /catalog/{id}
+    const resp = await fetch(`${urlGeral}catalog/${catalogData.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!resp.ok) {
-        const txt = await resp.text().catch(() => "");
-        throw new Error(`Falha ao atualizar catálogo (${resp.status}): ${txt}`);
-      }
-
-      toast("Item atualizado com sucesso!", { description: "As alterações foram salvas." });
-      setActive("final");
-    } catch (err: any) {
-      console.error(err);
-      toast("Erro ao salvar", { description: err?.message || "Tente novamente." });
-    } finally {
-      setSaving(false);
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => "");
+      throw new Error(`Falha ao atualizar catálogo (${resp.status}): ${txt}`);
     }
-  }, [catalogData, wizard, urlGeral, token]);
+
+    // 2) POST /catalog/{id}/workflow (com base no estado_previo)
+    const nextWorkflow = workflowFromEstado(wizard.estado?.estado_previo);
+    if (!nextWorkflow) {
+      throw new Error("Não foi possível inferir o workflow a partir do estado selecionado.");
+    }
+
+    const postBody = {
+      workflow_status: nextWorkflow,
+      detail: {
+        additionalProp1: {},
+        source: "edit-item-vitrine",
+        auto_from_estado: wizard.estado?.estado_previo,
+      },
+    };
+
+    const wfResp = await fetch(`${urlGeral}catalog/${catalogData.id}/workflow`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(postBody),
+    });
+
+    if (!wfResp.ok) {
+      const txt = await wfResp.text().catch(() => "");
+      throw new Error(`Falha ao registrar workflow (${wfResp.status}): ${txt}`);
+    }
+
+    // Sucesso total (PUT + POST)
+    toast("Item atualizado com sucesso!", {
+      description: "As alterações e o workflow inicial foram registrados.",
+    });
+    setActive("final");
+  } catch (err: any) {
+    console.error(err);
+    toast("Erro ao salvar", { description: err?.message || "Tente novamente." });
+  } finally {
+    setSaving(false);
+  }
+}, [catalogData, wizard, urlGeral, token]);
+
 
   const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
       

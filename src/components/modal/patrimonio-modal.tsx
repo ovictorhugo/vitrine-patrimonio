@@ -92,7 +92,7 @@ export function PatrimonioModal() {
   // URL do QR
   const qrValue = useMemo(() => {
     const codigo = assetCode ? `${assetCode}-${checkDigit}` : "";
-    return `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${data.asset_code}&bem_dgv=${data.asset_check_digit}`;
+    return `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${data.asset_code}&bem_dgv=${data.asset_check_digit}`;
   }, [assetCode, checkDigit]);
 
   // Endpoint de imagens (ajuste conforme sua API real)

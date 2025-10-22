@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle, ChevronLeft, Combine, Inbox, Info, Loader2, Package, PackageOpen, Plus, Rows, XCircle } from "lucide-react";
+import { ArrowRight, Check, CheckCircle, ChevronLeft, Combine, Inbox, Info, Loader2, Package, PackageOpen, Pencil, Plus,  Trash, XCircle } from "lucide-react";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
@@ -11,7 +11,7 @@ import {
 import { Label } from "../../ui/label";
 import { Input } from "../../ui/input";
 import { Separator } from "../../ui/separator";
-import { ArrowUUpLeft, SquaresFour } from "phosphor-react";
+import { ArrowUUpLeft, Rows, SquaresFour } from "phosphor-react";
 import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
 import { Textarea } from "../../ui/textarea";
@@ -31,6 +31,7 @@ import { CollectionItem } from "./components/collection-item";
 import { RowsItemsVitrine } from "./components/rows-items-vitrine";
 import { Alert } from "../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { usePermissions } from "../../permissions";
 
 type CollectionResponse = { collections: CollectionDTO[] };
 
@@ -182,7 +183,7 @@ export function Desfazimento() {
     if (!targetCollectionId) targetCollectionId = hitTestCollection();
 
     if (!targetCollectionId) {
-      toast.message("Soltou fora de um alvo válido");
+     
       return;
     }
 
@@ -225,7 +226,10 @@ export function Desfazimento() {
         okIds.forEach((id) => next.delete(id));
         return next;
       });
+
     }
+  
+
     if (failed > 0) toast.error(`${failed} item(ns) falharam ao adicionar`);
   };
 
@@ -343,6 +347,11 @@ export function Desfazimento() {
     }
   };
 
+   const { hasColecoes
+} = usePermissions();
+
+
+
     if (type_search) return <CollectionPage />;
 
   return (
@@ -371,9 +380,11 @@ export function Desfazimento() {
 
         <div className="hidden gap-3 items-center xl:flex">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
+            {hasColecoes && (
+              <DialogTrigger asChild>
               <Button size="sm"><Plus size={16}/> Adicionar coleção</Button>
             </DialogTrigger>
+            )}
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar coleção</DialogTitle>
@@ -401,8 +412,12 @@ export function Desfazimento() {
             </DialogContent>
           </Dialog>
 
-          <Button size="sm" variant="secondary" onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
-          <RoleMembers roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266" title="Comissão de desfazimento" />
+          {hasColecoes && (
+            <Button size="sm" variant="secondary" onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
+          )}
+         {hasColecoes && (
+           <RoleMembers roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266" title="Comissão de desfazimento" />
+         )}
         </div>
       </div>
 
@@ -443,17 +458,28 @@ export function Desfazimento() {
 
       {/* ============ DND CONTEXT ============ */}
       <DragDropContext onBeforeCapture={onBeforeCapture} onDragEnd={onDragEnd}>
-        {/* COLEÇÕES (ALVOS) */}
-        <div className="flex items-center gap-2 mb-2">
-          <Combine size={18}/> <span className="font-semibold">Coleções (solte aqui)</span>
-        </div>
+    
+      <Accordion
+        type="single"
+        defaultValue="usuarios"
+        collapsible
+        className="flex flex-col mt-4 gap-4"
+      >
+        <AccordionItem value="usuarios">
+          <AccordionTrigger className="px-0">
+            <HeaderResultTypeHome
+              title={"Coleções"}
+              icon={<Combine size={24} className="text-gray-400" />}
+            />
+          </AccordionTrigger>
 
-        <div
+          <AccordionContent className="p-0">
+  <div
           ref={collectionsGridRef}
-          className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-2"
+          className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 "
         >
           {loadingList ? (
-            Array.from({length:8}).map((_,i)=> <div key={i} className="w-full"><Skeleton className="w-full aspect-[4/3]" /></div>)
+            Array.from({length:8}).map((_,i)=> <div key={i} className="w-full"><Skeleton className="w-full aspect-square" /></div>)
           ) : collections.length === 0 ? (
             <div className="col-span-full items-center justify-center w-full flex text-center pt-6">Nenhuma coleção encontrada.</div>
           ) : (
@@ -470,6 +496,12 @@ export function Desfazimento() {
           )}
         </div>
 
+          </AccordionContent>
+
+          </AccordionItem>
+          </Accordion>
+
+      
         <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <div className="flex ">
@@ -546,7 +578,7 @@ export function Desfazimento() {
               <ArrowUUpLeft size={16} />  Cancelar
             </Button>
             <Button onClick={handleUpdateCollection} disabled={updateLoading}>
-              {updateLoading ? <Loader2 className="animate-spin " size={16} /> : <svg width="16" height="16"></svg>}
+              {updateLoading ? <Loader2 className="animate-spin " size={16} /> : <Pencil className=" " size={16} />}
               Salvar alterações
             </Button>
           </DialogFooter>
@@ -568,7 +600,7 @@ export function Desfazimento() {
               <ArrowUUpLeft size={16} />    Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDeleteCollection} disabled={deleteLoading}>
-              {deleteLoading ? <Loader2 className="animate-spin " size={16} /> : <svg width="16" height="16"></svg>}
+              {deleteLoading ? <Loader2 className="animate-spin " size={16} /> : <Trash className=" " size={16} />}
               Deletar coleção
             </Button>
           </DialogFooter>

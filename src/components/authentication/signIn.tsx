@@ -98,6 +98,8 @@ export function SignInContent() {
       const queryUrl = useQuery();
       const dev = queryUrl.get("dev");
 
+      const UrlAuthentication = import.meta.env.VITE_URL_AUTHENTICATION || ''
+
     return (
         <div className="w-full h-screen flex">
 
@@ -142,7 +144,7 @@ export function SignInContent() {
                     <div className="flex gap-3 flex-col">
                         <div>
                       
-                               <a href={`https://conectee.eng.ufmg.br/v2/api/auth/shibboleth/login`}><Button className=" w-full" variant={'outline'} ><div className="h-[12px]"><MUfmg /></div>Login com Minha UFMG
+                               <a href={UrlAuthentication}><Button className=" w-full" variant={'outline'} ><div className="h-[12px]"><MUfmg /></div>Login com Minha UFMG
                          <div className="relative float-right top-0 right-0">
                              <div className="bg-[#719CB8] w-2 rounded-full h-2 animate-ping float-right flex right-0">
                              </div><div className="bg-[#719CB8] w-2 rounded-full h-2"></div></div></Button></a>

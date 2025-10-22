@@ -35,6 +35,7 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { Separator } from "../../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
 import { Skeleton } from "../../../ui/skeleton";
+import { usePermissions } from "../../../permissions";
 
 /** ====== TIPOS conforme os schemas enviados ====== **/
 
@@ -302,6 +303,11 @@ export function UsersPage() {
     <Skeleton key={index} className="w-full rounded-md h-[200px]" />
   ));
 
+   const { hasDeletarUsuarios
+  } = usePermissions();
+  
+  
+
   /** ========== RENDER ========== **/
   return (
     <div className="flex flex-col  p-8 pt-6">
@@ -390,7 +396,8 @@ export function UsersPage() {
                             {/* Botões no canto superior direito */}
                             <div className="z-[1] w-full flex gap-3 justify-end">
                               <div className="flex gap-3">
-                                <Button
+                               {hasDeletarUsuarios && (
+                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     openDeleteDialog(u);
@@ -401,6 +408,7 @@ export function UsersPage() {
                                 >
                                   <Trash className="h-4 w-4" />
                                 </Button>
+                               )}
                               </div>
                             </div>
                           </div>

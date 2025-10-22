@@ -146,7 +146,7 @@ const fullCodeFrom = (d: Patrimonio) =>
 const qrUrlFrom = (d: Patrimonio) => {
   const code = fullCodeFrom(d);
   return code
-    ? `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${d.asset_code}&bem_dgv=${d.asset_check_digit}`
+    ? `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${d.asset_code}&bem_dgv=${d.asset_check_digit}`
     : d.atm_number || (d as any)?.id || "Sistema Patrimônio";
 };
 

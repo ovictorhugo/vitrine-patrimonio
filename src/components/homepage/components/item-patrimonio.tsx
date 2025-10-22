@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useModal } from "../../hooks/use-modal-store";
 import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
+import { usePermissions } from "../../permissions";
 
 /* ========= Básicos ========= */
 export interface Unit {
@@ -245,6 +246,25 @@ export function ItemPatrimonio(props: Props) {
  const csvCodTrimmed = (props.asset.csv_code || "").trim();
 
  const {onOpen} = useModal()
+
+ const {hasCatalogo} = usePermissions()
+
+// verifica se o primeiro workflow da lista é REVIEW_VITRINE
+const workflowReview =
+  (Array.isArray(props.workflow_history) &&
+   props.workflow_history.length > 0 &&
+   props.workflow_history[0].workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO") 
+   || props.workflow_history[0].workflow_status === "REVIEW_REQUESTED_VITRINE"
+   || props.workflow_history[0].workflow_status === "ADJUSTMENT_VITRINE"
+   || props.workflow_history[0].workflow_status === "ADJUSTMENT_DESFAZIMENTO"
+
+   const workflowAnunciados =
+  (Array.isArray(props.workflow_history) &&
+   props.workflow_history.length > 0 &&
+   props.workflow_history[0].workflow_status === "ANUNCIADOS") 
+
+
+
   return (
     <div
       className="group cursor-pointer"
@@ -280,7 +300,7 @@ export function ItemPatrimonio(props: Props) {
            </div>
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono) */}
-              {(props.user.id === user?.id) && (
+              {(((props.user.id === user?.id) || hasCatalogo) && workflowReview) && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -296,7 +316,7 @@ export function ItemPatrimonio(props: Props) {
 
            
               {/* Deletar (somente dono) */}
-              {(props.user.id === user?.id && props.onPromptDelete) && (
+              {((((props.user.id === user?.id) || hasCatalogo) && workflowReview) && (props.onPromptDelete)) && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -311,7 +331,7 @@ export function ItemPatrimonio(props: Props) {
               )}
 
               {/* Favoritar (opcional) */}
-              {loggedIn && (
+              {(loggedIn && workflowAnunciados) && (
                 <div onClick={(e) => e.stopPropagation()}>
                   <LikeButton id={props.id} />
                 </div>

@@ -50,6 +50,8 @@ import { AddToCollectionDrawer } from "../components/add-collection";
 import { Label } from "../../../ui/label";
 import { Textarea } from "../../../ui/textarea";
 import { ArrowUUpLeft } from "phosphor-react";
+import { usePermissions } from "../../../permissions";
+import { Badge } from "../../../ui/badge";
 
 // ================== Types ==================
 type UUID = string;
@@ -629,6 +631,80 @@ export function CollectionPage() {
     });
   }, [fetchCollectionItems]);
 
+     const { hasColecoes
+  } = usePermissions();
+  
+  // ... estados existentes ...
+
+  // 🆕 Modal de descarte em lote
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [discardLoading, setDiscardLoading] = useState(false);
+  const [discardProcessed, setDiscardProcessed] = useState(0);
+  const [discardErrors, setDiscardErrors] = useState<number>(0);
+
+  // ... resto do estado, effects, etc.
+  // 🆕 handler do descarte em lote
+  const handleDiscardSelected = useCallback(async () => {
+    const toDiscard = items.filter((it) => it.status === true);
+    if (toDiscard.length === 0) {
+      toast("Nada para enviar ao fluxo de descarte.", {
+        description: "Marque itens como coletados (status = true) primeiro.",
+      });
+      return;
+    }
+
+    setDiscardLoading(true);
+    setDiscardProcessed(0);
+    setDiscardErrors(0);
+
+    // processa item a item, removendo da lista conforme sucesso
+    for (const it of toDiscard) {
+      const catalogId = it.catalog?.id;
+      if (!catalogId) {
+        // sem catalog_id — não dá para registrar workflow
+        setDiscardErrors((e) => e + 1);
+        setDiscardProcessed((p) => p + 1);
+        continue;
+      }
+
+      try {
+        const res = await fetch(`${urlGeral}catalog/${catalogId}/workflow`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            workflow_status: "DESCARTADOS",
+            detail: { additionalProp1: {} },
+          }),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Falha HTTP ${res.status}`);
+        }
+
+        // ✅ remove da lista somente se deu certo
+        setItems((prev) => prev.filter((p) => p.id !== it.id));
+      } catch (err) {
+        setDiscardErrors((e) => e + 1);
+      } finally {
+        setDiscardProcessed((p) => p + 1);
+      }
+    }
+
+    setDiscardLoading(false);
+
+    // feedback final
+    const ok = toDiscard.length - discardErrors - 0; // discardErrors será atualizado, mas para garantir:
+    const total = toDiscard.length;
+    toast.success("Processo de descarte concluído", {
+      description: `${total - discardErrors} de ${total} itens enviados com sucesso.`,
+      action: { label: "Fechar", onClick: () => {} },
+    });
+
+    setDiscardOpen(false);
+  }, [items, urlGeral, authHeaders, discardErrors]);
+  
+
   if (loadingList && !collection) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -701,20 +777,37 @@ export function CollectionPage() {
             <h1 className="text-xl font-semibold tracking-tight">Coleção de desfazimento</h1>
           </div>
 
-          <div className="flex items-center gap-2">
+         {hasColecoes && (
+            <div className="flex items-center gap-2">
+
+                
+
             {/* editar / deletar */}
-            <Button variant="outline" onClick={() => setEditOpen(true)}>
-              <Pencil size={16}  /> Editar
+            <Button size={'icon'} variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil size={16}  /> 
             </Button>
-            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-              <Trash size={16} /> Deletar
+            <Button size={'icon'} variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash size={16} /> 
             </Button>
+
+             <Button
+                variant={'outline'}
+                onClick={() => setDiscardOpen(true)}
+                disabled={countDesfazimento === 0}
+                title={countDesfazimento === 0 ? "Nenhum item coletado para descartar" : "Enviar coletados para DESCARTADOS"}
+              >
+                <Recycle size={16} className="mr-1" />
+                Descartar coletados <Badge variant={'outline'}>{countDesfazimento}</Badge>
+              </Button>
 
             {/* botão abrir pop-up adicionar item */}
             <Button onClick={() => setOpenAdd(true)}>
               <Plus size={16}  /> Adicionar item
             </Button>
+
+         
           </div>
+         )}
         </div>
 
         <Alert className="dark:text-neutral-50 w-full h-72 bg-eng-blue dark:bg-eng-blue p-0 md:flex-row gap-8 flex-col flex">
@@ -959,6 +1052,41 @@ export function CollectionPage() {
             <Button variant="destructive" onClick={handleDeleteCollection} disabled={deleteLoading}>
               {deleteLoading ? <Loader2 className="animate-spin " size={16} /> : <Trash size={16}  />}
               Deletar coleção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+       {/* 🆕 Dialog: Descarte em lote */}
+      <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">
+              Atualizar itens coletados para descartados
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              {countDesfazimento > 0
+                ? `Você está prestes a enviar ${countDesfazimento} ${Number(countDesfazimento) === 1 ? "item coletado" : "itens coletados"} para o fluxo 'DESCARTADOS'.`
+                : "Nenhum item coletado encontrado."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {discardLoading ? (
+            <div className="flex items-center gap-3 text-gray-500">
+              <Loader2 className="animate-spin" size={18} />
+              <span className="text-sm text-muted-foreground">
+                Processando {discardProcessed} de {countDesfazimento}…
+              </span>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDiscardOpen(false)} disabled={discardLoading}>
+            <ArrowUUpLeft size={16} />      Cancelar
+            </Button>
+            <Button onClick={handleDiscardSelected} disabled={countDesfazimento === 0 || discardLoading}>
+              {discardLoading ? <Loader2 className="animate-spin" size={16} /> : <Recycle size={16} className="" />}
+              {discardLoading ? "Enviando…" : "Confirmar descarte"}
             </Button>
           </DialogFooter>
         </DialogContent>

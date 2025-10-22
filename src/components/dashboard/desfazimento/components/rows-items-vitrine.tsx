@@ -8,7 +8,8 @@ import { Skeleton } from "../../../ui/skeleton";
 import { useQuery } from "../../../authentication/signIn";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { Portal } from "./portal";
-
+import { Alert } from "../../../ui/alert";
+import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
 
 export interface CatalogEntry {
   id: string;
@@ -40,6 +41,10 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   if (val && val.trim().length > 0) sp.set(key, val);
   else sp.delete(key);
 };
+const rectIntersects = (a: DOMRect, b: DOMRect) =>
+  !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+
+type Pt = { x: number; y: number };
 
 export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, registerRemove }: Props) {
   const { urlGeral } = useContext(UserContext);
@@ -47,7 +52,9 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   const queryUrl = useQuery();
   const navigate = useNavigate();
   const location = useLocation();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   const initialQ = queryUrl.get("q") || "";
   const [q, setQ] = useState(initialQ);
@@ -74,6 +81,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     return h;
   }, [token]);
 
+  // Remoção local pós-POST
   const removeItemsById = (ids: string[]) => {
     if (!ids?.length) return;
     setItems((prev) => prev.filter((it) => !ids.includes(it.id)));
@@ -81,6 +89,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   };
   useEffect(() => { registerRemove?.(removeItemsById); }, [registerRemove]); // eslint-disable-line
 
+  // Atualiza URL ao mudar offset/limit
   const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", newOffset.toString());
@@ -98,6 +107,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   };
   useEffect(() => { handleNavigate(offset, limit, true); /* eslint-disable-next-line */ }, [offset, limit]);
 
+  // Sincroniza estado quando a URL muda
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const qUrl = sp.get("q") ?? "";
@@ -146,7 +156,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     return () => controller.abort();
   }, [baseUrl, baseHeaders, workflow, q, materialId, legalGuardianId, locationId, unitId, agencyId, sectorId, offset, limit]);
 
-  // seleção tipo Drive
+  // ===== Seleção tipo Drive =====
   const indexById = useMemo(() => {
     const m = new Map<string, number>();
     items.forEach((it, i) => m.set(it.id, i));
@@ -155,6 +165,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
 
   const [anchorIndex, setAnchorIndex] = useState<number | null>(null);
   const isSelected = (id: string) => selectedIds.has(id);
+
   const selectRange = (a: number, b: number) => {
     const [i,j] = a < b ? [a,b] : [b,a];
     const ids = items.slice(i, j+1).map((it)=>it.id);
@@ -162,12 +173,15 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     ids.forEach((id)=>next.add(id));
     onChangeSelected(next);
   };
+
   const toggleSingle = (id: string) => {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id); else next.add(id);
     onChangeSelected(next);
   };
+
   const clearSelection = () => { onChangeSelected(new Set()); setAnchorIndex(null); };
+
   const handleItemClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault(); e.stopPropagation();
     const idx = indexById.get(id) ?? 0;
@@ -175,6 +189,124 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     if (e.metaKey || e.ctrlKey) { toggleSingle(id); setAnchorIndex(idx); return; }
     onChangeSelected(new Set([id])); setAnchorIndex(idx);
   };
+
+  // ===== Seleção por área (marquee) =====
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [startPt, setStartPt] = useState<Pt | null>(null);
+  const [box, setBox] = useState<{ left:number; top:number; width:number; height:number } | null>(null);
+  const baseSelectionRef = useRef<Set<string>>(new Set()); // seleção antes do arrasto
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map()); // id -> wrapper DOM
+  const suppressNextClickRef = useRef(false); // evita limpar no click “fantasma”
+  const [altPressed, setAltPressed] = useState(false); // indicador visual
+
+  const registerItemRef = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) itemRefs.current.set(id, el);
+    else itemRefs.current.delete(id);
+  };
+
+  // 🔹 INICIAR MARQUEE:
+  // - clique no "fundo" da lista (como antes)
+  // - OU segure ALT e arraste mesmo por cima das linhas (não conflita com DnD)
+  const beginMarqueeAt = (clientX: number, clientY: number) => {
+    const list = listRef.current;
+    if (!list) return;
+    const rect = list.getBoundingClientRect();
+    const x = clientX - rect.left + list.scrollLeft;
+    const y = clientY - rect.top + list.scrollTop;
+    baseSelectionRef.current = new Set(selectedIds);
+    setStartPt({ x, y });
+    setBox({ left: x, top: y, width: 0, height: 0 });
+    setIsSelecting(true);
+  };
+
+  const onListMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // esquerdo
+    // Se ALT está pressionado, pode começar mesmo sobre as linhas.
+    if (e.target !== e.currentTarget && !e.altKey) return;
+    beginMarqueeAt(e.clientX, e.clientY);
+    e.preventDefault();
+  };
+
+  const onListMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSelecting || !startPt) return;
+    const list = listRef.current;
+    if (!list) return;
+
+    const rect = list.getBoundingClientRect();
+    const x = e.clientX - rect.left + list.scrollLeft;
+    const y = e.clientY - rect.top + list.scrollTop;
+
+    const left = Math.min(startPt.x, x);
+    const top = Math.min(startPt.y, y);
+    const width = Math.abs(x - startPt.x);
+    const height = Math.abs(y - startPt.y);
+    setBox({ left, top, width, height });
+
+    const selectionRect = new DOMRect(left, top, width, height);
+    let next = new Set<string>(e.ctrlKey || e.metaKey ? baseSelectionRef.current : []);
+    itemRefs.current.forEach((el, id) => {
+      const r = el.getBoundingClientRect();
+      const abs = new DOMRect(
+        r.left - rect.left + list.scrollLeft,
+        r.top - rect.top + list.scrollTop,
+        r.width,
+        r.height
+      );
+      if (rectIntersects(selectionRect, abs)) next.add(id);
+      else if (!(e.ctrlKey || e.metaKey)) next.delete(id);
+    });
+    onChangeSelected(next);
+  };
+
+  const endSelecting = () => {
+    if (!isSelecting) return;
+    setIsSelecting(false);
+    setStartPt(null);
+    setBox(null);
+    suppressNextClickRef.current = true;
+  };
+
+  const onListMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isSelecting) {
+      endSelecting();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  const onListClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (e.target === e.currentTarget) clearSelection();
+  };
+
+  // Clique fora e ESC limpam; Alt visual
+  useEffect(() => {
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
+      const list = listRef.current; if (!list) return;
+      if (!list.contains(e.target as Node) && selectedIds.size > 0) onChangeSelected(new Set());
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedIds.size > 0) onChangeSelected(new Set());
+      if (e.key === "Alt") setAltPressed(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Alt") setAltPressed(false);
+    };
+    document.addEventListener("mousedown", onDocMouseDown, true);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown, true);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [selectedIds, onChangeSelected]);
 
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
@@ -195,11 +327,24 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
       {!loading && (
         <>
           {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm">{selectedIds.size} selecionado(s)</span>
-              <Button variant="outline" size="sm" onClick={clearSelection}>Limpar seleção</Button>
-            </div>
+            <Alert className="flex items-center sticky  mb-8 justify-between p-2 px-2 ">
+              <span className="text-xs font-medium ml-4">{selectedIds.size} selecionado(s)</span>
+              <Button variant="ghost" size="sm" onClick={clearSelection} className="px-2 h-8">
+                <Trash size={16} /> Limpar seleção
+              </Button>
+            </Alert>
           )}
+
+          {/* 🔹 FAIXA DE SELEÇÃO: arraste aqui para iniciar a marquee */}
+          <div
+            className="mb-2 rounded-md border border-dashed border-primary/40 bg-primary/5 px-2 py-1 text-[12px] text-muted-foreground cursor-crosshair select-none"
+            title="Arraste aqui para selecionar por área (ou segure Alt e arraste sobre as linhas)"
+            onMouseDown={(e)=>{ beginMarqueeAt(e.clientX, e.clientY); e.preventDefault(); }}
+            onMouseMove={onListMouseMove}
+            onMouseUp={onListMouseUp}
+          >
+            Arraste aqui para selecionar por área (ou segure Alt e arraste sobre as linhas)
+          </div>
 
           <Droppable
             droppableId="CATALOG_ROWS"
@@ -214,7 +359,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     className="pointer-events-none"
-                    style={{ ...provided.draggableProps.style, zIndex: 9999 }}
+                    style={{ ...(provided.draggableProps.style || {}), zIndex: 9999 }}
                   >
                     <div className="px-3 py-2 rounded-md shadow-2xl ring-1 ring-black/10 bg-background text-sm">
                       {entry.asset?.material?.material_name || entry.asset?.asset_description || "Item"}
@@ -225,39 +370,53 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
             }}
           >
             {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="divide-y divide-neutral-200 rounded-md border bg-white dark:bg-neutral-900"
-                onClick={(e)=>{ if (e.target === e.currentTarget) clearSelection(); }}
-              >
-                {items.map((item, index) => (
-                  <Draggable draggableId={item.id} index={index} key={`row-${item.id}`}>
-                    {(prov, snap) => (
-                      <div
-                        ref={prov.innerRef}
-                        {...prov.draggableProps}
-                        {...prov.dragHandleProps}
-                        className={`flex items-center gap-3 px-3 py-2 ${isSelected(item.id) ? "ring-1 ring-blue-600" : ""} ${snap.isDragging ? "opacity-70 scale-[0.99]" : ""}`}
-                        onClick={(e)=>handleItemClick(e, item.id)}
-                      >
-                        <div className="w-10 h-10 rounded-md overflow-hidden border bg-neutral-100 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {item.asset?.material?.material_name || item.asset?.asset_description || "Item"}
+              // wrapper relativo para desenhar a marquee
+              <div className="relative">
+                <div
+                  ref={(el) => { provided.innerRef(el); listRef.current = el; }}
+                  {...provided.droppableProps}
+                  className={`divide-y divide-neutral-200 rounded-md border bg-white dark:bg-neutral-900 ${isSelecting || altPressed ? "cursor-crosshair select-none" : ""}`}
+                  onMouseDown={onListMouseDown}
+                  onMouseMove={onListMouseMove}
+                  onMouseUp={onListMouseUp}
+                  onClick={onListClick}
+                >
+                  {items.map((item, index) => (
+                    <Draggable draggableId={item.id} index={index} key={`row-${item.id}`}>
+                      {(prov, snap) => (
+                        <div
+                          ref={(el) => { prov.innerRef(el); registerItemRef(item.id)(el); }}
+                          {...prov.draggableProps}
+                          {...prov.dragHandleProps}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isSelected(item.id) ? "border border-eng-blue" : ""} ${snap.isDragging ? "opacity-70 scale-[0.99] w-fit" : ""}`}
+                          onClick={(e)=>handleItemClick(e, item.id)}
+                        >
+                          <div className="w-10 h-10 rounded-md overflow-hidden border bg-neutral-100 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">
+                              {item.asset?.material?.material_name || item.asset?.asset_description || "Item"}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {item.description}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {item.description}
+                          <div className="text-xs shrink-0">
+                            {item.asset?.asset_code}{item.asset?.asset_check_digit ? `-${item.asset?.asset_check_digit}` : ""}
                           </div>
                         </div>
-                        <div className="text-xs shrink-0">
-                          {item.asset?.asset_code}{item.asset?.asset_check_digit ? `-${item.asset?.asset_check_digit}` : ""}
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+
+                {/* Caixa de seleção (marquee) */}
+                {isSelecting && box && (
+                  <div
+                    className="absolute pointer-events-none border-2 border-eng-blue rounded"
+                    style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+                  />
+                )}
               </div>
             )}
           </Droppable>
@@ -280,10 +439,10 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
       <div className="w-full flex justify-center items-center gap-10 mt-8">
         <div className="flex gap-4">
           <Button variant="outline" onClick={()=>setOffset((p)=>Math.max(0, p - limit))} disabled={isFirstPage}>
-            Anterior
+            <ChevronLeft size={16} className="mr-2"/> Anterior
           </Button>
           <Button onClick={()=>!isLastPage && setOffset((p)=>p + limit)} disabled={isLastPage}>
-            Próximo
+            Próximo <ChevronRight size={16} className="ml-2"/>
           </Button>
         </div>
       </div>

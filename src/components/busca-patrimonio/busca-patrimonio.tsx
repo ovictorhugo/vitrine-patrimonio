@@ -577,7 +577,7 @@ export function BuscaPatrimonio() {
           </ScrollArea>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenSavedDialog(false)}>
+            <Button variant="ghost" onClick={() => setOpenSavedDialog(false)}>
           <ArrowUUpLeft size={16} /> Cancelar
             </Button>
           </DialogFooter>

@@ -34,6 +34,7 @@ import {
   Download,
   HelpCircle,
   Hourglass,
+  ListTodo,
   Maximize2,
   Plus,
   Recycle,
@@ -41,8 +42,10 @@ import {
   Trash,
   Users,
   Wrench,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../ui/carousel";
 
 /* =========================
    Tipos mínimos do backend
@@ -138,18 +141,19 @@ type CatalogResponse = { catalog_entries: CatalogEntry[] };
 ========================= */
 const WORKFLOWS = {
   vitrine: [
-    { key: "REVIEW_REQUESTED_VITRINE", name: "Esperando revisão", Icon: Hourglass },
-    { key: "ADJUSTMENT_VITRINE", name: "Esperando ajuste", Icon: Wrench },
+    { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine", Icon: Hourglass },
+    { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine", Icon: Wrench },
     { key: "VITRINE", name: "Anunciados", Icon: Store },
     { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando transferência", Icon: Clock },
     { key: "TRANSFERIDOS", name: "Transferidos", Icon: Archive },
   ],
   desfazimento: [
-    { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Revisão p/ Desfazimento", Icon: Hourglass },
-    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes Desfazimento", Icon: Wrench },
-    { key: "REVIEW_REQUESTED_COMISSION", name: "Revisão Comissão", Icon: Users },
-    { key: "REJEITADOS_COMISSAO", name: "Rejeitados Comissão", Icon: HelpCircle },
-    { key: "DESFAZIMENTO", name: "Desfazimento", Icon: Recycle },
+    { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Avaliação S. Patrimônio - Desfazimento", Icon: Hourglass },
+    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
+    { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento", Icon: ListTodo },
+    { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
+    { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento", Icon: Trash },
+    { key: "DESCARTADOS", name: "Processo Finalizado",Icon: Recycle },
   ],
 } as const;
 type BoardKind = keyof typeof WORKFLOWS;
@@ -659,26 +663,36 @@ export function Anunciados() {
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
         {/* === Cards de resumo (sem clique) === */}
         <TabsContent value="vitrine" className="p-0 m-0">
-          <div className="grid gap-8">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-              {WORKFLOWS.vitrine.map(({ key, name }) => {
-                const { Icon } = getMeta(key);
+
+            <Carousel className="w-full flex gap-4 px-4 items-center">
+                    <div className="absolute left-0 z-[9]">
+                      <CarouselPrevious className="" />
+                    </div>
+                    <CarouselContent className="gap-4">
+                      {WORKFLOWS.vitrine.map(({key, name}) => {
+                          const { Icon } = getMeta(key);
                 const count = counts[key] ?? 0;
-                return (
-                  <Alert key={key} className="p-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{name}</CardTitle>
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{loadingItems ? "…" : count}</div>
-                      <p className="text-xs text-muted-foreground">registrados</p>
-                    </CardContent>
-                  </Alert>
-                );
-              })}
-            </div>
-          </div>
+                      return(
+                        <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                          <Alert className="p-0">
+                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
+                           <Icon className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
+                              <p className="text-xs text-muted-foreground">registrados</p>
+                            </CardContent>
+                          </Alert>
+                        </CarouselItem>
+                      )})}
+                    </CarouselContent>
+                    <div className="absolute right-0 z-[9]">
+                      <CarouselNext />
+                    </div>
+                  </Carousel>
+
+         
 
           {/* === Accordions (controlado só para sabermos quais estão abertos) === */}
           <Accordion
@@ -722,26 +736,33 @@ export function Anunciados() {
         </TabsContent>
 
         <TabsContent value="desfazimento" className="p-0 m-0">
-          <div className="grid gap-8">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-              {WORKFLOWS.desfazimento.map(({ key, name }) => {
-                const { Icon } = getMeta(key);
+            <Carousel className="w-full flex gap-4 px-4 items-center">
+                    <div className="absolute left-0 z-[9]">
+                      <CarouselPrevious className="" />
+                    </div>
+                    <CarouselContent className="gap-4">
+                      {WORKFLOWS.desfazimento.map(({key, name}) => {
+                          const { Icon } = getMeta(key);
                 const count = counts[key] ?? 0;
-                return (
-                  <Alert key={key} className="p-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{name}</CardTitle>
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{loadingItems ? "…" : count}</div>
-                      <p className="text-xs text-muted-foreground">registrados</p>
-                    </CardContent>
-                  </Alert>
-                );
-              })}
-            </div>
-          </div>
+                      return(
+                        <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                          <Alert className="p-0">
+                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
+                           <Icon className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
+                              <p className="text-xs text-muted-foreground">registrados</p>
+                            </CardContent>
+                          </Alert>
+                        </CarouselItem>
+                      )})}
+                    </CarouselContent>
+                    <div className="absolute right-0 z-[9]">
+                      <CarouselNext />
+                    </div>
+                  </Carousel>
 
           <Accordion
             type="multiple"

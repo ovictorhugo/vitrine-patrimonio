@@ -73,6 +73,7 @@ import { CardItemDropdown } from "./card-item-dropdown";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { RoleMembers } from "../cargos-funcoes/components/role-members";
+import { usePermissions } from "../../permissions";
 
 
 /* =========================
@@ -197,25 +198,26 @@ type CatalogResponse = {
 /* =========================
    Board
 ========================= */
-const WORKFLOWS = {
+export const WORKFLOWS = {
   vitrine: [
-    { key: "REVIEW_REQUESTED_VITRINE", name: "Revisão para Vitrine" },
-    { key: "ADJUSTMENT_VITRINE", name: "Ajustes Vitrine" },
+    { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine" },
+    { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine" },
     { key: "VITRINE", name: "Anunciados" },
     { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando Transferência" },
     { key: "TRANSFERIDOS", name: "Transferidos" },
   ],
   desfazimento: [
-    { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Revisão para Desfazimento" },
-    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes Desfazimento" },
-    { key: "REVIEW_REQUESTED_COMISSION", name: "Lista Temporária de Desfazimento" },
-    { key: "REJEITADOS_COMISSAO", name: "Rejeitados Comissão" },
-    { key: "DESFAZIMENTO", name: "Lista Final de Desfazimento" },
+    { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Avaliação S. Patrimônio - Desfazimento" },
+    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento" },
+    { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento" },
+    { key: "REJEITADOS_COMISSAO", name: "Recusados" },
+    { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
+      { key: "DESCARTADOS", name: "Processo Finalizado" },
   ],
 } as const;
 type BoardKind = keyof typeof WORKFLOWS;
 
-const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
+export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
   REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
   ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
   VITRINE: { Icon: Store, colorClass: "text-green-600" },
@@ -226,7 +228,8 @@ const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: strin
   ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
-  DESFAZIMENTO: { Icon: Recycle, colorClass: "text-green-600" },
+  DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+    DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
 /* =========================
@@ -268,7 +271,7 @@ const varsFrom = (e: CatalogEntry) => {
   return { material, descricao, marca, modelo, patrimonio, dgv, codigo, atm, serial, responsavel, setor, unidade, ano, isEletronico };
 };
 
-const JUSTIFICATIVAS_DESFAZIMENTO: JustPreset[] = [
+export const JUSTIFICATIVAS_DESFAZIMENTO: JustPreset[] = [
   {
     id: "sicpat-baixado-ou-nao-localizado",
     label: "Número patrimonial baixado / não localizado no SICPAT",
@@ -347,7 +350,7 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
   VITRINE: { requireJustification: false },
   AGUARDANDO_TRANSFERENCIA: {
     requireJustification: true,
-    extraFields: [{ name: "contato", label: "Contato Solicitante", type: "text", placeholder: "Nome/ramal/e-mail" }],
+  
   },
   TRANSFERIDOS: { requireJustification: true },
 
@@ -355,7 +358,7 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
   ADJUSTMENT_DESFAZIMENTO: { requireJustification: true },
   REVIEW_REQUESTED_COMISSION: {
     requireJustification: true,
-    extraFields: [{ name: "processo", label: "Nº Processo/Protocolo", type: "text" }],
+ 
   },
   REJEITADOS_COMISSAO: { requireJustification: true },
   DESFAZIMENTO: { requireJustification: true },
@@ -958,6 +961,9 @@ params.set("limit", '100000');
   const [selectedPreset, setSelectedPreset] = useState<string>("");
 
   // ====== token já usado acima para POST workflow ======
+   const { hasAnunciarItem, hasCargosFuncoes
+} = usePermissions();
+
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -1028,12 +1034,14 @@ params.set("limit", '100000');
 
             <Separator orientation="vertical" className="h-8 mx-2" />
 
-            <Link to={"/dashboard/novo-item"}>
+           {hasAnunciarItem && (
+              <Link to={"/dashboard/novo-item"}>
               <Button size="sm">
                 <Plus size={16} className="" />
                 Anunciar item
               </Button>
             </Link>
+           )}
           </div>
         </div>
 
@@ -1124,10 +1132,12 @@ params.set("limit", '100000');
             </div>
 
             {/* ====== Membros do cargo (componente separado) ====== */}
+          {hasCargosFuncoes && (
             <RoleMembers
               roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266"
               title="Comissão de desfazimento"
             />
+          )}
           </div>
         )}
 
@@ -1331,7 +1341,7 @@ params.set("limit", '100000');
                       placeholder={
                         isDesfazimento
                           ? "Você pode escolher um modelo acima para pré-preencher e depois ajustar aqui…"
-                          : "Descreva a justificativa…"
+                          : ""
                       }
                     />
                   </div>

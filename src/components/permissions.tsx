@@ -23,9 +23,15 @@ export function usePermissions() {
   const hasMovimentacao        = useMemo(() => has("MOVIMENTACAO"), [has]);
   const hasAdministrativo      = useMemo(() => has("ADMINISTRATIVO"), [has]);
   const hasComissaoPermanente  = useMemo(() => has("COMISSAO_PERMANENTE"), [has]);
- const hasPermissoes  = useMemo(() => has("PESMISSOES"), [has]);
+ const hasPermissoes  = useMemo(() => has("PERMISSOES"), [has]);
  const hasAdministracaoDaComissao  = useMemo(() => has("ADMINISTRACAO_DA_COMISSAO"), [has]);
-
+const hasColecoes = useMemo(() => has("COLECOES"), [has]);
+const hasUsuarios = useMemo(() => has("USUARIOS"), [has]);
+const hasDeletarUsuarios = useMemo(() => has("DELETAR_USUARIOS"), [has]);
+const hasCatalogo = useMemo(() => has("CATALOGO"), [has]);
+const hasConfiguracoes = useMemo(() => has("CONFIGURACOES"), [has]);
+const hasDepartamento = useMemo(() => has("DEPARTAMENTO_SETOR"), [has]);
+const hasComissaoApoioLocal = useMemo(() => has("COMISSAO_APOIO_LOCAL"), [has]);
   return {
     has, // opcional: verificador dinâmico
     hasCriarEtiqueta,
@@ -38,6 +44,13 @@ export function usePermissions() {
     hasAdministrativo,
     hasComissaoPermanente,
     hasPermissoes,
-    hasAdministracaoDaComissao
+    hasAdministracaoDaComissao,
+    hasColecoes,
+    hasUsuarios,
+    hasDeletarUsuarios,
+    hasCatalogo,
+    hasConfiguracoes,
+    hasDepartamento,
+    hasComissaoApoioLocal
   };
 }

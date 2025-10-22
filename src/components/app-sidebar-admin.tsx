@@ -78,7 +78,9 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
      hasAlienacao,
      hasDesfazimento,
      hasMovimentacao,
-     hasComissaoPermanente
+     hasComissaoPermanente,
+     hasDepartamento,
+     hasComissaoApoioLocal
    } = usePermissions();
 
 
@@ -175,13 +177,17 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
               icon: Home,
             },
 
-            
-           
-      {
+              ...(loggedIn
+                        ? [
+                    {
         name: "Dashboard",
         url: "/dashboard",
         icon: LayoutDashboard,
       },
+                        ]
+                        : []),
+           
+    
 
         ...(hasAdministrativo
                         ? [
@@ -203,6 +209,17 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
       },
                         ]
                         : []),
+
+                          ...(hasComissaoApoioLocal
+                        ? [
+                           {
+        name: "Comissão de apoio local",
+        url: "/dashboard/comissao-apoio-local",
+        icon: Users,
+      },
+                        ]
+                        : []),
+
 
     
 
@@ -252,14 +269,18 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
                         : []),
 
      
-
-      
-
-        {
-        name: "Departamento",
-        url: "/dashboard/departamento",
+     ...(hasDepartamento
+                        ? [
+                     {
+        name: "Setor/Departamento",
+        url: "/dashboard/setor-departamento",
         icon: Building2,
       },
+                        ]
+                        : []),
+      
+
+      
      
       
     ],

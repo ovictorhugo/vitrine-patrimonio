@@ -6,10 +6,10 @@ import { Input } from "../../../ui/input";
 import { RefreshCcw } from "lucide-react";
 import { Button } from "../../../ui/button";
 import { Switch } from "../../../ui/switch";
-import { NotificationItem } from "../../administrativo/components/notification-item";
+import { NotificationItemDialog } from "../../administrativo/components/notification-item";
 import { NotificationDTO, NotificationsResponse } from "../../administrativo/tabs/notification";
 import { Alert } from "../../../ui/alert";
-import { NotificationPreview, notificationsTypes } from "../../../header/notifications";
+import {  FlatNotification, NotificationPreview, notificationsTypes } from "../../../header/notifications";
 
 type UpdateUserPayload = {
   username: string;
@@ -121,14 +121,15 @@ export function PerfilSegurancaDashboard() {
     try {
       return new URL("notifications/my", urlGeral).toString();
     } catch {
-      return `${(urlGeral || "").replace(/\/+$/, "")}/notifications/my`;
+      return `${(urlGeral)}/notifications/my`;
     }
   })();
 
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
-  const [notificationPreview, setNotificationPreview] = useState<NotificationPreview | null>(null);
+   const [notificationPreview, setNotificationPreview] =
+     useState<NotificationPreview | null>(null);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,21 +148,39 @@ export function PerfilSegurancaDashboard() {
     if (storageKey) localStorage.removeItem(storageKey);
   };
 
-  const checkForNewNotifications = (fresh: NotificationDTO[], old: NotificationDTO[]) => {
+  const checkForNewNotifications = (
+    fresh: FlatNotification[],
+    old: FlatNotification[]
+  ) => {
     const oldIds = new Set(old.map((n) => n.id));
     const newOnes = fresh.filter((n) => !oldIds.has(n.id));
     if (newOnes.length > 0) {
       setHasNewNotifications(true);
       const first = newOnes[0];
+      // tenta puxar título da detail; se não existir, usa um genérico
+      const title =
+        first.detail?.title ??
+        first.detail?.message ??
+        first.detail?.texto ??
+        "Notificação";
+      const description =
+        first.detail?.description ??
+        first.detail?.descricao ??
+        first.detail?.body ??
+        undefined;
+
       setNotificationPreview({
         id: first.id,
-        title: first.detail?.title ?? "Notificação",
-        description: first.detail?.description,
+        title,
+        description,
         type: first.type,
         show: true,
       });
       if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
-      previewTimeoutRef.current = setTimeout(() => setNotificationPreview(null), 3000);
+      previewTimeoutRef.current = setTimeout(
+        () => setNotificationPreview(null),
+        3000
+      );
     }
   };
 
@@ -418,7 +437,7 @@ export function PerfilSegurancaDashboard() {
             <>
               {notifications.slice(0, visibleCount).map((n) => (
                 <Alert key={n.id} className="p-0">
-                  <NotificationItem
+                  <NotificationItemDialog
                     notification={n}
                     baseUrl={baseUrl}
                     token={authToken!}

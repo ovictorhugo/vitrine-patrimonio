@@ -51,7 +51,7 @@ import { useModal } from "../hooks/use-modal-store";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ModeToggle } from "../mode-toggle";
 import { SpeedActions } from "./speed-actions";
-import { Notifications } from "./notifications";
+import {  NotificationsHeader } from "./notifications";
 
 export function Header() {
   const {loggedIn, user, permission} = useContext(UserContext)
@@ -146,7 +146,7 @@ export function Header() {
 
              
               {loggedIn && (
-                <Notifications/>
+                <NotificationsHeader/>
               )}
 
  <SpeedActions/>

@@ -642,8 +642,8 @@ const filteredAllPermissions = useMemo(() => {
             {roles.map((role) => (
               <CarouselItem key={role.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                 <Alert className="p-0">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{role.name}</CardTitle>
+                  <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm truncate font-medium">{role.name}</CardTitle>
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>

@@ -25,6 +25,7 @@ import { Desfazimento } from "../dashboard/desfazimento/desfazimento";
 import { CargosFuncoes } from "../dashboard/cargos-funcoes/cargos-funcoes";
 import { Alienacao } from "../dashboard/alienacao/alienacao";
 import { DepartamentPage } from "../dashboard/departament/departament-page";
+import { ComissaoApoioLocal } from "../dashboard/comissao-apoio-local/comissao-apoio-local";
 
 
 
@@ -65,6 +66,8 @@ const ModalContent = () => {
         return <Alienacao/>
       case 'departamento':
         return <DepartamentPage/>
+      case 'comissao-apoio-local':
+        return <ComissaoApoioLocal/>
     default:
       return null;
   }

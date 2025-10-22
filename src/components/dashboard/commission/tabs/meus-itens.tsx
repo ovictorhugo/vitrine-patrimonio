@@ -34,7 +34,7 @@ export function MeusItens() {
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}catalog/?reviewer_id=${user?.id}`, {
+      const res = await fetch(`${urlGeral}catalog/?reviewer_id=${user?.id}&workflow_status=REVIEW_REQUESTED_COMISSION`, {
         method: "GET",
         headers: authHeaders,
       });

@@ -1,5 +1,5 @@
 // src/pages/item/index.tsx
-import { useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Button } from "../ui/button";
@@ -25,6 +25,11 @@ import { useModal } from "../hooks/use-modal-store";
 import QRCode from "react-qr-code";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
 import { LikeButton } from "./like-button";
+import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_META } from "../modal/catalog-modal";
+import { usePermissions } from "../permissions";
+import { Tabs, TabsContent } from "../ui/tabs";
+import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
+import TransferTabCatalog, { TransferRequestDTO } from "../homepage/components/transfer-tab-catalog";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -117,6 +122,7 @@ type WorkflowEvent = {
     email?: string;
     photo_url?: string;
   } | null;
+    transfer_requests?: TransferRequestDTO[];
 };
  export interface CatalogResponseDTO {
   id: string;
@@ -195,44 +201,8 @@ const situationToText: Record<ApiSituation, string> = {
 };
 
 
-const WORKFLOW_STATUS_META: Record<
-  string,
-  { Icon: LucideIcon; colorClass: string }
-> = {
-  // ---------------- Vitrine ----------------
-  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },   // Revisão
-  ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },             // Ajustes
-  VITRINE: { Icon: Store, colorClass: "text-green-600" },                        // Publicados
-  AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },      // Aguardando Transferência
-  TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },                  // Finalizados
-
-  // --------------- Desfazimento ---------------
-  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" }, // Revisão
-  ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },           // Ajustes
-  REVIEW_REQUESTED_COMISSION: { Icon: Users, colorClass: "text-purple-500" },       // Revisão Comissão
-  REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },               // Rejeitados
-  DESFAZIMENTO: { Icon: Recycle, colorClass: "text-green-600" },                    // Desfazimento concluído
-};
 
 
-export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
-  STARTED: "Iniciado",
-
-  // Vitrine
-  REVIEW_REQUESTED_VITRINE: "Revisão para Vitrine",
-  ADJUSTMENT_VITRINE: "Ajustes Vitrine",
-  VITRINE: "Anunciados na Vitrine",
-  AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
-  TRANSFERIDOS: "Transferidos",
-
-  // Desfazimento
-  REVIEW_REQUESTED_DESFAZIMENTO: "Revisão para Desfazimento",
-  ADJUSTMENT_DESFAZIMENTO: "Ajustes Desfazimento",
-  REVIEW_REQUESTED_COMISSION: "Revisão Comissão",
-  REJEITADOS_COMISSAO: "Rejeitados pela Comissão",
-  DESFAZIMENTO: "Desfazimento Concluído",
-
-};
 
 const money = (v?: string) => {
   const n = Number(v ?? 0);
@@ -262,7 +232,7 @@ export function ItemPage() {
   const navigate = useNavigate();
   const query = useQuery();
 
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, user, permission, loggedIn } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
   const buildImgUrl = (p: string) => {
@@ -601,9 +571,11 @@ const fullCodeFrom = (d: CatalogResponseDTO) =>
 const qrUrlFrom = (d: CatalogResponseDTO) => {
   const code = fullCodeFrom(d);
   return code
-    ? `https://vitrine.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
+    ? `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
     : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
 };
+
+  const {hasCatalogo} = usePermissions()
 
 const lastWorkflow = useMemo(() => {
   const hist = catalog?.workflow_history ?? [];
@@ -617,6 +589,71 @@ const lastWorkflow = useMemo(() => {
 
 const fullCode = fullCodeFrom(catalog || ({} as CatalogResponseDTO));
   const qrValue = qrUrlFrom(catalog || ({} as CatalogResponseDTO));
+
+const workflowReview =
+  Array.isArray(catalog?.workflow_history) &&
+  catalog.workflow_history.length > 0 &&
+  (
+    catalog.workflow_history[0]?.workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO" ||
+    catalog.workflow_history[0]?.workflow_status === "REVIEW_REQUESTED_VITRINE" ||
+    catalog.workflow_history[0]?.workflow_status === "ADJUSTMENT_VITRINE" ||
+    catalog.workflow_history[0]?.workflow_status === "ADJUSTMENT_DESFAZIMENTO"
+  );
+
+        const workflowAnunciados =
+       (Array.isArray(catalog?.workflow_history) &&
+        catalog?.workflow_history.length > 0 &&
+        catalog?.workflow_history[0].workflow_status === "ANUNCIADOS") 
+
+       const [transfers, setTransfers] = useState<TransferRequestDTO[]>([]);
+     
+       useEffect(() => {
+    const hist = catalog?.workflow_history ?? [];
+    const list = hist
+      .filter((ev) => ev.workflow_status === "VITRINE")
+      .flatMap((ev) => ev.transfer_requests ?? []);
+    setTransfers(list);
+  }, [catalog?.workflow_history]);
+
+ const tabs = [
+    { id: "visao_geral", label: "Visão Geral", icon: Home },
+    { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive },
+    { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
+  ];
+
+  // Componente principal
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollability = () => {
+    if (scrollAreaRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  const scrollLeft = () => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    checkScrollability();
+    const handleResize = () => checkScrollability();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [value, setValue] = useState("visao_geral");
 
   if (loading) {
     return (
@@ -706,19 +743,26 @@ if(catalog) {
 
         <div className="hidden md:flex items-center gap-2">
         
-           <Button onClick={() => onOpen('workflow')} variant='outline' size="sm">
-            <ArrowRightLeft size={16} /> Mover
-          </Button>
+ 
 
+ {((((catalog?.user?.id === user?.id) || hasCatalogo) && workflowReview)) && (
           <Button onClick={handleEdit} variant='outline' size="sm">
             <Pencil size={16} /> Editar
           </Button>
+           )}
 
+ {((((catalog.user?.id === user?.id) || hasCatalogo) && workflowReview)) && (
           <Button onClick={openDelete} variant="destructive" size="sm" disabled={deleting}>
   <Trash size={16} /> Excluir
 </Button>
+     )}
 
-  <LikeButton id={catalog.id} />
+ {/* Favoritar (opcional) */}
+              {(loggedIn && workflowAnunciados) && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <LikeButton id={catalog?.id} />
+                </div>
+              )}
         </div>
       </div>
 
@@ -728,7 +772,68 @@ if(catalog) {
 
         <div className="flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8">
           {/* Coluna principal */}
+           <Tabs defaultValue="visao_geral" value={value} className="">
+                    <div className="mb-8 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
+                      <div className="relative grid grid-cols-1 w-full ">
+                        {/* Botão Esquerda */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${
+                            !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                          }`}
+                          onClick={scrollLeft}
+                          disabled={!canScrollLeft}
+                        >
+                          <ChevronLeft size={16} />
+                        </Button>
 
+                        {/* Scroll Area com Tabs */}
+                        <div className="mx-10">
+                          <div
+                            ref={scrollAreaRef}
+                            className="overflow-x-auto scrollbar-hide"
+                            onScroll={checkScrollability}
+                          >
+                            <div className="flex gap-2 h-auto bg-transparent dark:bg-transparent">
+                              {tabs.map(({ id, label, icon: Icon, condition }) => !condition && (
+                                <div
+                                  key={id}
+                                  className={`pb-2 border-b-2 transition-all text-black dark:text-white ${
+                                    value === id ? "border-b-[#719CB8]" : "border-b-transparent"
+                                  }`}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setValue(id);
+                                  }}
+                                >
+                                  <Button variant="ghost" className="m-0 flex items-center gap-2">
+                                    <Icon size={16} />
+                                    {label}
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Botão Direita */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`absolute right-0 z-10 h-8 w-8 p-0 top-1 ${
+                            !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                          }`}
+                          onClick={scrollRight}
+                          disabled={!canScrollRight}
+                        >
+                          <ChevronRight size={16} />
+                        </Button>
+                      </div>
+                    </div>
+
+<TabsContent value="visao_geral">
+  
           <div className="flex w-full flex-col">
             <div className="flex justify-between items-start">
              <div className="flex justify-between w-full">
@@ -1057,6 +1162,35 @@ if(catalog) {
                 </AccordionItem>
                 </Accordion>
           </div>
+</TabsContent>
+
+ <TabsContent value="transferencia">
+     <TransferTabCatalog
+      catalog={catalog}
+      urlGeral={urlGeral}
+      token={token}
+      onChange={() => {
+        // opcional: refetch do catálogo ou setState local, se quiser
+      }}
+    />
+ </TabsContent>
+
+{hasCatalogo && (
+
+                    <TabsContent value="movimentacao">
+ <MovimentacaoModalCatalog
+    catalog={catalog}
+    urlGeral={urlGeral}
+    onUpdated={(updated) => {
+      // opcional: atualizar o estado local do CatalogModal com o catálogo atualizado
+      // por exemplo, se você guarda `catalog` em state, faça setCatalog(updated)
+      (catalog.workflow_history ??= []);
+      // Se o catalog vem de props/context, você pode ignorar ou forçar um refresh
+    }}
+  />
+                    </TabsContent>
+                    )}
+          </Tabs>
 
           {/* Coluna lateral */}
           <div className="lg:w-[420px] flex flex-col gap-8 lg:min-w-[420px] w-full">

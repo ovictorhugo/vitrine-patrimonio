@@ -80,7 +80,7 @@ function getSender(n: any) {
 
 /* ===================== Componente ===================== */
 
-export const NotificationItem = memo(function NotificationItem({
+export const NotificationItemDialog = memo(function NotificationItem({
   notification,
   baseUrl,
   token,
