@@ -13,6 +13,9 @@ import {
   Users,
   X,
   Loader2,
+  Plus,
+  EyeOff,
+  Eye,
 
 } from "lucide-react";
 import { Alert } from "../../../ui/alert";
@@ -27,6 +30,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "../../../ui/dialog";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";
@@ -36,6 +40,7 @@ import { Separator } from "../../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
 import { Skeleton } from "../../../ui/skeleton";
 import { usePermissions } from "../../../permissions";
+import { set } from "date-fns";
 
 /** ====== TIPOS conforme os schemas enviados ====== **/
 
@@ -307,8 +312,122 @@ export function UsersPage() {
   } = usePermissions();
   
   
+  // dialog principal de criação de usuario
+  const [isOpen, setIsOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
 
+  const [name, setName] = useState(""); 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+   const [showPassword, setShowPassword] = useState(false)
+
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   /** ========== RENDER ========== **/
+
+  const handleCreateUser = async () => {
+  // validações simples
+  if (!name.trim()) {
+    toast("Nome obrigatório", { description: "Preencha o nome do usuário." });
+    return;
+  }
+  if (!email.trim()) {
+    toast("E-mail obrigatório", { description: "Preencha o e-mail do usuário." });
+    return;
+  }
+  if (!password.trim() || !confirmPassword.trim()) {
+    toast("Senha obrigatória", { description: "Preencha e confirme a senha." });
+    return;
+  }
+  if (password !== confirmPassword) {
+    toast("Senhas não conferem", { description: "A confirmação precisa ser igual à senha." });
+    return;
+  }
+
+  try {
+    setCreating(true);
+
+    // POST /users/
+    const resp = await fetch(`${urlGeral}users/`, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({
+        username: name.trim(),
+        email: email.trim(),
+        password: password, // não trim aqui p/ não mexer na senha do user
+      }),
+    });
+
+    if (!resp.ok) {
+      // tenta extrair um erro legível da API
+      const text = await resp.text().catch(() => "");
+      throw new Error(text || `HTTP ${resp.status}`);
+    }
+
+    // muitas APIs retornam o usuário criado; se não retornar, monto um básico
+    let created: Partial<APIUser> & { id?: string } = {};
+    try {
+      created = await resp.json();
+    } catch {
+      // fallback se a API não devolver JSON
+      created = {};
+    }
+
+    // garante campos mínimos para aparecer no grid
+    const createdUser: APIUser = {
+      id: (created as any)?.id || crypto.randomUUID(), // se API não devolver, gera um id local
+      username: (created as any)?.username ?? name.trim(),
+      email: (created as any)?.email ?? email.trim(),
+      provider: (created as any)?.provider ?? "",
+      linkedin: (created as any)?.linkedin ?? "",
+      lattes_id: (created as any)?.lattes_id ?? "",
+      orcid: (created as any)?.orcid ?? "",
+      ramal: (created as any)?.ramal ?? "",
+      photo_url: (created as any)?.photo_url ?? "",
+      background_url: (created as any)?.background_url ?? "",
+      matricula: (created as any)?.matricula ?? "",
+      verify: (created as any)?.verify ?? true,
+      institution_id: (created as any)?.institution_id ?? "",
+      roles: (created as any)?.roles ?? [],
+      system_identity: (created as any)?.system_identity ?? { id: "", legal_guardian: { id: "", legal_guardians_code: "", legal_guardians_name: "" } },
+    };
+
+    // adiciona no topo da lista local
+    setUsers(prev => [createdUser, ...prev]);
+
+    toast("Usuário criado com sucesso!", {
+      description: `${createdUser.email || createdUser.username} adicionado à lista.`,
+    });
+
+    // limpa e fecha modal
+    setName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setIsOpen(false);
+  } catch (error: any) {
+    console.error(error);
+    // trata conflito de e-mail já cadastrado (409) de forma amigável
+    const msg = String(error?.message || "");
+    const conflict = msg.includes("409") || msg.toLowerCase().includes("conflict");
+    toast(conflict ? "E-mail já cadastrado" : "Erro ao criar usuário", {
+      description: conflict
+        ? "Este e-mail já está em uso. Tente outro endereço."
+        : "Não foi possível concluir o cadastro agora.",
+    });
+  } finally {
+    setCreating(false);
+  }
+};
+
+
   return (
     <div className="flex flex-col  p-8 pt-6">
       <Alert className="p-0">
@@ -321,6 +440,99 @@ export function UsersPage() {
           <p className="text-xs text-muted-foreground">registrados</p>
         </CardContent>
       </Alert>
+
+       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Alert className="flex mt-8 items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800">
+            <div className="bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 rounded-md p-4 border ">
+              <Plus size={20} />
+            </div>
+            <p className="font-medium">Adicionar usuário externo</p>
+          </Alert>
+        </DialogTrigger>
+
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar usuário externo</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Adicione usuários que não possuem Minha UFMG para acesso na plataforma
+            </DialogDescription>
+          </DialogHeader>
+
+          <Separator className="my-4" />
+
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Email</Label>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Senha</Label>
+             
+      <div className="relative">
+        <Input
+          id="current"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="pr-10"
+        />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+      </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Confirmar senha</Label>
+            
+      <div className="relative">
+        <Input
+          id="current"
+          type={showConfirmPassword ? "text" : "password"}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="pr-10"
+        />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowConfirmPassword((prev) => !prev)}
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+      </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+      
+              <Button variant="ghost" onClick={() => setIsOpen(false)}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+      
+            <Button onClick={handleCreateUser} disabled={creating}>
+              {creating ? <Loader2 className="animate-spin " size={16} /> : <Plus className="" size={16} />}
+              Adicionar usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Accordion
         type="single"

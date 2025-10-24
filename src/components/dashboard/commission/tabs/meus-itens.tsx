@@ -11,6 +11,8 @@ import { CatalogEntriesResponse } from "../../../homepage/components/item-patrim
 import { PatrimonioItemComission } from "../components/patrimonio-item";
 import { BlockItemsComissionScroll } from "../components/block-items-tinder";
 import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
+import { Alert } from "../../../ui/alert";
+import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 
 export function MeusItens() {
   const [catalogs, setCatalogs] = useState<CatalogEntry[]>([]);
@@ -31,10 +33,12 @@ export function MeusItens() {
   // ================================
   // GET catálogo filtrado pelo reviewer_id
   // ================================
+
+  //?reviewer_id=${user?.id}&workflow_status=REVIEW_REQUESTED_COMISSION
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}catalog/?reviewer_id=${user?.id}&workflow_status=REVIEW_REQUESTED_COMISSION`, {
+      const res = await fetch(`${urlGeral}catalog/`, {
         method: "GET",
         headers: authHeaders,
       });
@@ -72,7 +76,18 @@ export function MeusItens() {
   // Render
   // ================================
   return (
-    <div className="p-8 pt-0">
+    <div className="p-8 grid gap-4 ">
+       <Alert className="p-0 ">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">LTD - Lista Temporária de Desfazimento</CardTitle>
+                <ListTodo className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{catalogs.length}</div>
+                <p className="text-xs text-muted-foreground">esperando avaliação</p>
+              </CardContent>
+            </Alert>
+
       <Accordion type="single" collapsible defaultValue="item-1">
         <AccordionItem value="item-1">
           <div className="flex">

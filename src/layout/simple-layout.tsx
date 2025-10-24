@@ -8,7 +8,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../compone
 import { cn } from "../lib"
 import { Link, useLocation} from "react-router-dom";
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../context/context";
 
 
@@ -17,6 +17,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "../components/ui/
 import { AppSidebarAdmin } from "../components/app-sidebar-admin";
 import { Separator } from "../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
+import { useModal } from "../components/hooks/use-modal-store";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -78,7 +79,13 @@ export default function SimpleLayout({
   };
   
   const breadcrumbItems = createBreadcrumbItems(router.pathname);
-  
+    const {onOpen} = useModal()
+    useEffect(() => {
+      if (!loggedIn) {
+        onOpen('sign-in'); // <- usa o modal existente
+      }
+    }, [loggedIn]);
+
     return (
     <div>
       

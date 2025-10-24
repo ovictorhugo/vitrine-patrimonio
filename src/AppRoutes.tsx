@@ -46,7 +46,8 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       <Route path='/dashboard/editar-item' element={<Admin />} />
       <Route path='/dashboard/inventario' element={<Admin />} />
       <Route path='/dashboard/painel' element={<Admin />} />
-      <Route path='/dashboard/assinaturee' element={<Admin />} />
+
+         <Route path='/user' element={<Admin />} />
      
       <Route path='/termo-uso' element={<Admin />} />
       <Route path='/politica-privacidade' element={<Admin />} />

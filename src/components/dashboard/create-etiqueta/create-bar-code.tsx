@@ -128,7 +128,7 @@ export function CreateBarCode() {
       <Progress className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1 z-[5]" value={pct} />
 
       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
-        <div className="w-full flex flex-col gap-8">
+        <div className="w-full flex flex-col h-full gap-8">
           <div className="flex gap-2">
             <Button onClick={handleBack} variant="outline" size="icon" className="h-7 w-7">
               <ChevronLeft className="h-4 w-4" />

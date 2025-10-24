@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, DoorClosed, Home, MailIcon, Package, Recycle, Shield, Store, Trash, Upload, User } from "lucide-react";
+import { ArrowRightLeft, ChevronLeft, ChevronRight, DoorClosed, Home, MailIcon, Package, Recycle, Shield, Store, Trash, Upload, User } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useQuery } from "../novo-item/search-bar";
 import { Helmet } from "react-helmet";
@@ -14,6 +14,8 @@ import { Homepage } from "./tabs/homepage";
 import { Patrimonios } from "./tabs/patrimonios";
 import { Anunciados } from "./components/anunciados";
 import { PerfilSegurancaDashboard } from "./tabs/perfil-seguranca";
+import { CatalogPage } from "./tabs/catalogo";
+import { Transfers } from "./tabs/transfers";
 
 
 export function VisaoGeralUser() {
@@ -22,7 +24,8 @@ export function VisaoGeralUser() {
              
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "bens", label: "Patrimônios", icon: Package },
-   { id: "anunciados", label: "Vitrine e desfazimento", icon: Recycle },
+   { id: "anunciados", label: "Itens cadastrados", icon: Recycle },
+    { id: "transfers", label: "Transferências", icon: ArrowRightLeft },
     { id: "perfil_seguranca", label: "Perfil e segurança", icon: Shield },
   ];
 
@@ -387,7 +390,12 @@ export function VisaoGeralUser() {
                         </TabsContent>
 
                          <TabsContent value="anunciados" className="m-0">
-                          <Anunciados/>
+                          <CatalogPage/>
+                        </TabsContent>
+
+                        
+                         <TabsContent value="transfers" className="m-0">
+                  <Transfers/>
                         </TabsContent>
 
                          <TabsContent value="perfil_seguranca" className="m-0">

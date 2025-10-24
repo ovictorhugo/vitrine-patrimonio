@@ -5,9 +5,11 @@ import { Button } from "../ui/button";
 import { Home } from "lucide-react";
 import bg_popup from '../../assets/bg_vitrine.png';
 import { getVersion } from "../gerVersion";
-
+import colaboradores from './colaboradores.json'
 export function Informacoes() {
        const version2 = getVersion();
+
+
 
     return (
         <main className="p-4 md:p-8   text-gray-800 dark:text-gray-100">
@@ -50,6 +52,21 @@ export function Informacoes() {
           <p className="text-justify">
         
           </p>
+
+                 
+               
+        </Alert>
+
+        
+            <Alert className="space-y-4 p-8">
+          <h2 className="text-2xl font-semibold">Colaboradores</h2>
+          <p className="text-justify">
+        Esses são os colaboradores que, com dedicação, conhecimento e espírito de cooperação, tornam possível a construção, evolução e aprimoramento contínuo da plataforma.
+          </p>
+
+          <div>
+
+          </div>
 
                  
                

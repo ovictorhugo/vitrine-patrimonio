@@ -36,7 +36,7 @@ import { usePermissions } from "../../permissions";
 type CollectionResponse = { collections: CollectionDTO[] };
 
 type StatusCount = {
-  status: string;
+  status: string
   count: number;
 };
 
@@ -206,7 +206,7 @@ export function Desfazimento() {
         fetch(`${urlGeral}collections/${targetCollection.id}/items/`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ catalog_id: catalogId, status: true, comment: "" }),
+          body: JSON.stringify({ catalog_id: catalogId, status: false, comment: "" }),
         })
       )
     );
@@ -309,30 +309,54 @@ export function Desfazimento() {
     }
   };
 
-    const [stats, setStats] = useState<StatusCount[] | null>(null);
+    const [stats, setStats] = useState<StatusCount[]>([
+  { status: "TRUE", count: 0 },
+  { status: "FALSE", count: 0 },
+  { status: "NOT_IN_COLLECTION", count: 0 },
+]);
   const [loading, setLoading] = useState(true);
 
- useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch(`${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO`, {
+useEffect(() => {
+  async function fetchStats() {
+    try {
+      const res = await fetch(
+        `${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO`,
+        {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
           },
-        });
-        if (!res.ok) throw new Error("Erro ao carregar estatísticas");
-        const data: StatusCount[] = await res.json();
-        setStats(data);
-      } catch (err) {
-        console.error(err);
-        setStats([]);
-      } finally {
-        setLoading(false);
-      }
+        }
+      );
+
+      if (!res.ok) throw new Error("Erro ao carregar estatísticas");
+
+      const data: StatusCount[] = await res.json();
+
+      // 🔧 Normaliza garantindo que todos os status existam
+      const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
+
+      const normalized = expectedStatuses.map((status) => {
+        const found = data.find((d) => d.status === status);
+        return { status, count: found ? found.count : 0 };
+      });
+
+      setStats(normalized);
+    } catch (err) {
+      console.error(err);
+      // Se der erro, ainda inicializa com 0 em todos
+      setStats([
+        { status: "TRUE", count: 0 },
+        { status: "FALSE", count: 0 },
+        { status: "NOT_IN_COLLECTION", count: 0 },
+      ]);
+    } finally {
+      setLoading(false);
     }
-    fetchStats();
-  }, [urlGeral, token]);
+  }
+
+  fetchStats();
+}, [urlGeral, token]);
 
    const getIcon = (status: string) => {
     switch (status) {
@@ -379,6 +403,10 @@ export function Desfazimento() {
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">
+             {hasColecoes && (
+            <Button size="sm" variant='outline' onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
+          )}
+
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             {hasColecoes && (
               <DialogTrigger asChild>
@@ -412,9 +440,7 @@ export function Desfazimento() {
             </DialogContent>
           </Dialog>
 
-          {hasColecoes && (
-            <Button size="sm" variant="secondary" onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
-          )}
+       
          {hasColecoes && (
            <RoleMembers roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266" title="Comissão de desfazimento" />
          )}
@@ -435,7 +461,7 @@ export function Desfazimento() {
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-3">
       {stats?.map((item) => (
         <Alert key={item.status} className="p-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

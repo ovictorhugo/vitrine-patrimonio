@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useModal } from "../../hooks/use-modal-store";
 import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
 import { usePermissions } from "../../permissions";
+import { useNavigate } from "react-router-dom";
 
 /* ========= Básicos ========= */
 export interface Unit {
@@ -261,9 +262,9 @@ const workflowReview =
    const workflowAnunciados =
   (Array.isArray(props.workflow_history) &&
    props.workflow_history.length > 0 &&
-   props.workflow_history[0].workflow_status === "ANUNCIADOS") 
+   props.workflow_history[0].workflow_status === "VITRINE") 
 
-
+const navigate = useNavigate();
 
   return (
     <div
@@ -300,11 +301,11 @@ const workflowReview =
            </div>
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono) */}
-              {(((props.user.id === user?.id) || hasCatalogo) && workflowReview) && (
+           {((((props.user.id === user?.id) || hasCatalogo) && workflowReview) && (props.onPromptDelete)) && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
-                    window.open(`/dashboard/editar-item?id=${props.id}`, "_blank");
+                      navigate(`/dashboard/editar-item?id=${props.id}`);
                   }}
                   size="icon"
                   variant='outline'

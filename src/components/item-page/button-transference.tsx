@@ -209,7 +209,7 @@ export function ButtonTransference({ catalog }: Props) {
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between mb-4"
-                  disabled={!loggedIn || !canTransfer} // <<< DESABILITA QUANDO NÃO ESTÁ EM VITRINE
+                  disabled={!loggedIn && !canTransfer} // <<< DESABILITA QUANDO NÃO ESTÁ EM VITRINE
                 >
                   <span className="truncate">
                     {loadingLoc ? (

@@ -1094,7 +1094,7 @@ return (
     <Progress className="absolute top-0 left-0  h-1 z-[5]" value={((idx + 1) / total) * 100} />
 
     <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
-      <div className="w-full flex flex-col gap-8">
+      <div className="w-full flex flex-col gap-8 h-full">
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
           <Button
@@ -1124,7 +1124,7 @@ return (
         </div>
         </div>
 
-        <div className="flex flex-col h-full w-full gap-8">
+        <div className="flex flex-col h-full flex-1  w-full gap-8">
           <Tabs
             value={active}
             onValueChange={(v) => {
@@ -1133,7 +1133,7 @@ return (
                 setActive(v as StepKey);
               }
             }}
-            className="h-full"
+            className="h-full flex-1"
           >
             {STEPS.map((s) => (
               <TabsContent key={s.key} value={s.key} className="m-0 h-full">

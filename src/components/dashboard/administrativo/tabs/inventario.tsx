@@ -1,4 +1,4 @@
-import { ListChecks, Plus, Loader2, Trash, User } from "lucide-react";
+import { ListChecks, Plus, Loader2, Trash, User, Pencil, Check } from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import { CardDescription, CardFooter, CardHeader, CardTitle } from "../../../ui/card";
@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { ArrowUUpLeft } from "phosphor-react";
 import { Separator } from "../../../ui/separator";
+import { Switch } from "../../../ui/switch";
 
 // ===== Tipos da API =====
 type UserDTO = {
@@ -191,7 +192,7 @@ export function Inventario() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       setDeleteText("");
-      await fetchInventories();
+    setInventories((prev) => prev.filter((i) => i.id !== deleteTarget.id));
     } catch (e: any) {
       toast("Erro ao excluir inventário", {
         description: e?.message || String(e),
@@ -220,6 +221,57 @@ export function Inventario() {
   const confirmEnabled = deleteTarget && deleteText.trim() === deleteTarget.key;
 
   const [isOpen, setIsOpen] = useState(false);
+
+
+  const [editOpen, setEditOpen] = useState(false);
+const [editTarget, setEditTarget] = useState<InventoryDTO | null>(null);
+const [editKey, setEditKey] = useState("");
+const [editAvailable, setEditAvailable] = useState<boolean>(true);
+const [savingEdit, setSavingEdit] = useState(false);
+
+const openEditDialog = (inv: InventoryDTO) => {
+  setEditTarget(inv);
+  setEditKey(inv.key || "");
+  setEditAvailable(!!inv.avaliable);
+  setEditOpen(true);
+};
+
+const handleEditSave = async () => {
+  if (!editTarget) return;
+  try {
+    setSavingEdit(true);
+    const res = await fetch(`${urlGeral}inventories/${editTarget.id}`, {
+      method: "PUT",
+      headers: authHeaders,
+      body: JSON.stringify({
+        key: editKey.trim(),
+        // manter o nome de campo da API exatamente como está no seu backend
+        avaliable: editAvailable,
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(t || `Falha ao atualizar inventário (HTTP ${res.status}).`);
+    }
+    toast("Inventário atualizado", { description: "Alterações salvas com sucesso." });
+    setEditOpen(false);
+    setEditTarget(null);
+    
+     // ✅ Atualiza o item na lista local sem refresh
+    setInventories((prev) =>
+      prev.map((i) =>
+        i.id === editTarget.id
+          ? { ...i, key: editKey.trim(), avaliable: editAvailable }
+          : i
+      )
+    );
+  } catch (e: any) {
+    toast("Erro ao salvar alterações", { description: e?.message || "Tente novamente." });
+  } finally {
+    setSavingEdit(false);
+  }
+};
+
   return (
     <div className="p-8 gap-8 flex flex-col">
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -335,6 +387,22 @@ export function Inventario() {
 
                  
                </div>
+<div className="flex gap-2 items-center">
+  
+               <Button
+  variant="outline"
+  size="icon"
+  className="h-8 w-8 shrink-0  group-hover:flex hidden"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openEditDialog(inv);
+  }}
+  title="Editar inventário"
+>
+  <Pencil size={16} />
+</Button>
+
                  <Button
                         variant={"destructive"}
                         size={"icon"}
@@ -348,6 +416,8 @@ export function Inventario() {
                       >
                         <Trash size={16} />
                       </Button>
+
+</div>
               </Alert>
             </div></Link>
           ))}
@@ -410,6 +480,47 @@ export function Inventario() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* (Dialog de edição) — ADICIONE PRÓXIMO AO Dialog de exclusão */}
+<Dialog open={editOpen} onOpenChange={setEditOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle className="text-2xl mb-2 font-medium">Editar inventário</DialogTitle>
+      <DialogDescription className="text-zinc-500">
+        Atualize as informações e confirme para salvar.
+      </DialogDescription>
+    </DialogHeader>
+
+    <Separator className="my-4" />
+
+    <div className="space-y-4">
+      <div className="grid gap-2">
+        <Label>Nome do inventário</Label>
+        <Input
+          value={editKey}
+          onChange={(e) => setEditKey(e.target.value)}
+          placeholder="Digite o novo nome"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Label>Disponível</Label>
+        <Switch checked={editAvailable} onCheckedChange={(v) => setEditAvailable(!!v)} />
+      </div>
+    </div>
+
+    <DialogFooter className="gap-2 sm:gap-0">
+      <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={savingEdit}>
+        <ArrowUUpLeft size={16} /> Cancelar
+      </Button>
+      <Button onClick={handleEditSave} disabled={savingEdit || !editKey.trim()}>
+        {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
+        Salvar alterações
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </div>
   );
 }

@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { CatalogEntry } from "../../../dashboard/itens-vitrine/card-item-dropdown";
 import { Label } from "../../../ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../../ui/select";
+import { Separator } from "../../../ui/separator";
+import { ArrowUUpLeft } from "phosphor-react";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -99,7 +101,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
   // abre modal patrimônio (card)
   const handleOpen = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    onOpen("patrimonio", { ...entry });
+    onOpen('catalog-modal', { ...entry });
   };
 
   // urls das imagens
@@ -289,13 +291,13 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
           {/* Barra de ações (Aceitar/Recusar) */}
           <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
             <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
-              <p className="text-sm mr-2">Ação da Comissão:</p>
+              <p className="text-sm mr-2">Avaliação:</p>
 
-              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleClickAction("REJEITADOS_COMISSAO"); }}>
+              <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleClickAction("REJEITADOS_COMISSAO"); }}>
                 <X className="h-4 w-4" /> Recusar
               </Button>
 
-              <Button size="sm" onClick={(e) => { e.stopPropagation(); handleClickAction("DESFAZIMENTO"); }}>
+              <Button size="sm" className="bg-green-700 hover:bg-green-800 dark:bg-green-700 dark:hover:bg-green-800" onClick={(e) => { e.stopPropagation(); handleClickAction("DESFAZIMENTO"); }}>
                 <Check className="h-4 w-4" /> Aceitar
               </Button>
             </div>
@@ -325,16 +327,27 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
 
       {/* Dialog de workflow (Aceitar/Recusar) */}
       <Dialog open={wfOpen} onOpenChange={setWfOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="">
+
           <DialogHeader>
-            <DialogTitle>Confirmar {wfTarget === "DESFAZIMENTO" ? "ACEITE" : "RECUSA"} do item</DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              {asset.material?.material_name} — {asset.asset_code}-{asset.asset_check_digit}
-            </DialogDescription>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">Confirmar {wfTarget === "DESFAZIMENTO" ? "ACEITE" : "RECUSA"} do item</DialogTitle>
+     
+              <DialogDescription className="text-zinc-500">
+                          Você está movendo o item{" "}
+                          <strong>
+                            {asset?.material.material_name} (
+                            {`${asset?.asset_code}-${asset?.asset_check_digit}`})
+                          </strong>{" "}
+                          de: <strong>LTD - Lista Temporária de Desfazimento</strong> para:{" "}
+                          <strong>{!(wfTarget === "DESFAZIMENTO") ? "Recusados" : "LFD - Lista Final de Desfazimento"}</strong>
+                        </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid gap-2">
+             <Separator className="my-4" />
+
+          <div className="grid gap-4 ">
+           {(wfTarget === "DESFAZIMENTO") && (
+              <div className="grid gap-2">
               <Label>Modelos de justificativa (opcional)</Label>
               <Select
                 value={preset}
@@ -344,9 +357,9 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
+                  <SelectValue  placeholder="Selecione um modelo para preencher a justificativa..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent  position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
                   {JUSTIFICATIVAS.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.label}
@@ -355,6 +368,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
                 </SelectContent>
               </Select>
             </div>
+           )}
 
             <div className="grid gap-2">
               <Label htmlFor="just">Justificativa</Label>
@@ -362,14 +376,14 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
                 id="just"
                 value={justTxt}
                 onChange={(e) => setJustTxt(e.target.value)}
-                placeholder="Descreva a justificativa…"
+                placeholder={!(wfTarget === "DESFAZIMENTO") ? "" : "Você pode escolher um modelo acima para pré-preencher e depois ajustar aqui…"}
               />
             </div>
           </div>
 
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setWfOpen(false)}>
-              Cancelar
+           <ArrowUUpLeft size={16} />       Cancelar
             </Button>
             <Button onClick={submitWorkflow} disabled={posting}>
               {posting ? (

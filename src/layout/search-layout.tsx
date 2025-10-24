@@ -19,6 +19,7 @@ import { AppSidebar } from "../components/app-sidebar";
 import { Separator } from "../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
 import { useQuery } from "../components/modal/search-modal-patrimonio";
+import { useModal } from "../components/hooks/use-modal-store";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -80,6 +81,14 @@ export default function SearchLayout({
   
   const breadcrumbItems = createBreadcrumbItems(router.pathname);
   
+  const {onOpen} = useModal()
+
+  useEffect(() => {
+    if (!loggedIn) {
+      onOpen('sign-in'); // <- usa o modal existente
+    }
+  }, [loggedIn]);
+
     return (
     <div>
       

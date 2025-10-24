@@ -200,7 +200,9 @@ export function FormularioStep({
 
   /** ====== Requisição sempre que a URL mudar ====== */
   const abortRef = useRef<AbortController | null>(null);
+  const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
 
+  
   useEffect(() => {
     if (!url) return;
 
@@ -217,7 +219,7 @@ export function FormularioStep({
           signal: ac.signal,
           headers: {
             Accept: "application/json",
-            // "X-API-KEY": apiKeyBackend!, // habilite se necessário
+           Authorization: token ? `Bearer ${token}` : "",
           },
         });
 

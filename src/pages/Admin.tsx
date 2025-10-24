@@ -32,6 +32,7 @@ export function Admin() {
           "/dashboard/alienacao": "alienacao",
               "/dashboard/setor-departamento": "departamento",
                "/dashboard/comissao-apoio-local": "comissao-apoio-local",
+                "/user": "user-public-page",
           
   };
 

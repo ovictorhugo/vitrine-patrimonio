@@ -21,11 +21,9 @@ import {
   AccordionTrigger,
 } from "../../../ui/accordion";
 import { Skeleton } from "../../../ui/skeleton";
-import { Separator } from "../../../ui/separator";
 import { Badge } from "../../../ui/badge";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
-
 import {
   Archive,
   ChevronLeft,
@@ -45,7 +43,24 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../ui/carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../../../ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import { Input } from "../../../ui/input";
+import { ArrowUUpLeft, Repeat } from "phosphor-react";
 
 /* =========================
    Tipos mínimos do backend
@@ -153,7 +168,7 @@ const WORKFLOWS = {
     { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento", Icon: ListTodo },
     { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento", Icon: Trash },
-    { key: "DESCARTADOS", name: "Processo Finalizado",Icon: Recycle },
+    { key: "DESCARTADOS", name: "Processo Finalizado", Icon: Recycle },
   ],
 } as const;
 type BoardKind = keyof typeof WORKFLOWS;
@@ -175,9 +190,6 @@ const WORKFLOW_STATUS_META: Record<
   DESFAZIMENTO: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
-/* =========================
-   Utils
-========================= */
 const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
@@ -186,7 +198,11 @@ const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
 
 const PAGE_SIZE = 24;
 
-/* ===== Helpers para CSV ===== */
+/* ===== Helpers URL/filtro ===== */
+type CatalogFilter = { type: string; value: string };
+const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
+
+/* ===== Helpers CSV ===== */
 const flattenObject = (obj: any, prefix = "", out: Record<string, any> = {}): Record<string, any> => {
   if (obj == null) return out;
   if (Array.isArray(obj)) {
@@ -222,7 +238,7 @@ const convertJsonToCsv = (data: any[]): string => {
 };
 
 /* =========================
-   Subcomponente: Accordion por status
+   Subcomponente: Accordion
 ========================= */
 function StatusAccordion({
   statusKey,
@@ -234,6 +250,9 @@ function StatusAccordion({
   isOpen,
   onExpand,
   onCollapseExpand,
+  // novo: handlers vindos do pai
+  onPromptDelete,
+  onPromptMove,
 }: {
   statusKey: string;
   title: string;
@@ -244,6 +263,8 @@ function StatusAccordion({
   isOpen: boolean;
   onExpand: (key: string) => void;
   onCollapseExpand: () => void;
+  onPromptDelete: (catalogId: string) => void;
+  onPromptMove: (catalogId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
@@ -318,49 +339,20 @@ function StatusAccordion({
 
   const disableNav = loading || items.length === 0;
 
-  type ItemHandlers = { onPromptMove?: () => void; onPromptDelete?: () => void };
-  const getItemHandlersForStatus = useCallback(
-    (_statusKey: string): ItemHandlers => {
-      switch (_statusKey) {
-        case "AGUARDANDO_TRANSFERENCIA":
-          return { onPromptMove: () => toast.info("Transferir item (implemente).") };
-        case "ADJUSTMENT_VITRINE":
-        case "ADJUSTMENT_DESFAZIMENTO":
-          return { onPromptMove: () => toast.info("Resolver ajustes (implemente).") };
-        case "DESFAZIMENTO":
-          return { onPromptDelete: () => toast.info("Concluir desfazimento (implemente).") };
-        default:
-          return {};
-      }
-    },
-    []
-  );
-
-  // Reset local se o accordion fechar enquanto estava expandido
-  useEffect(() => {
-    if (!isOpen && expanded) {
-      setExpanded(false);
-      onCollapseExpand();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
   return (
     <AccordionItem value={statusKey}>
-    <div className="flex gap-4 w-full justify-between items-center ">
-          {/* onClick no Trigger para fechar em 1 clique quando estiver expandido */}
-      <div className="w-full">
+      <div className="flex gap-4 w-full justify-between items-center ">
+        <div className="w-full">
           <div className="flex items-center justify-between">
-          <div className="flex items-center">
+            <div className="flex items-center">
               <HeaderResultTypeHome
-              title={title}
-              icon={<IconComp size={24} className="text-gray-400" />}
-            />
-                          <Badge variant="outline">{loading ? "…" : items.length}</Badge>
-          </div>
+                title={title}
+                icon={<IconComp size={24} className="text-gray-400" />}
+              />
+              <Badge variant="outline">{loading ? "…" : items.length}</Badge>
+            </div>
 
             <div className="flex items-center gap-2">
-          
               <Button
                 variant="outline"
                 size="sm"
@@ -369,57 +361,52 @@ function StatusAccordion({
                   onDownloadCsv();
                 }}
               >
-                <Download size={16} className="" />
+                <Download size={16} />
                 Baixar resultado
               </Button>
 
-              {/* Agora só aparece se o accordion estiver aberto E houver itens */}
               {isOpen && !expanded && items.length > 0 ? (
                 <Button
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     setExpanded(true);
-                    onExpand(statusKey); // entra no modo “somente este”
+                    onExpand(statusKey);
                     rafMeasure();
                   }}
                 >
-                  <Maximize2 size={16} className="" />
+                  <Maximize2 size={16} />
                   Expandir
                 </Button>
               ) : null}
 
               {isOpen && expanded ? (
                 <Button
-                
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     setExpanded(false);
-                    onCollapseExpand(); // sai do modo “somente este”
+                    onCollapseExpand();
                     rafMeasure();
                   }}
                 >
-                  <ChevronLeft size={16} className="" />
+                  <ChevronLeft size={16} />
                   Voltar ao quadro
                 </Button>
               ) : null}
             </div>
           </div>
         </div>
-      <AccordionTrigger
-        className=""
-        onClick={() => {
-          if (isOpen && expanded) {
-            // se está expandido e o trigger for clicado, desfaz expandido
-            setExpanded(false);
-            onCollapseExpand(); // sai do modo “somente este”
-          }
-        }}
-      >
-       
-      </AccordionTrigger>
-    </div>
+        <AccordionTrigger
+          className=""
+          onClick={() => {
+            if (isOpen && expanded) {
+              setExpanded(false);
+              onCollapseExpand();
+            }
+          }}
+        />
+      </div>
 
       <AccordionContent className="p-0">
         <div ref={contentWrapRef}>
@@ -462,7 +449,8 @@ function StatusAccordion({
                         <div className="w-64 min-w-64" key={item.id}>
                           <ItemPatrimonio
                             {...item}
-                            {...getItemHandlersForStatus(statusKey)}
+                            onPromptDelete={() => onPromptDelete(item.id)}
+                            onPromptMove={() => onPromptMove(item.id)}
                           />
                         </div>
                       ))
@@ -488,14 +476,15 @@ function StatusAccordion({
               </Button>
             </div>
           ) : (
-            // ======= MODO EXPANDIDO: grade com "Mostrar mais" =======
-            <div className="">
+            // ======= MODO EXPANDIDO: grid com "Mostrar mais"
+            <div>
               <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {(items || []).slice(0, visible).map((item) => (
                   <ItemPatrimonio
                     key={item.id}
                     {...item}
-                    {...getItemHandlersForStatus(statusKey)}
+                    onPromptDelete={() => onPromptDelete(item.id)}
+                    onPromptMove={() => onPromptMove(item.id)}
                   />
                 ))}
               </div>
@@ -505,7 +494,7 @@ function StatusAccordion({
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
-                      showMore();
+                      setVisible((n) => n + PAGE_SIZE);
                     }}
                   >
                     <Plus size={16} /> Mostrar mais
@@ -520,67 +509,177 @@ function StatusAccordion({
   );
 }
 
-
 /* =========================
    Componente Principal
 ========================= */
-export function Anunciados() {
+export function Anunciados(props: {
+  filter?: CatalogFilter;           // { type, value } vindo do pai
+  workflowOptions?: string[];       // opções do diálogo de movimentar
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { urlGeral, user } = useContext(UserContext);
+  const baseUrl = useMemo(() => sanitizeBaseUrl(urlGeral), [urlGeral]);
 
+  // token / headers
   const token = useMemo(
-    () => (typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null),
+    () => (typeof window !== "undefined" ? localStorage.getItem("jwt_token") || "" : ""),
     []
   );
-  const authHeaders: HeadersInit = useMemo(
-    () => ({
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }),
-    [token]
-  );
+  const authHeaders: HeadersInit = useMemo(() => {
+    const h: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  }, [token]);
 
-  // Abas Vitrine / Desfazimento
-  const [tab, setTab] = useState<BoardKind>("vitrine");
+  // Abas
+  type BoardState = BoardKind;
+  const [tab, setTab] = useState<BoardState>("vitrine");
+
+  // Filtro vindo do pai OU querystring
+  const qs = new URLSearchParams(location.search);
+  const urlType = qs.get("type") ?? undefined;
+  const urlValue = qs.get("value") ?? undefined;
+  const filter: CatalogFilter | undefined = props.filter ?? (urlType && urlValue ? { type: urlType, value: urlValue } : undefined);
 
   // Catálogo
   const [loadingItems, setLoadingItems] = useState(false);
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
-  // Chaves padrão abertas
+  // Aberturas padrão
   const allVitrineKeys = WORKFLOWS.vitrine.map((w) => w.key);
   const allDesfazKeys = WORKFLOWS.desfazimento.map((w) => w.key);
-
-  // Estado de abertura por aba (controlado só para sabermos se está aberto)
   const [openKeysVitrine, setOpenKeysVitrine] = useState<string[]>(allVitrineKeys);
   const [openKeysDesfaz, setOpenKeysDesfaz] = useState<string[]>(allDesfazKeys);
-
-  // Qual está “focado” (Expandir → mostra só ele)
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
 
-  const keysForTab = (t: BoardKind) => (t === "vitrine" ? allVitrineKeys : allDesfazKeys);
+  // ===== DELETE (diálogo no padrão do seu exemplo) =====
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  // ====== FETCH: Catálogo ======
+  const openDelete = (catalogId: string) => { setDeleteTargetId(catalogId); setIsDeleteOpen(true); };
+  const closeDelete = () => { setIsDeleteOpen(false); setDeleteTargetId(null); };
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTargetId) return;
+    try {
+      setDeleting(true);
+      const r = await fetch(`${baseUrl}/catalog/${deleteTargetId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        throw new Error(`Falha ao excluir (${r.status}): ${t}`);
+      }
+      setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
+      toast("Item excluído com sucesso.");
+      closeDelete();
+      try {
+  window.dispatchEvent(
+    new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
+  );
+} catch {}
+    } catch (e: any) {
+      toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTargetId, baseUrl, token]);
+
+  // ===== MOVIMENTAR (opcional) =====
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [moveTargetId, setMoveTargetId] = useState<string | null>(null);
+  const [moveStatus, setMoveStatus] = useState<string>("");
+  const [moveObs, setMoveObs] = useState<string>("");
+  const [moving, setMoving] = useState(false);
+
+  const openMove = (catalogId: string) => {
+    setMoveTargetId(catalogId);
+    setMoveStatus(props.workflowOptions?.[0] || "");
+    setMoveObs("");
+    setIsMoveOpen(true);
+  };
+  const closeMove = () => { setIsMoveOpen(false); setMoveTargetId(null); setMoveStatus(""); setMoveObs(""); };
+
+  const handleConfirmMove = useCallback(async () => {
+    if (!moveTargetId || !moveStatus) return;
+    try {
+      setMoving(true);
+      const payload = {
+        workflow_status: moveStatus,
+        detail: { observation: { text: moveObs } },
+      };
+      const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
+        method: "POST",
+        headers: { ...authHeaders },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
+      }
+
+      // Remove da lista se sair do status-original-visualizado (não há bloco único aqui, então apenas sinalizamos global)
+      try {
+        window.dispatchEvent(
+          new CustomEvent("catalog:workflow-updated", {
+            detail: { id: moveTargetId, newStatus: moveStatus },
+          })
+        );
+      } catch {}
+
+      toast("Movimentação registrada!");
+      closeMove();
+      // refresh leve: se quiser, refaça o fetchCatalog(); aqui deixei sem para manter instantâneo.
+      setEntries((prev) => prev.filter((it) => it.id !== moveTargetId));
+    } catch (e: any) {
+      toast("Erro ao movimentar", { description: e?.message || "Tente novamente." });
+    } finally {
+      setMoving(false);
+    }
+  }, [moveTargetId, moveStatus, moveObs, baseUrl, authHeaders]);
+
+  // ====== FETCH: Catálogo com {type,value} ou user_id
+  const buildCatalogListUrl = useCallback((
+    base: string,
+    board: BoardKind,
+    f?: CatalogFilter,
+    fallbackUserId?: string | null | undefined
+  ) => {
+    const url = new URL(`${base}/catalog/`);
+    if (f?.type && typeof f.value === "string") {
+      url.searchParams.set(f.type, f.value);
+    } else if (fallbackUserId) {
+      url.searchParams.set("user_id", fallbackUserId);
+    }
+    // opcional: se o backend aceitar informar o board
+    url.searchParams.set("board", board);
+    return url.toString();
+  }, []);
+
   const fetchCatalog = useCallback(async () => {
-    if (!urlGeral) return;
+    if (!baseUrl) return;
     setLoadingItems(true);
     try {
-      const res = await fetch(`${urlGeral}catalog/?user_id=${user?.id}`, { headers: authHeaders });
-      if (!res.ok) throw new Error();
+      const listUrl = buildCatalogListUrl(baseUrl, tab, filter, user?.id);
+      const res = await fetch(listUrl, { headers: authHeaders });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: CatalogResponse = await res.json();
       setEntries(json?.catalog_entries ?? []);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Falha ao carregar itens.");
+      setEntries([]);
     } finally {
       setLoadingItems(false);
     }
-  }, [urlGeral, authHeaders]);
+  }, [baseUrl, authHeaders, tab, filter, user?.id, buildCatalogListUrl]);
 
   useEffect(() => {
     fetchCatalog();
-    setFocusedKey(null); // ao trocar de aba, sai do modo focado
-    // reabre todos por padrão ao trocar de aba:
+    setFocusedKey(null); // reset foco ao trocar aba
     setOpenKeysVitrine(allVitrineKeys);
     setOpenKeysDesfaz(allDesfazKeys);
   }, [fetchCatalog, tab]);
@@ -623,13 +722,70 @@ export function Anunciados() {
     }
   };
 
-  // callbacks para focar/desfocar ao Expandir/Voltar
+  // foco expand/voltar
   const handleExpand = (key: string) => setFocusedKey(key);
   const handleCollapseExpand = () => setFocusedKey(null);
 
-  // Qual conjunto de chaves abertas usar conforme a aba
   const openKeys = tab === "vitrine" ? openKeysVitrine : openKeysDesfaz;
   const setOpenKeys = tab === "vitrine" ? setOpenKeysVitrine : setOpenKeysDesfaz;
+
+  // Remover localmente quando outro lugar mover status
+useEffect(() => {
+  const handler = (e: any) => {
+    const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+    const id = detail?.id;
+    const newStatus = detail?.newStatus?.trim();
+    if (!id || !newStatus) return;
+
+    setEntries((prev) => {
+      let touched = false;
+
+      const next = prev.map((it) => {
+        if (it.id !== id) return it;
+
+        // se já está no status informado, não muda nada
+        const current = it.workflow_history?.[0]?.workflow_status?.trim();
+        if (current === newStatus) return it;
+
+        touched = true;
+
+        const newHistoryItem: WorkflowHistoryItem = {
+          id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+          catalog_id: it.id,
+          workflow_status: newStatus,
+          detail: {},
+          created_at: new Date().toISOString(),
+          user: it.user ?? null, // opcional: mantém o mesmo usuário ou null
+        };
+
+        return {
+          ...it,
+          workflow_history: [newHistoryItem, ...(it.workflow_history ?? [])],
+        };
+      });
+
+      return touched ? next : prev;
+    });
+  };
+
+  window.addEventListener("catalog:workflow-updated" as any, handler as any);
+  return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+}, []);
+
+
+
+   
+// Remover item da lista quando for excluído em outro lugar (ex.: CatalogModal)
+useEffect(() => {
+  const handler = (e: any) => {
+    const id = e?.detail?.id as string | undefined;
+    if (!id) return;
+    setEntries((prev) => prev.filter((it) => it.id !== id));
+  };
+
+  window.addEventListener("catalog:deleted" as any, handler as any);
+  return () => window.removeEventListener("catalog:deleted" as any, handler as any);
+}, []);
 
   return (
     <div className="flex flex-col gap-8 p-8 pt-0">
@@ -661,53 +817,46 @@ export function Anunciados() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
-        {/* === Cards de resumo (sem clique) === */}
+        {/* === Cards de resumo === */}
         <TabsContent value="vitrine" className="p-0 m-0">
-
-            <Carousel className="w-full flex gap-4 px-4 items-center">
-                    <div className="absolute left-0 z-[9]">
-                      <CarouselPrevious className="" />
-                    </div>
-                    <CarouselContent className="gap-4">
-                      {WORKFLOWS.vitrine.map(({key, name}) => {
-                          const { Icon } = getMeta(key);
+          <Carousel className="w-full flex gap-4 px-4 items-center">
+            <div className="absolute left-0 z-[9]">
+              <CarouselPrevious />
+            </div>
+            <CarouselContent className="gap-4">
+              {WORKFLOWS.vitrine.map(({ key, name }) => {
+                const { Icon } = getMeta(key);
                 const count = counts[key] ?? 0;
-                      return(
-                        <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                          <Alert className="p-0">
-                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
-                           <Icon className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
-                              <p className="text-xs text-muted-foreground">registrados</p>
-                            </CardContent>
-                          </Alert>
-                        </CarouselItem>
-                      )})}
-                    </CarouselContent>
-                    <div className="absolute right-0 z-[9]">
-                      <CarouselNext />
-                    </div>
-                  </Carousel>
+                return (
+                  <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <Alert className="p-0">
+                      <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
+                        <p className="text-xs text-muted-foreground">registrados</p>
+                      </CardContent>
+                    </Alert>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <div className="absolute right-0 z-[9]">
+              <CarouselNext />
+            </div>
+          </Carousel>
 
-         
-
-          {/* === Accordions (controlado só para sabermos quais estão abertos) === */}
+          {/* === Accordions === */}
           <Accordion
             type="multiple"
-            value={
-              focusedKey
-                ? openKeys.filter((k) => k === focusedKey) // quando focado, só o aberto
-                : openKeys
-            }
+            value={focusedKey ? openKeys.filter((k) => k === focusedKey) : openKeys}
             onValueChange={(v) => {
               const next = Array.isArray(v) ? v : [];
-              // 🔁 RESET ao fechar o accordion focado
               if (focusedKey && !next.includes(focusedKey)) {
-                setFocusedKey(null); // sai do modo focado
-                setOpenKeysVitrine(allVitrineKeys); // reabre padrão dessa aba
+                setFocusedKey(null);
+                setOpenKeysVitrine(allVitrineKeys);
                 setOpenKeysDesfaz(allDesfazKeys);
                 return;
               }
@@ -730,46 +879,48 @@ export function Anunciados() {
                 isOpen={openKeys.includes(key)}
                 onExpand={handleExpand}
                 onCollapseExpand={handleCollapseExpand}
+                onPromptDelete={openDelete}
+                onPromptMove={openMove}
               />
             ))}
           </Accordion>
         </TabsContent>
 
         <TabsContent value="desfazimento" className="p-0 m-0">
-            <Carousel className="w-full flex gap-4 px-4 items-center">
-                    <div className="absolute left-0 z-[9]">
-                      <CarouselPrevious className="" />
-                    </div>
-                    <CarouselContent className="gap-4">
-                      {WORKFLOWS.desfazimento.map(({key, name}) => {
-                          const { Icon } = getMeta(key);
+          <Carousel className="w-full flex gap-4 px-4 items-center">
+            <div className="absolute left-0 z-[9]">
+              <CarouselPrevious />
+            </div>
+            <CarouselContent className="gap-4">
+              {WORKFLOWS.desfazimento.map(({ key, name }) => {
+                const { Icon } = getMeta(key);
                 const count = counts[key] ?? 0;
-                      return(
-                        <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                          <Alert className="p-0">
-                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
-                           <Icon className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
-                              <p className="text-xs text-muted-foreground">registrados</p>
-                            </CardContent>
-                          </Alert>
-                        </CarouselItem>
-                      )})}
-                    </CarouselContent>
-                    <div className="absolute right-0 z-[9]">
-                      <CarouselNext />
-                    </div>
-                  </Carousel>
+                return (
+                  <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <Alert className="p-0">
+                      <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{loadingItems ? "0" : count}</div>
+                        <p className="text-xs text-muted-foreground">registrados</p>
+                      </CardContent>
+                    </Alert>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <div className="absolute right-0 z-[9]">
+              <CarouselNext />
+            </div>
+          </Carousel>
 
           <Accordion
             type="multiple"
             value={focusedKey ? openKeys.filter((k) => k === focusedKey) : openKeys}
             onValueChange={(v) => {
               const next = Array.isArray(v) ? v : [];
-              // 🔁 RESET ao fechar o accordion focado
               if (focusedKey && !next.includes(focusedKey)) {
                 setFocusedKey(null);
                 setOpenKeysVitrine(allVitrineKeys);
@@ -795,11 +946,86 @@ export function Anunciados() {
                 isOpen={openKeys.includes(key)}
                 onExpand={handleExpand}
                 onCollapseExpand={handleCollapseExpand}
+                onPromptDelete={openDelete}
+                onPromptMove={openMove}
               />
             ))}
           </Accordion>
         </TabsContent>
       </Tabs>
+
+      {/* ===================== DIALOG: EXCLUIR ===================== */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Deletar item do catálogo
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 ">
+              Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="">
+            <Button variant="ghost" onClick={closeDelete}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+              <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================== DIALOG: MOVIMENTAR (opcional) ===================== */}
+      <Dialog open={isMoveOpen} onOpenChange={setIsMoveOpen}>
+        <DialogContent>
+          <DialogHeader className="pt-8 px-6 flex flex-col items-center">
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px] text-center">
+              Movimentar item do catálogo
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 text-center">
+              Selecione um status e (opcionalmente) escreva uma observação para registrar no histórico do item.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={moveStatus} onValueChange={setMoveStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(props.workflowOptions || []).map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Observação</label>
+              <Input
+                value={moveObs}
+                onChange={(e) => setMoveObs(e.target.value)}
+                placeholder="Opcional"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="py-4 px-6">
+            <Button variant="ghost" onClick={closeMove}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button onClick={handleConfirmMove} disabled={!moveStatus || moving}>
+              <Repeat size={16} /> {moving ? "Salvando…" : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

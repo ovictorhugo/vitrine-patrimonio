@@ -1,13 +1,41 @@
-import { ArrowRight, Barcode, Camera, Check, Image, ImageDown, PanelRightOpen, Plus, RefreshCcw, ScanEye, Trash } from "lucide-react";
+import {
+  ArrowRight,
+  Barcode,
+  Camera,
+  Check,
+  Image as ImageIcon,
+  ImageDown,
+  PanelRightOpen,
+  Plus,
+  RefreshCcw,
+  ScanEye,
+  Trash,
+  Loader,
+} from "lucide-react";
 import { Badge } from "../../../ui/badge";
 import { Button } from "../../../ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../../ui/dialog";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../ui/dialog";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
+import { Separator } from "../../../ui/separator";
+import { ArrowUUpLeft } from "phosphor-react";
 
 // contrato mínimo p/ encaixar no wizard existente
 type OnValidity = (v: boolean) => void;
-type OnState    = (st: Record<string, unknown>) => void;
+type OnState = (st: Record<string, unknown>) => void;
 
 type Props = {
   step: number;
@@ -30,6 +58,8 @@ const sameArr = (a?: string[], b?: string[]) => {
   return true;
 };
 
+type CamStatus = "idle" | "requesting" | "granted" | "denied";
+
 export function ImagemStepEdit({
   step,
   catalogId,
@@ -40,7 +70,9 @@ export function ImagemStepEdit({
   onStateChange,
 }: Props) {
   /** FONTE DE VERDADE: IDs no backend */
-  const [imageIds, setImageIds] = useState<string[]>(() => existingImageIds ?? []);
+  const [imageIds, setImageIds] = useState<string[]>(
+    () => existingImageIds ?? []
+  );
 
   // sincroniza quando o pai muda (evita ping-pong)
   const lastPropRef = useRef<string>("");
@@ -50,7 +82,8 @@ export function ImagemStepEdit({
     if (incoming === lastPropRef.current) return;
     if (!sameArr(imageIds, existingImageIds)) setImageIds(existingImageIds);
     lastPropRef.current = incoming;
-  }, [existingImageIds]); // eslint-disable-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingImageIds]);
 
   // validade + sinalização pro wizard (mantém chaves compatíveis com o seu NovoItem)
   const lastSentRef = useRef<string>("");
@@ -63,33 +96,93 @@ export function ImagemStepEdit({
     }
   }, [imageIds, onStateChange, onValidityChange]);
 
-  /** ===== Upload / Camera (UI igual ao seu) ===== */
+  /** ===== Upload / Camera ===== */
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   // câmera
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
+    []
+  );
   const [selectedCamera, setSelectedCamera] = useState("");
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+
+  // estados para primeira-vez/permissões
+  const [camStatus, setCamStatus] = useState<CamStatus>("idle");
+  const [permError, setPermError] = useState<string>("");
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const hasMediaDevices =
+    typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === "function";
+
+  /** Pede permissão sem lançar exceção; retorna boolean e atualiza estado */
+  const ensureCameraPermission = async (): Promise<boolean> => {
+    if (!hasMediaDevices) {
+      setPermError("Este navegador/dispositivo não suporta uso de câmera.");
+      setCamStatus("denied");
+      return false;
+    }
+    if (!window.isSecureContext) {
+      setPermError("Acesse via HTTPS para permitir o uso da câmera.");
+      setCamStatus("denied");
+      return false;
+    }
+    try {
+      setCamStatus("requesting");
+      const tmp = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+      // fecha o stream temporário imediatamente
+      tmp.getTracks().forEach((t) => t.stop());
+      setCamStatus("granted");
+      setPermError("");
+      return true;
+    } catch (e: any) {
+      console.error("Permissão de câmera negada ou indisponível:", e);
+      let msg = "Não foi possível acessar a câmera.";
+      if (e?.name === "NotAllowedError")
+        msg = "Permissão negada. Conceda acesso à câmera no navegador.";
+      if (e?.name === "NotFoundError")
+        msg = "Nenhuma câmera foi encontrada neste dispositivo.";
+      if (e?.name === "OverconstrainedError")
+        msg = "As restrições de vídeo não puderam ser satisfeitas.";
+      setPermError(msg);
+      setCamStatus("denied");
+      return false;
+    }
+  };
+
+  /** Lista dispositivos; ok mesmo sem labels (1ª vez) */
   const getCameras = async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cams = devices.filter((d) => d.kind === "videoinput");
       setAvailableCameras(cams);
-      if (cams.length && !selectedCamera) setSelectedCamera(cams[0].deviceId);
+      if (cams.length) {
+        setSelectedCamera((prev) => {
+          const stillExists = cams.some((c) => c.deviceId === prev);
+          return stillExists ? prev : cams[0].deviceId;
+        });
+      } else {
+        setSelectedCamera("");
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao enumerar dispositivos:", e);
     }
   };
 
   const startCamera = async () => {
     try {
+      if (!selectedCamera) return;
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
         setStream(null);
@@ -106,7 +199,11 @@ export function ImagemStepEdit({
       setStream(newStream);
       if (videoRef.current) videoRef.current.srcObject = newStream;
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao iniciar câmera:", e);
+      toast("Erro ao iniciar câmera", {
+        description: "Tente selecionar outra câmera ou verifique as permissões.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
     }
   };
 
@@ -116,44 +213,91 @@ export function ImagemStepEdit({
     if (videoRef.current) videoRef.current.srcObject = null;
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    setCapturedPhoto(photoDataUrl);
-    setShowPhotoPreview(true);
-    stopCamera();
+const capturePhoto = () => {
+  if (!videoRef.current || !canvasRef.current) return;
+  const canvas = canvasRef.current;
+  const video = videoRef.current;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+  setCapturedPhoto(photoDataUrl);
+  setShowPhotoPreview(true);
+  // para o stream, mas ainda não fecha o diálogo
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    setStream(null);
+  }
+  if (videoRef.current) videoRef.current.srcObject = null;
+};
+  const openUploadDialog = () => setShowUploadDialog(true);
+  const openFileDialog = () => {
+    setShowUploadDialog(false);
+    fileInputRef.current?.click();
   };
 
-  const openUploadDialog = () => setShowUploadDialog(true);
-  const openFileDialog = () => { setShowUploadDialog(false); fileInputRef.current?.click(); };
+  /** Inicialização segura ao abrir o diálogo */
+  const safeInitCamera = async () => {
+    const ok = await ensureCameraPermission();
+    if (!ok) return; // fica em denied e exibe UI guiada
+    await getCameras();
+    await startCamera();
+  };
+
   const openCameraDialog = async () => {
     setShowUploadDialog(false);
-    await getCameras();
     setShowCameraDialog(true);
-    setTimeout(() => startCamera(), 200);
-  };
-  const closeCameraDialog = (open: boolean) => {
-    if (!open) {
-      stopCamera();
-      setShowCameraDialog(false);
-      setCapturedPhoto(null);
-      setShowPhotoPreview(false);
-    } else {
-      setShowCameraDialog(true);
+    setShowPhotoPreview(false);
+    setCapturedPhoto(null);
+    // não liga automaticamente: espera o usuário clicar "Ativar câmera"
+    if (camStatus === "granted") {
+      await getCameras();
+      await startCamera();
     }
   };
 
+const teardownCamera = () => {
+  // para o stream
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    setStream(null);
+  }
+  if (videoRef.current) videoRef.current.srcObject = null;
+
+  // fecha e reseta estados de captura
+  setShowCameraDialog(false);
+  setCapturedPhoto(null);
+  setShowPhotoPreview(false);
+
+  // (opcional) reseta status de permissão, se você usa esse estado
+  // setCamStatus?.("idle");
+  // setPermError?.("");
+};
+
+// 2) useEffect para garantir stop ao desmontar o componente (rota/tela)
+useEffect(() => {
+  return () => {
+    teardownCamera();
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+// 3) feche ao mudar o "open" do Dialog (já chamava stop, troque por teardown)
+const closeCameraDialog = (open: boolean) => {
+  if (!open) {
+    teardownCamera();
+  } else {
+    setShowCameraDialog(true);
+  }
+};
   /** ===== Backend: POST/DELETE/REFRESH ===== */
   const [busy, setBusy] = useState(false);
 
   const refreshImages = async () => {
-    const r = await fetch(`${urlGeral}catalog/${catalogId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${urlGeral}catalog/${catalogId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (!r.ok) throw new Error(`Falha ao atualizar imagens (${r.status})`);
     const data = await r.json();
     const ids = (data?.images || []).map((i: any) => i.id);
@@ -174,42 +318,45 @@ export function ImagemStepEdit({
     }
   };
 
- const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  try {
-    const files = event.target.files;
-    if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    try {
+      const files = event.target.files;
+      if (!files || files.length === 0)
+        throw new Error("Nenhum arquivo selecionado.");
 
-    // percorre todos os arquivos já no momento do "submit"
-    for (const f of Array.from(files)) {
-      // limite de 2 MB = 2 * 1024 * 1024 bytes
-      if (f.size > 2 * 1024 * 1024) {
-        toast("Arquivo muito grande!", { 
-          description: `${f.name} excede o limite de 2 MB.` 
-        });
-        // limpa o input para permitir escolher de novo
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        return; // sai da função sem enviar nada
+      for (const f of Array.from(files)) {
+        if (f.size > 2 * 1024 * 1024) {
+          toast("Arquivo muito grande!", {
+            description: `${f.name} excede o limite de 2 MB.`,
+          });
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          return;
+        }
       }
-    }
 
-    setBusy(true);
-    for (const f of Array.from(files)) {
-      await uploadBlob(f, f.name);
-    }
+      setBusy(true);
+      for (const f of Array.from(files)) {
+        await uploadBlob(f, f.name);
+      }
 
-    await refreshImages();
-    setShowUploadDialog(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    toast("Imagens enviadas!");
-  } catch (e: any) {
-    toast("Erro ao carregar arquivo", { description: e?.message || String(e) });
-  } finally {
-    setBusy(false);
-  }
-};
+      await refreshImages();
+      setShowUploadDialog(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast("Imagens enviadas!");
+    } catch (e: any) {
+      toast("Erro ao carregar arquivo", {
+        description: e?.message || String(e),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const confirmPhoto = async () => {
     if (!capturedPhoto) return;
+     teardownCamera(); // <—
     try {
       setBusy(true);
       const b = await (await fetch(capturedPhoto)).blob(); // converte dataURL em blob
@@ -231,19 +378,43 @@ export function ImagemStepEdit({
     if (!id) return;
     try {
       setBusy(true);
-      const resp = await fetch(`${urlGeral}catalog/${catalogId}/images/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const resp = await fetch(
+        `${urlGeral}catalog/${catalogId}/images/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!resp.ok) throw new Error(`Falha ao remover (${resp.status})`);
       await refreshImages();
       toast("Imagem removida.");
     } catch (e: any) {
-      toast("Não foi possível remover a imagem", { description: e?.message || "" });
+      toast("Não foi possível remover a imagem", {
+        description: e?.message || "",
+      });
     } finally {
       setBusy(false);
     }
   };
+
+  /** Reinicia a câmera ao trocar seleção e quando o diálogo estiver aberto */
+  useEffect(() => {
+    if (!showCameraDialog) return;
+    if (camStatus !== "granted") return;
+    if (!selectedCamera) return;
+    startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCamera, showCameraDialog, camStatus]);
+
+  /** Atualiza lista ao plugar/desplugar dispositivos */
+  useEffect(() => {
+    if (!hasMediaDevices) return;
+    const handler = () => getCameras();
+    navigator.mediaDevices.addEventListener?.("devicechange", handler);
+    return () =>
+      navigator.mediaDevices.removeEventListener?.("devicechange", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMediaDevices]);
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -258,10 +429,10 @@ export function ImagemStepEdit({
       </div>
 
       <div className="ml-8">
-        {/* Passos sugeridos (mesmo do seu componente) */}
+        {/* Passos sugeridos */}
         <div className="grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8">
           <div className="flex gap-2">
-            <ImageDown size={24} />
+            <ImageIcon size={24} />
             <div>
               <p className="font-medium">Passo 1</p>
               <p className="text-gray-500 text-sm">Imagem frontal do item</p>
@@ -271,7 +442,9 @@ export function ImagemStepEdit({
             <Barcode size={24} />
             <div>
               <p className="font-medium">Passo 2</p>
-              <p className="text-gray-500 text-sm">Imagem com a identificação do item (se houver)</p>
+              <p className="text-gray-500 text-sm">
+                Imagem com a identificação do item (se houver)
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -290,7 +463,7 @@ export function ImagemStepEdit({
           </div>
         </div>
 
-        {/* Grade 4 slots (exibe até 4 primeiras do backend; botões para adicionar/remover) */}
+        {/* Grade 4 slots (exibe até 4 primeiras do backend) */}
         <div className="flex gap-2 w-full mb-8">
           <div className="w-full">
             <div className="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
@@ -301,7 +474,11 @@ export function ImagemStepEdit({
                   <div key={index} className="relative group">
                     {src ? (
                       <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
-                        <img className="aspect-square w-full rounded-md object-cover" src={src} alt={`Imagem ${index + 1}`} />
+                        <img
+                          className="aspect-square w-full rounded-md object-cover"
+                          src={src}
+                          alt={`Imagem ${index + 1}`}
+                        />
                         <Button
                           onClick={() => handleRemoveByIndex(index)}
                           variant="destructive"
@@ -338,26 +515,46 @@ export function ImagemStepEdit({
               multiple
             />
 
-            {/* Dialog de opções (mesmo do seu componente) */}
+            {/* Dialog de opções */}
             <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar imagem</DialogTitle>
+                  <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                    Adicionar imagem
+                  </DialogTitle>
                   <DialogDescription className="text-zinc-500">
-                    Você pode capturar uma nova imagem com a câmera ou escolher um arquivo do computador.
+                    Você pode capturar uma nova imagem com a câmera ou escolher
+                    um arquivo do computador.
                   </DialogDescription>
                 </DialogHeader>
 
+                  <Separator className="my-4" />
+
                 <div className="flex flex-col space-y-3">
-                  <Button onClick={openCameraDialog} className="flex items-center justify-center space-x-2" disabled={busy}>
+                  <Button
+                    onClick={openCameraDialog}
+                    className="flex items-center justify-center space-x-2"
+                    disabled={busy || !hasMediaDevices}
+                  >
                     <Camera size={20} />
                     <span>Tirar Foto</span>
                   </Button>
-                  <Button onClick={openFileDialog} variant="outline" className="flex items-center justify-center space-x-2" disabled={busy}>
-                    <Image size={20} />
+                  <Button
+                    onClick={openFileDialog}
+                    variant="outline"
+                    className="flex items-center justify-center space-x-2"
+                    disabled={busy}
+                  >
+                    <ImageIcon size={20} />
                     <span>Escolher do Computador</span>
                   </Button>
                 </div>
+                {!hasMediaDevices && (
+                  <p className="text-xs text-red-500 mt-3">
+                    O acesso à câmera não é suportado neste
+                    navegador/dispositivo.
+                  </p>
+                )}
               </DialogContent>
             </Dialog>
 
@@ -365,75 +562,200 @@ export function ImagemStepEdit({
             <Dialog open={showCameraDialog} onOpenChange={closeCameraDialog}>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Capturar foto</DialogTitle>
+                  <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                    Capturar foto
+                  </DialogTitle>
                   <DialogDescription className="text-zinc-500">
-                    Fotografe o item com boa iluminação. Esta foto será usada no Sistema Patrimônio.
+                    Fotografe o item com boa iluminação. Esta foto será usada no
+                    Sistema Patrimônio.
                   </DialogDescription>
                 </DialogHeader>
 
-                {!showPhotoPreview ? (
+  <Separator className="my-4" />
+
+                {/* Estados de permissão: idle/requesting/denied mostram UI de ativação; granted mostra seleção + preview */}
+                {camStatus !== "granted" ? (
                   <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center">
-                        <label className="text-sm font-medium mb-2 block">
-                          Câmeras Disponíveis <Badge variant="outline">{availableCameras.length}</Badge>
-                        </label>
-                        <div className="flex justify-center space-x-2">
-                          <Button onClick={getCameras} variant="outline" size="sm" className="text-xs" disabled={busy}>
-                            <RefreshCcw size={16} /> Atualizar Câmeras
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {/* seletor de câmera simples */}
-                        <select
-                          className="w-full border rounded-md p-2 text-sm"
-                          value={selectedCamera}
-                          onChange={(e) => {
-                            setSelectedCamera(e.target.value);
-                            setTimeout(() => startCamera(), 120);
-                          }}
-                        >
-                          {availableCameras.map((camera, index) => (
-                            <option key={camera.deviceId} value={camera.deviceId}>
-                              {camera.label || `Câmera ${index + 1}`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div className="rounded-md border p-3 text-sm">
+                      {camStatus === "idle" && (
+                        <p>
+                          Clique em <strong>Ativar câmera</strong> para listar
+                          os dispositivos disponíveis.
+                        </p>
+                      )}
+                      {camStatus === "requesting" && (
+                        <p>Solicitando acesso à câmera… confirme no navegador.</p>
+                      )}
+                      {camStatus === "denied" && (
+                        <p className="text-red-600">
+                          {permError ||
+                            "Acesso à câmera negado. Ajuste as permissões do navegador e tente novamente."}
+                        </p>
+                      )}
+                      {!window.isSecureContext && (
+                        <p className="text-amber-600 mt-2">
+                          Dica: acesse via <strong>HTTPS</strong> para liberar o
+                          uso da câmera.
+                        </p>
+                      )}
                     </div>
-
-                    <div className="relative">
-                      <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg bg-black" style={{ maxHeight: "300px" }} />
-                      <canvas ref={canvasRef} className="hidden" />
-                    </div>
-
-                    <div className="flex justify-center space-x-3">
-                      <Button onClick={() => closeCameraDialog(false)} className="w-full" variant="outline" disabled={busy}>
-                        Cancelar
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => closeCameraDialog(false)}
+                      >
+                    <ArrowUUpLeft size={16}/>      Cancelar
                       </Button>
-                      <Button onClick={capturePhoto} disabled={!stream || busy} className="w-full">
-                        <Camera size={16} />
-                        <span>Capturar Foto</span>
+                      <Button
+                        className="w-full"
+                        onClick={safeInitCamera}
+                        disabled={camStatus === "requesting" || !hasMediaDevices}
+                      >
+                            {camStatus === "requesting" ? <Loader className="animate-spin" size={16} /> : <Camera size={16} /> }     
+                        {camStatus === "requesting"
+                          ? "Ativando…"
+                          : "Ativar câmera"}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="relative">
-                      <img src={capturedPhoto ?? ""} alt="Foto capturada" className="w-full rounded-lg" style={{ maxHeight: "300px", objectFit: "cover" }} />
+                    {/* seleção de câmera (shadcn Select) */}
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <label className="text-sm font-medium mb-2 block">
+                          Câmeras Disponíveis{" "}
+                          <Badge variant="outline">
+                            {availableCameras.length}
+                          </Badge>
+                        </label>
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            onClick={getCameras}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                          >
+                            <RefreshCcw size={16} /> Atualizar Câmeras
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mt-4">
+                        <Select
+                          value={selectedCamera}
+                          onValueChange={(v) => setSelectedCamera(v)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione a câmera" />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            className="z-[99999]"
+                            align="start"
+                            side="bottom"
+                            sideOffset={6}
+                          >
+                            {availableCameras.map((camera, index) => (
+                              <SelectItem
+                                key={camera.deviceId}
+                                value={camera.deviceId}
+                              >
+                                {camera.label || `Câmera ${index + 1}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {selectedCamera && (
+                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                            <strong>Câmera ativa:</strong>{" "}
+                            {availableCameras.find(
+                              (c) => c.deviceId === selectedCamera
+                            )?.label ||
+                              `Câmera ${
+                                availableCameras.findIndex(
+                                  (c) => c.deviceId === selectedCamera
+                                ) + 1
+                              }`}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex justify-center space-x-3">
-                      <Button onClick={() => { setCapturedPhoto(null); setShowPhotoPreview(false); startCamera(); }} variant="outline" className="w-full" disabled={busy}>
-                        Tirar Outra
-                      </Button>
-                      <Button onClick={confirmPhoto} className="w-full" disabled={busy}>
-                        <Check size={16} />
-                        <span>Usar Esta Foto</span>
-                      </Button>
-                    </div>
+                    {/* preview da câmera */}
+                    {!showPhotoPreview ? (
+                      <>
+                        <div className="relative">
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            className="w-full rounded-lg bg-black"
+                            style={{ maxHeight: "300px" }}
+                          />
+                          <canvas ref={canvasRef} className="hidden" />
+                          <div className="absolute top-2 left-2 flex gap-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                            <Camera size={16} />{" "}
+                            {stream ? "Ao vivo" : "Iniciando..."}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-center space-x-3">
+                          <Button
+                            onClick={() => closeCameraDialog(false)}
+                            className="w-full"
+                            variant="outline"
+                            disabled={busy}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={capturePhoto}
+                            disabled={!stream || busy}
+                            className="w-full"
+                          >
+                            <Camera size={16} />
+                            <span>Capturar Foto</span>
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <img
+                            src={capturedPhoto ?? ""}
+                            alt="Foto capturada"
+                            className="w-full rounded-lg"
+                            style={{ maxHeight: "300px", objectFit: "cover" }}
+                          />
+                        </div>
+
+                        <div className="flex justify-center space-x-3">
+                          <Button
+                            onClick={() => {
+                              setCapturedPhoto(null);
+                              setShowPhotoPreview(false);
+                              startCamera();
+                            }}
+                            variant="outline"
+                            className="w-full"
+                            disabled={busy}
+                          >
+                            Tirar Outra
+                          </Button>
+                          <Button
+                            onClick={confirmPhoto}
+                            className="w-full"
+                            disabled={busy}
+                          >
+                            <Check size={16} />
+                            <span>Usar Esta Foto</span>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </DialogContent>

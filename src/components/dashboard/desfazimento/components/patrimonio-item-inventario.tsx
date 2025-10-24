@@ -125,7 +125,7 @@ export function PatrimonioItemCollection({
   // abre modal patrimônio (card)
   const handleOpen = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    onOpen("patrimonio", { ...entry });
+    onOpen('catalog-modal', { ...entry });
   };
 
   // urls das imagens

@@ -31,6 +31,7 @@ import { useTheme } from "next-themes";
 import { LogoVitrineWhite } from "../svg/LogoVitrineWhite";
 import { LogoVitrine } from "../svg/LogoVitrine";
 import { SymbolEEWhite } from "../svg/SymbolEEWhite";
+import { Eye, EyeOff } from "lucide-react";
 export const useQuery = () => {
     return new URLSearchParams(useLocation().search);
   }
@@ -100,6 +101,51 @@ export function SignInContent() {
 
       const UrlAuthentication = import.meta.env.VITE_URL_AUTHENTICATION || ''
 
+    const handleLogin = async () => {
+  try {
+    const form = new URLSearchParams();
+    form.append('username', email);
+    form.append('password', password);
+    // Se o seu backend exigir:
+    // form.append('grant_type', 'password'); // alguns /auth/token pedem isso
+
+    const res = await fetch(`${urlGeral}auth/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: form.toString(),
+    });
+
+    if (!res.ok) {
+      // Tenta ler detalhes do erro (ex.: 422 com 'detail')
+      let message = 'Credenciais inválidas ou erro no servidor';
+      try {
+        const err = await res.json();
+        if (err?.detail) message = JSON.stringify(err.detail);
+      } catch {}
+      throw new Error(message);
+    }
+
+    const data = await res.json(); // { access_token, token_type }
+
+    if (data?.access_token) {
+      localStorage.setItem('jwt_token', data.access_token);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 200);
+      return;
+    }
+
+    throw new Error('Token não encontrado na resposta');
+  } catch (error) {
+    console.error('Erro no login:', error);
+    toast('Falha ao efetuar login. Verifique suas credenciais.');
+  }
+};
+
+ const [showPassword, setShowPassword] = useState(false)
+
     return (
         <div className="w-full h-screen flex">
 
@@ -150,8 +196,46 @@ export function SignInContent() {
                              </div><div className="bg-[#719CB8] w-2 rounded-full h-2"></div></div></Button></a>
 
                         </div>
+
+                         <div className="flex items-center gap-3 text-neutral-300 dark:text-neutral-800 my-6">
+                        <div className="w-full h-[0.5px] bg-neutral-300 dark:bg-neutral-800"></div>
+                        ou
+                        <div className="w-full h-[0.5px]  bg-neutral-300 dark:bg-neutral-800"></div>
+                    </div>
                        
-              
+              <CardContent className=" p-0 w-full flex flex-col gap-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="name">Email</Label>
+                            <Input onChange={(e) => setEmail(e.target.value)} id="name" />
+                        </div>
+                        <div className="space-y-1">
+      <Label htmlFor="current">Senha</Label>
+
+      <div className="relative">
+        <Input
+          id="current"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="pr-10"
+        />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+      </div>
+    </div>
+
+                        <Button onClick={handleLogin} className="text-white mt-2 w-full dark:text-white"><SignIn size={16} /> Fazer login</Button>
+
+                    
+                    </CardContent>
 
                     </div>
 {/* 

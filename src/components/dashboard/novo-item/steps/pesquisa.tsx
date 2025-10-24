@@ -351,6 +351,11 @@ export function PesquisaStep({
           </div>
         </Alert>
 
+{filteredItems.length == 0 && (
+<p className="mt-8 text-xs font-medium text-gray-500">*Para códigos ATM que começam com "A", substituir por 90 ou 20</p>
+)}
+        
+
         {/* Resultados */}
         {/* MODO AVANÇADO: uma única sessão */}
         {advanced && input.trim().length >= 1 && advancedResults.length !== 0 && (

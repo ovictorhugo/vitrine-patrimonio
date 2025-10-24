@@ -173,7 +173,7 @@ export function ImportCsv() {
        <div className="mb-4">
          <div
           {...getRootProps()}
-          className="border-dashed h-full mb-3 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          className="border-dashed h-full mb-4 flex-col border border-neutral-300 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 w-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800"
         >
           <input {...getInputProps()} />
           <div className="p-4 border rounded-md">
@@ -187,7 +187,7 @@ export function ImportCsv() {
         </div>
 
         {fileInfo.name && (
-          <div className="justify-center flex items-center gap-3">
+          <div className="justify-center  flex items-center gap-3">
             <FileXls size={16} />
             <p className="text-center text-zinc-500 text-sm">
               Arquivo selecionado: <strong>{fileInfo.name}</strong> (
@@ -196,12 +196,10 @@ export function ImportCsv() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-2">
-          <div className="text-sm text-gray-500">
-            {uploading ? "Enviando… não feche a página." : ""}
-          </div>
-        </div>
        </div>
+
+     <Separator className="my-4" />
+     
 
         <DialogFooter>
           <Button onClick={onClose} variant={"ghost"}>

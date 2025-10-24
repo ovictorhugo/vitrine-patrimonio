@@ -26,6 +26,7 @@ import { CargosFuncoes } from "../dashboard/cargos-funcoes/cargos-funcoes";
 import { Alienacao } from "../dashboard/alienacao/alienacao";
 import { DepartamentPage } from "../dashboard/departament/departament-page";
 import { ComissaoApoioLocal } from "../dashboard/comissao-apoio-local/comissao-apoio-local";
+import { UserPublicPage } from "../user-public-page/user-public-page";
 
 
 
@@ -68,6 +69,8 @@ const ModalContent = () => {
         return <DepartamentPage/>
       case 'comissao-apoio-local':
         return <ComissaoApoioLocal/>
+      case 'user-public-page':
+        return <UserPublicPage/>
     default:
       return null;
   }

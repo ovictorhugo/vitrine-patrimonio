@@ -16,6 +16,12 @@ import {
   ChevronRight as ChevronRightIcon,
   DoorClosed,
   User,
+  Check,
+  BarChart,
+  Copy,
+  Calendar,
+  Hash,
+  DoorOpen,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -39,6 +45,11 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Separator } from "../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
+import { Statistics } from "./tabs/statistics";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
+import { HeaderResultTypeHome } from "../../header-result-type-home";
 
 /* ================= Tipos ================= */
 type StatusCount = { status: string; count: number };
@@ -167,7 +178,8 @@ export function InventarioPage() {
 
   const tabs = [
     { id: "inventario", label: "Salas", icon: DoorClosed },
-  { id: "guardian", label: "Responsável", icon:User }
+  { id: "guardian", label: "Responsáveis", icon:User },
+   { id: "statistics", label: "Estatísticas", icon:BarChart }
   ];
 
   const [isOn, setIsOn] = useState(true);
@@ -317,7 +329,7 @@ export function InventarioPage() {
       await putInventory(urlGeral, currentInventory.id, { key: currentInventory.key, available: next }, token);
       setCurrentInventory((prev) => (prev ? { ...prev, available: next } : prev));
       toast("Disponibilidade atualizada", {
-        description: `Inventário ${next ? "disponível" : "indisponível"} para uso.`,
+        description: `Inventário ${next ? "disponível" : "encerrado"} para uso.`,
       });
     } catch (e: any) {
       toast("Erro ao atualizar disponibilidade", { description: e?.message || "Tente novamente." });
@@ -443,6 +455,23 @@ export function InventarioPage() {
     }
   };
 
+
+    const formatDateTimeBR = (iso?: string) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      dateStyle: "short",
+      timeStyle: "short",
+      // exemplo: 18/09/2025 12:37
+    }).format(d);
+  } catch {
+    return iso;
+  }
+};
+
+
   /* ===== Telas de Loading / Not Found (para o INVENTÁRIO) ===== */
   if (loadingInventory) {
     return (
@@ -465,9 +494,7 @@ export function InventarioPage() {
           <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
             Não foi possível acessar as <br /> informações deste inventário.
           </h1>
-          {inventoryError ? (
-            <p className="mt-2 text-sm text-neutral-500 max-w-[600px] text-center">{inventoryError}</p>
-          ) : null}
+         
           <div className="flex gap-3 mt-8">
             <Button onClick={handleVoltar} variant={"ghost"}>
               <Undo2 size={16} /> Voltar
@@ -502,7 +529,8 @@ export function InventarioPage() {
 
           <div className="flex gap-3 items-center">
             {/* Switch: PUT /inventories/:id */}
-            <div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-medium">{currentInventory?.available ? ('Disponível'):('Encerrado')}</p>
               <Switch
                 checked={!!currentInventory?.available}
                 onCheckedChange={(c) => handleToggleAvailable(!!c)}
@@ -531,6 +559,55 @@ export function InventarioPage() {
 
         {/* Cards de estatística */}
         <div className="gap-8 p-8 pt-0">
+          <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+                         <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">{currentInventory.key}</h3>
+           
+         <div className="mt-2 flex flex-wrap justify-center  gap-3 text-sm text-gray-500 items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Criado por:</span>
+                    <span className="font-medium flex items-center gap-1">
+                      <Avatar className="rounded-md h-5 w-5 shrink-0">
+                        <AvatarImage
+                          className="rounded-md h-5 w-5"
+                          src={`${urlGeral}user/upload/${currentInventory?.created_by?.id}/icon`}
+                        />
+                        <AvatarFallback className="flex items-center justify-center">
+                          <User size={10} />
+                        </AvatarFallback>
+                      </Avatar>
+                      {currentInventory?.created_by?.username || "—"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-md ${currentInventory?.available ? "bg-green-500" : "bg-red-500"}`} />
+                    {currentInventory?.available ? "Disponível" : "Encerrado"}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                 <Calendar size={16} />   Início: {formatDateTimeBR(currentInventory?.created_at)}
+                  </div>
+
+                <div className="flex items-center gap-2">
+    <Hash size={16} /> Identificador
+  <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => {
+          navigator.clipboard.writeText(currentInventory.id);
+          toast("Identificador copiado", {
+            description: `O código ${currentInventory.id} foi copiado para a área de transferência.`,
+          });
+        }}
+      >
+        <Copy size={16} />
+      </Button>
+           
+           </div>
+                </div>
+          </div>
+
           <div className={`grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4`}>
             <Alert className="p-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -646,23 +723,33 @@ export function InventarioPage() {
           </div>
 
           <TabsContent value="inventario">
-            {/* Estado do inventário */}
-            <div className="px-8 pb-2">
-              <Alert className="text-sm flex flex-col gap-1">
-                <div>
-                  <span className="font-medium">Inventário:</span> {currentInventory.key}
-                </div>
-                <div>
-                  <span className="font-medium">ID:</span> {currentInventory.id}
-                </div>
-                <div>
-                  <span className="font-medium">Disponível:</span> {currentInventory.available ? "Sim" : "Não"}
-                </div>
-              </Alert>
-            </div>
+
 
             {/* GALERIA DE SALAS (sem Link) */}
-            <div className="flex flex-wrap gap-4 p-8 pt-4">
+            
+     <div className="p-8 grid gap-4">
+       <Alert className="p-0">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total de salas</CardTitle>
+                <DoorClosed className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{rooms.length}</div>
+                <p className="text-xs text-muted-foreground">registrados</p>
+              </CardContent>
+            </Alert>
+
+       <Accordion type="single" collapsible defaultValue="item-1">
+        <AccordionItem value="item-1">
+          <AccordionTrigger className="px-0">
+            <HeaderResultTypeHome
+              title={'Todas as salas'}
+              icon={<DoorClosed size={24} className="text-gray-400" />}
+            />
+          </AccordionTrigger>
+
+          <AccordionContent className="p-0">
+<div className="flex flex-wrap gap-4 p-8 pt-6">
               {loadingRooms ? (
                 <div className="text-sm text-muted-foreground">Carregando salas…</div>
               ) : rooms.length === 0 ? (
@@ -690,6 +777,11 @@ export function InventarioPage() {
                 ))
               )}
             </div>
+          </AccordionContent>
+          </AccordionItem>
+          </Accordion>
+            
+     </div>
 
             {/* Prévia dos assets carregados por sala (opcional) */}
             {Object.keys(assetsPreview).length > 0 && (
@@ -715,6 +807,11 @@ export function InventarioPage() {
                 })}
               </div>
             )}
+          </TabsContent>
+
+
+          <TabsContent value='statistics' className="">
+            <Statistics/>
           </TabsContent>
         </Tabs>
       </main>
@@ -774,15 +871,14 @@ export function InventarioPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <Separator className="my-4" />  
+
+          <div className="space-y-2 mb-4">
             <div className="grid gap-2">
-              <Label>Nome (key)</Label>
+              <Label>Nome do inventário</Label>
               <Input value={editKey} onChange={(e) => setEditKey(e.target.value)} />
             </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={editAvailable} onCheckedChange={(c) => setEditAvailable(!!c)} />
-              <span className="text-sm">Disponível</span>
-            </div>
+         
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -790,7 +886,7 @@ export function InventarioPage() {
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
             <Button onClick={handleEditSave} disabled={savingEdit || !editKey.trim()}>
-              {savingEdit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {savingEdit ? <Loader2 className=" h-4 w-4 animate-spin" /> : <Check size={16} /> }
               Salvar alterações
             </Button>
           </DialogFooter>

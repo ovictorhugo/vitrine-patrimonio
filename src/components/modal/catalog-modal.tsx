@@ -571,6 +571,12 @@ export function CatalogModal() {
         throw new Error(`Falha ao excluir (${r.status}): ${t}`);
       }
       toast("Item excluído com sucesso.");
+      try {
+  window.dispatchEvent(
+    new CustomEvent("catalog:deleted", { detail: { id: catalog.id } })
+  );
+} catch {}
+
       onClose();
     } catch (e: any) {
       toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
@@ -709,7 +715,7 @@ export function CatalogModal() {
         const workflowAnunciados =
        (Array.isArray(catalog?.workflow_history) &&
         catalog?.workflow_history.length > 0 &&
-        catalog?.workflow_history[0].workflow_status === "ANUNCIADOS") 
+        catalog?.workflow_history[0].workflow_status === "VITRINE") 
      
      
      
@@ -787,7 +793,7 @@ export function CatalogModal() {
   {(((catalog.user.id === user?.id) || hasCatalogo) && workflowReview) && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Link target="_blank" to={`/dashboard/editar-item?id=${catalog.id}`}>
+                  <Link  to={`/dashboard/editar-item?id=${catalog.id}`}>
                     <Button variant="outline" size="icon">
                       <Pencil size={16} />
                     </Button>
@@ -1098,7 +1104,7 @@ export function CatalogModal() {
                                 alt={`${catalog.user?.username}`}
                               />
                               <AvatarFallback className="flex items-center justify-center">
-                                <User size={10} />
+                                <User size={16} />
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -1129,8 +1135,8 @@ export function CatalogModal() {
   </div>
 ) : (
   catalog.workflow_history
-    ?.slice() // cria uma cópia
     .reverse() // inverte a ordem
+   
     .map((ev, idx) => {
       const meta =
         WORKFLOW_STATUS_META[ev.workflow_status] ?? {
@@ -1154,19 +1160,19 @@ export function CatalogModal() {
              </div>
             </Alert>
 
-            {!isLast && <Separator className="h-8" orientation="vertical" />}
+            {!isLast && <Separator className="min-h-8" orientation="vertical" />}
           </div>
 
           <div className="flex-1">
             <p className="text-lg font-medium">{getStatusLabel(ev.workflow_status)}</p>
 
             {ev.detail?.justificativa && (
-              <p className="text-sm dark:text-gray-300 font-normal">
+              <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
                 {ev.detail.justificativa}
               </p>
             )}
 
-            <div className="flex gap-3 mt-2 flex-wrap items-center justify-between">
+            <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
               <div className="flex gap-1 items-center">
                 <Avatar className="rounded-md h-5 w-5">
                   {ev.user?.photo_url ? (

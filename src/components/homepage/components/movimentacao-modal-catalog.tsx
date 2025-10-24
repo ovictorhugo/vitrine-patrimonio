@@ -190,7 +190,7 @@ function WorkflowCombobox({
   const selected = items.find((i) => i.key === value) || null;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild disabled={disabled}>
         <Button
           variant="outline"
@@ -205,9 +205,9 @@ function WorkflowCombobox({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[99999]">
+      <PopoverContent   className="z-[99999] p-0 w-full"  side="bottom" >
         <Command>
-          <CommandInput placeholder="Buscar status…" />
+          <CommandInput  />
           <CommandList className="max-h-64">
             <CommandEmpty>Nenhum status encontrado</CommandEmpty>
 
@@ -225,7 +225,7 @@ function WorkflowCombobox({
 
             <CommandSeparator />
 
-            <CommandGroup heading="Workflows">
+            <CommandGroup>
               {items.map((it) => {
                 const isSelected = it.key === value;
                 return (
@@ -370,13 +370,7 @@ export function MovimentacaoModalCatalog({ catalog, urlGeral, token: tokenProp, 
 
   return (
     <div className="space-y-4">
-      <Alert className="flex items-start justify-between">
-        <div>
-          <p className="font-medium">Alterar workflow do item</p>
-          <p className="text-sm text-muted-foreground">Selecione o novo status de workflow e preencha os campos conforme exigência de cada etapa.</p>
-        </div>
-      </Alert>
-
+   
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label>Movimentação</Label>
@@ -405,7 +399,7 @@ export function MovimentacaoModalCatalog({ catalog, urlGeral, token: tokenProp, 
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um modelo..." />
+                <SelectValue  />
               </SelectTrigger>
               <SelectContent position="popper" align="start" sideOffset={6} className="z-[99999]">
                 {JUSTIFICATIVAS_DESFAZIMENTO_MODAL.map((p) => (
@@ -451,7 +445,7 @@ export function MovimentacaoModalCatalog({ catalog, urlGeral, token: tokenProp, 
           </div>
         ))}
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-end mt-4">
           <Button variant="ghost" onClick={handleResetInline}>
             <Undo2 className="mr-2 h-4 w-4" /> Limpar alterações
           </Button>

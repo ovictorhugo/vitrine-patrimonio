@@ -52,6 +52,7 @@ import { Textarea } from "../../../ui/textarea";
 import { ArrowUUpLeft } from "phosphor-react";
 import { usePermissions } from "../../../permissions";
 import { Badge } from "../../../ui/badge";
+import { Tabs, TabsContent } from "../../../ui/tabs";
 
 // ================== Types ==================
 type UUID = string;
@@ -324,6 +325,8 @@ export function CollectionPage() {
       if (qMain) params.set("q", qMain);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
+
+      params.set("workflow_status", 'DESFAZIMENTO')
 
       const url = `${urlGeral}collections/${collection_id}/items/${params.toString() ? `?${params.toString()}` : ""}`;
 
@@ -705,6 +708,20 @@ export function CollectionPage() {
   }, [items, urlGeral, authHeaders, discardErrors]);
   
 
+  
+  const tabs = [
+    { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
+  { id: "finalizados", label: "Processos finalizados", icon:Recycle },
+
+  ];
+
+  const [isOn, setIsOn] = useState(true);
+  const tab = queryUrl.get("tab");
+  const inv_id = queryUrl.get("inv_id") || ""; // ← INVENTORY_ID vem da URL
+  const [value, setValue] = useState(tab || tabs[0].id);
+
+ 
+
   if (loadingList && !collection) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -743,7 +760,7 @@ export function CollectionPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
+    <div className=" gap-8 flex flex-col h-full">
       <Helmet>
         <title>{collection?.name || ""} | Sistema Patrimônio</title>
         <meta name="description" content={`${collection?.name || ""} | Sistema Patrimônio`} />
@@ -751,7 +768,7 @@ export function CollectionPage() {
 
       <main className="flex flex-col gap-8  flex-1 min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
           <div className="flex gap-2 items-center">
             <Button
               onClick={() => {
@@ -810,15 +827,17 @@ export function CollectionPage() {
          )}
         </div>
 
-        <Alert className="dark:text-neutral-50 w-full h-72 bg-eng-blue dark:bg-eng-blue p-0 md:flex-row gap-8 flex-col flex">
-          <div className="md:w-1/2 w-full gap-1 flex flex-col h-full justify-center p-8">
-            <p className="font-semibold text-2xl text-white">{collection.name}</p>
-            <p className=" text-white">{collection.description}</p>
-          </div>
-        </Alert>
+         <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+                                 <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">{collection.name}</h3>
+                   
+                 <div className="mt-2 flex flex-wrap justify-center  gap-3 text-sm text-gray-500 items-center">
+                          <span className="text-muted-foreground max-w-[900px] text-justify">{collection.description}</span>
+                        </div>
+                  </div>
+
 
         {/* Cards de status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 px-8">
           <Alert className="p-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Coletados</CardTitle>
@@ -842,8 +861,58 @@ export function CollectionPage() {
           </Alert>
         </div>
 
-        {/* Barra de filtros da lista principal */}
-        <div className="relative grid grid-cols-1">
+        <Tabs defaultValue="inventario" value={value} className="relative ">
+                  {/* header das tabs, mantendo seu estilo */}
+                  <div className="sticky top-[68px]  z-[2] supports-[backdrop-filter]:dark:bg-neutral-900/60 supports-[backdrop-filter]:bg-neutral-50/60 backdrop-blur ">
+                    <div className={`w-full ${isOn ? "px-8" : "px-4"} border-b border-b-neutral-200 dark:border-b-neutral-800`}>
+                      {isOn && <div className="w-full  flex justify-between items-center"></div>}
+                      <div className={`flex pt-2 gap-8 justify-between  ${isOn ? "" : ""} `}>
+                        <div className="flex items-center gap-2">
+                          <div className="relative grid grid-cols-1">
+                          
+        
+                            <div className="  ">
+                              <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide scrollbar-hide" onScroll={checkScrollability}>
+                                <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
+                                  {tabs.map(({ id, label, icon: Icon }) => (
+                                    <div
+                                      key={id}
+                                      className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
+                                        value === id ? "border-b-[#719CB8]" : "border-b-transparent"
+                                      }`}
+                                      onClick={() => {
+                                        setValue(id);
+                                        queryUrl.set("page", "1");
+                                        navigate({
+                                          pathname: location.pathname,
+                                          search: queryUrl.toString(),
+                                        });
+                                      }}
+                                    >
+                                      <Button variant="ghost" className="m-0">
+                                        <Icon size={16} />
+                                        {label}
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+        
+                        
+                          </div>
+                        </div>
+        
+                        <div className="hidden xl:flex xl:flex-nowrap gap-2">
+                          <div className="md:flex md:flex-nowrap gap-2">i</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                      {/* Barra de filtros da lista principal */}
+       <div className="p-8 pb-4">
+         <div className="relative grid grid-cols-1 ">
           <Button
             variant="outline"
             size="sm"
@@ -943,8 +1012,12 @@ export function CollectionPage() {
             <ChevronRight size={16} />
           </Button>
         </div>
+       </div>
 
-        <Accordion type="single" collapsible defaultValue="item-1">
+        
+                  <TabsContent value="lfd">
+<div className="p-8 pt-0">
+   <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <AccordionTrigger className="px-0">
               <HeaderResultTypeHome title={"Todos os itens"} icon={<Package size={24} className="text-gray-400" />} />
@@ -998,6 +1071,16 @@ export function CollectionPage() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+</div>
+                  </TabsContent>
+
+                  <TabsContent value="finalizados">
+
+                  </TabsContent>
+                  </Tabs>
+
+    
+       
       </main>
 
       {/* =================== Dialog EDITAR =================== */}

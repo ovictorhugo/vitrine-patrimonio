@@ -1,24 +1,8 @@
 // src/pages/vitrine/card-item-dropdown.tsx
-import { Pencil, Trash, Barcode, ArrowRightLeft, User } from "lucide-react";
-import { Button } from "../../ui/button";
-import { Alert } from "../../ui/alert";
-
-import {
-  Carousel,
-  CarouselApi,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "../../ui/carousel";
-import { CardContent } from "../../ui/card";
-import { useContext, useState } from "react";
-import { UserContext } from "../../../context/context";
-import { Badge } from "../../ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { LikeButton } from "../../homepage/components/like-button";
 import { Draggable } from "@hello-pangea/dnd";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import { useContext } from "react";
+import { UserContext } from "../../../context/context";
 
 /* ===== Tipos (compatíveis com a página) ===== */
 type UUID = string;
@@ -107,17 +91,17 @@ export type CatalogEntry = {
   created_at: string;
 };
 
-/** Props extras do pai (opcionais) */
+/** Ações que vêm do pai (todas opcionais) */
 type ParentActions = {
   isFavorite?: boolean;
   onToggleFavorite?: (patrimonioId: string) => void;
   handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
   viewCount?: number;
-  onPromptDelete?: () => void;
-  onPromptMove?: () => void;
+  onPromptDelete?: () => void; // abre diálogo de deletar no pai
+  onPromptMove?: () => void;   // abre diálogo de movimentar no pai
 };
 
-type Props =  {
+type Props = ParentActions & {
   entry: CatalogEntry;
   index: number;
 };
@@ -125,8 +109,15 @@ type Props =  {
 export function CardItemDropdown({
   entry,
   index,
- 
+  isFavorite,
+  onToggleFavorite,
+  handlePutItem,
+  viewCount,
+  onPromptDelete,
+  onPromptMove,
 }: Props) {
+  // (se precisar de algo do contexto)
+  useContext(UserContext);
 
   return (
     <Draggable draggableId={entry.id} index={index}>
@@ -135,11 +126,18 @@ export function CardItemDropdown({
           ref={prov.innerRef}
           {...prov.draggableProps}
           {...prov.dragHandleProps}
-          className={` ${
-            snap.isDragging ? "" : ""
-          }`}
+          className={`${snap.isDragging ? "" : ""}`}
         >
-            <ItemPatrimonio key={entry.id} {...entry} />
+          <ItemPatrimonio
+            key={entry.id}
+            {...entry}
+            isFavorite={isFavorite}
+            onToggleFavorite={onToggleFavorite}
+            handlePutItem={handlePutItem}
+            viewCount={viewCount}
+            onPromptDelete={onPromptDelete}
+            onPromptMove={onPromptMove}
+          />
         </div>
       )}
     </Draggable>

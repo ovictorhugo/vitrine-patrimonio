@@ -1,5 +1,8 @@
 // src/pages/vitrine/ItensVitrine.tsx
 import { Helmet } from "react-helmet";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
 import {
   ChevronDown,
   ChevronLeft,
@@ -471,6 +474,9 @@ export function ItensVitrine() {
   const { urlGeral } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
+    // Drag & Drop
+  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+
 
   // Hierarquia local
   const [units, setUnits] = useState<UnitDTO[]>([]);
@@ -484,58 +490,80 @@ export function ItensVitrine() {
   const [sectorId, setSectorId] = useState<UUID | null>(null);
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
-  // Fetch listas hierarquia
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${urlGeral}units/`);
-        const json = await res.json();
-        setUnits(json?.units ?? []);
-      } catch {}
-    })();
-  }, [urlGeral]);
+// Fetch listas hierarquia
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch(`${urlGeral}units/`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
+      setUnits(json?.units ?? []);
+    } catch {
+      setUnits([]);
+    }
+  })();
+}, [urlGeral, token]);
 
-  const fetchAgencies = useCallback(
-    async (uid: UUID) => {
-      if (!uid) return setAgencies([]);
-      try {
-        const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`);
-        const json = await res.json();
-        setAgencies(json?.agencies ?? []);
-      } catch {
-        setAgencies([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchAgencies = useCallback(
+  async (uid: UUID) => {
+    if (!uid) return setAgencies([]);
+    try {
+      const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
+      setAgencies(json?.agencies ?? []);
+    } catch {
+      setAgencies([]);
+    }
+  },
+  [urlGeral, token]
+);
 
-  const fetchSectors = useCallback(
-    async (aid: UUID) => {
-      if (!aid) return setSectors([]);
-      try {
-        const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`);
-        const json = await res.json();
-        setSectors(json?.sectors ?? []);
-      } catch {
-        setSectors([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchSectors = useCallback(
+  async (aid: UUID) => {
+    if (!aid) return setSectors([]);
+    try {
+      const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
+      setSectors(json?.sectors ?? []);
+    } catch {
+      setSectors([]);
+    }
+  },
+  [urlGeral, token]
+);
 
-  const fetchLocations = useCallback(
-    async (sid: UUID) => {
-      if (!sid) return setLocations([]);
-      try {
-        const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`);
-        const json = await res.json();
-        setLocations(json?.locations ?? []);
-      } catch {
-        setLocations([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchLocations = useCallback(
+  async (sid: UUID) => {
+    if (!sid) return setLocations([]);
+    try {
+      const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
+      setLocations(json?.locations ?? []);
+    } catch {
+      setLocations([]);
+    }
+  },
+  [urlGeral, token]
+);
 
   // Cascata
   useEffect(() => {
@@ -714,8 +742,6 @@ params.set("limit", '100000');
     setBoard(groupByLastWorkflow(filteredEntries, columns));
   }, [filteredEntries, columns]);
 
-  // Drag & Drop
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
   const postWorkflowChange = async (entry: CatalogEntry | undefined, toKey: string | undefined, detailsExtra: Record<string, any>) => {
     if (!entry || !toKey) return false;
@@ -870,34 +896,115 @@ params.set("limit", '100000');
     if (expandedColumn !== null) resetExpandedPagination();
   }, [expandedColumn]);
 
-  const getItemsForExport = (colKey?: string, onlyVisible = false) => {
-    let items: CatalogEntry[] = [];
-    if (colKey) {
-      const all = board[colKey] ?? [];
-      const isExpanded = expandedColumn === colKey;
-      items = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
-    } else {
-      items = filteredEntries;
-    }
-    return items.map(({ workflow_history, ...rest }) => rest);
-  };
+const getItemsForExport = (colKey?: string, onlyVisible = false): CatalogEntry[] => {
+  let items: CatalogEntry[] = [];
+  if (colKey) {
+    const all = board[colKey] ?? [];
+    const isExpanded = expandedColumn === colKey;
+    items = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+  } else {
+    items = filteredEntries; // já é o array de CatalogEntry (catalog)
+  }
+  return items; // <-- sem map/rest; mantém o objeto catalog inteiro
+};
+// mantém sua buildImgUrl já definida no arquivo
+const buildImgUrl = (p: string) => {
+  try {
+    const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
+    return `${urlGeral}${cleanPath}`;
+  } catch {
+    const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
+    return `${urlGeral}${cleanPath}`;
+  }
+};
 
-  const handleDownloadJson = (colKey?: string, onlyVisible = false) => {
-    try {
-      const jsonData = getItemsForExport(colKey, onlyVisible);
-      const csvData = convertJsonToCsv(jsonData);
-      const blob = new Blob([csvData], { type: "text/csv;charset=windows-1252;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const colName = (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos";
-      link.download = `itens_${colName.replace(/\s+/g, "_").toLowerCase()}${onlyVisible ? "_visiveis" : ""}.csv`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Falha ao gerar CSV");
-    }
-  };
+// helpers
+const getIdentificacao = (e: CatalogEntry) =>
+  [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
+
+const getParecer = (e: CatalogEntry) => {
+  const ev = (e.workflow_history || []).find(
+    (w) => (w.workflow_status || "").trim() === "DESFAZIMENTO"
+  );
+  const d = ev?.detail || {};
+  // ajuste aqui se você salva em outro campo
+  return d.justificativa ?? d?.observation?.text ?? "";
+};
+
+const simNao = (b?: boolean) => (b ? "Sim" : "Não");
+
+// Troque sua função de CSV por esta versão em XLSX com fórmulas
+const handleDownloadXlsx = async (colKey?: string, onlyVisible = false) => {
+  try {
+    const items = getItemsForExport(colKey, onlyVisible); // já é CatalogEntry completo
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Itens");
+
+    // Se você quiser forçar só HYPERLINK (sem IMAGE), troque para false
+    const USE_IMAGE_FORMULA = true;
+
+    ws.columns = [
+      { header: "Identificação", key: "ident", width: 22 },
+      { header: "Material", key: "material", width: 28 },
+      { header: "Imagem 1", key: "img1", width: 36 },
+      { header: "Imagem 2", key: "img2", width: 36 },
+      { header: "Imagem 3", key: "img3", width: 36 },
+      { header: "Imagem 4", key: "img4", width: 36 },
+      { header: "Identificável", key: "identificavel", width: 14 },
+      { header: "Valor estimado", key: "valor", width: 18 },
+      { header: "Parecer (DESFAZIMENTO)", key: "parecer", width: 42 },
+      { header: "Tipo de destinação", key: "destino", width: 16 },
+    ];
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+    ws.getRow(1).font = { bold: true };
+
+    items.forEach((e) => {
+      const images = (e.images || []).slice(0, 4).map((img) => buildImgUrl(img?.file_path || ""));
+      while (images.length < 4) images.push("");
+
+      const row = ws.addRow({
+        ident: getIdentificacao(e),
+        material: e?.asset?.material?.material_name ?? "",
+        img1: "", img2: "", img3: "", img4: "",
+        identificavel: simNao(e?.asset?.is_official),
+        valor: e?.asset?.asset_value ?? "",
+        parecer: getParecer(e),
+        destino: "Descarte",
+      });
+
+      // Preenche fórmulas/links nas colunas de imagem
+      const imgCols = [3, 4, 5, 6]; // posições das colunas Imagem 1..4
+      images.forEach((url, j) => {
+        const cell = row.getCell(imgCols[j]);
+        if (!url) {
+          cell.value = "";
+          return;
+        }
+        if (USE_IMAGE_FORMULA) {
+          // Excel 365 / Online: exibe a imagem dentro da célula
+          cell.value = { formula: `IMAGE("${url}")` };
+        } else {
+          // Fallback: hyperlink clicável
+          cell.value = { text: "Abrir", hyperlink: url };
+        }
+      });
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const colName =
+      (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos";
+    const filename = `itens_${colName.replace(/\s+/g, "_").toLowerCase()}${onlyVisible ? "_visiveis" : ""}.xlsx`;
+    saveAs(
+      new Blob([buf], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      filename
+    );
+  } catch (e) {
+    console.error(e);
+    toast.error("Falha ao gerar XLSX");
+  }
+};
 
   const stripWorkflow = (obj: any) => {
     if (obj && typeof obj === "object" && "workflow_history" in obj) {
@@ -963,6 +1070,93 @@ params.set("limit", '100000');
   // ====== token já usado acima para POST workflow ======
    const { hasAnunciarItem, hasCargosFuncoes
 } = usePermissions();
+
+// ===== DELETE (dialog no padrão do seu exemplo) =====
+const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+const [deleting, setDeleting] = useState(false);
+
+const openDelete = (catalogId: string) => { setDeleteTargetId(catalogId); setIsDeleteOpen(true); };
+const closeDelete = () => { setIsDeleteOpen(false); setDeleteTargetId(null); };
+
+const handleConfirmDelete = useCallback(async () => {
+  if (!deleteTargetId) return;
+  try {
+    setDeleting(true);
+    const r = await fetch(`${urlGeral}catalog/${deleteTargetId}`, {
+      method: "DELETE",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(() => "");
+      throw new Error(`Falha ao excluir (${r.status}): ${t}`);
+    }
+    // remove do estado base (entries); o board é derivado e será recalculado
+    setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
+    toast("Item excluído com sucesso.");
+    closeDelete();
+  } catch (e: any) {
+    toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
+  } finally {
+    setDeleting(false);
+  }
+}, [deleteTargetId, urlGeral, token]);
+
+useEffect(() => {
+  const handler = (e: any) => {
+    const id = e?.detail?.id as string | undefined;
+    if (!id) return;
+    setEntries(prev => prev.filter(it => it.id !== id));
+  };
+
+  window.addEventListener("catalog:deleted" as any, handler as any);
+  return () => window.removeEventListener("catalog:deleted" as any, handler as any);
+}, []);
+
+useEffect(() => {
+  const handler = (e: any) => {
+    const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+    const id = detail?.id;
+    const newStatus = detail?.newStatus?.trim();
+    if (!id || !newStatus) return;
+
+    setEntries((prev) => {
+      let touched = false;
+
+      const next = prev.map((it) => {
+        if (it.id !== id) return it;
+
+        // se já está no status informado, não muda nada
+        const current = it.workflow_history?.[0]?.workflow_status?.trim();
+        if (current === newStatus) return it;
+
+        touched = true;
+
+        const newHistoryItem: WorkflowHistoryItem = {
+          id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+          catalog_id: it.id,
+          workflow_status: newStatus,
+          detail: {},
+          created_at: new Date().toISOString(),
+          user: it.user ?? null, // opcional: mantém o mesmo usuário ou null
+        };
+
+        return {
+          ...it,
+          workflow_history: [newHistoryItem, ...(it.workflow_history ?? [])],
+        };
+      });
+
+      return touched ? next : prev;
+    });
+  };
+
+  window.addEventListener("catalog:workflow-updated" as any, handler as any);
+  return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+}, []);
+
+
+
 
 
   return (
@@ -1201,7 +1395,11 @@ params.set("limit", '100000');
 
                                   {slice.map((entry, idx) => (
                                     <div key={entry.id} className="min-w-0 w-full max-w-full overflow-hidden">
-                                      <CardItemDropdown entry={entry} index={idx} />
+                                      <CardItemDropdown 
+                                      entry={entry} 
+                                      index={idx} 
+                                      onPromptDelete={() => openDelete(entry.id)} // <-- novo
+                                      />
                                     </div>
                                   ))}
 
@@ -1249,7 +1447,7 @@ params.set("limit", '100000');
                     </div>
 
                     <div className="flex gap-3">
-                      <Button size={"sm"} variant="outline" onClick={() => handleDownloadJson(col.key)}>
+                      <Button size={"sm"} variant="outline" onClick={() => handleDownloadXlsx(col.key)}>
                         <Download size={16} /> Baixar resultado
                       </Button>
                       <Button size={"sm"} onClick={() => setExpandedColumn(null)}>
@@ -1261,7 +1459,9 @@ params.set("limit", '100000');
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {items.map((item) => (
-                      <ItemPatrimonio {...item}  />
+                      <ItemPatrimonio {...item}  
+                      onPromptDelete={() => openDelete(item.id)}
+                      />
                     ))}
                   </div>
 
@@ -1388,6 +1588,30 @@ params.set("limit", '100000');
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ===================== DIALOG: EXCLUIR ===================== */}
+<Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+        Deletar item do catálogo
+      </DialogTitle>
+      <DialogDescription className="text-zinc-500 ">
+        Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
+      </DialogDescription>
+    </DialogHeader>
+
+    <DialogFooter className="">
+      <Button variant="ghost" onClick={closeDelete}>
+        <ArrowUUpLeft size={16} /> Cancelar
+      </Button>
+      <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+        <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </div>
   );
 }

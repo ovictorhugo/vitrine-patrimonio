@@ -359,7 +359,7 @@ export function BuscaPatrimonio() {
       <Progress className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1 z-[5]" value={pct} />
 
       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
-        <div className="w-full flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-8 h-full">
           <div className="items-center flex justify-between">
             <div className="flex gap-2">
               <Button onClick={handleBack} variant="outline" size="icon" className="h-7 w-7">
@@ -549,8 +549,12 @@ export function BuscaPatrimonio() {
           <ScrollArea className="h-[360px] mt-3">
             <div className="">
               {saved.length === 0 && (
-                <div className="text-sm text-muted-foreground text-center">
-                  Nenhum resultado salvo ainda.
+                <div className="text-center mt-8" >
+                  <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">^_^</p>
+          <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+ Nenhum resultado salvo ainda.
+          </h1>
+             
                 </div>
               )}
 

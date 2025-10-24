@@ -22,7 +22,8 @@ export interface CatalogResponse {
 /* ===== Props ===== */
 interface Props {
   workflow: string;              // filtro workflow que vem do pai
-  workflowOptions?: string[];    // lista para o popup de movimentação
+  workflowOptions?: string[]; 
+  user_id?:string   // lista para o popup de movimentação
 }
 
 /* ===== Helpers de URL/filtros (compatível com seu modal) ===== */
@@ -96,6 +97,11 @@ export function BlockItemsVitrine(props: Props) {
       }
       setItems((prev) => prev.filter((it) => it.id !== deleteTargetId));
       toast("Item excluído com sucesso.");
+        try {
+      window.dispatchEvent(
+        new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
+      );
+    } catch {}
       closeDelete();
     } catch (e: any) {
       toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
@@ -232,6 +238,9 @@ const handleConfirmMove = useCallback(async () => {
         if (agencyId) url.searchParams.set("agency_id", agencyId);
         if (sectorId) url.searchParams.set("sector_id", sectorId);
 
+
+        if(props.user_id) url.searchParams.set("user_id", props.user_id);
+
         url.searchParams.set("offset", String(offset));
         url.searchParams.set("limit", String(limit));
 
@@ -300,6 +309,18 @@ useEffect(() => {
   window.addEventListener("catalog:workflow-updated" as any, handler as any);
   return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
 }, [props.workflow]);
+
+// Remover item quando for excluído em outro lugar (ex.: modal de item)
+useEffect(() => {
+  const handler = (e: any) => {
+    const id = e?.detail?.id as string | undefined;
+    if (!id) return;
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  };
+
+  window.addEventListener("catalog:deleted" as any, handler as any);
+  return () => window.removeEventListener("catalog:deleted" as any, handler as any);
+}, []);
 
 
   return (

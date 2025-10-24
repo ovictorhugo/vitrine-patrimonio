@@ -1,104 +1,44 @@
-import { ChevronLeft, DoorClosed, DoorOpen, Home, List, ListChecks, LoaderCircle, Package, Recycle, Undo2, Upload, User } from "lucide-react";
-import { Button } from "../../ui/button";
+import { ChevronLeft, DoorClosed, DoorOpen, Home, List, ListChecks, LoaderCircle, Mail, Package, Recycle, Undo2, Upload, User } from "lucide-react";
+import { Button } from "../ui/button";
 import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
-import { UserContext } from "../../../context/context";
-import { useQuery } from "../../authentication/signIn";
-import { Alert } from "../../ui/alert";
-import { Tabs, TabsContent, TabsList } from "../../ui/tabs";
-import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
+import { UserContext } from "../../context/context";
+import { useQuery } from "../authentication/signIn";
+import { Alert } from "../ui/alert";
+import { Tabs, TabsContent, TabsList } from "../ui/tabs";
+import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { Patrimonios } from "../dashboard-page/tabs/patrimonios";
-import { Inventario } from "./tabs/inventario";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { BlockItemsVitrine } from "../homepage/components/block-items-vitrine";
 
-type Unit = { unit_name: string; unit_code: string; unit_siaf: string; id: string };
-type Agency = { agency_name: string; agency_code: string; unit_id: string; id: string; unit: Unit };
-type Sector = { agency_id: string; sector_name: string; sector_code: string; id: string; agency: Agency };
-type LegalGuardian = { legal_guardians_code: string; legal_guardians_name: string; id: string };
-
-
-interface RoomResponseDTO {
-    legal_guardian_id: string;
-  sector_id: string;
-  location_name: string;
-  location_code: string;
+interface Permission {
   id: string;
-  sector: Sector;
-  legal_guardian: LegalGuardian;
-  location_inventories: LocationInventoryDTO[]
+  name: string;
+  code: string;
+  description: string;
 }
 
-export type UnitDTO = {
+interface Role {
   id: string;
-  unit_name: string;
-  unit_code: string;
-  unit_siaf: string;
-};
+  name: string;
+  description: string;
+  permissions: Permission[];
+}
 
-export type AgencyDTO = {
-  id: string;
-  agency_name: string;
-  agency_code: string;
-  unit_id: string;
-  unit: UnitDTO;
-};
-
-export type SectorDTO = {
-  id: string;
-  sector_name: string;
-  sector_code: string;
-  agency_id: string;
-  agency: AgencyDTO;
-};
-
-export type LegalGuardianDTO = {
+interface LegalGuardian {
   id: string;
   legal_guardians_code: string;
   legal_guardians_name: string;
-};
+}
 
-export type MaterialDTO = {
+interface SystemIdentity {
   id: string;
-  material_code: string;
-  material_name: string;
-};
+  legal_guardian: LegalGuardian;
+}
 
-export type AssetDTO = {
-  id: string;
-  asset_code: string;
-  asset_check_digit: string;
-  atm_number: string;
-  serial_number: string;
-  asset_status: string;
-  asset_value: string;
-  asset_description: string;
-  csv_code: string;
-  accounting_entry_code: string;
-  item_brand: string;
-  item_model: string;
-  group_type_code: string;
-  group_code: string;
-  expense_element_code: string;
-  subelement_code: string;
-  material: MaterialDTO;
-  legal_guardian: LegalGuardianDTO;
-  location: string;
-  is_official: boolean;
-};
-
-// ========= INVENTORY =========
-export type InventoryDTO = {
-  id: string;
-  key: string;
-  avaliable: boolean;
-  created_by: UserDTO;
-};
-
-// ========= USER =========
-export type UserDTO = {
+export interface UserResponseDTO {
   id: string;
   username: string;
   email: string;
@@ -112,39 +52,34 @@ export type UserDTO = {
   matricula: string;
   verify: boolean;
   institution_id: string;
-};
+  roles: Role[];
+  system_identity: SystemIdentity | null;
+}
 
-export type LocationInventoryDTO = {
-  id: string;
-  assets: AssetDTO[];
-  inventory: InventoryDTO;
-  filled: boolean;
-};
-
-export function DepartamentPage() {
-   const { urlGeral } = useContext(UserContext);
+export function UserPublicPage() {
+   const { urlGeral, user:usuario } = useContext(UserContext);
       const navigate = useNavigate();
       const queryUrl = useQuery();
-    const type_search = queryUrl.get('loc_id');
+    const type_search = queryUrl.get('id');
        const [loading, setLoading] = useState(true);
-     const [room, setRoom] = useState<RoomResponseDTO | null>(null);
+     const [user, setUser] = useState<UserResponseDTO | null>(null);
         const location = useLocation();
            const token = localStorage.getItem("jwt_token");
         useEffect(() => {
     const locId = type_search?.trim();
     if (!locId) {
-      setRoom(null);
+      setUser(null);
       return;
     }
 
     const controller = new AbortController();
 
-    async function fetchLocation() {
+    async function fetchUser() {
       try {
         setLoading(true);
 
 
-        const res = await fetch(`${urlGeral}locations/${type_search}`, {
+        const res = await fetch(`${urlGeral}users/${type_search}`, {
           method: "GET",
           signal: controller.signal,
          headers: { Authorization: `Bearer ${token}` }, // se precisar de auth, descomente e injete o token
@@ -155,18 +90,18 @@ export function DepartamentPage() {
           throw new Error(text || `Falha ao buscar localização (${res.status})`);
         }
 
-        const data: RoomResponseDTO = await res.json();
-        setRoom(data);
+        const data: UserResponseDTO = await res.json();
+        setUser(data);
         setLoading(false);
       } catch (err: any) {
         if (err?.name !== "AbortError") {
       
-          setRoom(null);
+          setUser(null);
         }
       }
     }
 
-    fetchLocation();
+    fetchUser();
     return () => controller.abort();
   }, [type_search]);
 
@@ -247,21 +182,21 @@ export function DepartamentPage() {
                     
                            
     const [urlBackground, setUrlBackground] = useState(
-      `${urlGeral}location/upload/${room?.id}/cover`
+      `${urlGeral}user/upload/${user?.id}/cover`
     );
     
     const [urlPerfil, setUrlPerfil] = useState(
-      `${urlGeral}location/upload/${room?.id}/icon`
+      `${urlGeral}user/upload/${user?.id}/icon`
     );
     
     useEffect(() => {
     setUrlBackground(
-          `${urlGeral}location/upload/${room?.id}/cover`
+          `${urlGeral}user/upload/${user?.id}/cover`
         );
         setUrlPerfil(
-          `${urlGeral}location/upload/${room?.id}/icon`
+          `${urlGeral}user/upload/${user?.id}/icon`
         );
-    }, [room]);
+    }, [user]);
     
     const handleUpload = (folder: UploadFolder, programId: string) => {
       const input = document.createElement("input");
@@ -285,8 +220,8 @@ export function DepartamentPage() {
     
         const endpoint =
           folder === "profile"
-            ? `${urlGeral}location/upload/icon`
-            : `${urlGeral}location/upload/cover`;
+            ? `${urlGeral}user/upload/icon`
+            : `${urlGeral}user/upload/cover`;
     
         try {
           const res = await fetch(endpoint, {
@@ -321,11 +256,11 @@ export function DepartamentPage() {
     
           if (folder === "profile") {
             setUrlPerfil(
-              `${urlGeral}user/upload/${room?.id}/icon`
+              `${urlGeral}user/upload/${user?.id}/icon`
             );
           } else {
             setUrlBackground(
-              `${urlGeral}user/upload/${room?.id}/cover`
+              `${urlGeral}user/upload/${user?.id}/cover`
             );
           }
     
@@ -364,7 +299,7 @@ export function DepartamentPage() {
           }
 
 
-             if (!room ) {
+             if (!user ) {
             return (
               <div
                 className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
@@ -377,7 +312,7 @@ export function DepartamentPage() {
                     (⊙_⊙)
                   </p>
                   <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
-                    Não foi possível acessar as <br/>  informações desta sala.
+                    Não foi possível acessar as <br/>  informações deste usuário.
                   </h1>
                  
           
@@ -394,8 +329,7 @@ export function DepartamentPage() {
     return(
         <main className=" w-full grid grid-cols-1 ">
         <Helmet>
-               <title>{room.location_name} | Sistema Patrimônio</title>
-               <meta name="description" content={`${room.location_name} | Sistema Patrimônio`} />
+               <title>{user.username} | Sistema Patrimônio</title>
                <meta name="robots" content="index, follow" />
              </Helmet>
        
@@ -426,7 +360,7 @@ export function DepartamentPage() {
                       "
                                     >
                                         <h1 className="flex-1 shrink-0 text-white whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                                           Visão da sala
+                                           Usuário
                                         </h1>
                                     </div>
                                 </div>
@@ -438,9 +372,11 @@ export function DepartamentPage() {
                                 >
 
 
- <Button variant="outline" size="sm" onClick={() => handleUpload("background", room?.id || '')} className="h-8 text-eng-blue hover:text-eng-blue">
+{(usuario?.id === user?.id) && (
+     <Button variant="outline" size="sm" onClick={() => handleUpload("background", user?.id || '')} className="h-8 text-eng-blue hover:text-eng-blue">
           <Upload size={16} /> Alterar imagem
       </Button>
+)}
 
                                 </div>
                             </div>
@@ -453,12 +389,15 @@ export function DepartamentPage() {
                                             <AvatarImage className={'rounded-md h-24 w-24'} src={urlPerfil} />
                                             <AvatarFallback className="flex items-center justify-center"><DoorClosed size={24} /></AvatarFallback>
                                           </Avatar>
-                                         <div
+                                          {(usuario?.id === user?.id) && (
+     <div
                                                   className="aspect-square backdrop-blur rounded-md h-24 group-hover:flex bg-black/20 items-center justify-center absolute hidden -top-12 xl:top-0  z-[1] cursor-pointer"
-                                                  onClick={() => handleUpload("profile", room?.id || '')}
+                                                  onClick={() => handleUpload("profile", user?.id || '')}
                                                 >
                                                   <Upload size={20} />
                                                 </div>
+)}
+                                        
                                                 </div>
                                     </div>
                                  
@@ -509,7 +448,7 @@ export function DepartamentPage() {
 
                                 <div>
                                     <h1 className="text-2xl mb-2 max-w-[800px] font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
-                                        {room.location_name}
+                                        {user.username}
                                     </h1>
 
                                     <p className="max-w-[750px] text-lg font-light text-foreground">
@@ -517,7 +456,7 @@ export function DepartamentPage() {
                                            
 
                                           
-                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"><User size={12} />{room.legal_guardian.legal_guardians_name}</div>
+                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"><Mail size={12} />{user.email}</div>
                                            
                                         </div>
                                     </p>
@@ -565,18 +504,10 @@ export function DepartamentPage() {
 
 
                         <TabsContent value="visao_geral" className="m-0">
-                    
+                    <BlockItemsVitrine workflow="VITRINE" user_id={type_search || ''}/>
                         </TabsContent>
 
-                          <TabsContent value="inventario" className="m-0">
-                                           <Inventario />
-                        </TabsContent>
-
-                          <TabsContent value="bens" className="m-0">
-                                                  <Patrimonios
-                                                  type={'loc'}
-                                                  />
-                                                </TabsContent>
+                         
                         </div>
                         </Tabs>
                         </main>

@@ -590,20 +590,23 @@ const lastWorkflow = useMemo(() => {
 const fullCode = fullCodeFrom(catalog || ({} as CatalogResponseDTO));
   const qrValue = qrUrlFrom(catalog || ({} as CatalogResponseDTO));
 
+
+
 const workflowReview =
-  Array.isArray(catalog?.workflow_history) &&
-  catalog.workflow_history.length > 0 &&
+  lastWorkflow &&
   (
-    catalog.workflow_history[0]?.workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO" ||
-    catalog.workflow_history[0]?.workflow_status === "REVIEW_REQUESTED_VITRINE" ||
-    catalog.workflow_history[0]?.workflow_status === "ADJUSTMENT_VITRINE" ||
-    catalog.workflow_history[0]?.workflow_status === "ADJUSTMENT_DESFAZIMENTO"
+    lastWorkflow.workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO" ||
+    lastWorkflow.workflow_status === "REVIEW_REQUESTED_VITRINE" ||
+    lastWorkflow.workflow_status === "ADJUSTMENT_VITRINE" ||
+    lastWorkflow.workflow_status === "ADJUSTMENT_DESFAZIMENTO"
   );
 
-        const workflowAnunciados =
-       (Array.isArray(catalog?.workflow_history) &&
-        catalog?.workflow_history.length > 0 &&
-        catalog?.workflow_history[0].workflow_status === "ANUNCIADOS") 
+
+const workflowAnunciados =
+  Array.isArray(catalog?.workflow_history) &&
+  catalog.workflow_history.length > 0 &&
+  [...catalog.workflow_history]               // cria cópia pra não mutar
+    [0]?.workflow_status === "VITRINE";
 
        const [transfers, setTransfers] = useState<TransferRequestDTO[]>([]);
      
@@ -617,7 +620,7 @@ const workflowReview =
 
  const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive },
+    { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:(!hasCatalogo || !(user?.id == catalog?.user?.id)) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
   ];
 
@@ -772,7 +775,29 @@ if(catalog) {
 
         <div className="flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8">
           {/* Coluna principal */}
-           <Tabs defaultValue="visao_geral" value={value} className="">
+           <Tabs defaultValue="visao_geral" value={value} className="w-full">
+                     <div className="flex justify-between items-start">
+             <div className="flex justify-between w-full">
+               <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">{titulo}</h2>
+
+                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
+                  <Calendar size={16}/>{formatDateTimeBR(catalog.created_at)}
+                 
+                 {diff && (
+              <Badge className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}>
+                {diff.months > 0
+                  ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
+                  : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
+              </Badge>
+            )}
+                 </div>
+             </div>
+            </div>
+
+            <p className="mb-8 text-gray-500">{asset?.asset_description || "Sem descrição."}</p>
+
+ 
+                    
                     <div className="mb-8 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
                       <div className="relative grid grid-cols-1 w-full ">
                         {/* Botão Esquerda */}
@@ -835,27 +860,7 @@ if(catalog) {
 <TabsContent value="visao_geral">
   
           <div className="flex w-full flex-col">
-            <div className="flex justify-between items-start">
-             <div className="flex justify-between w-full">
-               <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">{titulo}</h2>
-
-                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
-                  <Calendar size={16}/>{formatDateTimeBR(catalog.created_at)}
-                 
-                 {diff && (
-              <Badge className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}>
-                {diff.months > 0
-                  ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
-                  : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
-              </Badge>
-            )}
-                 </div>
-             </div>
-            </div>
-
-            <p className="mb-8 text-gray-500">{asset?.asset_description || "Sem descrição."}</p>
-
-
+          
    <>
           <div className="flex group ">
             <div
@@ -1081,8 +1086,7 @@ if(catalog) {
         Nenhum evento de workflow.
       </div>
     ) : (
-     catalog.workflow_history?.slice()
-    .reverse().map((ev, idx) => {
+     catalog.workflow_history?.reverse().map((ev, idx) => {
         const meta =
           WORKFLOW_STATUS_META[ev.workflow_status] ??
           { Icon: HelpCircle, colorClass: "text-zinc-500" };
@@ -1106,7 +1110,7 @@ if(catalog) {
             </Alert>
 
          {!isLast && (
-          <Separator className="h-8" orientation="vertical" />
+          <Separator className="min-h-8" orientation="vertical" />
         )}
            </div>
 
@@ -1117,14 +1121,14 @@ if(catalog) {
               </p>
 
   {ev.detail?.justificativa && (
-<p className="text-sm  dark:text-gray-300 font-normal">
-                    {ev.detail.justificativa }
-                  </p>
+ <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
+                {ev.detail.justificativa}
+              </p>
   ) }
                 
 
               {/* linha com avatar + user + data */}
-              <div className="flex gap-3 mt-2 flex-wrap items-center justify-between ">
+              <div className="flex gap-3 mt-2 mb-2 flex-wrap items-center justify-between ">
                 <div className="flex gap-1 items-center">
                   <Avatar className="rounded-md h-5 w-5">
                     {ev.user?.photo_url ? (
@@ -1201,7 +1205,7 @@ if(catalog) {
                                 <Avatar className="rounded-md h-12 w-12">
                                   <AvatarImage className={""} src={`${urlGeral}user/upload/${catalog.user?.id}/icon`} alt={`${catalog.user?.username}`} />
                                   <AvatarFallback className="flex items-center justify-center">
-                                    <User size={10} />
+                                    <User size={16} />
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
