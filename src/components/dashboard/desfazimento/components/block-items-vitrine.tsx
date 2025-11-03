@@ -140,14 +140,16 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
         if (agencyId) url.searchParams.set("agency_id", agencyId);
         if (sectorId) url.searchParams.set("sector_id", sectorId);
         url.searchParams.set("offset", String(offset));
+        url.searchParams.set("only_uncollected", 'true');
         url.searchParams.set("limit", String(limit));
         const res = await fetch(url.toString(), { method: "GET", signal: controller.signal, headers: baseHeaders });
         if (!res.ok) throw new Error(`Erro ao buscar catálogo (${res.status})`);
         const data: { catalog_entries: CatalogEntry[] } = await res.json();
         setItems(Array.isArray(data.catalog_entries) ? data.catalog_entries : []);
+      setLoading(false)
       } catch {
         setItems([]);
-      } finally { setLoading(false); }
+      } 
     })();
     return () => controller.abort();
   }, [baseUrl, baseHeaders, workflow, q, materialId, legalGuardianId, locationId, unitId, agencyId, sectorId, offset, limit]);
@@ -176,92 +178,212 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     onChangeSelected(next);
   };
 
-  const clearSelection = () => { onChangeSelected(new Set()); setAnchorIndex(null); };
-
-  const handleItemClick = (e: React.MouseEvent, id: string) => {
-    e.preventDefault(); e.stopPropagation();
-    const idx = indexById.get(id) ?? 0;
-    if (e.shiftKey && anchorIndex !== null) { selectRange(anchorIndex, idx); return; }
-    if (e.metaKey || e.ctrlKey) { toggleSingle(id); setAnchorIndex(idx); return; }
-    onChangeSelected(new Set([id])); setAnchorIndex(idx);
+  const clearSelection = () => { 
+    onChangeSelected(new Set()); 
+    setAnchorIndex(null); 
   };
 
-  const [isSelecting, setIsSelecting] = useState(false);
+  // Lógica de seleção estilo Google Drive
+  const [isBoxSelecting, setIsBoxSelecting] = useState(false);
   const [startPt, setStartPt] = useState<Pt | null>(null);
-  const [box, setBox] = useState<{ left:number; top:number; width:number; height:number } | null>(null);
+  const [currentPt, setCurrentPt] = useState<Pt | null>(null);
+  const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const baseSelectionRef = useRef<Set<string>>(new Set());
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const suppressNextClickRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const hasMovedRef = useRef(false);
+  const mouseDownTimeRef = useRef<number>(0);
 
   const registerItemRef = (id: string) => (el: HTMLDivElement | null) => {
-    if (el) itemRefs.current.set(id, el); else itemRefs.current.delete(id);
+    if (el) itemRefs.current.set(id, el); 
+    else itemRefs.current.delete(id);
   };
 
-  const onGridMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleItemClick = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const idx = indexById.get(id) ?? 0;
+
+    // Shift + Click: seleção de range
+    if (e.shiftKey && anchorIndex !== null) {
+      selectRange(anchorIndex, idx);
+      return;
+    }
+
+    // Ctrl/Cmd + Click: toggle individual
+    if (e.metaKey || e.ctrlKey) {
+      toggleSingle(id);
+      setAnchorIndex(idx);
+      return;
+    }
+
+    // Click simples: seleciona apenas este item
+    onChangeSelected(new Set([id]));
+    setAnchorIndex(idx);
+  };
+
+  // Iniciar seleção por arrastar
+  const handleGridMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Apenas botão esquerdo do mouse
     if (e.button !== 0) return;
-    if (e.target !== e.currentTarget) return;
-    const grid = gridRef.current; if (!grid) return;
+
+    // Verificar se clicou no próprio grid (não em um item)
+    const target = e.target as HTMLElement;
+    const clickedOnGrid = target === gridRef.current || target.closest('[data-droppable-id="CATALOG"]') === gridRef.current;
+    
+    if (!clickedOnGrid) return;
+
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    mouseDownTimeRef.current = Date.now();
+    hasMovedRef.current = false;
+
     const rect = grid.getBoundingClientRect();
     const x = e.clientX - rect.left + grid.scrollLeft;
     const y = e.clientY - rect.top + grid.scrollTop;
+
+    // Salvar seleção base (para Ctrl + arrastar)
     baseSelectionRef.current = new Set(selectedIds);
+
     setStartPt({ x, y });
-    setBox({ left: x, top: y, width: 0, height: 0 });
-    setIsSelecting(true);
+    setCurrentPt({ x, y });
+    isDraggingRef.current = true;
+
     e.preventDefault();
   };
 
-  const onGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isSelecting || !startPt) return;
-    const grid = gridRef.current; if (!grid) return;
+  // Atualizar seleção durante o arrasto
+  const handleGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !startPt) return;
+
+    hasMovedRef.current = true;
+
+    const grid = gridRef.current;
+    if (!grid) return;
+
     const rect = grid.getBoundingClientRect();
     const x = e.clientX - rect.left + grid.scrollLeft;
     const y = e.clientY - rect.top + grid.scrollTop;
+
+    setCurrentPt({ x, y });
+
+    // Calcular retângulo de seleção
     const left = Math.min(startPt.x, x);
     const top = Math.min(startPt.y, y);
     const width = Math.abs(x - startPt.x);
     const height = Math.abs(y - startPt.y);
-    setBox({ left, top, width, height });
-    const selectionRect = new DOMRect(left, top, width, height);
-    let next = new Set<string>(e.ctrlKey || e.metaKey ? baseSelectionRef.current : []);
-    itemRefs.current.forEach((el, id) => {
-      const r = el.getBoundingClientRect();
-      const abs = new DOMRect(r.left - rect.left + grid.scrollLeft, r.top - rect.top + grid.scrollTop, r.width, r.height);
-      if (rectIntersects(selectionRect, abs)) next.add(id);
-      else if (!(e.ctrlKey || e.metaKey)) next.delete(id);
-    });
-    onChangeSelected(next);
+
+    // Apenas mostrar box se moveu pelo menos 5px (evita seleção acidental)
+    if (width > 5 || height > 5) {
+      if (!isBoxSelecting) setIsBoxSelecting(true);
+      setSelectionBox({ left, top, width, height });
+
+      const selectionRect = new DOMRect(left, top, width, height);
+
+      // Começar com seleção base (se Ctrl/Cmd pressionado)
+      const isAdditive = e.ctrlKey || e.metaKey;
+      let next = new Set<string>(isAdditive ? baseSelectionRef.current : []);
+
+      // Verificar interseção com cada item
+      itemRefs.current.forEach((el, id) => {
+        const itemRect = el.getBoundingClientRect();
+        const itemAbsRect = new DOMRect(
+          itemRect.left - rect.left + grid.scrollLeft,
+          itemRect.top - rect.top + grid.scrollTop,
+          itemRect.width,
+          itemRect.height
+        );
+
+        if (rectIntersects(selectionRect, itemAbsRect)) {
+          next.add(id);
+        } else if (!isAdditive) {
+          next.delete(id);
+        }
+      });
+
+      onChangeSelected(next);
+    }
   };
 
-  const endSelecting = () => {
-    if (!isSelecting) return;
-    setIsSelecting(false);
+  // Finalizar seleção
+  const handleGridMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+
+    const clickDuration = Date.now() - mouseDownTimeRef.current;
+    const wasQuickClick = clickDuration < 200 && !hasMovedRef.current;
+
+    // Se foi um clique rápido sem movimento e sem Ctrl/Cmd, limpa seleção
+    if (wasQuickClick && !e.ctrlKey && !e.metaKey) {
+      clearSelection();
+    }
+
+    // Resetar estados
+    isDraggingRef.current = false;
+    setIsBoxSelecting(false);
     setStartPt(null);
-    setBox(null);
-    suppressNextClickRef.current = true;
+    setCurrentPt(null);
+    setSelectionBox(null);
+    hasMovedRef.current = false;
+
+    e.preventDefault();
+    e.stopPropagation();
   };
 
-  const onGridMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isSelecting) { endSelecting(); e.preventDefault(); e.stopPropagation(); }
-  };
-
-  const onGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (suppressNextClickRef.current) { suppressNextClickRef.current = false; e.preventDefault(); e.stopPropagation(); return; }
-    if (e.target === e.currentTarget) clearSelection();
-  };
-
+  // Limpar seleção ao clicar fora
   useEffect(() => {
-    const onDocMouseDown = (e: MouseEvent) => {
-      if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
-      const grid = gridRef.current; if (!grid) return;
+    const handleDocumentMouseDown = (e: MouseEvent) => {
+      const grid = gridRef.current;
+      if (!grid) return;
+
       const clickedInsideGrid = grid.contains(e.target as Node);
-      if (!clickedInsideGrid && selectedIds.size > 0) onChangeSelected(new Set());
+      const clickedOnAlert = (e.target as HTMLElement).closest('[role="alert"]');
+
+      // Limpar seleção se clicou fora do grid e não no alert de seleção
+      if (!clickedInsideGrid && !clickedOnAlert && selectedIds.size > 0) {
+        clearSelection();
+      }
     };
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && selectedIds.size > 0) onChangeSelected(new Set()); };
-    document.addEventListener("mousedown", onDocMouseDown, true);
-    window.addEventListener("keydown", onKeyDown);
-    return () => { document.removeEventListener("mousedown", onDocMouseDown, true); window.removeEventListener("keydown", onKeyDown); };
-  }, [selectedIds, onChangeSelected]);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // ESC limpa seleção
+      if (e.key === "Escape" && selectedIds.size > 0) {
+        clearSelection();
+      }
+
+      // Ctrl/Cmd + A seleciona todos
+      if ((e.ctrlKey || e.metaKey) && e.key === "a" && gridRef.current) {
+        e.preventDefault();
+        const allIds = new Set(items.map(item => item.id));
+        onChangeSelected(allIds);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentMouseDown, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentMouseDown, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedIds, items, onChangeSelected]);
+
+  // Cancelar seleção se mouse sair da janela
+  useEffect(() => {
+    const handleMouseLeave = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsBoxSelecting(false);
+        setStartPt(null);
+        setCurrentPt(null);
+        setSelectionBox(null);
+      }
+    };
+
+    window.addEventListener("mouseleave", handleMouseLeave);
+    return () => window.removeEventListener("mouseleave", handleMouseLeave);
+  }, []);
 
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
@@ -272,16 +394,19 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
     <div ref={containerRef}>
       {loading && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {skeletons.map((s,i)=><div key={i} className="w-full">{s}</div>)}
+          {skeletons.map((s, i) => <div key={i} className="w-full">{s}</div>)}
         </div>
       )}
 
       {!loading && (
         <>
           {selectedIds.size > 0 && (
-            <Alert className="flex items-center sticky mb-8 justify-between p-2 px-2 ">
-              <span className="text-xs font-medium ml-4">{selectedIds.size} selecionado(s)</span>
-              <Button variant="ghost" size="sm" onClick={clearSelection} className="px-2 h-8"><Trash size={16} />Limpar seleção</Button>
+            <Alert className="flex items-center sticky top-0 z-10 mb-8 justify-between p-2 px-4 shadow-sm">
+              <span className="text-sm font-medium">{selectedIds.size} item(ns) selecionado(s)</span>
+              <Button variant="ghost" size="sm" onClick={clearSelection} className="px-3 h-9">
+                <Trash size={16} className="mr-2" />
+                Limpar seleção
+              </Button>
             </Alert>
           )}
 
@@ -293,7 +418,7 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     className="pointer-events-none"
                     style={{ ...(provided.draggableProps.style || {}), zIndex: 9999 }}>
-                    <div className="w-[220px] rounded-lg overflow-hidden shadow-2xl ring-1 ring-black/10 bg-background">
+                    <div className="w-[220px] rounded-lg overflow-hidden shadow-2xl ">
                       <ItemPatrimonio {...(entry as any)} selected />
                     </div>
                   </div>
@@ -305,11 +430,11 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
                 <div
                   ref={(el) => { provided.innerRef(el); gridRef.current = el; }}
                   {...provided.droppableProps}
-                  className={`grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 ${isSelecting ? "select-none" : ""}`}
-                  onMouseDown={onGridMouseDown}
-                  onMouseMove={onGridMouseMove}
-                  onMouseUp={onGridMouseUp}
-                  onClick={onGridClick}
+                  className={`grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 ${isBoxSelecting ? "select-none cursor-crosshair" : ""}`}
+                  onMouseDown={handleGridMouseDown}
+                  onMouseMove={handleGridMouseMove}
+                  onMouseUp={handleGridMouseUp}
+                  style={{ position: 'relative', minHeight: '200px' }}
                 >
                   {items.map((item, index) => (
                     <Draggable draggableId={item.id} index={index} key={item.id}>
@@ -321,7 +446,11 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
                           className={snap.isDragging ? "opacity-70 scale-[0.98]" : ""}
                           data-item-id={item.id}
                         >
-                          <ItemPatrimonio {...(item as any)} selected={isSelected(item.id)} onItemClick={(e)=>handleItemClick(e, item.id)} />
+                          <ItemPatrimonio 
+                            {...(item as any)} 
+                            selected={isSelected(item.id)} 
+                            onItemClick={(e) => handleItemClick(e, item.id)} 
+                          />
                         </div>
                       )}
                     </Draggable>
@@ -329,35 +458,41 @@ export function BlockItemsVitrine({ workflow, selectedIds, onChangeSelected, reg
                   {provided.placeholder}
                 </div>
 
-                {isSelecting && box && (
+                {/* Box de seleção visual */}
+                {isBoxSelecting && selectionBox && (
                   <div
-                    className="absolute pointer-events-none border-2 border-primary/60 bg-primary/10 rounded"
-                    style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+                    className="absolute pointer-events-none border-2 border-primary/50 bg-primary/10 rounded-sm z-50"
+                    style={{
+                      left: `${selectionBox.left}px`,
+                      top: `${selectionBox.top}px`,
+                      width: `${selectionBox.width}px`,
+                      height: `${selectionBox.height}px`,
+                    }}
                   />
                 )}
               </div>
             )}
           </Droppable>
 
-          {!items.length && <div className="pt-6 text-center">Nenhum item encontrado</div>}
+          {!items.length && <div className="pt-6 text-center text-muted-foreground">Nenhum item encontrado</div>}
         </>
       )}
 
       <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
         <span className="text-sm text-muted-foreground">Itens por página:</span>
-        <Select value={limit.toString()} onValueChange={(v)=>{ const nl = parseInt(v); setOffset(0); setLimit(nl); handleNavigate(0, nl); }}>
+        <Select value={limit.toString()} onValueChange={(v) => { const nl = parseInt(v); setOffset(0); setLimit(nl); handleNavigate(0, nl); }}>
           <SelectTrigger className="w-[100px]"><SelectValue placeholder="Itens" /></SelectTrigger>
-          <SelectContent>{[12,24,36,48,84,162].map((val)=><SelectItem key={val} value={val.toString()}>{val}</SelectItem>)}</SelectContent>
+          <SelectContent>{[12, 24, 36, 48, 84, 162].map((val) => <SelectItem key={val} value={val.toString()}>{val}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
       <div className="w-full flex justify-center items-center gap-10 mt-8">
         <div className="flex gap-4">
-          <Button variant="outline" onClick={()=>setOffset((p)=>Math.max(0, p - limit))} disabled={isFirstPage}>
-            <ChevronLeft size={16} className="mr-2"/> Anterior
+          <Button variant="outline" onClick={() => setOffset((p) => Math.max(0, p - limit))} disabled={isFirstPage}>
+            <ChevronLeft size={16} className="mr-2" /> Anterior
           </Button>
-          <Button onClick={()=>!isLastPage && setOffset((p)=>p + limit)} disabled={isLastPage}>
-            Próximo <ChevronRight size={16} className="ml-2"/>
+          <Button onClick={() => !isLastPage && setOffset((p) => p + limit)} disabled={isLastPage}>
+            Próximo <ChevronRight size={16} className="ml-2" />
           </Button>
         </div>
       </div>

@@ -33,6 +33,7 @@ export function Admin() {
               "/dashboard/setor-departamento": "departamento",
                "/dashboard/comissao-apoio-local": "comissao-apoio-local",
                 "/user": "user-public-page",
+                  "/dashboard/finalizados": "finalizados",
           
   };
 

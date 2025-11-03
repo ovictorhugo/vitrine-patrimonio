@@ -11,12 +11,16 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  Dialog,
+  DialogContent,
 } from "../../../ui/dialog";
 import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Expand,
   Loader2,
+  Minimize,
   Plus,
   Search,
   Trash,
@@ -31,6 +35,13 @@ import {
   CommandList,
   CommandSeparator,
 } from "../../../ui/command";
+import { ArrowUUpLeft } from "phosphor-react";
+import { ScrollArea, ScrollBar } from "../../../ui/scroll-area";
+import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
+import { ItemPatrimonioRows } from "./item-patrimonio-rows";
+import { ItemPatrimonioRowsSelect } from "./item-patrimonio-rows-select";
+import { useModal } from "../../../hooks/use-modal-store";
+import { CatalogEntry } from "../../itens-vitrine/itens-vitrine";
 
 /* ================== Tipos compartilhados ================== */
 type UUID = string;
@@ -117,29 +128,18 @@ type WorkflowHistoryItem = {
   created_at: string;
 };
 
-export type Catalog = {
-  id: UUID;
-  situation: "UNUSED" | "IN_USE" | "DAMAGED" | string;
-  conservation_status: string;
-  description: string;
-  asset: Asset;
-  user?: WorkflowUser;
-  location?: LocationNested;
-  images?: CatalogImage[];
-  workflow_history?: WorkflowHistoryItem[];
-  created_at: string;
-};
 
-export type CollectionItem = { id: UUID; status: boolean; comment: string; catalog: Catalog };
+
+export type CollectionItem = { id: UUID; status: boolean; comment: string; catalog: CatalogEntry };
 
 type CollectionsListResponse = {
   collections: { id: UUID; name: string; description: string; created_at: string }[];
 };
 
 type CatalogListResponse =
-  | { catalog_entries?: Catalog[] }
-  | { results?: Catalog[] }
-  | Catalog[];
+  | { catalog_entries?: CatalogEntry[] }
+  | { results?: CatalogEntry[] }
+  | CatalogEntry[];
 
 /* ================== Combobox genérico ================== */
 type ComboboxItem = { id: UUID | null; code?: string; label: string };
@@ -445,7 +445,7 @@ const fetchLocationsP = useCallback(
 
   /* ================== Lista de catálogo + seleção ================== */
   const [loadingAddList, setLoadingAddList] = useState(false);
-  const [catalogList, setCatalogList] = useState<Catalog[]>([]);
+  const [catalogList, setCatalogList] = useState<CatalogEntry[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<UUID>>(new Set());
   const [addingItems, setAddingItems] = useState(false);
 
@@ -486,7 +486,7 @@ const fetchLocationsP = useCallback(
         : Array.isArray((data as any)?.results)
         ? (data as any).results
         : [];
-      setCatalogList(list as Catalog[]);
+      setCatalogList(list as CatalogEntry[]);
     } catch (e: any) {
       toast("Erro ao listar catálogo", { description: e?.message || String(e) });
       setCatalogList([]);
@@ -595,11 +595,36 @@ const fetchLocationsP = useCallback(
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+    // ...
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // ...
+
+  const {onOpen} = useModal()
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="p-8">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className={
+          isFullscreen
+            ? // Quase full-screen, com overflow gerenciável
+              "w-[96vw] max-w-[96vw] h-[94vh]  overflow-hidden"
+            : // Layout normal
+              "max-w-5xl"
+        }
+      >
         <DialogHeader>
-          <DialogTitle className="text-2xl mb-2 font-medium">Adicionar itens à coleção de desfazimento</DialogTitle>
+          <div className=" flex justify-between">
+            <DialogTitle className="text-2xl  font-medium">Adicionar itens à coleção de desfazimento</DialogTitle>
+         
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsFullscreen((s) => !s)}
+              title={isFullscreen ? "Reduzir" : "Expandir"}
+            >
+              {isFullscreen ? <Minimize size={16} /> : <Expand size={16} />}
+            </Button>
+          </div>
           <DialogDescription className="text-zinc-500">
             Selecione itens do catálogo para inserir na coleção.
           </DialogDescription>
@@ -745,45 +770,69 @@ const fetchLocationsP = useCallback(
         </div>
 
         {/* Lista do catálogo com checkboxes */}
-        <div className=" max-h-[50vh] overflow-auto">
-          {loadingAddList ? (
+        <ScrollArea className=" h-[40vh] ">
+          <div>
+              {loadingAddList ? (
             <div className="flex flex-col gap-2">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
             </div>
           ) : catalogList.length === 0 ? (
             <div className="text-center text-muted-foreground py-6 text-sm">Nenhum item encontrado no catálogo.</div>
           ) : (
-            <ul className="space-y-2">
-              {catalogList.map((cat) => {
-                const checked = selectedIds.has(cat.id);
-                const a = cat.asset;
-                return (
-                  <li key={cat.id} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/40">
-                    <input type="checkbox" className="h-4 w-4" checked={checked} onChange={() => toggleSelect(cat.id)} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">
-                        {a?.asset_code ?? "—"} {a?.asset_check_digit ? `- ${a.asset_check_digit}` : ""} •{" "}
-                        {a?.asset_description || cat.description || "Sem descrição"}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {a?.item_brand || "S/ marca"} · {a?.item_model || "S/ modelo"} ·{" "}
-                        {a?.material?.material_name || a?.material?.material_code || "S/ material"}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+          <ul className="grid gap-4">
+    {catalogList.map((cat) => {
+      const checked = selectedIds.has(cat.id);
+      const id = `sel-${cat.id}`;
+
+      return (
+        <li key={cat.id} className="list-none">
+          <input
+            id={id}
+            type="checkbox"
+            className="peer sr-only"
+            checked={checked}
+            onChange={() => toggleSelect(cat.id)}
+          />
+
+          <label
+            htmlFor={id}
+           
+          >
+            <ItemPatrimonioRowsSelect
+              {...(cat as any)}
+              selected={checked}
+              onClick={(e) => {
+                // clique simples = alterna seleção
+                e.preventDefault();
+                e.stopPropagation();
+                const el = document.getElementById(id) as HTMLInputElement | null;
+                if (el) el.click();
+              }}
+              onDoubleClick={() => {
+                // duplo clique = abre modal (sem mexer na seleção)
+                onOpen("catalog-modal", { ...cat });
+              }}
+            />
+          </label>
+        </li>
+      );
+    })}
+  </ul>
           )}
-        </div>
+          </div>
+
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
 
         <DialogFooter className="flex items-center justify-between gap-2 mt-4">
           <div className="text-sm text-muted-foreground">{selectedIds.size} selecionado(s)</div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+           <ArrowUUpLeft size={16} />    Cancelar
             </Button>
             <Button onClick={addSelectedToCollection} disabled={addingItems || selectedIds.size === 0}>
               {addingItems ? <Loader2 size={16} className=" animate-spin" /> : <Plus size={16} />
@@ -792,7 +841,7 @@ const fetchLocationsP = useCallback(
             </Button>
           </div>
         </DialogFooter>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }

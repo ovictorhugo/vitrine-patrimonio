@@ -31,8 +31,12 @@ const hasDeletarUsuarios = useMemo(() => has("DELETAR_USUARIOS"), [has]);
 const hasCatalogo = useMemo(() => has("CATALOGO"), [has]);
 const hasConfiguracoes = useMemo(() => has("CONFIGURACOES"), [has]);
 const hasDepartamento = useMemo(() => has("DEPARTAMENTO_SETOR"), [has]);
-const hasComissaoApoioLocal = useMemo(() => has("COMISSAO_APOIO_LOCAL"), [has]);
-  return {
+const hasComissaoApoioLocal = useMemo(() => has("COMISSAO_DE_APOIO_LOCAL"), [has]);
+  const hasSalas = useMemo(() => has("SALAS"), [has]);
+  const hasInventario = useMemo(() => has("INVENTARIO"), [has]);
+  const hasFinalizados = useMemo(() => has("FINALIZADOS"), [has]);
+
+return {
     has, // opcional: verificador dinâmico
     hasCriarEtiqueta,
     hasAnunciarItem,
@@ -51,6 +55,9 @@ const hasComissaoApoioLocal = useMemo(() => has("COMISSAO_APOIO_LOCAL"), [has]);
     hasCatalogo,
     hasConfiguracoes,
     hasDepartamento,
-    hasComissaoApoioLocal
+    hasComissaoApoioLocal,
+    hasSalas,
+    hasInventario,
+    hasFinalizados
   };
 }

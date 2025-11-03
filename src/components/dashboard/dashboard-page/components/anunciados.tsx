@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../../../../context/context";
 
 import { Alert } from "../../../ui/alert";
@@ -31,6 +31,7 @@ import {
   Clock,
   Download,
   HelpCircle,
+  Home,
   Hourglass,
   ListTodo,
   Maximize2,
@@ -38,6 +39,7 @@ import {
   Recycle,
   Store,
   Trash,
+  Undo2,
   Users,
   Wrench,
   XCircle,
@@ -61,6 +63,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
 import { Input } from "../../../ui/input";
 import { ArrowUUpLeft, Repeat } from "phosphor-react";
+import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 
 /* =========================
    Tipos mínimos do backend
@@ -246,11 +249,10 @@ function StatusAccordion({
   icon: IconComp,
   items,
   loading,
-  onDownloadCsv,
+  onDownloadXlsx,
   isOpen,
   onExpand,
   onCollapseExpand,
-  // novo: handlers vindos do pai
   onPromptDelete,
   onPromptMove,
 }: {
@@ -259,13 +261,14 @@ function StatusAccordion({
   icon: React.ComponentType<any>;
   items: CatalogEntry[];
   loading: boolean;
-  onDownloadCsv: () => void;
+  onDownloadXlsx: () => void;
   isOpen: boolean;
   onExpand: (key: string) => void;
   onCollapseExpand: () => void;
   onPromptDelete: (catalogId: string) => void;
   onPromptMove: (catalogId: string) => void;
-}) {
+})
+ {
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -349,7 +352,7 @@ function StatusAccordion({
                 title={title}
                 icon={<IconComp size={24} className="text-gray-400" />}
               />
-              <Badge variant="outline">{loading ? "…" : items.length}</Badge>
+              <Badge variant="outline">{loading ? "0" : items.length}</Badge>
             </div>
 
             <div className="flex items-center gap-2">
@@ -358,7 +361,7 @@ function StatusAccordion({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDownloadCsv();
+                  onDownloadXlsx();
                 }}
               >
                 <Download size={16} />
@@ -641,6 +644,20 @@ export function Anunciados(props: {
     }
   }, [moveTargetId, moveStatus, moveObs, baseUrl, authHeaders]);
 
+    // Filtra apenas os que tiverem "Comissão" no nome (case-insensitive)
+const normalize = (text: string) =>
+  text
+    .normalize("NFD")                     // separa acentos
+    .replace(/[\u0300-\u036f]/g, "")      // remove acentos
+    .replace(/[^a-zA-Z0-9\s]/g, "")       // remove caracteres especiais
+    .toUpperCase();                       // tudo maiúsculo
+
+const comissaoRoles = user?.roles?.filter((role) =>
+  normalize(role.name).includes("COMISSAO")
+);
+
+const [selectedRoleId, setSelectedRoleId] = useState<string>(comissaoRoles?.[0]?.id ?? "");
+
   // ====== FETCH: Catálogo com {type,value} ou user_id
   const buildCatalogListUrl = useCallback((
     base: string,
@@ -649,13 +666,11 @@ export function Anunciados(props: {
     fallbackUserId?: string | null | undefined
   ) => {
     const url = new URL(`${base}/catalog/`);
-    if (f?.type && typeof f.value === "string") {
-      url.searchParams.set(f.type, f.value);
-    } else if (fallbackUserId) {
-      url.searchParams.set("user_id", fallbackUserId);
-    }
-    // opcional: se o backend aceitar informar o board
-    url.searchParams.set("board", board);
+  
+      if(f?.type === "user_id") url.searchParams.set("user_id", f.value);  
+       if(f?.type === "role_id" && selectedRoleId) url.searchParams.set("role_id", selectedRoleId);  
+    
+
     return url.toString();
   }, []);
 
@@ -675,7 +690,7 @@ export function Anunciados(props: {
     } finally {
       setLoadingItems(false);
     }
-  }, [baseUrl, authHeaders, tab, filter, user?.id, buildCatalogListUrl]);
+  }, [baseUrl, authHeaders, tab, filter, selectedRoleId, user?.id, buildCatalogListUrl]);
 
   useEffect(() => {
     fetchCatalog();
@@ -721,6 +736,40 @@ export function Anunciados(props: {
       toast.error("Falha ao gerar CSV.");
     }
   };
+
+const downloadXlsxFor = async (statusKey: string, statusName: string) => {
+  const itemsToExport = grouped[statusKey] ?? [];
+  if (!Array.isArray(itemsToExport) || itemsToExport.length === 0) {
+    toast.error("Nada para exportar.");
+    return;
+  }
+
+  // importante: o util concatena `${urlBase}${cleanPath}` internamente.
+  // Aqui garantimos a barra final.
+  const urlBaseWithSlash = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+
+  await handleDownloadXlsx({
+    items: itemsToExport,
+    urlBase: urlBaseWithSlash,
+    sheetName: "Itens",
+    filename: `itens_${statusName.replace(/\s+/g, "_").toLowerCase()}.xlsx`,
+  });
+};
+
+const downloadAllXlsx = async () => {
+  if (!entries.length) {
+    toast.error("Nada para exportar.");
+    return;
+  }
+  const urlBaseWithSlash = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+
+  await handleDownloadXlsx({
+    items: entries,
+    urlBase: urlBaseWithSlash,
+    sheetName: "Itens",
+    filename: "itens_todos.xlsx",
+  });
+};
 
   // foco expand/voltar
   const handleExpand = (key: string) => setFocusedKey(key);
@@ -787,11 +836,35 @@ useEffect(() => {
   return () => window.removeEventListener("catalog:deleted" as any, handler as any);
 }, []);
 
+
   return (
     <div className="flex flex-col gap-8 p-8 pt-0">
       {/* Header com toggle de abas */}
       <div className="flex justify-between items-center">
-        <div />
+        <div className="flex items-center gap-3">
+          {props?.filter?.type == 'role_id' && (
+            <Select onValueChange={(value) => setSelectedRoleId(value)} value={selectedRoleId} defaultValue={selectedRoleId} >
+      <SelectTrigger className="w-[280px]">
+        <SelectValue className="" placeholder="Selecione uma Comissão" />
+      </SelectTrigger>
+       <SelectContent className="max-h-[200px] overflow-y-auto">
+    {comissaoRoles?.length ? (
+      comissaoRoles.map((role) => (
+        <SelectItem key={role.id} value={role.id.toString()}>
+          {role.name}
+        </SelectItem>
+      ))
+    ) : (
+      <div className="text-sm text-gray-500 px-3 py-2">
+        Nenhuma comissão encontrada
+      </div>
+    )}
+  </SelectContent>
+    </Select>
+          )}
+
+          <Button variant={'outline'}><Download size={16} onClick={() => downloadAllXlsx()} />Baixar todos</Button>
+        </div>
         <div>
           <div className="flex">
             <Button
@@ -800,7 +873,7 @@ useEffect(() => {
               variant={tab === "vitrine" ? "default" : "outline"}
               className="rounded-r-none"
             >
-              <Store size={16} className="mr-2" />
+              <Store size={16} className="" />
               Vitrine
             </Button>
             <Button
@@ -809,7 +882,7 @@ useEffect(() => {
               variant={tab !== "vitrine" ? "default" : "outline"}
               className="rounded-l-none"
             >
-              <Trash size={16} className="mr-2" />
+              <Trash size={16} className="" />
               Desfazimento
             </Button>
           </div>
@@ -868,20 +941,20 @@ useEffect(() => {
               ? WORKFLOWS.vitrine.filter(({ key }) => key === focusedKey)
               : WORKFLOWS.vitrine
             ).map(({ key, name, Icon }) => (
-              <StatusAccordion
-                key={key}
-                statusKey={key}
-                title={name}
-                icon={Icon}
-                items={grouped[key] ?? []}
-                loading={loadingItems}
-                onDownloadCsv={() => downloadCsvFor(key, name)}
-                isOpen={openKeys.includes(key)}
-                onExpand={handleExpand}
-                onCollapseExpand={handleCollapseExpand}
-                onPromptDelete={openDelete}
-                onPromptMove={openMove}
-              />
+             <StatusAccordion
+  key={key}
+  statusKey={key}
+  title={name}
+  icon={Icon}
+  items={grouped[key] ?? []}
+  loading={loadingItems}
+  onDownloadXlsx={() => downloadXlsxFor(key, name)}
+  isOpen={openKeys.includes(key)}
+  onExpand={handleExpand}
+  onCollapseExpand={handleCollapseExpand}
+  onPromptDelete={openDelete}
+  onPromptMove={openMove}
+/>
             ))}
           </Accordion>
         </TabsContent>
@@ -935,20 +1008,20 @@ useEffect(() => {
               ? WORKFLOWS.desfazimento.filter(({ key }) => key === focusedKey)
               : WORKFLOWS.desfazimento
             ).map(({ key, name, Icon }) => (
-              <StatusAccordion
-                key={key}
-                statusKey={key}
-                title={name}
-                icon={Icon}
-                items={grouped[key] ?? []}
-                loading={loadingItems}
-                onDownloadCsv={() => downloadCsvFor(key, name)}
-                isOpen={openKeys.includes(key)}
-                onExpand={handleExpand}
-                onCollapseExpand={handleCollapseExpand}
-                onPromptDelete={openDelete}
-                onPromptMove={openMove}
-              />
+             <StatusAccordion
+  key={key}
+  statusKey={key}
+  title={name}
+  icon={Icon}
+  items={grouped[key] ?? []}
+  loading={loadingItems}
+  onDownloadXlsx={() => downloadXlsxFor(key, name)}
+  isOpen={openKeys.includes(key)}
+  onExpand={handleExpand}
+  onCollapseExpand={handleCollapseExpand}
+  onPromptDelete={openDelete}
+  onPromptMove={openMove}
+/>
             ))}
           </Accordion>
         </TabsContent>

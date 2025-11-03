@@ -49,8 +49,8 @@ export function HomepageListTempAsset() {
   return (
     <div className="flex flex-col h-full">
       <Helmet>
-        <title>Patrimônio temporário | Sistema Patrimônio</title>
-        <meta name="description" content="Patrimônio temporário | Sistema Patrimônio" />
+        <title>Busca avançada | Sistema Patrimônio</title>
+       
       </Helmet>
 
       <main className="flex flex-col ">
@@ -90,17 +90,21 @@ export function HomepageListTempAsset() {
           </div>
         </div>
 
-           <div className="p-8 py-0">
-          <Alert className="w-full h-72 bg-eng-blue p-0 md:flex-row gap-8 flex-col flex">
-            <div className="md:w-1/2 w-full gap-1 flex flex-col h-full justify-center p-8">
-              <p className="font-semibold text-2xl text-white">Entenda melhor</p>
-              <p className="text-white">
-                Bens cadastrados na plataforma que perderam sua plaqueta original ou foram registrados apenas de forma provisória.
-              </p>
-            </div>
-            <div className="md:w-1/2 w-full gap-2 flex flex-col h-full justify-center" />
-          </Alert>
-        </div>
+           <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+  <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+    Encontre bens patrimoniados de forma rápida e inteligente
+  </h3>
+
+  <div className="mt-2 text-center flex flex-wrap justify-center gap-3 text-sm text-gray-500 items-center">
+    <span className="text-muted-foreground max-w-[900px] text-center">
+      Utilize os filtros de busca para localizar bens cadastrados na plataforma, 
+      incluindo aqueles com plaquetas extraviadas ou registros provisórios. 
+      Simplifique o acompanhamento e mantenha o controle patrimonial atualizado.
+    </span>
+  </div>
+</div>
+
+
 
 
 <Patrimonios

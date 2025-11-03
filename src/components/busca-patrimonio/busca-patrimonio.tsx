@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -136,9 +136,15 @@ export function BuscaPatrimonio() {
     [setValidIfChanged]
   );
 
-  const onStateChangePesquisa = useCallback((st: { value_item?: string; type?: "cod" | "atm" }) => {
-    setWizardIfChanged(prev => ({ ...prev, pesquisa: { ...prev.pesquisa, ...st } }));
-  }, [setWizardIfChanged]);
+ const onStateChangePesquisa = useCallback((st: { value_item?: string; type?: "cod" | "atm" }) => {
+   setWizardIfChanged(prev => ({
+     ...prev,
+     pesquisa: {
+       value_item: st.value_item ?? prev.pesquisa?.value_item,
+       type: st.type ?? prev.pesquisa?.type,
+     },
+   }));
+ }, [setWizardIfChanged]);
 
   const onStateChangeFormulario = useCallback((st: Patrimonio) => {
     setWizardIfChanged(prev => ({ ...prev, formulario: st }));
@@ -155,10 +161,13 @@ export function BuscaPatrimonio() {
     }
   };
 
+  const didInitFromURL = useRef(false);
   // Preenche automaticamente a pesquisa com base nos query params
   useEffect(() => {
     // prioriza ATM se existir; senão tenta COD-DGV
+    if (didInitFromURL.current) return;
     if (bem_num_atm && bem_num_atm.trim()) {
+      didInitFromURL.current = true;
       setWizardIfChanged(prev => ({
         ...prev,
         pesquisa: { value_item: bem_num_atm.trim(), type: "atm" }
@@ -167,7 +176,8 @@ export function BuscaPatrimonio() {
       return;
     }
 
-    if (bem_cod && bem_dgv && `${bem_cod}`.trim() && `${bem_dgv}`.trim()) {
+   if (bem_cod && bem_dgv && `${bem_cod}`.trim() && `${bem_dgv}`.trim()) {
+    didInitFromURL.current = true;
       const composed = `${bem_cod.trim()}-${bem_dgv.trim()}`;
       setWizardIfChanged(prev => ({
         ...prev,

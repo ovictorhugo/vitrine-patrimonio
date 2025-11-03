@@ -38,7 +38,7 @@ export function MeusItens() {
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}catalog/`, {
+      const res = await fetch(`${urlGeral}catalog/?reviewer_id=${user?.id}&workflow_status=REVIEW_REQUESTED_COMISSION`, {
         method: "GET",
         headers: authHeaders,
       });
@@ -76,8 +76,9 @@ export function MeusItens() {
   // Render
   // ================================
   return (
-    <div className="p-8 grid gap-4 ">
-       <Alert className="p-0 ">
+    <div className=" grid gap-4 ">
+       <div className="p-8 pb-0">
+        <Alert className="p-0  mb-0 ">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">LTD - Lista Temporária de Desfazimento</CardTitle>
                 <ListTodo className="h-4 w-4 text-muted-foreground" />
@@ -88,9 +89,10 @@ export function MeusItens() {
               </CardContent>
             </Alert>
 
+       </div>
       <Accordion type="single" collapsible defaultValue="item-1">
         <AccordionItem value="item-1">
-          <div className="flex">
+          <div className="flex px-8">
             <HeaderResultTypeHome
               title={"Lista Temporária de Desfazimento (LTD)"}
               icon={<ListTodo size={24} className="" />}
@@ -115,20 +117,20 @@ export function MeusItens() {
             <AccordionTrigger className="px-0"></AccordionTrigger>
           </div>
 
-          <AccordionContent className="p-0">
+          <AccordionContent className="p-0 mb-8">
             {typeVisu === "rows" ? (
               loadingList ? (
-                <div className="flex gap-4 flex-col">
-                  <Skeleton className="w-full h-16" />
-                  <Skeleton className="w-full h-16" />
-                  <Skeleton className="w-full h-16" />
+                <div className="flex gap-4 flex-col mx-8">
+                  <Skeleton className="w-full h-32" />
+                  <Skeleton className="w-full h-32" />
+                  <Skeleton className="w-full h-32" />
                 </div>
               ) : catalogs.length === 0 ? (
                 <div className="items-center justify-center w-full flex text-center pt-6">
                   Nenhum item encontrado.
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-4 px-8">
                   {catalogs.map((entry) => (
                     <PatrimonioItemComission key={entry.id} entry={entry} onRemove={handleRemove} />
                   ))}
@@ -136,9 +138,8 @@ export function MeusItens() {
               )
             ) : loadingList ? (
               <div className="flex gap-4 flex-col">
-                <Skeleton className="w-full h-16" />
-                <Skeleton className="w-full h-16" />
-                <Skeleton className="w-full h-16" />
+                <Skeleton className="w-full h-[640px]  mx-auto max-w-[480px]" />
+
               </div>
             ) : catalogs.length === 0 ? (
               <div className="items-center justify-center w-full flex text-center pt-6">

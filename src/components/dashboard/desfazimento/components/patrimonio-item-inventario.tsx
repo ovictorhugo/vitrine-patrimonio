@@ -370,20 +370,41 @@ export function PatrimonioItemCollection({
             <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
               <p>Coleta:</p>
 
-              <ToggleGroup
-                type="single"
-                value={statusValue}
-                onValueChange={(v) => v && setStatusValue(v as "true" | "false")}
-                className="flex gap-2"
-                variant={"outline"}
-              >
-                <ToggleGroupItem onClick={stop} className="w-10 h-10 " value="true" aria-label="OK">
-                  <Check size={16} />
-                </ToggleGroupItem>
-                <ToggleGroupItem onClick={stop} className="w-10 h-10 " value="false" aria-label="Com problema">
-                  <X size={16} />
-                </ToggleGroupItem>
-              </ToggleGroup>
+             <ToggleGroup
+  type="single"
+  value={statusValue}
+  onValueChange={(v) => v && setStatusValue(v as "true" | "false")}
+  className="flex gap-2"
+  variant="outline"
+>
+  <ToggleGroupItem
+    onClick={stop}
+    value="true"
+    aria-label="OK"
+    className="
+      w-10 h-10 border
+      data-[state=on]:bg-green-700 data-[state=on]:text-white
+      dark:data-[state=on]:bg-green-700
+      hover:bg-muted/40 transition
+    "
+  >
+    <Check size={16} />
+  </ToggleGroupItem>
+
+  <ToggleGroupItem
+    onClick={stop}
+    value="false"
+    aria-label="Com problema"
+    className="
+      w-10 h-10 border
+      data-[state=on]:bg-red-600 data-[state=on]:text-white
+      dark:data-[state=on]:bg-red-700
+      hover:bg-muted/40 transition
+    "
+  >
+    <X size={16} />
+  </ToggleGroupItem>
+</ToggleGroup>
 
               <Input
                 placeholder="Observações"
@@ -420,7 +441,7 @@ export function PatrimonioItemCollection({
 
       {/* Dialog de imagem */}
       <Dialog open={openImage} onOpenChange={setOpenImage}>
-        <DialogContent className="max-w-5xl" onClick={stop}>
+        <DialogContent className="max-w-5xl p-0" onClick={stop}>
           <div className="w-full">
             <div className="relative w-full max-h-[80vh]">
               {selectedImg ? (

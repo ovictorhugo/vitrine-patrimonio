@@ -46,7 +46,7 @@ import { useQuery } from "../../../authentication/signIn";
 import { PatrimonioItemCollection } from "../components/patrimonio-item-inventario";
 import { CardHeader, CardTitle, CardContent } from "../../../ui/card";
 import { CollectionDTO } from "../../collection/collection-page";
-import { AddToCollectionDrawer } from "../components/add-collection";
+import { AddToCollectionDrawer, CollectionItem } from "../components/add-collection";
 import { Label } from "../../../ui/label";
 import { Textarea } from "../../../ui/textarea";
 import { ArrowUUpLeft } from "phosphor-react";
@@ -152,7 +152,7 @@ type Catalog = {
   created_at: string;
 };
 
-type CollectionItem = { id: UUID; status: boolean; comment: string; catalog: Catalog };
+
 type CollectionItemsResponse = { collection_items: CollectionItem[] };
 type CatalogListResponse = { catalog_entries?: Catalog[] } | { results?: Catalog[] } | Catalog[]; // flexibiliza backend
 
@@ -1026,9 +1026,9 @@ export function CollectionPage() {
             <AccordionContent className="p-0">
               {loadingList ? (
                 <div className="flex gap-4 flex-col">
-                  <Skeleton className="w-full h-16" />
-                  <Skeleton className="w-full h-16" />
-                  <Skeleton className="w-full h-16" />
+                  <Skeleton className="w-full h-32" />
+                  <Skeleton className="w-full h-32" />
+                  <Skeleton className="w-full h-32" />
                 </div>
               ) : items.length === 0 ? (
                 <div className="items-center justify-center w-full flex text-center pt-6">Nenhum item adicionado.</div>

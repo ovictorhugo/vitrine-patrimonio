@@ -7,9 +7,37 @@ import { RefreshCcw } from "lucide-react";
 import { Button } from "../../../ui/button";
 import { Switch } from "../../../ui/switch";
 import { NotificationItemDialog } from "../../administrativo/components/notification-item";
-import { NotificationDTO, NotificationsResponse } from "../../administrativo/tabs/notification";
 import { Alert } from "../../../ui/alert";
-import {  FlatNotification, NotificationPreview, notificationsTypes } from "../../../header/notifications";
+
+import type {
+  ApiNotificationItem,
+  ApiNotificationPayload,
+  FlatNotification,
+  NotificationPreview,
+} from "../../../header/notifications";
+import { notificationsTypes } from "../../../header/notifications";
+
+// Helpers de parsing (copiados do Header para evitar ciclo)
+const isArray = Array.isArray as <T = any>(v: any) => v is T[];
+
+function resolveListFromData(data?: ApiNotificationPayload): ApiNotificationItem[] {
+  if (!data) return [];
+  if (isArray<ApiNotificationItem>(data)) return data;
+  if (isArray<ApiNotificationItem>((data as any).notifications)) return (data as any).notifications;
+  return [];
+}
+
+function flattenApiItem(item: ApiNotificationItem): FlatNotification {
+  return {
+    id: item.id,
+    read_at: item.read_at ?? null,
+    created_at: item.created_at,
+    type: item.notification?.type,
+    detail: item.notification?.detail,
+    source_user: item.notification?.source_user,
+    __raw: item,
+  };
+}
 
 type UpdateUserPayload = {
   username: string;
@@ -111,35 +139,32 @@ export function PerfilSegurancaDashboard() {
     }
   };
 
-  // ------------------------------
-  // BLOCO DE NOTIFICAÇÕES
-  // ------------------------------
-
+  // ------------------------------ BLOCO DE NOTIFICAÇÕES ------------------------------
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   const baseUrl = (() => {
     try {
       return new URL("notifications/my", urlGeral).toString();
     } catch {
-      return `${(urlGeral)}/notifications/my`;
+      return `${(urlGeral || "").replace(/\/+$/, "")}/notifications/my`;
     }
   })();
 
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
+  const [notifications, setNotifications] = useState<FlatNotification[]>([]);
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
-   const [notificationPreview, setNotificationPreview] =
-     useState<NotificationPreview | null>(null);
+  const [notificationPreview, setNotificationPreview] =
+    useState<NotificationPreview | null>(null);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const storageKey = authToken ? `notifications_${authToken.substring(0, 10)}` : null;
 
-  const saveToStorage = (items: NotificationDTO[]) => {
+  const saveToStorage = (items: FlatNotification[]) => {
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(items));
   };
-  const loadFromStorage = (): NotificationDTO[] => {
+  const loadFromStorage = (): FlatNotification[] => {
     if (!storageKey) return [];
     const stored = localStorage.getItem(storageKey);
     return stored ? JSON.parse(stored) : [];
@@ -157,7 +182,6 @@ export function PerfilSegurancaDashboard() {
     if (newOnes.length > 0) {
       setHasNewNotifications(true);
       const first = newOnes[0];
-      // tenta puxar título da detail; se não existir, usa um genérico
       const title =
         first.detail?.title ??
         first.detail?.message ??
@@ -206,15 +230,9 @@ export function PerfilSegurancaDashboard() {
         throw new Error(`Erro ao buscar notificações (${res.status})`);
       }
 
-      const payload: NotificationsResponse | NotificationDTO[] = await res
-        .json()
-        .catch(() => ({} as NotificationsResponse));
-
-      const list = Array.isArray((payload as NotificationsResponse)?.notifications)
-        ? (payload as NotificationsResponse).notifications
-        : Array.isArray(payload)
-        ? (payload as NotificationDTO[])
-        : [];
+      const payload: ApiNotificationPayload = await res.json().catch(() => ([] as ApiNotificationItem[]));
+      const rawList: ApiNotificationItem[] = resolveListFromData(payload);
+      const list: FlatNotification[] = rawList.map(flattenApiItem);
 
       if (!isInitial) {
         const old = loadFromStorage();
@@ -223,7 +241,7 @@ export function PerfilSegurancaDashboard() {
 
       setNotifications(list);
       saveToStorage(list);
-      setVisibleCount(PAGE_SIZE); // reinicia paginação
+      setVisibleCount(PAGE_SIZE);
     } catch (e: any) {
       if (e?.name === "AbortError") return;
       console.error("[notifications] fetch falhou:", e);
@@ -304,9 +322,7 @@ export function PerfilSegurancaDashboard() {
     saveToStorage(updated);
   };
 
-  // ------------------------------
-  // PAGINAÇÃO LOCAL
-  // ------------------------------
+  // Paginação local
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -314,9 +330,6 @@ export function PerfilSegurancaDashboard() {
     setVisibleCount(PAGE_SIZE);
   }, [authToken]);
 
-  // ------------------------------
-  // RENDERIZAÇÃO
-  // ------------------------------
   return (
     <div className="flex gap-8 p-8 pt-0">
       <div className="flex flex-col flex-1 w-full gap-8">
@@ -439,7 +452,7 @@ export function PerfilSegurancaDashboard() {
                 <Alert key={n.id} className="p-0">
                   <NotificationItemDialog
                     notification={n}
-                    baseUrl={baseUrl}
+                    baseUrl={baseUrl.replace(/\/my$/, "")} // PATCH /notifications/:id
                     token={authToken!}
                     notificationsTypes={notificationsTypes}
                     onMarkedRead={handleMarkedRead}

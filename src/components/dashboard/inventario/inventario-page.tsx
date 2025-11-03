@@ -22,6 +22,7 @@ import {
   Calendar,
   Hash,
   DoorOpen,
+  Plus,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -50,6 +51,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
+import DialogPreencherSala from "./components/dialog-preencher-sala";
+import { usePermissions } from "../../permissions";
 
 /* ================= Tipos ================= */
 type StatusCount = { status: string; count: number };
@@ -438,21 +441,10 @@ export function InventarioPage() {
   );
 
   /* ===== Voltar (usa o mesmo padrão do seu exemplo) ===== */
+
+  const history = useNavigate()
   const handleVoltar = () => {
-    const currentPath = location.pathname;
-    const hasQueryParams = location.search.length > 0;
-    if (hasQueryParams) {
-      navigate(currentPath);
-    } else {
-      const pathSegments = currentPath.split("/").filter((segment) => segment !== "");
-      if (pathSegments.length > 1) {
-        pathSegments.pop();
-        const previousPath = "/" + pathSegments.join("/");
-        navigate(previousPath);
-      } else {
-        navigate("/");
-      }
-    }
+   history('/dashboard/administrativo')
   };
 
 
@@ -471,6 +463,11 @@ export function InventarioPage() {
   }
 };
 
+// no topo do componente InventarioPage:
+const [invenarioSalaOpen, setInvenarioSalaOpen] = useState(false);
+
+     const { hasConfiguracoes,hasInventario
+  } = usePermissions();
 
   /* ===== Telas de Loading / Not Found (para o INVENTÁRIO) ===== */
   if (loadingInventory) {
@@ -486,7 +483,7 @@ export function InventarioPage() {
     );
   }
 
-  if (!inv_id || inventoryError || !currentInventory) {
+  if (!inv_id || inventoryError || !currentInventory || !hasInventario) {
     return (
       <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
         <div className="w-full flex flex-col items-center justify-center">
@@ -512,8 +509,8 @@ export function InventarioPage() {
   return (
     <div className="flex flex-col h-full">
       <Helmet>
-        <title>{currentInventory.key} | Inventário | Sistema Patrimônio</title>
-        <meta name="description" content={`${currentInventory.key} | Inventário | Sistema Patrimônio`} />
+        <title>{currentInventory.key} | Sistema Patrimônio</title>
+        <meta name="description" content={`${currentInventory.key} | Sistema Patrimônio`} />
       </Helmet>
 
       <main className="flex flex-col ">
@@ -553,6 +550,19 @@ export function InventarioPage() {
               }}
             >
               <Trash size={16} /> Deletar
+            </Button>
+
+
+               {/* Novo inventario (Dialog) */}
+            <Button
+          
+              size={"sm"}
+              onClick={() => {
+                setDeleteText("");
+                setInvenarioSalaOpen(true);
+              }}
+            >
+              <Plus size={16} /> Preencher inventário de sala
             </Button>
           </div>
         </div>
@@ -892,6 +902,14 @@ export function InventarioPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DialogPreencherSala
+  open={invenarioSalaOpen}
+  onOpenChange={setInvenarioSalaOpen}
+  invId={currentInventory.id}
+  baseUrl={urlGeral}
+  token={token}
+/>
     </div>
   );
 }

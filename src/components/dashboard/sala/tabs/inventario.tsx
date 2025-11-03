@@ -15,7 +15,7 @@ import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { Skeleton } from "../../../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Separator } from "../../../ui/separator";
-import { Plus, ChevronLeft, User as UserIcon } from "lucide-react";
+import { Plus, ChevronLeft, User as UserIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { PatrimonioItem } from "../components/patrimonio-item-inventario";
 import { AssetDTO } from "../../collection/collection-page";
@@ -429,7 +429,7 @@ export function Inventario() {
                           onClick={() => handleRemoveAdded(inv.id, asset.id)}
                           title="Remover item adicionado"
                         >
-                          ×
+                          <X size={16} />
                         </Button>
                       )}
 

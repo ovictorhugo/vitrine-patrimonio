@@ -77,7 +77,8 @@ import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
-
+import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
+import { handleDownloadXlsx } from "./handle-download";
 
 /* =========================
    Tipos do backend
@@ -152,9 +153,14 @@ type CatalogAsset = {
   is_official: boolean;
 };
 
+type ReviewerRef = { id: UUID; username: string };
+
 type WorkflowHistoryItem = {
   workflow_status: string;
-  detail?: Record<string, any>;
+  detail?: {
+    reviewers?: ReviewerRef[] | string[]; // aceita objetos {id, username} ou apenas IDs
+    [key: string]: any;
+  };
   id: UUID;
   user: {
     id: UUID;
@@ -215,9 +221,10 @@ export const WORKFLOWS = {
     { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento" },
     { key: "REJEITADOS_COMISSAO", name: "Recusados" },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
-      { key: "DESCARTADOS", name: "Processo Finalizado" },
+
   ],
 } as const;
+
 type BoardKind = keyof typeof WORKFLOWS;
 
 export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
@@ -232,7 +239,7 @@ export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
   DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
-    DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
+  DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
 /* =========================
@@ -245,9 +252,9 @@ const safeTxt = (v?: string | null) => (v ?? "").toString().trim();
 const inferYear = (e?: CatalogEntry): string => {
   if (!e) return "";
   const tryYear = (s?: string | null) => safeTxt(s).match(/(?:19|20)\d{2}/)?.[0] ?? "";
-  const fromDesc = tryYear(e.asset?.asset_description);
-  const fromSerial = tryYear(e.asset?.serial_number);
-  const fromCreated = safeTxt(e.created_at) ? new Date(e.created_at).getFullYear().toString() : "";
+  const fromDesc = tryYear(e?.asset?.asset_description);
+  const fromSerial = tryYear(e?.asset?.serial_number);
+  const fromCreated = safeTxt(e?.created_at) ? new Date(e!.created_at).getFullYear().toString() : "";
   return fromDesc || fromSerial || fromCreated || "";
 };
 
@@ -274,64 +281,6 @@ const varsFrom = (e: CatalogEntry) => {
   return { material, descricao, marca, modelo, patrimonio, dgv, codigo, atm, serial, responsavel, setor, unidade, ano, isEletronico };
 };
 
-export const JUSTIFICATIVAS_DESFAZIMENTO: JustPreset[] = [
-  {
-    id: "sicpat-baixado-ou-nao-localizado",
-    label: "Número patrimonial baixado / não localizado no SICPAT",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material ? `um(a) ${material}` : "um bem";
-      return `Trata-se de ${alvo} cujo número patrimonial já foi baixado ou não se encontra disponível no SICPAT, e que por isso a comissão recomenda seu descarte, já que o item não possui valor de uso nem de venda.`;
-    },
-  },
-  {
-    id: "antigo-depreciado-in-rfb-1700-2017",
-    label: "Item antigo/depreciado (≥10 anos, IN RFB nº 1.700/2017)",
-    build: (e) => {
-      const { material, ano } = varsFrom(e);
-      const alvo = material || "bem";
-      const anoTxt = ano || "[ano]";
-      const anosTxt = "10+";
-      return `Trata-se de ${alvo} de ${anoTxt}, com mais de ${anosTxt} anos de uso e que, de acordo com a IN RFB nº 1.700/2017 (depreciação por desgaste, obsolescência e uso), recomenda-se a baixa do item, já que não possui valor de uso nem de venda.`;
-    },
-  },
-  {
-    id: "danificado-ou-quebrado",
-    label: "Item danificado/quebrado (sem condições de uso)",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "bem (mesa, armário, parte de móvel, monitor, poltrona, etc.)";
-      return `Trata-se de ${alvo} danificado/quebrado, que não possui valor de uso nem de venda. Recomenda-se o descarte.`;
-    },
-  },
-  {
-    id: "fragmento-ou-parte-de-bem",
-    label: "Parte/fragmento de bem (resto de móvel/equipamento)",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "pedaço/resto de móvel/equipamento (mesa, armário, microcomputador, etc.)";
-      return `Trata-se de ${alvo} sem patrimônio, sem valor de uso nem de venda. Recomenda-se a baixa.`;
-    },
-  },
-  {
-    id: "eletronico-antigo-ou-obsoleto",
-    label: "Equipamento eletrônico antigo/obsoleto e/ou quebrado",
-    build: (e) => {
-      const { material, isEletronico } = varsFrom(e);
-      const alvo = material || (isEletronico ? "equipamento eletrônico" : "equipamento");
-      return `Trata-se de ${alvo} danificado/obsoleto, sem patrimônio, sem valor de uso nem de venda. Recomenda-se a baixa.`;
-    },
-  },
-  {
-    id: "destinacao-doacao",
-    label: "Destinação: Doação",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "item";
-      return `Trata-se de ${alvo} sem valor de uso para a unidade. A comissão recomenda a baixa do acervo patrimonial e a destinação do bem para Doação, por não possuir valor de uso nem de venda para a Escola de Engenharia da UFMG.`;
-    },
-  },
-];
 
 /* =========================
    Regras por coluna
@@ -351,18 +300,12 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
   REVIEW_REQUESTED_VITRINE: { requireJustification: false },
   ADJUSTMENT_VITRINE: { requireJustification: true },
   VITRINE: { requireJustification: false },
-  AGUARDANDO_TRANSFERENCIA: {
-    requireJustification: true,
-  
-  },
+  AGUARDANDO_TRANSFERENCIA: { requireJustification: true },
   TRANSFERIDOS: { requireJustification: true },
 
   REVIEW_REQUESTED_DESFAZIMENTO: { requireJustification: false },
   ADJUSTMENT_DESFAZIMENTO: { requireJustification: true },
-  REVIEW_REQUESTED_COMISSION: {
-    requireJustification: true,
- 
-  },
+  REVIEW_REQUESTED_COMISSION: { requireJustification: true },
   REJEITADOS_COMISSAO: { requireJustification: true },
   DESFAZIMENTO: { requireJustification: true },
 };
@@ -390,7 +333,55 @@ const groupByLastWorkflow = (data: CatalogEntry[], columns: { key: string; name:
   return map;
 };
 
-const codeFrom = (e: CatalogEntry) => [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
+const codeFrom = (e: CatalogEntry) =>
+  [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
+
+/* =========================
+   Helpers (TOP APENAS p/ DESFAZIMENTO)
+========================= */
+const WF_DESFAZIMENTO = "DESFAZIMENTO";
+
+const getTopIfDesfazimento = (e: CatalogEntry) => {
+  const top = e?.workflow_history?.[0];
+  if (!top) return null;
+  return (top.workflow_status ?? "").trim() === WF_DESFAZIMENTO ? top : null;
+};
+
+const getDesfazimentoInfoTopOnly = (e: CatalogEntry) => {
+  const top = getTopIfDesfazimento(e);
+  if (!top) return { isDesfazimento: false, reviewers: [] as { id: string; username: string }[], parecer: "" };
+
+  // reviewers pode vir como objetos {id, username} OU como array de strings (IDs)
+  const raw = (top.detail?.reviewers ?? []) as (ReviewerRef | string)[];
+  let reviewers: { id: string; username: string }[] = [];
+
+  if (Array.isArray(raw) && raw.length > 0) {
+    if (typeof raw[0] === "object" && raw[0] !== null) {
+      reviewers = (raw as ReviewerRef[])
+        .map((r) => {
+          const id = String(r?.id ?? "").trim();
+          const username = String(r?.username ?? "").trim();
+          if (!id || !username) return null;
+          return { id, username };
+        })
+        .filter(Boolean) as { id: string; username: string }[];
+    } else {
+      reviewers = (raw as string[])
+        .map((id) => {
+          const rid = String(id ?? "").trim();
+          if (!rid) return null;
+          // sem lista de usuários aqui, então mantém somente o ID como username
+          return { id: rid, username: rid };
+        })
+        .filter(Boolean) as { id: string; username: string }[];
+    }
+  }
+
+  const d = top.detail || {};
+  const parecer = d.justificativa ?? d?.observation?.text ?? "";
+
+  return { isDesfazimento: true, reviewers, parecer };
+};
 
 /* =========================
    Combobox
@@ -425,7 +416,11 @@ function Combobox({
           aria-expanded={open}
           className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
         >
-          {selected ? <span className="truncate text-left font-medium">{selected.label}</span> : <span className="text-muted-foreground">{placeholder}</span>}
+          {selected ? (
+            <span className="truncate text-left font-medium">{selected.label}</span>
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -474,9 +469,8 @@ export function ItensVitrine() {
   const { urlGeral } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
-    // Drag & Drop
+  // Drag & Drop
   const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
-
 
   // Hierarquia local
   const [units, setUnits] = useState<UnitDTO[]>([]);
@@ -490,80 +484,80 @@ export function ItensVitrine() {
   const [sectorId, setSectorId] = useState<UUID | null>(null);
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
-// Fetch listas hierarquia
-useEffect(() => {
-  (async () => {
-    try {
-      const res = await fetch(`${urlGeral}units/`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const json = await res.json();
-      setUnits(json?.units ?? []);
-    } catch {
-      setUnits([]);
-    }
-  })();
-}, [urlGeral, token]);
+  // Fetch listas hierarquia
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${urlGeral}units/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setUnits(json?.units ?? []);
+      } catch {
+        setUnits([]);
+      }
+    })();
+  }, [urlGeral, token]);
 
-const fetchAgencies = useCallback(
-  async (uid: UUID) => {
-    if (!uid) return setAgencies([]);
-    try {
-      const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const json = await res.json();
-      setAgencies(json?.agencies ?? []);
-    } catch {
-      setAgencies([]);
-    }
-  },
-  [urlGeral, token]
-);
+  const fetchAgencies = useCallback(
+    async (uid: UUID) => {
+      if (!uid) return setAgencies([]);
+      try {
+        const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setAgencies(json?.agencies ?? []);
+      } catch {
+        setAgencies([]);
+      }
+    },
+    [urlGeral, token]
+  );
 
-const fetchSectors = useCallback(
-  async (aid: UUID) => {
-    if (!aid) return setSectors([]);
-    try {
-      const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const json = await res.json();
-      setSectors(json?.sectors ?? []);
-    } catch {
-      setSectors([]);
-    }
-  },
-  [urlGeral, token]
-);
+  const fetchSectors = useCallback(
+    async (aid: UUID) => {
+      if (!aid) return setSectors([]);
+      try {
+        const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setSectors(json?.sectors ?? []);
+      } catch {
+        setSectors([]);
+      }
+    },
+    [urlGeral, token]
+  );
 
-const fetchLocations = useCallback(
-  async (sid: UUID) => {
-    if (!sid) return setLocations([]);
-    try {
-      const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const json = await res.json();
-      setLocations(json?.locations ?? []);
-    } catch {
-      setLocations([]);
-    }
-  },
-  [urlGeral, token]
-);
+  const fetchLocations = useCallback(
+    async (sid: UUID) => {
+      if (!sid) return setLocations([]);
+      try {
+        const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setLocations(json?.locations ?? []);
+      } catch {
+        setLocations([]);
+      }
+    },
+    [urlGeral, token]
+  );
 
   // Cascata
   useEffect(() => {
@@ -605,7 +599,10 @@ const fetchLocations = useCallback(
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   // Colunas
-  const columns = useMemo(() => WORKFLOWS[tab].map((c) => ({ ...c, key: (c.key ?? "").trim() })), [tab]);
+  const columns = useMemo(
+    () => WORKFLOWS[tab].map((c) => ({ ...c, key: (c.key ?? "").trim() })),
+    [tab]
+  );
 
   // Board
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -613,7 +610,11 @@ const fetchLocations = useCallback(
 
   // Modal de mudança de coluna
   const [moveModalOpen, setMoveModalOpen] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<{ entry?: CatalogEntry; fromKey?: string; toKey?: string }>({});
+  const [moveTarget, setMoveTarget] = useState<{
+    entry?: CatalogEntry;
+    fromKey?: string;
+    toKey?: string;
+  }>({});
   const [justificativa, setJustificativa] = useState("");
   const [extraValues, setExtraValues] = useState<Record<string, string>>({});
   const [posting, setPosting] = useState(false);
@@ -652,7 +653,10 @@ const fetchLocations = useCallback(
   useEffect(() => {
     const run = async () => {
       try {
-        const [mRes, gRes] = await Promise.all([fetch(`${urlGeral}materials/`), fetch(`${urlGeral}legal-guardians/`)]);
+        const [mRes, gRes] = await Promise.all([
+          fetch(`${urlGeral}materials/`),
+          fetch(`${urlGeral}legal-guardians/`),
+        ]);
         const mJson = await mRes.json();
         const gJson = await gRes.json();
         setMaterials(mJson?.materials ?? []);
@@ -675,7 +679,7 @@ const fetchLocations = useCallback(
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-params.set("limit", '100000');
+      params.set("limit", "100000");
       const res = await fetch(`${urlGeral}catalog/?${params.toString()}`);
       if (!res.ok) throw new Error();
       const json: CatalogResponse = await res.json();
@@ -742,8 +746,11 @@ params.set("limit", '100000');
     setBoard(groupByLastWorkflow(filteredEntries, columns));
   }, [filteredEntries, columns]);
 
-
-  const postWorkflowChange = async (entry: CatalogEntry | undefined, toKey: string | undefined, detailsExtra: Record<string, any>) => {
+  const postWorkflowChange = async (
+    entry: CatalogEntry | undefined,
+    toKey: string | undefined,
+    detailsExtra: Record<string, any>
+  ) => {
     if (!entry || !toKey) return false;
     try {
       const payload = {
@@ -783,18 +790,18 @@ params.set("limit", '100000');
     const prevBoard = board;
     const prevEntries = entries;
 
-   const optimisticHistory: WorkflowHistoryItem = {
-  id: crypto.randomUUID(),
-  catalog_id: entry.id,
-  user: entry.user,
-  workflow_status: toKey,
-  detail: {},
-  created_at: new Date().toISOString(),
-};
+    const optimisticHistory: WorkflowHistoryItem = {
+      id: crypto.randomUUID(),
+      catalog_id: entry.id,
+      user: entry.user,
+      workflow_status: toKey,
+      detail: {},
+      created_at: new Date().toISOString(),
+    };
     const optimisticEntry: CatalogEntry = {
-  ...entry,
-  workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
-};
+      ...entry,
+      workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
+    };
     const newFrom = Array.from(prevBoard[fromKey] ?? []);
     const idx = newFrom.findIndex((x) => x.id === entry.id);
     if (idx >= 0) newFrom.splice(idx, 1);
@@ -818,24 +825,62 @@ params.set("limit", '100000');
     }
   };
 
-  const handleConfirmMove = async () => {
-    if (!moveTarget.entry || !moveTarget.fromKey || !moveTarget.toKey) return;
+// 5) Antes de fechar ao confirmar, marque o motivo "confirm" e limpe snapshots
+const handleConfirmMove = async () => {
+  if (!moveTarget.entry || !moveTarget.fromKey || !moveTarget.toKey) return;
 
-    const needs = rulesFor(moveTarget.toKey);
-    const extra: Record<string, any> = {};
-    for (const f of needs.extraFields ?? []) extra[f.name] = extraValues[f.name] ?? "";
+  const needs = rulesFor(moveTarget.toKey);
+  const extra: Record<string, any> = {};
+  for (const f of needs.extraFields ?? []) extra[f.name] = extraValues[f.name] ?? "";
 
-    const prevBoard = snapshotBoard ?? board;
-    const prevEntries = snapshotEntries ?? entries;
+  const prevBoard = snapshotBoard ?? board;
+  const prevEntries = snapshotEntries ?? entries;
 
-    setPosting(true);
-    const ok = await postWorkflowChange(moveTarget.entry, moveTarget.toKey, extra);
-    setPosting(false);
+  setPosting(true);
+  const ok = await postWorkflowChange(moveTarget.entry, moveTarget.toKey, extra);
+  setPosting(false);
 
-    if (!ok) {
-      setBoard(prevBoard);
-      setEntries(prevEntries);
+  if (!ok) {
+    setBoard(prevBoard);
+    setEntries(prevEntries);
+    // fecha como cancel (para manter semântica de rollback)
+    closingActionRef.current = "cancel";
+    setMoveModalOpen(false);
+    return;
+  }
+
+  // sucesso: NÃO reverter ao fechar
+  closingActionRef.current = "confirm";
+  // importante: limpar snapshots ANTES de fechar
+  setSnapshotBoard(null);
+  setSnapshotEntries(null);
+  setMoveModalOpen(false);
+
+  // limpeza adicional
+  setMoveTarget({});
+  setJustificativa("");
+  setExtraValues({});
+  setSelectedPreset("");
+};
+
+
+  // 1) Adicione um ref no componente
+const closingActionRef = useRef<"confirm" | "cancel" | null>(null);
+
+
+// 2) Ajuste o onOpenChange do Dialog
+const handleModalOpenChange = (open: boolean) => {
+  if (!open) {
+    const reason = closingActionRef.current;
+    closingActionRef.current = null;
+
+    // Reverter somente se foi cancelado / fechado sem confirmar
+    if (reason !== "confirm" && snapshotBoard && snapshotEntries) {
+      setBoard(snapshotBoard);
+      setEntries(snapshotEntries);
     }
+
+    // Limpeza de estado efêmero sempre
     setMoveModalOpen(false);
     setMoveTarget({});
     setJustificativa("");
@@ -843,25 +888,16 @@ params.set("limit", '100000');
     setSnapshotBoard(null);
     setSnapshotEntries(null);
     setSelectedPreset("");
-  };
+  } else {
+    setMoveModalOpen(true);
+  }
+};
 
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      if (snapshotBoard && snapshotEntries) {
-        setBoard(snapshotBoard);
-        setEntries(snapshotEntries);
-      }
-      setMoveModalOpen(false);
-      setMoveTarget({});
-      setJustificativa("");
-      setExtraValues({});
-      setSnapshotBoard(null);
-      setSnapshotEntries(null);
-      setSelectedPreset("");
-    } else {
-      setMoveModalOpen(true);
-    }
-  };
+const handleCancelMove = () => {
+  closingActionRef.current = "cancel";
+  setMoveModalOpen(false);
+};
+
 
   const clearFilters = () => {
     setMaterialId(null);
@@ -889,163 +925,118 @@ params.set("limit", '100000');
     if (l) setLocationId(l);
   }, []); // eslint-disable-line
 
-  const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({ id: m.id, code: m.material_code, label: m.material_name || m.material_code }));
-  const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({ id: g.id, code: g.legal_guardians_code, label: g.legal_guardians_name || g.legal_guardians_code }));
+  const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
+    id: m.id,
+    code: m.material_code,
+    label: m.material_name || m.material_code,
+  }));
+  const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({
+    id: g.id,
+    code: g.legal_guardians_code,
+    label: g.legal_guardians_name || g.legal_guardians_code,
+  }));
 
   useEffect(() => {
     if (expandedColumn !== null) resetExpandedPagination();
   }, [expandedColumn]);
 
-const getItemsForExport = (colKey?: string, onlyVisible = false): CatalogEntry[] => {
-  let items: CatalogEntry[] = [];
-  if (colKey) {
-    const all = board[colKey] ?? [];
-    const isExpanded = expandedColumn === colKey;
-    items = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
-  } else {
-    items = filteredEntries; // já é o array de CatalogEntry (catalog)
-  }
-  return items; // <-- sem map/rest; mantém o objeto catalog inteiro
-};
-// mantém sua buildImgUrl já definida no arquivo
-const buildImgUrl = (p: string) => {
-  try {
-    const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
-    return `${urlGeral}${cleanPath}`;
-  } catch {
-    const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
-    return `${urlGeral}${cleanPath}`;
-  }
-};
 
-// helpers
-const getIdentificacao = (e: CatalogEntry) =>
-  [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
 
-const getParecer = (e: CatalogEntry) => {
-  const ev = (e.workflow_history || []).find(
-    (w) => (w.workflow_status || "").trim() === "DESFAZIMENTO"
-  );
-  const d = ev?.detail || {};
-  // ajuste aqui se você salva em outro campo
-  return d.justificativa ?? d?.observation?.text ?? "";
-};
+  // ====== token já usado acima para POST workflow ======
+  const { hasAnunciarItem, hasCargosFuncoes } = usePermissions();
 
-const simNao = (b?: boolean) => (b ? "Sim" : "Não");
+  // ===== DELETE (dialog) =====
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-// Troque sua função de CSV por esta versão em XLSX com fórmulas
-const handleDownloadXlsx = async (colKey?: string, onlyVisible = false) => {
-  try {
-    const items = getItemsForExport(colKey, onlyVisible); // já é CatalogEntry completo
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet("Itens");
-
-    // Se você quiser forçar só HYPERLINK (sem IMAGE), troque para false
-    const USE_IMAGE_FORMULA = true;
-
-    ws.columns = [
-      { header: "Identificação", key: "ident", width: 22 },
-      { header: "Material", key: "material", width: 28 },
-      { header: "Imagem 1", key: "img1", width: 36 },
-      { header: "Imagem 2", key: "img2", width: 36 },
-      { header: "Imagem 3", key: "img3", width: 36 },
-      { header: "Imagem 4", key: "img4", width: 36 },
-      { header: "Identificável", key: "identificavel", width: 14 },
-      { header: "Valor estimado", key: "valor", width: 18 },
-      { header: "Parecer (DESFAZIMENTO)", key: "parecer", width: 42 },
-      { header: "Tipo de destinação", key: "destino", width: 16 },
-    ];
-    ws.views = [{ state: "frozen", ySplit: 1 }];
-    ws.getRow(1).font = { bold: true };
-
-    items.forEach((e) => {
-      const images = (e.images || []).slice(0, 4).map((img) => buildImgUrl(img?.file_path || ""));
-      while (images.length < 4) images.push("");
-
-      const row = ws.addRow({
-        ident: getIdentificacao(e),
-        material: e?.asset?.material?.material_name ?? "",
-        img1: "", img2: "", img3: "", img4: "",
-        identificavel: simNao(e?.asset?.is_official),
-        valor: e?.asset?.asset_value ?? "",
-        parecer: getParecer(e),
-        destino: "Descarte",
-      });
-
-      // Preenche fórmulas/links nas colunas de imagem
-      const imgCols = [3, 4, 5, 6]; // posições das colunas Imagem 1..4
-      images.forEach((url, j) => {
-        const cell = row.getCell(imgCols[j]);
-        if (!url) {
-          cell.value = "";
-          return;
-        }
-        if (USE_IMAGE_FORMULA) {
-          // Excel 365 / Online: exibe a imagem dentro da célula
-          cell.value = { formula: `IMAGE("${url}")` };
-        } else {
-          // Fallback: hyperlink clicável
-          cell.value = { text: "Abrir", hyperlink: url };
-        }
-      });
-    });
-
-    const buf = await wb.xlsx.writeBuffer();
-    const colName =
-      (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos";
-    const filename = `itens_${colName.replace(/\s+/g, "_").toLowerCase()}${onlyVisible ? "_visiveis" : ""}.xlsx`;
-    saveAs(
-      new Blob([buf], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      }),
-      filename
-    );
-  } catch (e) {
-    console.error(e);
-    toast.error("Falha ao gerar XLSX");
-  }
-};
-
-  const stripWorkflow = (obj: any) => {
-    if (obj && typeof obj === "object" && "workflow_history" in obj) {
-      const { workflow_history, ...rest } = obj;
-      return rest;
-    }
-    return obj;
+  const openDelete = (catalogId: string) => {
+    setDeleteTargetId(catalogId);
+    setIsDeleteOpen(true);
+  };
+  const closeDelete = () => {
+    setIsDeleteOpen(false);
+    setDeleteTargetId(null);
   };
 
-  const flattenObject = (obj: any, prefix = "", out: Record<string, any> = {}): Record<string, any> => {
-    if (obj == null) return out;
-    if (Array.isArray(obj)) {
-      const key = prefix.slice(0, -1);
-      if (obj.every((v) => typeof v !== "object" || v === null)) out[key] = obj.join("|");
-      else if (/(\.|^)images$/.test(key)) out[key] = obj.map((it: any) => it?.file_path ?? JSON.stringify(it)).join("|");
-      else out[key] = JSON.stringify(obj);
-      return out;
-    }
-    if (typeof obj === "object") {
-      for (const [k, v] of Object.entries(obj)) {
-        if (k === "workflow_history") continue;
-        flattenObject(v, `${prefix}${k}.`, out);
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTargetId) return;
+    try {
+      setDeleting(true);
+      const r = await fetch(`${urlGeral}catalog/${deleteTargetId}`, {
+        method: "DELETE",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        throw new Error(`Falha ao excluir (${r.status}): ${t}`);
       }
-      return out;
+      setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
+      toast("Item excluído com sucesso.");
+      closeDelete();
+    } catch (e: any) {
+      toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
+    } finally {
+      setDeleting(false);
     }
-    out[prefix.slice(0, -1)] = obj;
-    return out;
-  };
+  }, [deleteTargetId, urlGeral, token]);
 
-  const convertJsonToCsv = (data: any[]): string => {
-    const flattened = data.map((d) => flattenObject(stripWorkflow(d)));
-    const headerSet = new Set<string>();
-    flattened.forEach((row) => Object.keys(row).forEach((k) => headerSet.add(k)));
-    const headers = Array.from(headerSet).sort();
-    const esc = (val: unknown) => {
-      const s = String(val ?? "");
-      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  useEffect(() => {
+    const handler = (e: any) => {
+      const id = e?.detail?.id as string | undefined;
+      if (!id) return;
+      setEntries((prev) => prev.filter((it) => it.id !== id));
     };
-    const lines = [headers.join(";"), ...flattened.map((row) => headers.map((h) => esc((row as any)[h])).join(";"))];
-    return lines.join("\n");
-  };
+
+    window.addEventListener("catalog:deleted" as any, handler as any);
+    return () => window.removeEventListener("catalog:deleted" as any, handler as any);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+      const id = detail?.id;
+      const newStatus = detail?.newStatus?.trim();
+      if (!id || !newStatus) return;
+
+      setEntries((prev) => {
+        let touched = false;
+
+        const next = prev.map((it) => {
+          if (it.id !== id) return it;
+
+          const current = it.workflow_history?.[0]?.workflow_status?.trim();
+          if (current === newStatus) return it;
+
+          touched = true;
+
+          const newHistoryItem: WorkflowHistoryItem = {
+            id:
+              typeof crypto !== "undefined" && "randomUUID" in crypto
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.random()}`,
+            catalog_id: it.id,
+            workflow_status: newStatus,
+            detail: {},
+            created_at: new Date().toISOString(),
+            user: it.user ?? null,
+          };
+
+          return {
+            ...it,
+            workflow_history: [newHistoryItem, ...(it.workflow_history ?? [])],
+          };
+        });
+
+        return touched ? next : prev;
+      });
+    };
+
+    window.addEventListener("catalog:workflow-updated" as any, handler as any);
+    return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+  }, []);
+
+  const ROLE_COMISSAO_ID = import.meta.env.VITE_ID_COMISSAO_PERMANENTE;
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -1067,97 +1058,33 @@ const handleDownloadXlsx = async (colKey?: string, onlyVisible = false) => {
 
   const [selectedPreset, setSelectedPreset] = useState<string>("");
 
-  // ====== token já usado acima para POST workflow ======
-   const { hasAnunciarItem, hasCargosFuncoes
-} = usePermissions();
+const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
+  let itemsToExport: CatalogEntry[] = [];
 
-// ===== DELETE (dialog no padrão do seu exemplo) =====
-const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-const [deleting, setDeleting] = useState(false);
-
-const openDelete = (catalogId: string) => { setDeleteTargetId(catalogId); setIsDeleteOpen(true); };
-const closeDelete = () => { setIsDeleteOpen(false); setDeleteTargetId(null); };
-
-const handleConfirmDelete = useCallback(async () => {
-  if (!deleteTargetId) return;
-  try {
-    setDeleting(true);
-    const r = await fetch(`${urlGeral}catalog/${deleteTargetId}`, {
-      method: "DELETE",
-      headers: { Authorization: token ? `Bearer ${token}` : "" },
-    });
-    if (!r.ok) {
-      const t = await r.text().catch(() => "");
-      throw new Error(`Falha ao excluir (${r.status}): ${t}`);
-    }
-    // remove do estado base (entries); o board é derivado e será recalculado
-    setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
-    toast("Item excluído com sucesso.");
-    closeDelete();
-  } catch (e: any) {
-    toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
-  } finally {
-    setDeleting(false);
+  if (colKey) {
+    const all = board[colKey] ?? [];
+    const isExpanded = expandedColumn === colKey;
+    itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+  } else {
+    itemsToExport = filteredEntries;
   }
-}, [deleteTargetId, urlGeral, token]);
 
-useEffect(() => {
-  const handler = (e: any) => {
-    const id = e?.detail?.id as string | undefined;
-    if (!id) return;
-    setEntries(prev => prev.filter(it => it.id !== id));
-  };
+  if (!Array.isArray(itemsToExport)) {
+    console.error("downloadXlsx: itemsToExport não é array", itemsToExport);
+    toast.error("Nada para exportar.");
+    return;
+  }
 
-  window.addEventListener("catalog:deleted" as any, handler as any);
-  return () => window.removeEventListener("catalog:deleted" as any, handler as any);
-}, []);
-
-useEffect(() => {
-  const handler = (e: any) => {
-    const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
-    const id = detail?.id;
-    const newStatus = detail?.newStatus?.trim();
-    if (!id || !newStatus) return;
-
-    setEntries((prev) => {
-      let touched = false;
-
-      const next = prev.map((it) => {
-        if (it.id !== id) return it;
-
-        // se já está no status informado, não muda nada
-        const current = it.workflow_history?.[0]?.workflow_status?.trim();
-        if (current === newStatus) return it;
-
-        touched = true;
-
-        const newHistoryItem: WorkflowHistoryItem = {
-          id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-          catalog_id: it.id,
-          workflow_status: newStatus,
-          detail: {},
-          created_at: new Date().toISOString(),
-          user: it.user ?? null, // opcional: mantém o mesmo usuário ou null
-        };
-
-        return {
-          ...it,
-          workflow_history: [newHistoryItem, ...(it.workflow_history ?? [])],
-        };
-      });
-
-      return touched ? next : prev;
-    });
-  };
-
-  window.addEventListener("catalog:workflow-updated" as any, handler as any);
-  return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
-}, []);
-
-
-
-
+  await handleDownloadXlsx({
+    items: itemsToExport,
+    urlBase: urlGeral,
+    sheetName: "Itens",
+    filename:
+      `itens_${(colKey && (columns.find(c => c.key === colKey)?.name || colKey)) || "todos"}${onlyVisible ? "_visiveis" : ""}`
+        .replace(/\s+/g, "_")
+        .toLowerCase() + ".xlsx"
+  });
+};
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -1228,14 +1155,14 @@ useEffect(() => {
 
             <Separator orientation="vertical" className="h-8 mx-2" />
 
-           {hasAnunciarItem && (
+            {hasAnunciarItem && (
               <Link to={"/dashboard/novo-item"}>
-              <Button size="sm">
-                <Plus size={16} className="" />
-                Anunciar item
-              </Button>
-            </Link>
-           )}
+                <Button size="sm">
+                  <Plus size={16} className="" />
+                  Anunciar item
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -1326,12 +1253,9 @@ useEffect(() => {
             </div>
 
             {/* ====== Membros do cargo (componente separado) ====== */}
-          {hasCargosFuncoes && (
-            <RoleMembers
-              roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266"
-              title="Comissão de desfazimento"
-            />
-          )}
+            {hasCargosFuncoes && (
+              <RoleMembers roleId={ROLE_COMISSAO_ID} title="Comissão de desfazimento" />
+            )}
           </div>
         )}
 
@@ -1366,7 +1290,13 @@ useEffect(() => {
                               {items.length}
                             </Badge>
                           </div>
-                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => setExpandedColumn(col.key)} title="Expandir coluna">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            onClick={() => setExpandedColumn(col.key)}
+                            title="Expandir coluna"
+                          >
                             <Maximize2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1395,10 +1325,10 @@ useEffect(() => {
 
                                   {slice.map((entry, idx) => (
                                     <div key={entry.id} className="min-w-0 w-full max-w-full overflow-hidden">
-                                      <CardItemDropdown 
-                                      entry={entry} 
-                                      index={idx} 
-                                      onPromptDelete={() => openDelete(entry.id)} // <-- novo
+                                      <CardItemDropdown
+                                        entry={entry}
+                                        index={idx}
+                                        onPromptDelete={() => openDelete(entry.id)}
                                       />
                                     </div>
                                   ))}
@@ -1447,7 +1377,7 @@ useEffect(() => {
                     </div>
 
                     <div className="flex gap-3">
-                      <Button size={"sm"} variant="outline" onClick={() => handleDownloadXlsx(col.key)}>
+                      <Button size={"sm"} variant="outline" onClick={() => downloadXlsx(col.key)}>
                         <Download size={16} /> Baixar resultado
                       </Button>
                       <Button size={"sm"} onClick={() => setExpandedColumn(null)}>
@@ -1458,11 +1388,9 @@ useEffect(() => {
                   </div>
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                    {items.map((item) => (
-                      <ItemPatrimonio {...item}  
-                      onPromptDelete={() => openDelete(item.id)}
-                      />
-                    ))}
+                    {slice.map((item) => (
+    <ItemPatrimonio key={item.id} {...item} onPromptDelete={() => openDelete(item.id)} />
+  ))}
                   </div>
 
                   {items.length > slice.length ? (
@@ -1495,123 +1423,122 @@ useEffect(() => {
             </DialogDescription>
           </DialogHeader>
 
-          <Separator className="my-4" />
+        <Separator className="my-4" />
 
-          <div className="space-y-4">
-            {(() => {
-              const needs = rulesFor(moveTarget.toKey);
-              if (!needs.requireJustification) return null;
-              const isDesfazimento = moveTarget.toKey === "DESFAZIMENTO";
+        <div className="space-y-4">
+          {(() => {
+            const needs = rulesFor(moveTarget.toKey);
+            if (!needs.requireJustification) return null;
+            const isDesfazimento = moveTarget.toKey === "DESFAZIMENTO";
 
-              return (
-                <div className="grid gap-3">
-                  {isDesfazimento && (
-                    <div className="grid gap-2">
-                      <Label>Modelos de justificativa (opcional)</Label>
-                      <Select
-                        value={selectedPreset}
-                        onValueChange={(val) => {
-                          setSelectedPreset(val);
-                          const preset = JUSTIFICATIVAS_DESFAZIMENTO.find((p) => p.id === val);
-                          if (preset && moveTarget.entry) {
-                            setJustificativa(preset.build(moveTarget.entry));
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
-                        </SelectTrigger>
-                        <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
-                          {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
+            return (
+              <div className="grid gap-3">
+                {isDesfazimento && (
                   <div className="grid gap-2">
-                    <Label htmlFor="just">Justificativa</Label>
-                    <Textarea
-                      id="just"
-                      value={justificativa}
-                      onChange={(e) => setJustificativa(e.target.value)}
-                      placeholder={
-                        isDesfazimento
-                          ? "Você pode escolher um modelo acima para pré-preencher e depois ajustar aqui…"
-                          : ""
-                      }
-                    />
+                    <Label>Modelos de justificativa (opcional)</Label>
+                    <Select
+                      value={selectedPreset}
+                      onValueChange={(val) => {
+                        setSelectedPreset(val);
+                        const preset = JUSTIFICATIVAS_DESFAZIMENTO.find((p) => p.id === val);
+                        if (preset && moveTarget.entry) {
+                          setJustificativa(preset.build(moveTarget.entry));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                        {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-              );
-            })()}
-
-            {(rulesFor(moveTarget.toKey)?.extraFields ?? []).map((f) => (
-              <div className="grid gap-2" key={f.name}>
-                <Label htmlFor={f.name}>{f.label}</Label>
-                {f.type === "textarea" ? (
-                  <Textarea
-                    id={f.name}
-                    value={extraValues[f.name] ?? ""}
-                    onChange={(e) => setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))}
-                  />
-                ) : (
-                  <Input
-                    id={f.name}
-                    placeholder={f.placeholder}
-                    value={extraValues[f.name] ?? ""}
-                    onChange={(e) => setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))}
-                  />
                 )}
-              </div>
-            ))}
-          </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => handleModalOpenChange(false)}>
-              <X size={16} /> Cancelar
-            </Button>
-            <Button disabled={posting} onClick={handleConfirmMove}>
-              {posting ? (
-                <>
-                  <Loader size={16} /> Salvando...
-                </>
+                <div className="grid gap-2">
+                  <Label htmlFor="just">Justificativa</Label>
+                  <Textarea
+                    id="just"
+                    value={justificativa}
+                    onChange={(e) => setJustificativa(e.target.value)}
+                    placeholder={
+                      isDesfazimento
+                        ? "Você pode escolher um modelo acima para pré-preencher e depois ajustar aqui…"
+                        : ""
+                    }
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          {(rulesFor(moveTarget.toKey)?.extraFields ?? []).map((f) => (
+            <div className="grid gap-2" key={f.name}>
+              <Label htmlFor={f.name}>{f.label}</Label>
+              {f.type === "textarea" ? (
+                <Textarea
+                  id={f.name}
+                  value={extraValues[f.name] ?? ""}
+                  onChange={(e) => setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))}
+                />
               ) : (
-                <>
-                  <Check size={16} /> Confirmar
-                </>
+                <Input
+                  id={f.name}
+                  placeholder={f.placeholder}
+                  value={extraValues[f.name] ?? ""}
+                  onChange={(e) => setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))}
+                />
               )}
-            </Button>
-          </DialogFooter>
+            </div>
+          ))}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={handleCancelMove}>
+  <X size={16} /> Cancelar
+</Button>
+          <Button disabled={posting} onClick={handleConfirmMove}>
+            {posting ? (
+              <>
+                <Loader size={16} /> Salvando...
+              </>
+            ) : (
+              <>
+                <Check size={16} /> Confirmar
+              </>
+            )}
+          </Button>
+        </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ===================== DIALOG: EXCLUIR ===================== */}
-<Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-        Deletar item do catálogo
-      </DialogTitle>
-      <DialogDescription className="text-zinc-500 ">
-        Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
-      </DialogDescription>
-    </DialogHeader>
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Deletar item do catálogo
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 ">
+              Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
+            </DialogDescription>
+          </DialogHeader>
 
-    <DialogFooter className="">
-      <Button variant="ghost" onClick={closeDelete}>
-        <ArrowUUpLeft size={16} /> Cancelar
-      </Button>
-      <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
-        <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
+          <DialogFooter className="">
+            <Button variant="ghost" onClick={closeDelete}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+              <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

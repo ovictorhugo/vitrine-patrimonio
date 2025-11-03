@@ -21,6 +21,7 @@ import { Label } from "../../../ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../../ui/select";
 import { Separator } from "../../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
+import { JUSTIFICATIVAS_DESFAZIMENTO } from "../../itens-vitrine/JUSTIFICATIVAS_DESFAZIMENTO";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -46,14 +47,7 @@ type Props = {
 
 type WorkflowTarget = "DESFAZIMENTO" | "REJEITADOS_COMISSAO";
 
-const JUSTIFICATIVAS = [
-  { id: "sicpat", label: "Número patrimonial baixado / não localizado no SICPAT" },
-  { id: "antigo", label: "Item antigo/depreciado (≥10 anos, IN RFB nº 1.700/2017)" },
-  { id: "quebrado", label: "Item danificado/quebrado (sem condições de uso)" },
-  { id: "fragmento", label: "Parte/fragmento de bem (resto de móvel/equipamento)" },
-  { id: "eletronico", label: "Equipamento eletrônico antigo/obsoleto e/ou quebrado" },
-  { id: "doacao", label: "Destinação: Doação" },
-];
+
 
 export function PatrimonioItemComission({ entry, onRemove }: Props) {
   if (!entry) return null;
@@ -114,21 +108,21 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
   const [wfOpen, setWfOpen] = useState(false);
   const [wfTarget, setWfTarget] = useState<WorkflowTarget>("DESFAZIMENTO");
   const [posting, setPosting] = useState(false);
-  const [preset, setPreset] = useState<string>("");
-  const [justTxt, setJustTxt] = useState<string>("");
+const [presetId, setPresetId] = useState<string>("");
+const [justTxt, setJustTxt] = useState<string>("");
 
-  const fillPreset = (id: string) => {
-    const find = JUSTIFICATIVAS.find((p) => p.id === id);
-    if (!find) return;
-    // texto simples e genérico (você pode sofisticar como no exemplo do quadro)
-    const base = `${find.label}.`;
-    setJustTxt((curr) => (curr?.trim() ? curr : base));
-  };
+
+const fillPreset = useCallback((id: string) => {
+  const p = JUSTIFICATIVAS_DESFAZIMENTO.find((x) => x.id === id);
+  if (!p) return;
+  const texto = p.build(entry); // gera a justificativa personalizada com base no item
+  setJustTxt((curr) => (curr?.trim() ? curr : texto));
+}, [entry]);
 
   const handleClickAction = (target: WorkflowTarget) => {
     setWfTarget(target);
-    setPreset("");
-    setJustTxt("");
+setPresetId("");
+setJustTxt("");
     setWfOpen(true);
   };
 
@@ -144,7 +138,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
         },
         body: JSON.stringify({
           workflow_status: wfTarget,
-          detail: { justificativa: justTxt?.trim() || undefined, preset: preset || undefined },
+          detail: { justificativa: justTxt?.trim() || undefined, preset: presetId || undefined },
         }),
       });
 
@@ -167,7 +161,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
     } finally {
       setPosting(false);
     }
-  }, [urlGeral, entry.id, wfTarget, justTxt, preset, onRemove]);
+  }, [urlGeral, entry.id, wfTarget, justTxt, presetId, onRemove]);
 
   return (
     <>
@@ -307,7 +301,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
 
       {/* Dialog de imagem */}
       <Dialog open={openImage} onOpenChange={setOpenImage}>
-        <DialogContent className="max-w-5xl P-0" onClick={stop}>
+        <DialogContent className="max-w-5xl p-0" onClick={stop}>
           <div className="w-full">
             <div className="relative w-full max-h-[80vh]">
               {selectedImg ? (
@@ -349,24 +343,25 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
            {(wfTarget === "DESFAZIMENTO") && (
               <div className="grid gap-2">
               <Label>Modelos de justificativa (opcional)</Label>
-              <Select
-                value={preset}
-                onValueChange={(val) => {
-                  setPreset(val);
-                  fillPreset(val);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue  placeholder="Selecione um modelo para preencher a justificativa..." />
-                </SelectTrigger>
-                <SelectContent  position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
-                  {JUSTIFICATIVAS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+             <Select
+  value={presetId}
+  onValueChange={(val) => {
+    setPresetId(val);
+    fillPreset(val);
+  }}
+>
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
+  </SelectTrigger>
+  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+    {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
+      <SelectItem key={p.id} value={p.id}>
+        {p.label}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
             </div>
            )}
 

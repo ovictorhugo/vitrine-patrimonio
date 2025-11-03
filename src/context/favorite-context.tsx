@@ -62,13 +62,12 @@ export const FavoriteProvider: React.FC<StarsProviderProps> = ({ children }) => 
       }
     } catch (err) {
       console.error("Erro ao buscar favoritos:", err);
-
     } finally {
       setIsLoading(false);
     }
   }, [token, urlGeral]);
 
-  /* --- TOGGLE favorito --- */
+  /* --- TOGGLE favorito (atualiza lista local sem refetch) --- */
   const toggleFavorite = useCallback(
     async (entryId: string) => {
       const alreadyExists = favorites.some((f) => f.id === entryId);
@@ -81,9 +80,11 @@ export const FavoriteProvider: React.FC<StarsProviderProps> = ({ children }) => 
               Authorization: `Bearer ${token}`,
             },
           });
+
           if (res.status === 200 || res.status === 204) {
+            // Remove localmente sem chamar fetchFavorites
+            setFavorites((prev) => prev.filter((f) => f.id !== entryId));
             toast.info("Removido dos favoritos");
-            await fetchFavorites();
           }
         } catch (err) {
           console.error("Erro ao remover favorito:", err);
@@ -97,9 +98,15 @@ export const FavoriteProvider: React.FC<StarsProviderProps> = ({ children }) => 
               Authorization: `Bearer ${token}`,
             },
           });
+
           if (res.status === 201 || res.status === 200) {
+            // Adiciona localmente sem chamar fetchFavorites
+            setFavorites((prev) => {
+              // evita duplicado caso dois cliques rápidos
+              if (prev.some((f) => f.id === entryId)) return prev;
+              return [...prev, { id: entryId }];
+            });
             toast.success("Adicionado aos favoritos");
-            await fetchFavorites();
           }
         } catch (err) {
           console.error("Erro ao adicionar favorito:", err);
@@ -107,7 +114,7 @@ export const FavoriteProvider: React.FC<StarsProviderProps> = ({ children }) => 
         }
       }
     },
-    [favorites, fetchFavorites, token, urlGeral]
+    [favorites, token, urlGeral]
   );
 
   useEffect(() => {

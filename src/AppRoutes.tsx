@@ -24,7 +24,8 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
     hasAdministrativo,
     hasComissaoPermanente,
     hasDepartamento,
-    hasComissaoApoioLocal
+    hasComissaoApoioLocal,
+    hasFinalizados
   } = usePermissions();
 
   return (
@@ -85,6 +86,13 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
         path='/dashboard/cargos-funcoes'
         element={
           <ProtectedRoute element={<Admin />} hasPermission={hasCargosFuncoes} />
+        }
+      />
+
+        <Route
+        path='/dashboard/finalizados'
+        element={
+          <ProtectedRoute element={<Admin />} hasPermission={hasFinalizados} />
         }
       />
 

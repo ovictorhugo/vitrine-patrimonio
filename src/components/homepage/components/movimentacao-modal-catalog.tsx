@@ -20,6 +20,8 @@ import {
   CommandSeparator,
 } from "../../ui/command";
 import { cn } from "../../../lib";
+import { JUSTIFICATIVAS_DESFAZIMENTO } from "../../dashboard/itens-vitrine/JUSTIFICATIVAS_DESFAZIMENTO";
+import { CatalogEntry } from "../../dashboard/itens-vitrine/itens-vitrine";
 
 /* ===== Tipos mínimos ===== */
 type UUID = string;
@@ -120,54 +122,6 @@ const varsFromCatalog = (d: CatalogResponseDTO) => {
   })();
   return { material, isEletronico, ano };
 };
-const JUSTIFICATIVAS_DESFAZIMENTO_MODAL: JustPreset[] = [
-  {
-    id: "sicpat-baixado-ou-nao-localizado",
-    label: "Número patrimonial baixado / não localizado (SICPAT)",
-    build: (c) => {
-      const { material } = varsFromCatalog(c);
-      const alvo = material ? `um(a) ${material}` : "um bem";
-      return `Trata-se de ${alvo} cujo número patrimonial já foi baixado ou não se encontra disponível no SICPAT; recomenda-se o descarte por não possuir valor de uso nem de venda.`;
-    },
-  },
-  {
-    id: "antigo-depreciado-in-rfb-1700-2017",
-    label: "Antigo/depreciado (≥10 anos, IN RFB nº 1.700/2017)",
-    build: (c) => {
-      const { material, ano } = varsFromCatalog(c);
-      const alvo = material || "bem";
-      const anoTxt = ano || "[ano]";
-      return `Trata-se de ${alvo} de ${anoTxt}, com mais de 10 anos de uso. À luz da IN RFB nº 1.700/2017 (depreciação por desgaste/obsolescência), recomenda-se a baixa por não possuir valor de uso nem de venda.`;
-    },
-  },
-  {
-    id: "danificado-ou-quebrado",
-    label: "Danificado/quebrado (sem condição de uso)",
-    build: (c) => {
-      const { material } = varsFromCatalog(c);
-      const alvo = material || "bem";
-      return `Trata-se de ${alvo} danificado/quebrado, sem valor de uso nem de venda; recomenda-se o descarte.`;
-    },
-  },
-  {
-    id: "eletronico-antigo-ou-obsoleto",
-    label: "Eletrônico antigo/obsoleto e/ou quebrado",
-    build: (c) => {
-      const { material, isEletronico } = varsFromCatalog(c);
-      const alvo = material || (isEletronico ? "equipamento eletrônico" : "equipamento");
-      return `Trata-se de ${alvo} obsoleto/danificado, sem patrimônio, sem valor de uso nem de venda; recomenda-se a baixa.`;
-    },
-  },
-  {
-    id: "destinacao-doacao",
-    label: "Destinação: Doação",
-    build: (c) => {
-      const { material } = varsFromCatalog(c);
-      const alvo = material || "item";
-      return `Trata-se de ${alvo} sem valor de uso para a unidade. Recomenda-se a baixa e destinação para Doação, por não possuir valor de uso nem de venda para a Escola de Engenharia da UFMG.`;
-    },
-  },
-];
 
 type WorkflowOption = { key: string; name: string };
 
@@ -258,7 +212,7 @@ function WorkflowCombobox({
 
 /* ===== Props ===== */
 export interface MovimentacaoModalCatalogProps {
-  catalog: CatalogResponseDTO;
+  catalog: CatalogEntry
   urlGeral: string;
   token?: string;
   onUpdated?: (updated: CatalogResponseDTO) => void;
@@ -394,7 +348,7 @@ export function MovimentacaoModalCatalog({ catalog, urlGeral, token: tokenProp, 
               value={selectedPresetModal}
               onValueChange={(val) => {
                 setSelectedPresetModal(val);
-                const preset = JUSTIFICATIVAS_DESFAZIMENTO_MODAL.find((p) => p.id === val);
+                const preset = JUSTIFICATIVAS_DESFAZIMENTO.find((p) => p.id === val);
                 if (preset && catalog) setJustModal(preset.build(catalog));
               }}
             >
@@ -402,7 +356,7 @@ export function MovimentacaoModalCatalog({ catalog, urlGeral, token: tokenProp, 
                 <SelectValue  />
               </SelectTrigger>
               <SelectContent position="popper" align="start" sideOffset={6} className="z-[99999]">
-                {JUSTIFICATIVAS_DESFAZIMENTO_MODAL.map((p) => (
+                {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.label}
                   </SelectItem>

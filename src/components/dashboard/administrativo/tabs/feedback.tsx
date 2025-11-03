@@ -97,7 +97,7 @@ export function Feedback() {
 
   // --------- FETCH ----------
   const fetchData = async (_offset = 0, _limit = limit, append = false) => {
-    const url = `${baseUrl}?offset=${_offset}&limit=${_limit}`;
+    const url = `${baseUrl}?offset=${_offset}&limit=${_limit}&q=${pesquisaInput}`;
     try {
       if (!append) setLoading(true);
       const res = await fetch(url, { method: "GET", headers: authHeaders, mode: "cors" });
@@ -134,7 +134,7 @@ export function Feedback() {
     // carrega página atual (de acordo com a URL) ao montar
     fetchData(initialOffset, initialLimit, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl]);
+  }, [baseUrl, pesquisaInput]);
 
   // quando offset/limit mudarem por interação dos botões "Anterior/Próximo" ou Select, recarrega (sem append)
   useEffect(() => {
@@ -235,33 +235,7 @@ export function Feedback() {
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
 
-  const filtered = useMemo(() => {
-    const q = normalize(pesquisaInput);
-    if (!q) return feedbacks;
-
-    return feedbacks.filter((item) => {
-      const datePretty = (() => {
-        try {
-          return format(new Date(item.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
-        } catch {
-          return item.created_at;
-        }
-      })();
-
-      const haystack =
-        normalize(item.name) +
-        " " +
-        normalize(item.email) +
-        " " +
-        normalize(item.description) +
-        " " +
-        String(item.rating ?? "").toLowerCase() +
-        " " +
-        normalize(datePretty);
-
-      return haystack.includes(q);
-    });
-  }, [feedbacks, pesquisaInput]);
+ 
 
   const itemsLoading = Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="w-full rounded-md h-[170px]" />);
 
@@ -302,7 +276,7 @@ export function Feedback() {
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {filtered
+                  {feedbacks
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .map((f) => {
                       const formattedDate = (() => {
@@ -368,14 +342,14 @@ export function Feedback() {
                       );
                     })}
 
-                  {filtered.length === 0 && (
+                  {feedbacks.length === 0 && (
                     <div className="items-center justify-center w-full flex text-center py-12">
                       Nenhum resultado encontrado
                     </div>
                   )}
 
                   {/* Carregar mais (mantido) */}
-                  {hasMore && filtered.length > 0 && (
+                  {hasMore && feedbacks.length > 0 && (
                     <div className="flex justify-center pt-2">
                       <Button onClick={handleLoadMore} disabled={loadingMore} variant="outline">
                         {loadingMore ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowRight className="mr-2" size={16} />}

@@ -21,7 +21,9 @@ export interface CatalogResponse {
 
 /* ===== Props ===== */
 interface Props {
-  workflow: string;              // filtro workflow que vem do pai
+  workflow: string;  
+  type?: string;
+  value?: string;            // filtro workflow que vem do pai
   workflowOptions?: string[]; 
   user_id?:string   // lista para o popup de movimentação
 }
@@ -239,7 +241,9 @@ const handleConfirmMove = useCallback(async () => {
         if (sectorId) url.searchParams.set("sector_id", sectorId);
 
 
-        if(props.user_id) url.searchParams.set("user_id", props.user_id);
+        if(props.user_id) url.searchParams.set("user_id", props.user_id)
+        if(props.type == 'user_id') url.searchParams.set("user_id", (props.value || ''))
+        if(props.type == 'location_id') url.searchParams.set("location_id", (props.value || ''))
 
         url.searchParams.set("offset", String(offset));
         url.searchParams.set("limit", String(limit));
@@ -254,14 +258,13 @@ const handleConfirmMove = useCallback(async () => {
 
         const data: CatalogResponse = await res.json();
         setItems(Array.isArray(data.catalog_entries) ? data.catalog_entries : []);
+       setLoading(false);
       } catch (e: any) {
         if (e.name !== "AbortError") {
           setError(e?.message || "Erro inesperado ao carregar itens.");
           setItems([]);
         }
-      } finally {
-        setLoading(false);
-      }
+      } 
     };
 
     run();
@@ -279,6 +282,8 @@ const handleConfirmMove = useCallback(async () => {
     sectorId,
     offset,
     limit,
+    props.type,
+    props.value
   ]);
 
   // paginação

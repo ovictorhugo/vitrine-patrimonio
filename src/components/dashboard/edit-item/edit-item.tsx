@@ -403,7 +403,42 @@ export function EditItemVitrine() {
       }
     };
 
-        if (loading) {
+       const workflowsPermitidos = [
+        "ADJUSTMENT_VITRINE",
+        "REVIEW_REQUESTED_VITRINE",
+        "REVIEW_REQUESTED_DESFAZIMENTO",
+        "ADJUSTMENT_DESFAZIMENTO",
+      ];
+
+       const firstWorkflow = Array.isArray(catalogData?.workflow_history) && catalogData?.workflow_history.length > 0
+        ? catalogData?.workflow_history[0].workflow_status
+        : null;
+
+       const WORKFLOWS = {
+  vitrine: [
+    { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine" },
+    { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine" },
+    { key: "VITRINE", name: "Anunciados" },
+    { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando Transferência" },
+    { key: "TRANSFERIDOS", name: "Transferidos" },
+  ],
+  desfazimento: [
+    { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Avaliação S. Patrimônio - Desfazimento" },
+    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento" },
+    { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento" },
+    { key: "REJEITADOS_COMISSAO", name: "Recusados" },
+    { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
+    { key: "DESCARTADOS", name: "Processo Finalizado" },
+  ],
+} as const;
+
+const allWorkflows = [
+  ...WORKFLOWS.vitrine,
+  ...WORKFLOWS.desfazimento,
+];
+
+
+  if (loading) {
             return (
               <div className="flex justify-center items-center h-full">
               <div className="w-full flex flex-col items-center justify-center h-full">
@@ -444,6 +479,40 @@ export function EditItemVitrine() {
               </div>
     );
   }
+  
+        if(!workflowsPermitidos.includes(firstWorkflow)) {
+          const workflowInfo =
+    allWorkflows.find((wf) => wf.key === firstWorkflow) ||
+    { name: "etapa desconhecida" };
+
+
+        return(
+           <div
+                className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
+                
+              >
+           
+          
+                <div className="w-full flex flex-col items-center justify-center">
+                <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                 ¯\_(ツ)_/¯
+                  </p>
+                  <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                 Este item não pode ser editado mais, <br/> pois já se econtra em {workflowInfo.name}.
+                  </h1>
+                 
+          
+                  <div className="flex gap-3 mt-8">
+                          <Button  onClick={handleVoltar} variant={'ghost'}><Undo2 size={16}/> Voltar</Button>
+                           <Link to={'/'}> <Button><Home size={16}/> Página Inicial</Button></Link>
+          
+                          </div>
+                </div>
+              </div>
+        )
+        }
+
+      
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">

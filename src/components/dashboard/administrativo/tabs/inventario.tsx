@@ -1,4 +1,4 @@
-import { ListChecks, Plus, Loader2, Trash, User, Pencil, Check } from "lucide-react";
+import { ListChecks, Plus, Loader2, Trash, User, Pencil, Check, ChevronRight, ChevronLeft } from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import { CardDescription, CardFooter, CardHeader, CardTitle } from "../../../ui/card";
@@ -9,7 +9,7 @@ import { UserContext } from "../../../../context/context";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Skeleton } from "../../../ui/skeleton";
 import {
   Dialog,
@@ -17,17 +17,15 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogFooter as DialogFooterUI,
   DialogHeader,
-  DialogHeader as DialogHeaderUI,
   DialogTitle,
-  DialogTitle as DialogTitleUI,
   DialogTrigger,
 } from "../../../ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { ArrowUUpLeft } from "phosphor-react";
 import { Separator } from "../../../ui/separator";
 import { Switch } from "../../../ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
 
 // ===== Tipos da API =====
 type UserDTO = {
@@ -86,14 +84,45 @@ export function Inventario() {
     [token]
   );
 
-  // ===== GET /inventories/ =====
+  // ===== navegação & paginação por querystring =====
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qs = new URLSearchParams(location.search);
+  const initialOffset = Number(qs.get("offset") || "0");
+  const initialLimit = Number(qs.get("limit") || "24");
+
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
+
+  // isFirstPage / isLastPage (como no exemplo: última se veio menos que o limit)
+  const isFirstPage = offset === 0;
+  const isLastPage = inventories.length < limit;
+
+  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+    const params = new URLSearchParams(location.search);
+    params.set("offset", String(newOffset));
+    params.set("limit", String(newLimit));
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+  };
+
+  useEffect(() => {
+    // mantém a URL sincronizada quando muda offset/limit
+    handleNavigate(offset, limit, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, limit]);
+
+  // ===== GET /inventories/ (com paginação) =====
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}inventories/`, {
-        method: "GET",
-        headers: authHeaders,
-      });
+
+      // Se sua API aceita offset/limit na query, seguimos o padrão do exemplo:
+      // /inventories/?offset=...&limit=...
+      const url = `${urlGeral}inventories/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(
+        limit
+      )}`;
+
+      const res = await fetch(url, { method: "GET", headers: authHeaders });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -115,7 +144,7 @@ export function Inventario() {
   useEffect(() => {
     fetchInventories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlGeral]);
+  }, [urlGeral, offset, limit]);
 
   // ===== POST /inventories/ =====
   const handleSubmit = async () => {
@@ -133,9 +162,9 @@ export function Inventario() {
       const res = await fetch(`${urlGeral}inventories/`, {
         method: "POST",
         headers: authHeaders,
-        body: JSON.stringify({ 
-            key: key.trim() ,
-            avaliable:true
+        body: JSON.stringify({
+          key: key.trim(),
+          avaliable: true,
         }),
       });
 
@@ -150,7 +179,10 @@ export function Inventario() {
       });
 
       setKey("");
-       setIsOpen(false)
+      setIsOpen(false);
+
+      // após criar, volta para a primeira página (offset 0) como no exemplo
+      setOffset(0);
       await fetchInventories();
     } catch (e: any) {
       toast("Erro ao criar inventário", {
@@ -192,7 +224,10 @@ export function Inventario() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       setDeleteText("");
-    setInventories((prev) => prev.filter((i) => i.id !== deleteTarget.id));
+
+      // duas opções: refetch da página OU remover local
+      // para manter a paginação coerente (evitar "buraco"), vou refazer a busca
+      await fetchInventories();
     } catch (e: any) {
       toast("Erro ao excluir inventário", {
         description: e?.message || String(e),
@@ -204,132 +239,120 @@ export function Inventario() {
   };
 
   const formatDateTimeBR = (iso?: string) => {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      dateStyle: "short",
-      timeStyle: "short",
-      // exemplo: 18/09/2025 12:37
-    }).format(d);
-  } catch {
-    return iso;
-  }
-};
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(d);
+    } catch {
+      return iso;
+    }
+  };
 
   const confirmEnabled = deleteTarget && deleteText.trim() === deleteTarget.key;
 
   const [isOpen, setIsOpen] = useState(false);
 
-
+  // ===== edição =====
   const [editOpen, setEditOpen] = useState(false);
-const [editTarget, setEditTarget] = useState<InventoryDTO | null>(null);
-const [editKey, setEditKey] = useState("");
-const [editAvailable, setEditAvailable] = useState<boolean>(true);
-const [savingEdit, setSavingEdit] = useState(false);
+  const [editTarget, setEditTarget] = useState<InventoryDTO | null>(null);
+  const [editKey, setEditKey] = useState("");
+  const [editAvailable, setEditAvailable] = useState<boolean>(true);
+  const [savingEdit, setSavingEdit] = useState(false);
 
-const openEditDialog = (inv: InventoryDTO) => {
-  setEditTarget(inv);
-  setEditKey(inv.key || "");
-  setEditAvailable(!!inv.avaliable);
-  setEditOpen(true);
-};
+  const openEditDialog = (inv: InventoryDTO) => {
+    setEditTarget(inv);
+    setEditKey(inv.key || "");
+    setEditAvailable(!!inv.avaliable);
+    setEditOpen(true);
+  };
 
-const handleEditSave = async () => {
-  if (!editTarget) return;
-  try {
-    setSavingEdit(true);
-    const res = await fetch(`${urlGeral}inventories/${editTarget.id}`, {
-      method: "PUT",
-      headers: authHeaders,
-      body: JSON.stringify({
-        key: editKey.trim(),
-        // manter o nome de campo da API exatamente como está no seu backend
-        avaliable: editAvailable,
-      }),
-    });
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(t || `Falha ao atualizar inventário (HTTP ${res.status}).`);
+  const handleEditSave = async () => {
+    if (!editTarget) return;
+    try {
+      setSavingEdit(true);
+      const res = await fetch(`${urlGeral}inventories/${editTarget.id}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify({
+          key: editKey.trim(),
+          avaliable: editAvailable,
+        }),
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || `Falha ao atualizar inventário (HTTP ${res.status}).`);
+      }
+      toast("Inventário atualizado", { description: "Alterações salvas com sucesso." });
+      setEditOpen(false);
+      setEditTarget(null);
+
+      // Atualiza o item na página atual (sem perder a paginação)
+      setInventories((prev) =>
+        prev.map((i) => (i.id === (editTarget?.id ?? "") ? { ...i, key: editKey.trim(), avaliable: editAvailable } : i))
+      );
+    } catch (e: any) {
+      toast("Erro ao salvar alterações", { description: e?.message || "Tente novamente." });
+    } finally {
+      setSavingEdit(false);
     }
-    toast("Inventário atualizado", { description: "Alterações salvas com sucesso." });
-    setEditOpen(false);
-    setEditTarget(null);
-    
-     // ✅ Atualiza o item na lista local sem refresh
-    setInventories((prev) =>
-      prev.map((i) =>
-        i.id === editTarget.id
-          ? { ...i, key: editKey.trim(), avaliable: editAvailable }
-          : i
-      )
-    );
-  } catch (e: any) {
-    toast("Erro ao salvar alterações", { description: e?.message || "Tente novamente." });
-  } finally {
-    setSavingEdit(false);
-  }
-};
+  };
 
   return (
     <div className="p-8 gap-8 flex flex-col">
+      {/* Dialog Adicionar Inventário */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-  <DialogTrigger>
-    <Alert onClick={() => setIsOpen(true)} className="flex items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:bg-transparent dark:hover:bg-neutral-800">
-<div className="bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 rounded-md p-4 border ">
-      <Plus size={20} />
-</div>
-
-<p className="font-medium">Adicionar inventário</p>
-    </Alert>
-  </DialogTrigger>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar inventário</DialogTitle>
-    <DialogDescription className="text-zinc-500">
-         Crie um inventário para organizar os registros de bens em todas as salas.
-      </DialogDescription>
-    </DialogHeader>
-
-     <Separator className="my-4" />
-
-       <div className="mb-4">
- <div className="flex flex-col space-y-1.5 w-full flex-1">
-              <Label htmlFor="inventory-name">Nome do inventário</Label>
-              <Input
-                id="inventory-name"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                type="text"
-              />
+        <DialogTrigger>
+          <Alert
+            onClick={() => setIsOpen(true)}
+            className="flex items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:bg-transparent dark:hover:bg-neutral-800"
+          >
+            <div className="bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 rounded-md p-4 border ">
+              <Plus size={20} />
             </div>
-       </div>
 
-         <DialogFooter>
-          <DialogClose>
- <Button  variant={"ghost"}>
-            <ArrowUUpLeft size={16} /> Cancelar
-          </Button>
-          </DialogClose>
+            <p className="font-medium">Adicionar inventário</p>
+          </Alert>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar inventário</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Crie um inventário para organizar os registros de bens em todas as salas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Separator className="my-4" />
+
+          <div className="mb-4">
+            <div className="flex flex-col space-y-1.5 w-full flex-1">
+              <Label htmlFor="inventory-name">Nome do inventário</Label>
+              <Input id="inventory-name" value={key} onChange={(e) => setKey(e.target.value)} type="text" />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose>
+              <Button variant={"ghost"}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+            </DialogClose>
 
             <Button onClick={handleSubmit} disabled={creating}>
               {creating ? <Loader2 className=" animate-spin" size={16} /> : <Plus size={16} className="" />}
               Adicionar inventário
             </Button>
-         
           </DialogFooter>
-  </DialogContent>
-</Dialog>
-   
+        </DialogContent>
+      </Dialog>
 
       <Accordion type="single" collapsible defaultValue="item-1">
         <AccordionItem value="item-1">
           <AccordionTrigger className="px-0">
-            <HeaderResultTypeHome
-              title={'Todos os inventários'}
-              icon={<ListChecks size={24} className="text-gray-400" />}
-            />
+            <HeaderResultTypeHome title={"Todos os inventários"} icon={<ListChecks size={24} className="text-gray-400" />} />
           </AccordionTrigger>
 
           <AccordionContent className="p-0">
@@ -342,111 +365,139 @@ const handleEditSave = async () => {
             ) : inventories.length === 0 ? (
               <div className="items-center justify-center w-full flex text-center pt-6">Nenhum inventário encontrado.</div>
             ) : (
-             <div className="grid gap-4 ">
-          {inventories.map((inv) => (
-           <Link to={`/dashboard/inventario?inv_id=${inv.id}`}>
-            <div key={inv.id} className="relative group flex">
-              <div className="w-2 min-w-2 rounded-l-md border dark:border-neutral-800 bg-eng-blue" />
-              <Alert
-                className="rounded-l-none items-center flex justify-between border-l-0 w-full cursor-pointer hover:shadow-sm transition"
-               
-              >
-               <div>
-                 <div className="flex items-center mb-2 justify-between min-h-8 ">
-                  <span className="font-medium text-lg truncate">{inv.key}</span>
-                 
-                
-                </div>
+              <div className="grid gap-4 ">
+                {inventories.map((inv) => (
+                  <div key={inv.id} className="relative group flex">
+                    <div className="w-2 min-w-2 rounded-l-md border dark:border-neutral-800 bg-eng-blue" />
+                    <Alert className="rounded-l-none items-center flex justify-between border-l-0 w-full cursor-pointer hover:shadow-sm transition">
+                      <Link to={`/dashboard/inventario?inv_id=${inv.id}`} className="flex-1 min-w-0">
+                        <div>
+                          <div className="flex items-center mb-2 justify-between min-h-8 ">
+                            <span className="font-medium text-lg truncate">{inv.key}</span>
+                          </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Criado por:</span>
-                    <span className="font-medium flex items-center gap-1">
-                      <Avatar className="rounded-md h-5 w-5 shrink-0">
-                        <AvatarImage
-                          className="rounded-md h-5 w-5"
-                          src={`${urlGeral}user/upload/${inv.created_by.id}/icon`}
-                        />
-                        <AvatarFallback className="flex items-center justify-center">
-                          <User size={10} />
-                        </AvatarFallback>
-                      </Avatar>
-                      {inv.created_by?.username || "—"}
-                    </span>
+                          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Criado por:</span>
+                              <span className="font-medium flex items-center gap-1">
+                                <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                  <AvatarImage
+                                    className="rounded-md h-5 w-5"
+                                    src={`${urlGeral}user/upload/${inv.created_by.id}/icon`}
+                                  />
+                                  <AvatarFallback className="flex items-center justify-center">
+                                    <User size={10} />
+                                  </AvatarFallback>
+                                </Avatar>
+                                {inv.created_by?.username || "—"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <div className={`w-4 h-4 rounded-md ${inv.avaliable ? "bg-green-500" : "bg-red-500"}`} />
+                              {inv.avaliable ? "Disponível" : "Encerrado"}
+                            </div>
+
+                            <div className="flex items-center gap-2">Início: {formatDateTimeBR(inv.created_at)}</div>
+                          </div>
+                        </div>
+                      </Link>
+
+                      <div className="flex gap-2 items-center pl-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 shrink-0  group-hover:flex hidden"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openEditDialog(inv);
+                          }}
+                          title="Editar inventário"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+
+                        <Button
+                          variant={"destructive"}
+                          size={"icon"}
+                          className="h-8 w-8 shrink-0 group-hover:flex hidden"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openDeleteDialog(inv.id, inv.key);
+                          }}
+                          title="Excluir inventário"
+                        >
+                          <Trash size={16} />
+                        </Button>
+                      </div>
+                    </Alert>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-md ${inv.avaliable ? "bg-green-500" : "bg-red-500"}`} />
-                    {inv.avaliable ? "Disponível" : "Encerrado"}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    Início: {formatDateTimeBR(inv.created_at)}
-                  </div>
-                </div>
-
-                 
-               </div>
-<div className="flex gap-2 items-center">
-  
-               <Button
-  variant="outline"
-  size="icon"
-  className="h-8 w-8 shrink-0  group-hover:flex hidden"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openEditDialog(inv);
-  }}
-  title="Editar inventário"
->
-  <Pencil size={16} />
-</Button>
-
-                 <Button
-                        variant={"destructive"}
-                        size={"icon"}
-                        className="h-8 w-8 shrink-0 group-hover:flex hidden"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openDeleteDialog(inv.id, inv.key);
-                        }}
-                        title="Excluir inventário"
-                      >
-                        <Trash size={16} />
-                      </Button>
-
-</div>
-              </Alert>
-            </div></Link>
-          ))}
-        </div>
+                ))}
+              </div>
             )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
 
+      {/* ===== Paginação ===== */}
+      <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+        <span className="text-sm text-muted-foreground">Itens por página:</span>
+        <Select
+          value={limit.toString()}
+          onValueChange={(value) => {
+            const newLimit = parseInt(value);
+            setOffset(0);
+            setLimit(newLimit);
+            handleNavigate(0, newLimit);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Itens" />
+          </SelectTrigger>
+          <SelectContent>
+            {[12, 24, 36, 48, 84, 162].map((val) => (
+              <SelectItem key={val} value={val.toString()}>
+                {val}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="w-full flex justify-center items-center gap-10 mt-8">
+        <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+            disabled={isFirstPage}
+          >
+            {/* você pode importar ChevronLeft/ChevronRight se quiser repetir o estilo idêntico */}
+         <ChevronLeft size={16} className="" />     Anterior
+          </Button>
+          <Button onClick={() => !isLastPage && setOffset((prev) => prev + limit)} disabled={isLastPage}>
+         Próximo  <ChevronRight size={16} className="" />   
+          </Button>
+        </div>
+      </div>
+
       {/* Dialog de confirmação de exclusão */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        
         <DialogContent>
-            <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
- Excluir inventário
-</DialogTitle>
-<DialogDescription className="text-zinc-500 ">
- Esta ação é <span className="font-semibold">irreversível</span>. Para confirmar, digite exatamente o nome do inventário: <span className=" font-semibold ">{deleteTarget?.key}</span>
-</DialogDescription>
-            </DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Excluir inventário</DialogTitle>
+            <DialogDescription className="text-zinc-500 ">
+              Esta ação é <span className="font-semibold">irreversível</span>. Para confirmar, digite exatamente o nome do inventário:{" "}
+              <span className=" font-semibold ">{deleteTarget?.key}</span>
+            </DialogDescription>
+          </DialogHeader>
 
-                  
-            <Separator className="my-4"/>
-      
+          <Separator className="my-4" />
+
           <div className="space-y-2 mb-4">
-            <Label >Digite o nome do inventário</Label>
+            <Label>Digite o nome do inventário</Label>
             <Input
-            
               placeholder="Digite exatamente como aparece"
               value={deleteText}
               onChange={(e) => setDeleteText(e.target.value)}
@@ -467,60 +518,49 @@ const handleEditSave = async () => {
               }}
               disabled={deleting}
             >
-            <ArrowUUpLeft size={16} />     Cancelar
+              <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={!confirmEnabled || deleting}
-            >
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={!confirmEnabled || deleting}>
               {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                <Trash size={16} /> Confirmar exclusão
+              <Trash size={16} /> Confirmar exclusão
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* (Dialog de edição) — ADICIONE PRÓXIMO AO Dialog de exclusão */}
-<Dialog open={editOpen} onOpenChange={setEditOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle className="text-2xl mb-2 font-medium">Editar inventário</DialogTitle>
-      <DialogDescription className="text-zinc-500">
-        Atualize as informações e confirme para salvar.
-      </DialogDescription>
-    </DialogHeader>
+      {/* Dialog de edição */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium">Editar inventário</DialogTitle>
+            <DialogDescription className="text-zinc-500">Atualize as informações e confirme para salvar.</DialogDescription>
+          </DialogHeader>
 
-    <Separator className="my-4" />
+          <Separator className="my-4" />
 
-    <div className="space-y-4">
-      <div className="grid gap-2">
-        <Label>Nome do inventário</Label>
-        <Input
-          value={editKey}
-          onChange={(e) => setEditKey(e.target.value)}
-          placeholder="Digite o novo nome"
-        />
-      </div>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label>Nome do inventário</Label>
+              <Input value={editKey} onChange={(e) => setEditKey(e.target.value)} placeholder="Digite o novo nome" />
+            </div>
 
-      <div className="flex items-center justify-between">
-        <Label>Disponível</Label>
-        <Switch checked={editAvailable} onCheckedChange={(v) => setEditAvailable(!!v)} />
-      </div>
-    </div>
+            <div className="flex items-center justify-between">
+              <Label>Disponível</Label>
+              <Switch checked={editAvailable} onCheckedChange={(v) => setEditAvailable(!!v)} />
+            </div>
+          </div>
 
-    <DialogFooter className="gap-2 sm:gap-0">
-      <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={savingEdit}>
-        <ArrowUUpLeft size={16} /> Cancelar
-      </Button>
-      <Button onClick={handleEditSave} disabled={savingEdit || !editKey.trim()}>
-        {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
-        Salvar alterações
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
-
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={savingEdit}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button onClick={handleEditSave} disabled={savingEdit || !editKey.trim()}>
+              {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

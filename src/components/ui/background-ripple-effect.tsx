@@ -32,7 +32,7 @@ export function BackgroundAvatarGrid({
   borderColor = "var(--cell-border-color, #e4e4e7)",
   className,
   maxAvatars = 10,
-  intervalMs = 3000,
+  intervalMs = 5000,
   showBorders = true,
 }: BackgroundAvatarGridProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -175,7 +175,7 @@ export function BackgroundAvatarGrid({
                   <AvatarImage
                     src={buildImgUrl(img.file_path)}
                     alt="catalog image"
-                    className="object-cover"
+                    className="object-cover opacity-40"
                   />
                   <AvatarFallback className="rounded-none text-[10px]">
                     <Image size={16} />

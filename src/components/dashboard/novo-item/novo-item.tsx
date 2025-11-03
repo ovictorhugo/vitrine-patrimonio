@@ -993,92 +993,80 @@ export function NovoItem() {
   }
 
   // Tela de SUCESSO (após finalizar) — agora com o MESMO esquema de plaqueta do "etiqueta"
-  if (finished) {
-    // Descobre se temos dados válidos para mostrar o card de plaqueta
-    const dataForLabel: Patrimonio | undefined =
-      flow === "desfazimento" ? wizard["formulario-sp"] : wizard.formulario;
-    const canShowPlaqueta = !!(dataForLabel && (dataForLabel.asset_code || dataForLabel.atm_number));
+if (finished) {
+  // Exibe a plaqueta apenas se o flow for "desfazimento"
+  const isDesfazimento = flow === "desfazimento";
+  const dataForLabel: Patrimonio | undefined = isDesfazimento ? wizard["formulario-sp"] : undefined;
+  const canShowPlaqueta = !!(
+    isDesfazimento &&
+    dataForLabel &&
+    (dataForLabel.asset_code || dataForLabel.atm_number)
+  );
 
-    return (
-      <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
-        <div className="flex gap-2">
-          <div className="flex justify-between items-center h-fit mt-2 w-8">
-            <p className="text-lg">{(STEPS.findIndex(s => s.key === "final") + 1) || 0}</p>
-            <ArrowRight size={16} />
-          </div>
-          <h1 className="mb-10 text-4xl font-semibold max-w-[700px]">
-            Parabéns, cadastro concluído!
-          </h1>
+  return (
+    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+      <div className="flex gap-2">
+        <div className="flex justify-between items-center h-fit mt-2 w-8">
+          <p className="text-lg">{(STEPS.findIndex(s => s.key === "final") + 1) || 0}</p>
+          <ArrowRight size={16} />
         </div>
+        <h1 className="mb-10 text-4xl font-semibold max-w-[700px]">
+          Parabéns, cadastro concluído!
+        </h1>
+      </div>
 
-        {/* PREVIEW + AÇÕES */}
-        <div className="ml-8 grid gap-4">
+      {/* PREVIEW + AÇÕES */}
+      <div className="ml-8 grid gap-4">
 
-          {/* Seletor de tamanho da plaqueta (exatamente como em EtiquetaStepCB) */}
-          {canShowPlaqueta && (
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              className="w-full gap-3"
-              onValueChange={(v) => v && setSelectedSize(v as any)}
-              value={selectedSize}
-            >
-              <ToggleGroupItem className="w-full" value="d">Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)</ToggleGroupItem>
-              <ToggleGroupItem className="w-full" value="a">Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)</ToggleGroupItem>
-              <ToggleGroupItem className="w-full" value="b">Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)</ToggleGroupItem>
-            </ToggleGroup>
-          )}
+        {/* Seletor de tamanho da plaqueta (apenas se for desfazimento) */}
+        {canShowPlaqueta && (
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            className="w-full gap-3"
+            onValueChange={(v) => v && setSelectedSize(v as any)}
+            value={selectedSize}
+          >
+            <ToggleGroupItem className="w-full" value="d">Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)</ToggleGroupItem>
+            <ToggleGroupItem className="w-full" value="a">Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)</ToggleGroupItem>
+            <ToggleGroupItem className="w-full" value="b">Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)</ToggleGroupItem>
+          </ToggleGroup>
+        )}
 
-          {/* Card de Plaqueta (idêntico em UX ao de EtiquetaStepCB) */}
-          {canShowPlaqueta && (
-            <Alert className="flex items-center gap-8">
-              <div className="flex gap-2 flex-1">
-                <Barcode size={24} />
-                <div>
-                  <p className="font-medium">Plaqueta de identificação</p>
-                  <p className="text-gray-500 text-sm">
-                    Geramos a plaqueta com tamanho físico exato (mm). Clique para baixar em <strong>PDF</strong>.
-                  </p>
-                </div>
-              </div>
-              <Button
-                className="h-8 w-8"
-                variant={"ghost"}
-                size={"icon"}
-                onClick={handleDownloadPlaqueta}
-              >
-                <Download size={16} />
-              </Button>
-            </Alert>
-          )}
-
-          {/* Documento de comprovação (mantido do seu layout) */}
-          <Alert className="flex items-center gap-8 ">
+        {/* Card de Plaqueta (somente para desfazimento) */}
+        {canShowPlaqueta && (
+          <Alert className="flex items-center gap-8">
             <div className="flex gap-2 flex-1">
-              <File size={24} className="" />
+              <Barcode size={24} />
               <div>
-                <p className="font-medium">Documento de comprovação</p>
+                <p className="font-medium">Plaqueta de identificação</p>
                 <p className="text-gray-500 text-sm">
-                  Comprovante de submissão do item para avaliação na plataforma.
-                  Este documento confirma o envio, mas não substitui a documentação oficial do bem.
+                  Geramos a plaqueta com tamanho físico exato (mm). Clique para baixar em <strong>PDF</strong>.
                 </p>
               </div>
             </div>
-            <Button className="h-8 w-8" variant={"ghost"} size={"icon"}>
+            <Button
+              className="h-8 w-8"
+              variant={"ghost"}
+              size={"icon"}
+              onClick={handleDownloadPlaqueta}
+            >
               <Download size={16} />
             </Button>
           </Alert>
+        )}
 
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
-            <Button onClick={resetToNewForm}><Plus size={16} />Cadastrar outro item</Button>
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              <LayoutDashboard size={16} /> Ir para o dashboard
-            </Button>
-          </div>
+        {/* Botões finais */}
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <Button onClick={resetToNewForm}><Plus size={16} />Cadastrar outro item</Button>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <LayoutDashboard size={16} /> Ir para o dashboard
+          </Button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Wizard normal
  

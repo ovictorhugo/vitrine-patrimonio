@@ -113,7 +113,7 @@ export function Header() {
          
 
 
-        <div onClick={() => onOpenModal('search')} className="flex  h-8 border border-neutral-200 dark:border-neutral-800 px-1 bg-white dark:bg-neutral-950 rounded-md items-center">
+        <div onClick={() => onOpenModal('search-patrimonio-exact')} className="xl:flex hidden  h-8 border border-neutral-200 dark:border-neutral-800 px-1 bg-white dark:bg-neutral-950 rounded-md items-center">
           <MagnifyingGlass size={16} className="w-8" />
           <Input className="border-0 h-full flex flex-1 dark:bg-transparent" placeholder="Buscar patrimônio..." />
 <p className="bg-neutral-100 rounded-md text-[10px] mr-1  dark:bg-neutral-800 h-6 flex items-center justify-center px-2">Ctrl + Q</p>

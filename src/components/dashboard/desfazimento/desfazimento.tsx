@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle, ChevronLeft, Combine, Inbox, Info, Loader2, Package, PackageOpen, Pencil, Plus,  Trash, XCircle } from "lucide-react";
+import { ArrowRight, Check, CheckCircle, ChevronLeft, ChevronRight, Combine, Inbox, Info, Loader2, Package, PackageOpen, Pencil, Plus,  Trash, XCircle } from "lucide-react";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
@@ -32,6 +32,7 @@ import { RowsItemsVitrine } from "./components/rows-items-vitrine";
 import { Alert } from "../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { usePermissions } from "../../permissions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 
 type CollectionResponse = { collections: CollectionDTO[] };
 
@@ -60,16 +61,39 @@ export function Desfazimento() {
     [token]
   );
 
+  // ===== paginação via querystring (padrão offset/limit)
+  const qs = new URLSearchParams(location.search);
+  const initialOffset = Number(qs.get("offset") || "0");
+  const initialLimit = Number(qs.get("limit") || "24");
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
+
+  const isFirstPage = offset === 0;
+  const isLastPage = collections.length < limit;
+
+  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+    const params = new URLSearchParams(location.search);
+    params.set("offset", String(newOffset));
+    params.set("limit", String(newLimit));
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+  };
+
+  useEffect(() => {
+    handleNavigate(offset, limit, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, limit]);
+
   // seleção da grade
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // função registrada pela grade para remover itens após POST
   const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(() => () => {});
 
-  // ===== coleções
+  // ===== coleções (com paginação)
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}collections/?type=SMAL`, { method: "GET", headers: authHeaders });
+      const url = `${urlGeral}collections/?type=SMAL&offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`;
+      const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok) throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
       const data: CollectionResponse = await res.json();
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
@@ -79,7 +103,7 @@ export function Desfazimento() {
       setLoadingList(false);
     }
   };
-  useEffect(() => { fetchInventories(); /* eslint-disable-next-line */ }, [urlGeral]);
+  useEffect(() => { fetchInventories(); /* eslint-disable-next-line */ }, [urlGeral, offset, limit]);
 
   // criar coleção
   const [isOpen, setIsOpen] = useState(false);
@@ -93,16 +117,12 @@ export function Desfazimento() {
         body: JSON.stringify({ description, name: key, type: "SMAL" }),
       });
       if (!res.ok) throw new Error(`Falha ao criar (HTTP ${res.status})`);
-      const created = await res.json().catch(()=>null);
+      await res.json().catch(()=>null);
       toast.success("Coleção criada");
       setKey(""); setDescription(""); setIsOpen(false);
-      // atualiza local sem refetch, se possível
-      if (created?.id) {
-        setCollections((prev)=> [{...created}, ...prev]);
-      } else {
-        // fallback: refetch
-        fetchInventories();
-      }
+      // ✅ volta para a primeira página e refaz busca
+      setOffset(0);
+      await fetchInventories();
     } catch (e: any) {
       toast.error("Erro ao criar", { description: e?.message || String(e) });
     } finally { setCreating(false); }
@@ -114,7 +134,6 @@ export function Desfazimento() {
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
 
-
   /* ===========================
      Fallback de DROP por hit-test
   ============================ */
@@ -123,7 +142,6 @@ export function Desfazimento() {
   const lastPoint = useRef<XY>({ x: 0, y: 0 });
   const draggingRef = useRef(false);
 
-  // atualiza posição via pointer/touch (robusto)
   useEffect(() => {
     const onPointer = (e: PointerEvent) => {
       if (!draggingRef.current) return;
@@ -166,24 +184,21 @@ export function Desfazimento() {
   };
 
   /* ============ DnD ============ */
- const onBeforeCapture: OnBeforeCaptureResponder = (start) => {
-  if (!selectedIds.has(start.draggableId)) {
-    setSelectedIds(new Set<string>([start.draggableId]));
-  }
-  draggingRef.current = true;
-};
+  const onBeforeCapture: OnBeforeCaptureResponder = (start) => {
+    if (!selectedIds.has(start.draggableId)) {
+      setSelectedIds(new Set<string>([start.draggableId]));
+    }
+    draggingRef.current = true;
+  };
 
   const onDragEnd = async (result: DropResult) => {
     draggingRef.current = false;
     const { destination, draggableId } = result;
 
-    // 1) destino oficial
     let targetCollectionId = destination?.droppableId || null;
-    // 2) fallback por hit-test
     if (!targetCollectionId) targetCollectionId = hitTestCollection();
 
     if (!targetCollectionId) {
-     
       return;
     }
 
@@ -226,16 +241,14 @@ export function Desfazimento() {
         okIds.forEach((id) => next.delete(id));
         return next;
       });
-
     }
-  
 
     if (failed > 0) toast.error(`${failed} item(ns) falharam ao adicionar`);
   };
 
   const [typeVisu, setTypeVisu] = useState<"block" | "rows">("block");
 
-  /* ========= EDIT/DELETE COLLECTION (dialogs + handlers) ========= */
+  /* ========= EDIT/DELETE COLLECTION ========= */
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -272,7 +285,6 @@ export function Desfazimento() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao atualizar a coleção.");
       }
-      // Atualiza array local
       setCollections((prev) =>
         prev.map((c) => (c.id === currentCollectionId ? { ...c, name: newName, description: newDescription } : c))
       );
@@ -297,11 +309,12 @@ export function Desfazimento() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao deletar a coleção.");
       }
-      // remove local
       setCollections((prev) => prev.filter((c) => c.id !== currentCollectionId));
       toast.success("Coleção deletada.");
       setDeleteOpen(false);
       setCurrentCollectionId(null);
+      // opcional: se esvaziar página, você pode fazer:
+      // await fetchInventories();
     } catch (e: any) {
       toast.error(e?.message || "Falha ao deletar a coleção.");
     } finally {
@@ -309,56 +322,53 @@ export function Desfazimento() {
     }
   };
 
-    const [stats, setStats] = useState<StatusCount[]>([
-  { status: "TRUE", count: 0 },
-  { status: "FALSE", count: 0 },
-  { status: "NOT_IN_COLLECTION", count: 0 },
-]);
+  const [stats, setStats] = useState<StatusCount[]>([
+    { status: "TRUE", count: 0 },
+    { status: "FALSE", count: 0 },
+    { status: "NOT_IN_COLLECTION", count: 0 },
+  ]);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  async function fetchStats() {
-    try {
-      const res = await fetch(
-        `${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO`,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch(
+          `${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (!res.ok) throw new Error("Erro ao carregar estatísticas");
+        if (!res.ok) throw new Error("Erro ao carregar estatísticas");
 
-      const data: StatusCount[] = await res.json();
+        const data: StatusCount[] = await res.json();
 
-      // 🔧 Normaliza garantindo que todos os status existam
-      const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
+        const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
+        const normalized = expectedStatuses.map((status) => {
+          const found = data.find((d) => d.status === status);
+          return { status, count: found ? found.count : 0 };
+        });
 
-      const normalized = expectedStatuses.map((status) => {
-        const found = data.find((d) => d.status === status);
-        return { status, count: found ? found.count : 0 };
-      });
-
-      setStats(normalized);
-    } catch (err) {
-      console.error(err);
-      // Se der erro, ainda inicializa com 0 em todos
-      setStats([
-        { status: "TRUE", count: 0 },
-        { status: "FALSE", count: 0 },
-        { status: "NOT_IN_COLLECTION", count: 0 },
-      ]);
-    } finally {
-      setLoading(false);
+        setStats(normalized);
+      } catch (err) {
+        console.error(err);
+        setStats([
+          { status: "TRUE", count: 0 },
+          { status: "FALSE", count: 0 },
+          { status: "NOT_IN_COLLECTION", count: 0 },
+        ]);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  fetchStats();
-}, [urlGeral, token]);
+    fetchStats();
+  }, [urlGeral, token]);
 
-   const getIcon = (status: string) => {
+  const getIcon = (status: string) => {
     switch (status) {
       case "TRUE":
         return <CheckCircle className="h-4 w-4 " />;
@@ -371,12 +381,12 @@ useEffect(() => {
     }
   };
 
-   const { hasColecoes
-} = usePermissions();
+  const { hasColecoes } = usePermissions();
+
+  const ROLE_COMISSAO_ID = import.meta.env.VITE_ID_SESSAO_DE_MANUTENCAO_E_LOGISTICA;
 
 
-
-    if (type_search) return <CollectionPage />;
+  if (type_search) return <CollectionPage />;
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -403,15 +413,15 @@ useEffect(() => {
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">
-             {hasColecoes && (
+          {hasColecoes && (
             <Button size="sm" variant='outline' onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
           )}
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             {hasColecoes && (
               <DialogTrigger asChild>
-              <Button size="sm"><Plus size={16}/> Adicionar coleção</Button>
-            </DialogTrigger>
+                <Button size="sm"><Plus size={16}/> Adicionar coleção</Button>
+              </DialogTrigger>
             )}
             <DialogContent>
               <DialogHeader>
@@ -440,10 +450,9 @@ useEffect(() => {
             </DialogContent>
           </Dialog>
 
-       
-         {hasColecoes && (
-           <RoleMembers roleId="16c957d6-e66a-42a4-a48a-1e4ca77e6266" title="Comissão de desfazimento" />
-         )}
+          {hasColecoes && (
+            <RoleMembers roleId={ROLE_COMISSAO_ID} title="Seção de Manutenção e Apoio Logístico" />
+          )}
         </div>
       </div>
 
@@ -451,9 +460,9 @@ useEffect(() => {
       <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
         <Link to={'/informacoes'} className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12} /><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba o que é e como utilizar a plataforma<ArrowRight size={12} /></Link>
 
-        <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-          Encontre, disponibilize e contribua para a reutilização de <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">bens patrimoniais</strong>
-        </h1>
+      <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+Agrupe os itens em coleções para o acompanhamento, controle e <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">descarte</strong>
+</h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
         <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
@@ -462,72 +471,116 @@ useEffect(() => {
       </div>
 
       <div className="grid gap-8 sm:grid-cols-3">
-      {stats?.map((item) => (
-        <Alert key={item.status} className="p-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {item.status === "TRUE"
-                ? "Coletados"
-                : item.status === "FALSE"
-                ? "Pendentes"
-                : "Sem coleção"}
-            </CardTitle>
-            {getIcon(item.status)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{item.count}</div>
-            <p className="text-xs text-muted-foreground">registrados</p>
-          </CardContent>
-        </Alert>
-      ))}
-    </div>
+        {stats?.map((item) => (
+          <Alert key={item.status} className="p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {item.status === "TRUE"
+                  ? "Coletados"
+                  : item.status === "FALSE"
+                  ? "Pendentes"
+                  : "Sem coleção"}
+              </CardTitle>
+              {getIcon(item.status)}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{item.count}</div>
+              <p className="text-xs text-muted-foreground">registrados</p>
+            </CardContent>
+          </Alert>
+        ))}
+      </div>
 
       {/* ============ DND CONTEXT ============ */}
       <DragDropContext onBeforeCapture={onBeforeCapture} onDragEnd={onDragEnd}>
-    
-      <Accordion
-        type="single"
-        defaultValue="usuarios"
-        collapsible
-        className="flex flex-col mt-4 gap-4"
-      >
-        <AccordionItem value="usuarios">
-          <AccordionTrigger className="px-0">
-            <HeaderResultTypeHome
-              title={"Coleções"}
-              icon={<Combine size={24} className="text-gray-400" />}
-            />
-          </AccordionTrigger>
 
-          <AccordionContent className="p-0">
-  <div
-          ref={collectionsGridRef}
-          className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 "
+        {/* ===== Coleções (com paginação) ===== */}
+        <Accordion
+          type="single"
+          defaultValue="usuarios"
+          collapsible
+          className="flex flex-col mt-4 gap-4"
         >
-          {loadingList ? (
-            Array.from({length:8}).map((_,i)=> <div key={i} className="w-full"><Skeleton className="w-full aspect-square" /></div>)
-          ) : collections.length === 0 ? (
-            <div className="col-span-full items-center justify-center w-full flex text-center pt-6">Nenhuma coleção encontrada.</div>
-          ) : (
-            collections.map((c)=> (
-              <CollectionItem
-                key={c.id}
-                props={c}
-                type="DESFAZIMENTO"
-                // novos callbacks p/ hover actions
-                onEdit={()=>openEditFor(c.id)}
-                onDelete={()=>openDeleteFor(c.id)}
+          <AccordionItem value="usuarios">
+            <AccordionTrigger className="px-0">
+              <HeaderResultTypeHome
+                title={"Coleções"}
+                icon={<Combine size={24} className="text-gray-400" />}
               />
-            ))
-          )}
-        </div>
+            </AccordionTrigger>
 
-          </AccordionContent>
+            <AccordionContent className="p-0">
+              <div
+                ref={collectionsGridRef}
+                className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 "
+              >
+                {loadingList ? (
+                  Array.from({length:8}).map((_,i)=> <div key={i} className="w-full"><Skeleton className="w-full aspect-square" /></div>)
+                ) : collections.length === 0 ? (
+                  <div className="col-span-full items-center justify-center w-full flex text-center pt-6">Nenhuma coleção encontrada.</div>
+                ) : (
+                  collections.map((c)=> (
+                    <CollectionItem
+                      key={c.id}
+                      props={c}
+                      type="DESFAZIMENTO"
+                      onEdit={()=>openEditFor(c.id)}
+                      onDelete={()=>openDeleteFor(c.id)}
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* ===== Paginação das Coleções ===== */}
+              <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+                <span className="text-sm text-muted-foreground">Itens por página:</span>
+                <Select
+                  value={limit.toString()}
+                  onValueChange={(value) => {
+                    const newLimit = parseInt(value);
+                    setOffset(0);
+                    setLimit(newLimit);
+                    handleNavigate(0, newLimit);
+                  }}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Itens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[12, 24, 36, 48, 84, 162].map((val) => (
+                      <SelectItem key={val} value={val.toString()}>
+                        {val}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-full flex justify-center items-center gap-10 mt-8">
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+                    disabled={isFirstPage}
+                  >
+                    <ChevronLeft size={16} className="mr-2" />
+                    Anterior
+                  </Button>
+                  <Button
+                    onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+                    disabled={isLastPage}
+                  >
+                    Próximo
+                    <ChevronRight size={16} className="ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </AccordionContent>
 
           </AccordionItem>
-          </Accordion>
+        </Accordion>
 
-      
+        {/* ===== Itens ===== */}
         <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <div className="flex ">
@@ -548,23 +601,23 @@ useEffect(() => {
               <AccordionTrigger />
             </div>
 
-           <AccordionContent className="p-0">
-  {typeVisu === "block" ? (
-    <BlockItemsVitrine
-      workflow="DESFAZIMENTO"
-      selectedIds={selectedIds}
-      onChangeSelected={setSelectedIds}
-      registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
-    />
-  ) : (
-    <RowsItemsVitrine
-      workflow="DESFAZIMENTO"
-      selectedIds={selectedIds}
-      onChangeSelected={setSelectedIds}
-      registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
-    />
-  )}
-</AccordionContent>
+            <AccordionContent className="p-0">
+              {typeVisu === "block" ? (
+                <BlockItemsVitrine
+                  workflow="DESFAZIMENTO"
+                  selectedIds={selectedIds}
+                  onChangeSelected={setSelectedIds}
+                  registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
+                />
+              ) : (
+                <RowsItemsVitrine
+                  workflow="DESFAZIMENTO"
+                  selectedIds={selectedIds}
+                  onChangeSelected={setSelectedIds}
+                  registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
+                />
+              )}
+            </AccordionContent>
 
           </AccordionItem>
         </Accordion>

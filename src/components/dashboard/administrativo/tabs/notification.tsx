@@ -39,9 +39,10 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { Tabs, TabsContent } from "../../../ui/tabs";
-import { UsersResponse } from "../../cargos-funcoes/tabs/roles";
+
 import { useLocation, useNavigate } from "react-router-dom";
 import { NotificationItemAdmin } from "../components/notification-item-admin";
+import { UsersResponse } from "../../cargos-funcoes/tabs/roles";
 
 // ===== Tipos da API =====
 export type RoleDTO = { id: string; name: string; description: string };
@@ -408,7 +409,7 @@ const fetchInventories = async () => {
                   <SelectTrigger className="w-full">
                     <SelectValue  />
                   </SelectTrigger>
-                  <SelectContent className="z-[9999]">
+                       <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
                     <SelectGroup>
                       {MESSAGE_TEMPLATES.map((t) => (
                         <SelectItem key={t.id} value={t.id}>
@@ -661,7 +662,7 @@ const fetchInventories = async () => {
             onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
             disabled={isFirstPage}
           >
-            <ChevronLeft size={16} className="mr-2" />
+            <ChevronLeft size={16} className="" />
             Anterior
           </Button>
 
@@ -670,7 +671,7 @@ const fetchInventories = async () => {
             disabled={isLastPage}
           >
             Próximo
-            <ChevronRight size={16} className="ml-2" />
+            <ChevronRight size={16} className="" />
           </Button>
         </div>
       </div>

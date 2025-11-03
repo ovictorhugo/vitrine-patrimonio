@@ -1,76 +1,72 @@
-import * as React from "react"
-import { ChevronsUpDown, GalleryVerticalEnd, Plus } from "lucide-react"
+import * as React from "react";
+import { ChevronsUpDown } from "lucide-react";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
+} from "./ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "./ui/sidebar"
+} from "./ui/sidebar";
+import { useTheme } from "next-themes";
+import { UserContext } from "../context/context";
+import { SymbolEEWhite } from "./svg/SymbolEEWhite";
 import { toast } from "sonner";
-import { useTheme } from "next-themes"
-import { UserContext } from "../context/context"
-import { SymbolEEWhite } from "./svg/SymbolEEWhite"
-import { Button } from "./ui/button";
 
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string
-    id: string
-    plan: string
-  }[]
-}) {
-  const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+type Team = {
+  name: string;
+  id: string;
+  plan: string;
+};
 
-    const {user,   setPermission, urlGeral, setRole, role, loggedIn} = React.useContext(UserContext)
-    const { theme } = useTheme()
-  
-  
-  
-    React.useEffect(() => {
-      // Obtém o role do localStorage
-      const storedRole = localStorage.getItem("role");
-      if (storedRole) {
-        const parsedRole = JSON.parse(storedRole);
-        const initialTeam = teams.find((team) => team.name === parsedRole);
-        if (initialTeam) {
-          setRole(initialTeam.name);
-        }
+export function TeamSwitcher({ teams }: { teams: Team[] }) {
+  const { isMobile } = useSidebar();
+  const [activeTeam, setActiveTeam] = React.useState<Team | undefined>(teams?.[0]);
+  const { setPermission, urlGeral, setRole, role, loggedIn } = React.useContext(UserContext);
+  const { theme } = useTheme();
+
+  // carrega role inicial do localStorage, se existir
+  React.useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    if (storedRole) {
+      const parsedRole = JSON.parse(storedRole);
+      const initialTeam = teams.find((team) => team.name === parsedRole);
+      if (initialTeam) {
+        setRole(initialTeam.name);
+        setActiveTeam(initialTeam);
       }
-    }, [teams]); // Executa novamente se a lista de teams mudar
-  
-    const token = localStorage.getItem('jwt_token');
-  
-  const fetchDataPerm = async (role_id:any) => {
-    let urlPermission = urlGeral + `roles/${role_id.id}/permissions`
-       console.log(urlPermission)
+    }
+  }, [teams, setRole]);
 
-       if (role_id.id == '') {
-        setPermission([])
-        setRole('')
-        localStorage.removeItem('role');
-        localStorage.removeItem('permission');
-     
-       }
+  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
-   else {
+  const fetchDataPerm = async (team: Team) => {
+    // VISITANTE / MODO PADRÃO
+    if (!team.id) {
+      setPermission([]);
+      setRole("");
+      setActiveTeam(undefined);
+      localStorage.removeItem("role");
+      localStorage.removeItem("permission");
+      toast("Você alternou as permissões", {
+        description: `Acessando no modo padrão`,
+        action: { label: "Fechar", onClick: () => {} },
+      });
+      return;
+    }
+
+    const urlPermission = `${urlGeral}roles/${team.id}/permissions`;
     try {
-      const response = await fetch(urlPermission , {
+      const response = await fetch(urlPermission, {
         mode: "cors",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET",
           "Access-Control-Allow-Headers": "Content-Type",
@@ -78,36 +74,35 @@ export function TeamSwitcher({
           "Content-Type": "text/plain",
         },
       });
+
       const data = await response.json();
       if (data) {
-        console.log(data)
-        setPermission(data)
-        setActiveTeam(role_id)
-        localStorage.setItem('permission', JSON.stringify(data));
+        // aplica primeiro as permissões, depois o papel (evita corrida visual)
+        setPermission(data);
+        setRole(team.name);
+        setActiveTeam(team);
+        localStorage.setItem("permission", JSON.stringify(data));
+        localStorage.setItem("role", JSON.stringify(team.name));
+
         toast("Você alternou as permissões", {
-          description: `Acessando como ${role_id.name}`,
-          action: {
-            label: "Fechar",
-            onClick: () => console.log("Fechar"),
-          },
+          description: `Acessando como ${team.name}`,
+          action: { label: "Fechar", onClick: () => {} },
         });
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      toast("Não foi possível carregar as permissões", {
+        description: "Tente novamente em instantes.",
+      });
     }
-   }
   };
-  
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu  >
-          <DropdownMenuTrigger  asChild disabled={!loggedIn && (teams.length == 0)}>
-            <SidebarMenuButton
-              size="lg"
-              className=" data-[state=open]:text-sidebar-accent-foreground"
-            >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild disabled={!loggedIn && teams.length === 0}>
+            <SidebarMenuButton size="lg" className="data-[state=open]:text-sidebar-accent-foreground">
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-eng-dark-blue text-sidebar-primary-foreground">
                 <div className="h-4">
                   <SymbolEEWhite />
@@ -115,15 +110,16 @@ export function TeamSwitcher({
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {teams.find((team) => team.name === role)?.name || "Selecionar"}
+                  {teams.find((t) => t.name === role)?.name || "Selecionar"}
                 </span>
                 <span className="truncate text-xs">
-                  {teams.find((team) => team.name === role)?.plan || ""}
+                  {teams.find((t) => t.name === role)?.plan || ""}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             align="start"
@@ -133,22 +129,35 @@ export function TeamSwitcher({
             <DropdownMenuLabel className="text-xs text-slate-500 dark:text-slate-400">
               Cargos
             </DropdownMenuLabel>
+
             {teams.map((team) => (
               <DropdownMenuItem
-                key={team.id}
+                key={team.id || team.name}
                 onClick={() => {
+                  // não setar role/LS aqui: deixe fetchDataPerm orquestrar tudo
                   fetchDataPerm(team);
-                  localStorage.setItem("role", JSON.stringify(team.name));
-                  setRole(team.name);
                 }}
-                className={`gap-2 p-2 ${
-                  role === team.name ? "bg-neutral-50 dark:bg-neutral-700" : ""
-                }`}
+                className={`gap-2 p-2 ${role === team.name ? "bg-neutral-50 dark:bg-neutral-700" : ""}`}
               >
-              
                 <p className="truncate">{team.name}</p>
               </DropdownMenuItem>
             ))}
+
+            <div className="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+
+            <DropdownMenuLabel className="text-xs text-slate-500 dark:text-slate-400">
+              Usuário
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem
+              onClick={() => {
+                // Modo padrão (sem cargo/permissão)
+                fetchDataPerm({ name: "Visitante", id: "", plan: "Usuário" });
+              }}
+              className="gap-2 p-2"
+            >
+              <p className="truncate">Modo padrão</p>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

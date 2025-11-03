@@ -1,4 +1,4 @@
-import { Archive, Bell, Bug, ChevronLeft, ChevronRight, Hourglass, ListChecks, Recycle, Settings, Store } from "lucide-react";
+import { Archive, Bell, Bug, ChevronLeft, ChevronRight, Clock, HelpCircle, Hourglass, ListChecks, ListTodo, Recycle, Settings, Store, Trash, Users, Wrench, XCircle } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -15,18 +15,31 @@ import { Notification } from "./tabs/notification";
 import { Feedback } from "./tabs/feedback";
 import { Configuration } from "./tabs/configuration";
 import { usePermissions } from "../../permissions";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../ui/carousel";
 
 export type StatusCount = { status: string; count: number };
-
+const WORKFLOWS = [
+ { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine", Icon: Hourglass },
+    { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine", Icon: Wrench },
+    { key: "VITRINE", name: "Anunciados", Icon: Store },
+    { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando transferência", Icon: Clock },
+    { key: "TRANSFERIDOS", name: "Transferidos", Icon: Archive },
+ { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Avaliação S. Patrimônio - Desfazimento", Icon: Hourglass },
+    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
+    { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento", Icon: ListTodo },
+    { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
+    { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento", Icon: Trash },
+    { key: "DESCARTADOS", name: "Processo Finalizado", Icon: Recycle },
+] as const;
 export function Admin() {
-     const { hasConfiguracoes
+     const { hasConfiguracoes,hasInventario
   } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, urlGeral } = useContext(UserContext);
 
   const tabs = [
-    { id: "inventario", label: "Inventário", icon: ListChecks },
+    { id: "inventario", label: "Inventário", icon: ListChecks, condition:!hasInventario },
         { id: "notification", label: "Notificações", icon: Bell },
          { id: "feedback", label: "Feedback", icon:Bug },
           { id: 'configuration', label: "Configurações", icon: Settings, condition:!hasConfiguracoes },
@@ -101,16 +114,30 @@ export function Admin() {
   }, [urlGeral]);
 
   // Derivações dos cards
-  const countReview =
-    (statsMap["REVIEW_REQUESTED_VITRINE"] || 0) + (statsMap["REVIEW_REQUESTED_DESFAZIMENTO"] || 0);
-  const countVitrine = statsMap["VITRINE"] || 0;
-  const countTransferidos = statsMap["TRANSFERIDOS"] || 0;
-  const countDesfazimento = statsMap["DESFAZIMENTO"] || 0;
-
-  const fmt = (n: number) => (loadingStats ? "…" : String(n));
 
   const {onOpen} = useModal()
 
+  
+const WORKFLOW_STATUS_META: Record<
+  string,
+  { Icon: React.ComponentType<any>; colorClass: string }
+> = {
+  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
+  ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
+  VITRINE: { Icon: Store, colorClass: "text-green-600" },
+  AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
+  TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
+
+  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+  ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
+  REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
+  REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
+  DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+  DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
+};
+
+  const getMeta = (statusKey: string) =>
+    WORKFLOW_STATUS_META[statusKey] ?? { Icon: HelpCircle, colorClass: "text-zinc-500" };
 
   return (
     <div className="flex flex-col h-full">
@@ -154,51 +181,35 @@ export function Admin() {
         </div>
 
         <div className="gap-8 p-8 pt-0">
-          <div className={`grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4`}>
-            <Alert className="p-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Esperando revisão</CardTitle>
-                <Hourglass className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{fmt(countReview)}</div>
-                <p className="text-xs text-muted-foreground">registrados</p>
-              </CardContent>
-            </Alert>
+            <Carousel className="w-full flex gap-4 px-4 items-center">
+                      <div className="absolute left-0 z-[9]">
+                        <CarouselPrevious />
+                      </div>
+                      <CarouselContent className="gap-4">
+                        {WORKFLOWS.map(({ key, name }) => {
+              const { Icon } = getMeta(key);
+                          return (
+                            <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                              <Alert className="p-0">
+                                <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                                  <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>
+                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="text-2xl font-bold">{statsMap[key] || 0}</div>
+                                  <p className="text-xs text-muted-foreground">registrados</p>
+                                </CardContent>
+                              </Alert>
+                            </CarouselItem>
+                          );
+                        })}
+                      </CarouselContent>
+                      <div className="absolute right-0 z-[9]">
+                        <CarouselNext />
+                      </div>
+                    </Carousel>
 
-            <Alert className="p-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Anunciados</CardTitle>
-                <Store className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{fmt(countVitrine)}</div>
-                <p className="text-xs text-muted-foreground">registrados</p>
-              </CardContent>
-            </Alert>
-
-            <Alert className="p-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Transferidos</CardTitle>
-                <Archive className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{fmt(countTransferidos)}</div>
-                <p className="text-xs text-muted-foreground">registrados</p>
-              </CardContent>
-            </Alert>
-
-            <Alert className="p-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Desfeitos</CardTitle>
-                <Recycle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{fmt(countDesfazimento)}</div>
-                <p className="text-xs text-muted-foreground">registrados</p>
-              </CardContent>
-            </Alert>
-          </div>
+       
         </div>
 
         <Tabs defaultValue="articles" value={value} className="relative ">

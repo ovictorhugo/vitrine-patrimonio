@@ -30,6 +30,7 @@ import { usePermissions } from "../permissions";
 import { Tabs, TabsContent } from "../ui/tabs";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog, { TransferRequestDTO } from "../homepage/components/transfer-tab-catalog";
+import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -54,12 +55,29 @@ interface SectorDTO {
   unit_id?: string;
   unit?: UnitDTO;
 }
+interface LegalGuardian { legal_guardians_name: string; legal_guardians_code: string; id: UUID; }
+
+type UUID = string;
 interface LocationDTO {
-  id: string;
-  location_name: string;
-  location_code: string;
-  sector_id?: string;
-  sector?: SectorDTO;
+    legal_guardian_id: UUID;
+    sector_id: UUID;
+    location_name: string;
+    location_code: string;
+    id: UUID;
+    sector: {
+      agency_id: UUID;
+      sector_name: string;
+      sector_code: string;
+      id: UUID;
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: UUID;
+        id: UUID;
+        unit: { unit_name: string; unit_code: string; unit_siaf: string; id: UUID; };
+      };
+    };
+    legal_guardian: LegalGuardian;
 }
 interface MaterialDTO {
   id: string;
@@ -88,10 +106,10 @@ interface AssetDTO {
   group_code: string;
   expense_element_code: string;
   subelement_code: string;
-  is_official?: boolean;
-  material?: MaterialDTO | null;
-  legal_guardian?: LegalGuardianDTO | null;
-  location?: LocationDTO | null;
+  is_official: boolean;
+  material: MaterialDTO ;
+  legal_guardian: LegalGuardianDTO ;
+  location: LocationDTO ;
 }
 type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
 
@@ -111,19 +129,32 @@ type WorkflowStatus =
   | "ARCHIVED"
   | string; // permite desconhecidos
 
-type WorkflowEvent = {
-  id: string;
-   detail?: Record<string, any>;
+
+
+type WorkflowHistoryItem = {
   workflow_status: string;
-  created_at: string; // ISO
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string;
-  } | null;
-    transfer_requests?: TransferRequestDTO[];
+  detail?: Record<string, any>;
+  id: UUID;
+  user: {
+    id: UUID;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string | null;
+    lattes_id: string | null;
+    orcid: string | null;
+    ramal: string | null;
+    photo_url: string | null;
+    background_url: string | null;
+    matricula: string | null;
+    verify: boolean;
+    institution_id: UUID;
+  };
+  catalog_id: UUID;
+  created_at: string;
+  transfer_requests?: TransferRequestDTO[];
 };
+
  export interface CatalogResponseDTO {
   id: string;
   created_at:string
@@ -131,14 +162,24 @@ type WorkflowEvent = {
   conservation_status: string;
   description: string;
   asset: AssetDTO;
-  user?: {
-    id: string;
+   user: {
+    id: UUID;
     username: string;
     email: string;
-  } | null;
-  location?: LocationDTO | null; // localização ATUAL do item no catálogo
+    provider: string;
+    linkedin: string | null;
+    lattes_id: string | null;
+    orcid: string | null;
+    ramal: string | null;
+    photo_url: string | null;
+    background_url: string | null;
+    matricula: string | null;
+    verify: boolean;
+    institution_id: UUID;
+  };
+  location: LocationDTO ; // localização ATUAL do item no catálogo
   images: CatalogImageDTO[];
-  workflow_history?: WorkflowEvent[]; 
+  workflow_history:  WorkflowHistoryItem[]; 
   transfer_requests: TransferRequest[]
 }
 
@@ -214,7 +255,7 @@ const chain = (loc?: LocationDTO | null) => {
   if (!loc || !loc.sector) return [];
   const s = loc.sector;
   const a = s.agency;
-  const u = a?.unit ?? s.unit;
+  const u = a?.unit 
   // ordem: Unidade -> Agência -> Setor -> Local
   const parts: string[] = [];
   if (u) parts.push(`${u.unit_code} - ${u.unit_name}`);
@@ -587,26 +628,31 @@ const lastWorkflow = useMemo(() => {
 }, [catalog?.workflow_history]);
 
 
-const fullCode = fullCodeFrom(catalog || ({} as CatalogResponseDTO));
+  const fullCode = fullCodeFrom(catalog || ({} as CatalogResponseDTO));
   const qrValue = qrUrlFrom(catalog || ({} as CatalogResponseDTO));
 
 
 
+// Garante que workflow_history é um array válido
+const firstWorkflow = Array.isArray(catalog?.workflow_history)
+  ? catalog.workflow_history[0]
+  : undefined;
+
+
+
+// Agora você pode acessar com segurança
+const firstStatus = lastWorkflow?.workflow_status;
+
+console.log(' firstStatus', firstStatus );
+// Exemplos de uso:
 const workflowReview =
-  lastWorkflow &&
-  (
-    lastWorkflow.workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO" ||
-    lastWorkflow.workflow_status === "REVIEW_REQUESTED_VITRINE" ||
-    lastWorkflow.workflow_status === "ADJUSTMENT_VITRINE" ||
-    lastWorkflow.workflow_status === "ADJUSTMENT_DESFAZIMENTO"
-  );
+  firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
+  firstStatus === "REVIEW_REQUESTED_VITRINE" ||
+  firstStatus === "ADJUSTMENT_VITRINE" ||
+  firstStatus === "ADJUSTMENT_DESFAZIMENTO";
 
+const workflowAnunciados = firstStatus === "VITRINE";
 
-const workflowAnunciados =
-  Array.isArray(catalog?.workflow_history) &&
-  catalog.workflow_history.length > 0 &&
-  [...catalog.workflow_history]               // cria cópia pra não mutar
-    [0]?.workflow_status === "VITRINE";
 
        const [transfers, setTransfers] = useState<TransferRequestDTO[]>([]);
      
@@ -620,7 +666,7 @@ const workflowAnunciados =
 
  const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:(!hasCatalogo || !(user?.id == catalog?.user?.id)) },
+    { id: "transferencia", label: `Pedidos de transferência ${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:!((hasCatalogo || (user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
   ];
 
@@ -1183,7 +1229,7 @@ if(catalog) {
 
                     <TabsContent value="movimentacao">
  <MovimentacaoModalCatalog
-    catalog={catalog}
+    catalog={catalog ?? ({} as CatalogEntry)}
     urlGeral={urlGeral}
     onUpdated={(updated) => {
       // opcional: atualizar o estado local do CatalogModal com o catálogo atualizado

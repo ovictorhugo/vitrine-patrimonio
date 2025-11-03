@@ -41,7 +41,7 @@ step
   <div>
     <p className="font-medium">Notificações</p>
     <p className="text-gray-500 text-sm">
-      Você será notificado sobre o andamento e o resultado da avaliação.
+      Você será notificado na plataforma sobre o andamento e o resultado da avaliação.
     </p>
   </div>
 </div>

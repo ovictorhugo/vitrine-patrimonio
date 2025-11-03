@@ -660,9 +660,49 @@ export function CatalogModal() {
 
   const diff = catalog?.created_at ? calculateDifference(catalog.created_at) : null;
 
+  
+
+// Agora você pode acessar com segurança
+const [workflowReview, setWorkflowReview] = useState(false);
+const [workflowAnunciados, setWorkflowAnunciados] = useState(false);
+
+useEffect(() => {
+  if (!catalog || !Array.isArray(catalog.workflow_history)) return;
+
+  // pega o primeiro item (ou o último, dependendo da sua regra)
+  const lastWorkflow = catalog.workflow_history[0];
+  const firstStatus = lastWorkflow?.workflow_status;
+
+  console.log("firstStatus:", firstStatus);
+
+  // define estados conforme o status
+  const isReview =
+    firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
+    firstStatus === "REVIEW_REQUESTED_VITRINE" ||
+    firstStatus === "ADJUSTMENT_VITRINE" ||
+    firstStatus === "ADJUSTMENT_DESFAZIMENTO";
+
+    const isComissao = 
+     firstStatus === "REVIEW_REQUESTED_COMISSION" ||
+firstStatus === "REJEITADOS_COMISSAO" ||
+ firstStatus === "DESFAZIMENTO" ||
+      firstStatus === "DESCARTADOS"
+
+     const isJustificativa =
+      firstStatus === "DESFAZIMENTO" ||
+      firstStatus === "DESCARTADOS" ||
+firstStatus === "REJEITADOS_COMISSAO"
+
+  const isAnunciado = firstStatus === "VITRINE";
+
+  setWorkflowReview(isReview);
+  setWorkflowAnunciados(isAnunciado);
+}, [catalog]);
+
+
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "transferencia", label: `Transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive },
+    { id: "transferencia", label: `Pedidos de transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:!((hasCatalogo || (user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
   ];
 
@@ -701,25 +741,137 @@ export function CatalogModal() {
   const [value, setValue] = useState("visao_geral");
 
 
-  
-  // verifica se o primeiro workflow da lista é REVIEW_VITRINE
-  const workflowReview =
-    (Array.isArray(catalog?.workflow_history) &&
-     catalog?.workflow_history.length > 0 &&
-     catalog?.workflow_history[0].workflow_status === "REVIEW_REQUESTED_DESFAZIMENTO") 
-     || catalog?.workflow_history[0].workflow_status === "REVIEW_REQUESTED_VITRINE"
-     || catalog?.workflow_history[0].workflow_status === "ADJUSTMENT_VITRINE"
-     || catalog?.workflow_history[0].workflow_status === "ADJUSTMENT_DESFAZIMENTO"
-  
+  const firstStatus = lastWorkflow?.workflow_status;
 
-        const workflowAnunciados =
-       (Array.isArray(catalog?.workflow_history) &&
-        catalog?.workflow_history.length > 0 &&
-        catalog?.workflow_history[0].workflow_status === "VITRINE") 
-     
-     
-     
+    const isComissao = 
+     firstStatus === "REVIEW_REQUESTED_COMISSION" ||
+firstStatus === "REJEITADOS_COMISSAO" ||
+ firstStatus === "DESFAZIMENTO" ||
+      firstStatus === "DESCARTADOS"
 
+     const isJustificativa =
+      firstStatus === "DESFAZIMENTO" ||
+      firstStatus === "DESCARTADOS" ||
+firstStatus === "REJEITADOS_COMISSAO"
+
+
+//////////////JUSTIFICVATIVA E AVALIADOR
+
+// === Helpers para revisor/justificativa baseados em workflow.detail ===
+const FIRST_COMMISSION_STATUS = "REVIEW_REQUESTED_COMISSION";
+const JUSTIFY_FROM_STATUSES = new Set(["REJEITADOS_COMISSAO", "DESFAZIMENTO"]);
+const COMMISSION_BLOCK_STATUSES = new Set([
+  "REVIEW_REQUESTED_COMISSION",
+  "REJEITADOS_COMISSAO",
+  "DESFAZIMENTO",
+  "DESCARTADOS",
+]);
+
+function firstTruthy<T>(...vals: (T | null | undefined)[]) {
+  return vals.find((v) => {
+    if (typeof v === "string") return v.trim().length > 0;
+    return v != null;
+  });
+}
+
+type ReviewerObj = { id?: string | number; username?: string; name?: string } | undefined;
+
+function takeFirstReviewerFromDetail(detail?: Record<string, any>): ReviewerObj {
+  if (!detail) return undefined;
+
+  const candidates = [
+    detail.reviewers,
+    detail.reviwers, // variação/typo
+    detail.reviewes, // variação/typo
+    detail.revisor,
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) {
+      const first = c[0];
+      if (first && (first.id || first.username || first.name)) return first;
+    } else if (c && (c.username || c.name || c.id)) {
+      return c as ReviewerObj;
+    }
+  }
+  return undefined;
+}
+
+function pickJustificationFromDetail(detail?: Record<string, any>): string | undefined {
+  const j = firstTruthy<string>(detail?.justificativa, detail?.justification, detail?.reason);
+  return typeof j === "string" ? j : undefined;
+}
+
+function findFirstWorkflowByStatuses(
+  list: WorkflowEvent[] | undefined | null,
+  statuses: string[]
+): WorkflowEvent | undefined {
+  if (!list?.length) return undefined;
+  return list.find((ev) => statuses.includes(ev.workflow_status));
+}
+
+// Status atual (seguro)
+const currentStatus = lastWorkflow?.workflow_status;
+
+// Deve mostrar bloco de comissão?
+const shouldShowCommissionBlock = COMMISSION_BLOCK_STATUSES.has(currentStatus ?? "");
+
+// Primeiro REVIEW_REQUESTED_COMISSION para extrair revisor
+const firstReviewRequestedComission = useMemo(
+  () =>
+    (catalog?.workflow_history ?? []).find(
+      (ev) => ev.workflow_status === FIRST_COMMISSION_STATUS
+    ) ?? null,
+  [catalog?.workflow_history]
+);
+
+// Normaliza "detail" vs "details" => sempre retorna o objeto de details
+function getDetailsFromEvent(ev?: WorkflowEvent | null): Record<string, any> | undefined {
+  if (!ev) return undefined;
+  // prioriza "details" (como você pediu), mas aceita "detail" se vier assim
+  return (ev as any).details ?? (ev as any).detail ?? undefined;
+}
+
+function pickJustificationFromDetails(details?: Record<string, any>): string | undefined {
+  if (!details) return undefined;
+  const j = details.justificativa ?? details.justification ?? details.reason;
+  return typeof j === "string" && j.trim() ? j : undefined;
+}
+
+
+// Revisor (se existir)
+const reviewerFromCommission = useMemo(() => {
+  if (!shouldShowCommissionBlock) return undefined;
+
+  const firstCommission = findFirstWorkflowByStatuses(catalog?.workflow_history, [
+    "REVIEW_REQUESTED_COMISSION",
+  ]);
+  const details = getDetailsFromEvent(firstCommission);
+
+  const rev = details?.reviewers?.[0];
+  if (rev && (rev.id || rev.username)) {
+    return rev as { id?: string; username?: string };
+  }
+  return undefined;
+}, [shouldShowCommissionBlock, catalog?.workflow_history]);
+
+// Justificativa conforme regra:
+const justificationText = useMemo(() => {
+  if (!shouldShowCommissionBlock) return undefined;
+
+  // Sempre pegar o PRIMEIRO workflow que seja DESFAZIMENTO ou REJEITADOS_COMISSAO
+  const wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
+    "DESFAZIMENTO",
+    "REJEITADOS_COMISSAO",
+  ]);
+
+  const details = getDetailsFromEvent(wf);
+  return pickJustificationFromDetails(details);
+}, [shouldShowCommissionBlock, catalog?.workflow_history]);
+
+
+
+console.log(catalog)
   const content = () => {
     if (!catalog) {
       return (
@@ -1095,26 +1247,70 @@ export function CatalogModal() {
                           </Alert>
                         </div>
 
-                        <Alert className="mt-8">
-                          <div className="flex gap-3 items-center">
-                            <Avatar className="rounded-md h-12 w-12">
-                              <AvatarImage
-                                className={""}
-                                src={`${urlGeral}user/upload/${catalog.user?.id}/icon`}
-                                alt={`${catalog.user?.username}`}
-                              />
-                              <AvatarFallback className="flex items-center justify-center">
-                                <User size={16} />
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm w-fit text-gray-500">Anunciante</p>
-                              <p className="text-black dark:text-white font-medium text-lg truncate">
-                                {catalog.user?.username}
-                              </p>
-                            </div>
-                          </div>
-                        </Alert>
+
+                 
+                       {/* Anunciante (mantém como já está) */}
+<Alert className="mt-8">
+  <div className="flex gap-3 items-center">
+    <Avatar className="rounded-md h-12 w-12">
+      <AvatarImage
+        className=""
+        src={`${urlGeral}user/upload/${catalog.user?.id}/icon`}
+      />
+      <AvatarFallback className="flex items-center justify-center">
+        <User size={16} />
+      </AvatarFallback>
+    </Avatar>
+    <div>
+      <p className="text-sm w-fit text-gray-500">Anunciante</p>
+      <p className="text-black dark:text-white font-medium text-lg truncate">
+        {catalog.user?.username}
+      </p>
+    </div>
+  </div>
+</Alert>
+
+{/* Revisor + Justificativa (apenas quando houver algo) */}
+{shouldShowCommissionBlock && (reviewerFromCommission || justificationText) && (
+  <Alert className="mt-8">
+    {reviewerFromCommission && (
+      <div className="flex gap-3 items-center">
+        <Avatar className="rounded-md h-12 w-12">
+          <AvatarImage
+            className=""
+            src={
+              reviewerFromCommission.id
+                ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
+                : undefined
+            }
+          />
+          <AvatarFallback className="flex items-center justify-center">
+            <User size={16} />
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm w-fit text-gray-500">Revisor</p>
+          <p className="text-black dark:text-white font-medium text-lg truncate">
+            {reviewerFromCommission.username ?? "Não informado"}
+          </p>
+        </div>
+      </div>
+    )}
+
+    {justificationText && (
+      <div className={reviewerFromCommission ? "mt-4" : ""}>
+        <p className="text-sm w-fit text-gray-500">Justificativa</p>
+        <p className="text-black dark:text-white whitespace-pre-wrap">
+          {justificationText}
+        </p>
+      </div>
+    )}
+  </Alert>
+)}
+
+
+
+                      
 
                         {/* Histórico */}
                         <Separator className="mt-8 mb-2" />

@@ -1,14 +1,16 @@
 // src/pages/desfazimento/components/item-patrimonio.tsx
+import React, { useContext, useEffect, useRef } from "react";
 import { Eye, User, Barcode } from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "../../../ui/carousel";
 import { CardContent } from "../../../ui/card";
-import { useContext } from "react";
 import { UserContext } from "../../../../context/context";
 import { Badge } from "../../../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
+// ⬇️ hook do seu modal
+import { useModal } from "../../../hooks/use-modal-store";
 
 export interface CatalogEntry {
   id: string;
@@ -29,19 +31,12 @@ export interface CatalogEntry {
 
 type Props = CatalogEntry & {
   selected?: boolean;
-  onItemClick?: (e: React.MouseEvent) => void;
+  onItemClick?: (e: React.MouseEvent) => void; // seleção no clique simples (pai controla)
 };
 
 export function ItemPatrimonio(props: Props) {
   const { urlGeral } = useContext(UserContext);
-
-  const formatDateTimeBR = (iso?: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(d);
-    } catch { return iso; }
-  };
+  const { onOpen } = useModal();
 
   const materialNome =
     props.asset?.material?.material_name ??
@@ -56,9 +51,52 @@ export function ItemPatrimonio(props: Props) {
     return `${urlGeral}${cleanPath}`;
   };
 
+  const qualisColor: Record<string, string> = {
+    BM: "bg-green-500",
+    AE: "bg-red-500",
+    IR: "bg-yellow-500",
+    OC: "bg-blue-500",
+    RE: "bg-purple-500",
+  };
+
+  // ======= Clique simples x duplo clique =======
+  const clickTimerRef = useRef<number | null>(null);
+  const CLICK_DELAY = 200; // ajuste fino se quiser
+
+  const handleRootClick: React.MouseEventHandler = (e) => {
+    if (clickTimerRef.current !== null) {
+      // Double-click: cancela single e abre modal
+      window.clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      onOpen("catalog-modal", { ...props });
+      return;
+    }
+    // Single-click: agenda seleção
+    clickTimerRef.current = window.setTimeout(() => {
+      clickTimerRef.current = null;
+      props.onItemClick?.(e);
+    }, CLICK_DELAY);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current !== null) {
+        window.clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const stop: React.MouseEventHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <div className={`group cursor-pointer  rounded-lg relative ${props.selected ? "border-2 border-eng-blue" : ""}`} onClick={props.onItemClick}>
-     
+    <div
+      className={`group cursor-pointer rounded-lg relative ${props.selected ? "border-2 border-eng-blue" : ""}`}
+      onClick={handleRootClick}
+    >
       <div className="relative">
         {/* Imagens */}
         <Carousel className="w-full flex items-center">
@@ -79,15 +117,21 @@ export function ItemPatrimonio(props: Props) {
               );
             })}
           </CarouselContent>
+
+          {/* botões com stopPropagation para não selecionar ao clicar */}
           <div className="w-full hidden absolute justify-between group-hover:flex p-3">
-            <CarouselPrevious variant="outline" />
-            <CarouselNext variant="outline" />
+            <div onClick={stop}>
+              <CarouselPrevious variant="outline" />
+            </div>
+            <div onClick={stop}>
+              <CarouselNext variant="outline" />
+            </div>
           </div>
         </Carousel>
       </div>
 
       {/* Rodapé */}
-      <Alert className={`rounded-none p-3 flex justify-between items-center `}>
+      <Alert className="rounded-none p-3 flex justify-between items-center">
         <div className="w-full">
           <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
             <p className="font-medium truncate min-w-0" title={materialNome}>
@@ -104,7 +148,10 @@ export function ItemPatrimonio(props: Props) {
           <p className="text-sm line-clamp-1 text-gray-500">{props.description}</p>
         </div>
       </Alert>
-      <div className="h-2 border rounded-b-md border-t-0 bg-zinc-300" />
+
+      <div
+        className={`${qualisColor[props.asset.csv_code] || "bg-neutral-300"} h-2 border rounded-b-md border-t-0`}
+      />
     </div>
   );
 }

@@ -12,6 +12,8 @@ import { Inventario } from "./tabs/inventario";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { Patrimonios } from "../dashboard-page/tabs/patrimonios";
+import { AnunciadosSala } from "./tabs/anunciados";
+import { usePermissions } from "../../permissions";
 
 type Unit = { unit_name: string; unit_code: string; unit_siaf: string; id: string };
 type Agency = { agency_name: string; agency_code: string; unit_id: string; id: string; unit: Unit };
@@ -121,7 +123,7 @@ export type LocationInventoryDTO = {
 };
 
 export function VisaoSala() {
-   const { urlGeral } = useContext(UserContext);
+   const { urlGeral, user } = useContext(UserContext);
       const navigate = useNavigate();
       const queryUrl = useQuery();
     const type_search = queryUrl.get('loc_id');
@@ -169,29 +171,13 @@ export function VisaoSala() {
     return () => controller.abort();
   }, [type_search]);
 
+
+  const history = useNavigate();
       
         const handleVoltar = () => {
-  
-      const currentPath = location.pathname;
-      const hasQueryParams = location.search.length > 0;
-      
-      if (hasQueryParams) {
-        // Se tem query parameters, remove apenas eles
-        navigate(currentPath);
-      } else {
-        // Se não tem query parameters, remove o último segmento do path
-        const pathSegments = currentPath.split('/').filter(segment => segment !== '');
-        
-        if (pathSegments.length > 1) {
-          pathSegments.pop();
-          const previousPath = '/' + pathSegments.join('/');
-          navigate(previousPath);
-        } else {
-          // Se estiver na raiz ou com apenas um segmento, vai para raiz
-          navigate('/');
-        }
-      }
-    };
+   history(-3)
+  };
+
 
  
           const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
@@ -345,8 +331,11 @@ export function VisaoSala() {
     
       input.click();
     };
-    
 
+    const {hasSalas} = usePermissions()
+    
+console.log(room?.legal_guardian_id)
+console.log('ertert',user?.system_identity.legal_guardian.id)
         if (loading) {
             return (
               <div className="flex justify-center items-center h-full">
@@ -359,6 +348,33 @@ export function VisaoSala() {
                 </p>
               </div>
             </div>
+            );
+          }
+
+           if (!hasSalas && !(room?.legal_guardian_id == user?.system_identity.legal_guardian.id)) {
+            return (
+              <div
+                className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
+                
+              >
+           
+          
+                <div className="w-full flex flex-col items-center justify-center">
+                <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                    (⊙_⊙)
+                  </p>
+                  <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                   Você não tem permissão para <br/> acessar as  informações desta sala.
+                  </h1>
+                 
+          
+                  <div className="flex gap-3 mt-8">
+                          <Button  onClick={handleVoltar} variant={'ghost'}><Undo2 size={16}/> Voltar</Button>
+                           <Link to={'/'}> <Button><Home size={16}/> Página Inicial</Button></Link>
+          
+                          </div>
+                </div>
+              </div>
             );
           }
 
@@ -563,9 +579,6 @@ export function VisaoSala() {
 
 
 
-                        <TabsContent value="visao_geral" className="m-0">
-                    
-                        </TabsContent>
 
                           <TabsContent value="inventario" className="m-0">
                                            <Inventario />
@@ -575,6 +588,10 @@ export function VisaoSala() {
                                                   <Patrimonios
                                                   type={'loc'}
                                                   />
+                                                </TabsContent>
+
+                                                 <TabsContent value="anunciados" className="m-0">
+                                                 <AnunciadosSala/>
                                                 </TabsContent>
                         </div>
                         </Tabs>

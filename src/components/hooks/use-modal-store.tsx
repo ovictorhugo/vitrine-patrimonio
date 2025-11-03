@@ -16,7 +16,7 @@ export type ModalType =
   | "search-vitrine"
   | "edit-item"
   | "edit-admin-item"
-  | "search-patrimonio"       // <- usado pelo SearchPatrimonioModal
+  | "search-patrimonio"
   | "filters-patrimonio"
   | "filters-patrimonio-adm"
   | "patrimonio"
@@ -26,9 +26,10 @@ export type ModalType =
   | "edit-patrimonio"
   | "relatar-problema"
   | "workflow"
-  | 'filters-assets'
-  | 'catalog-modal'
-  |'sign-in'
+  | "filters-assets"
+  | "catalog-modal"
+  | "sign-in"
+  | 'search-patrimonio-exact'
 
 /** DTOs auxiliares */
 type UnitDTO = {
@@ -99,6 +100,12 @@ export interface ModalData {
   is_official?: boolean;
 }
 
+/** Factory para garantir um data SEM resíduos */
+const getInitialData = (): ModalData => ({
+  // manter vazio garante que TODAS as chaves opcionais fiquem undefined
+  // se você quiser valores default, defina-os aqui
+});
+
 /** Store do modal */
 interface ModalStore {
   type: ModalType | null;
@@ -108,7 +115,7 @@ interface ModalStore {
   /** Abre (ou reabre) um modal definindo o tipo e substituindo o data */
   onOpen: (type: ModalType, data?: ModalData) => void;
 
-  /** Fecha o modal sem apagar o data (para permitir leitura após fechar) */
+  /** Fecha o modal e zera o data (limpo mesmo pós-fechamento) */
   onClose: () => void;
 
   /** Substitui todo o data */
@@ -123,31 +130,34 @@ interface ModalStore {
   /** Altera só o tipo (opcional) */
   setType: (type: ModalType | null) => void;
 
-  /** Altera só o estado de abertura (opcional) */
+  /** Altera o estado de abertura; se false, também zera o data */
   setOpen: (open: boolean) => void;
 }
 
 export const useModal = create<ModalStore>((set) => ({
   type: null,
   isOpen: false,
-  data: {},
+  data: getInitialData(),
 
   onOpen: (type, data = {}) =>
-    set({
+    set(() => ({
+      // limpa ANTES de abrir para evitar “restos” de chaves
+      data: { ...getInitialData(), ...data },
       isOpen: true,
       type,
-      data, // substitui o data inteiro ao abrir
-    }),
-
-  onClose: () =>
-    set((state) => ({
-      ...state,
-      isOpen: false,
-      type: null,
-      // ⚠️ não zeramos `data` aqui; ele fica disponível pós-fechamento
     })),
 
-  setData: (data) => set((state) => ({ ...state, data })),
+  onClose: () =>
+    set(() => ({
+      isOpen: false,
+      type: null,
+      data: getInitialData(), // <- zera tudo ao fechar
+    })),
+
+  setData: (data) =>
+    set(() => ({
+      data: { ...getInitialData(), ...data }, // força substituição total
+    })),
 
   mergeData: (patch) =>
     set((state) => ({
@@ -155,9 +165,26 @@ export const useModal = create<ModalStore>((set) => ({
       data: { ...state.data, ...patch },
     })),
 
-  resetData: () => set((state) => ({ ...state, data: {} })),
+  resetData: () =>
+    set(() => ({
+      data: getInitialData(),
+    })),
 
-  setType: (type) => set((state) => ({ ...state, type })),
+  setType: (type) =>
+    set((state) => ({
+      ...state,
+      type,
+    })),
 
-  setOpen: (open) => set((state) => ({ ...state, isOpen: open })),
+  setOpen: (open) =>
+    set((state) =>
+      open
+        ? { ...state, isOpen: true }
+        : {
+            // ao FECHAR por aqui, também zera o data
+            isOpen: false,
+            type: null,
+            data: getInitialData(),
+          }
+    ),
 }));

@@ -16,7 +16,8 @@ import {
   Plus,
   EyeOff,
   Eye,
-
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Label } from "../../../ui/label";
@@ -41,6 +42,14 @@ import { ArrowUUpLeft } from "phosphor-react";
 import { Skeleton } from "../../../ui/skeleton";
 import { usePermissions } from "../../../permissions";
 import { set } from "date-fns";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 
 /** ====== TIPOS conforme os schemas enviados ====== **/
 
@@ -133,30 +142,59 @@ export function UsersPage() {
 
   const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
 
-  const listUrl = `${urlGeral}users/`; // Ajuste se sua rota de listagem for diferente
+  // ===== navegação & paginação por querystring =====
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qs = new URLSearchParams(location.search);
+  const initialOffset = Number(qs.get("offset") || "0");
+  const initialLimit = Number(qs.get("limit") || "24");
+
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
+
+  const isFirstPage = offset === 0;
+  const isLastPage = users.length < limit;
+
+  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+    const params = new URLSearchParams(location.search);
+    params.set("offset", String(newOffset));
+    params.set("limit", String(newLimit));
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+  };
+
+  useEffect(() => {
+    handleNavigate(offset, limit, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, limit]);
 
   /** ========== FETCH (GET) ========== **/
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(listUrl, {
+      // padrão: /users/?offset=...&limit=...
+      const url = `${urlGeral}users/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`;
+
+      const resp = await fetch(url, {
         mode: "cors",
         headers: {
           "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : "",
         },
       });
-      const data: GetUsersResponse = await resp.json();
-      if (data?.users) {
-        setUsers(data.users);
-      } else {
-        setUsers([]);
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(text || `Falha ao carregar usuários (HTTP ${resp.status}).`);
       }
-    } catch (err) {
+
+      const data: GetUsersResponse = await resp.json();
+      setUsers(Array.isArray(data?.users) ? data.users : []);
+    } catch (err: any) {
       console.error(err);
       toast("Falha ao carregar usuários", {
-        description: "Tente novamente em instantes.",
+        description: err?.message || "Tente novamente em instantes.",
       });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -165,7 +203,7 @@ export function UsersPage() {
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listUrl]);
+  }, [urlGeral, offset, limit]);
 
   /** ========== HANDLERS EDIÇÃO ========== **/
   const openEditDialog = (u: APIUser) => {
@@ -198,7 +236,6 @@ export function UsersPage() {
   const onSubmit = async () => {
     if (!selectedUserId) return;
 
-    // validações simples
     if (!form.username?.trim()) {
       toast("O nome não pode ser vazio", {
         description: "Por favor, preencha o campo Nome completo.",
@@ -213,7 +250,7 @@ export function UsersPage() {
     }
 
     try {
-      const url = `${urlGeral}users/${selectedUserId}`; // Path param com o id
+      const url = `${urlGeral}users/${selectedUserId}`;
       const resp = await fetch(url, {
         method: "PUT",
         mode: "cors",
@@ -233,7 +270,6 @@ export function UsersPage() {
         description: "As informações do usuário foram salvas.",
       });
 
-      // Atualiza lista local rapidamente
       setUsers((prev) =>
         prev.map((u) => (u.id === selectedUserId ? ({ ...u, ...form } as APIUser) : u))
       );
@@ -275,9 +311,6 @@ export function UsersPage() {
         throw new Error(text || `HTTP ${resp.status}`);
       }
 
-      // Remover da lista local
-      setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
-
       toast("Usuário excluído", {
         description: `O usuário ${deleteTarget.email || deleteTarget.username} foi removido.`,
       });
@@ -285,6 +318,9 @@ export function UsersPage() {
       setDeleteOpen(false);
       setDeleteTarget(null);
       setDeleteText("");
+
+      // refetch da página atual (mantém paginação coerente)
+      await fetchUsers();
     } catch (error) {
       console.error(error);
       toast("Erro ao excluir", {
@@ -304,129 +340,125 @@ export function UsersPage() {
     !!deleteText.trim() &&
     deleteText.trim() === deleteCheckValue;
 
-      const items = Array.from({ length: 12 }, (_, index) => (
-    <Skeleton key={index} className="w-full rounded-md h-[200px]" />
+  const items = Array.from({ length: 12 }, (_, index) => (
+    <Skeleton key={index} className="w-full rounded-md h-[300px]" />
   ));
 
-   const { hasDeletarUsuarios
-  } = usePermissions();
-  
-  
+  const { hasDeletarUsuarios } = usePermissions();
+
   // dialog principal de criação de usuario
   const [isOpen, setIsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const [name, setName] = useState(""); 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-   const [showPassword, setShowPassword] = useState(false)
-
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  /** ========== RENDER ========== **/
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleCreateUser = async () => {
-  // validações simples
-  if (!name.trim()) {
-    toast("Nome obrigatório", { description: "Preencha o nome do usuário." });
-    return;
-  }
-  if (!email.trim()) {
-    toast("E-mail obrigatório", { description: "Preencha o e-mail do usuário." });
-    return;
-  }
-  if (!password.trim() || !confirmPassword.trim()) {
-    toast("Senha obrigatória", { description: "Preencha e confirme a senha." });
-    return;
-  }
-  if (password !== confirmPassword) {
-    toast("Senhas não conferem", { description: "A confirmação precisa ser igual à senha." });
-    return;
-  }
-
-  try {
-    setCreating(true);
-
-    // POST /users/
-    const resp = await fetch(`${urlGeral}users/`, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-      body: JSON.stringify({
-        username: name.trim(),
-        email: email.trim(),
-        password: password, // não trim aqui p/ não mexer na senha do user
-      }),
-    });
-
-    if (!resp.ok) {
-      // tenta extrair um erro legível da API
-      const text = await resp.text().catch(() => "");
-      throw new Error(text || `HTTP ${resp.status}`);
+    if (!name.trim()) {
+      toast("Nome obrigatório", { description: "Preencha o nome do usuário." });
+      return;
+    }
+    if (!email.trim()) {
+      toast("E-mail obrigatório", { description: "Preencha o e-mail do usuário." });
+      return;
+    }
+    if (!password.trim() || !confirmPassword.trim()) {
+      toast("Senha obrigatória", { description: "Preencha e confirme a senha." });
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast("Senhas não conferem", { description: "A confirmação precisa ser igual à senha." });
+      return;
     }
 
-    // muitas APIs retornam o usuário criado; se não retornar, monto um básico
-    let created: Partial<APIUser> & { id?: string } = {};
     try {
-      created = await resp.json();
-    } catch {
-      // fallback se a API não devolver JSON
-      created = {};
+      setCreating(true);
+
+      const resp = await fetch(`${urlGeral}users/`, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          username: name.trim(),
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(text || `HTTP ${resp.status}`);
+      }
+
+      let created: Partial<APIUser> & { id?: string } = {};
+      try {
+        created = await resp.json();
+      } catch {
+        created = {};
+      }
+
+      const createdUser: APIUser = {
+        id: (created as any)?.id || crypto.randomUUID(),
+        username: (created as any)?.username ?? name.trim(),
+        email: (created as any)?.email ?? email.trim(),
+        provider: (created as any)?.provider ?? "",
+        linkedin: (created as any)?.linkedin ?? "",
+        lattes_id: (created as any)?.lattes_id ?? "",
+        orcid: (created as any)?.orcid ?? "",
+        ramal: (created as any)?.ramal ?? "",
+        photo_url: (created as any)?.photo_url ?? "",
+        background_url: (created as any)?.background_url ?? "",
+        matricula: (created as any)?.matricula ?? "",
+        verify: (created as any)?.verify ?? true,
+        institution_id: (created as any)?.institution_id ?? "",
+        roles: (created as any)?.roles ?? [],
+        system_identity:
+          (created as any)?.system_identity ?? {
+            id: "",
+            legal_guardian: { id: "", legal_guardians_code: "", legal_guardians_name: "" },
+          },
+      };
+
+      // adiciona localmente (apenas para feedback imediato)
+      setUsers((prev) => [createdUser, ...prev]);
+
+      toast("Usuário criado com sucesso!", {
+        description: `${createdUser.email || createdUser.username} adicionado à lista.`,
+      });
+
+      // limpa e fecha modal
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setIsOpen(false);
+
+      // ✅ volta para a primeira página e refaz busca (padrão do seu exemplo)
+      setOffset(0);
+      await fetchUsers();
+    } catch (error: any) {
+      console.error(error);
+      const msg = String(error?.message || "");
+      const conflict = msg.includes("409") || msg.toLowerCase().includes("conflict");
+      toast(conflict ? "E-mail já cadastrado" : "Erro ao criar usuário", {
+        description: conflict
+          ? "Este e-mail já está em uso. Tente outro endereço."
+          : "Não foi possível concluir o cadastro agora.",
+      });
+    } finally {
+      setCreating(false);
     }
-
-    // garante campos mínimos para aparecer no grid
-    const createdUser: APIUser = {
-      id: (created as any)?.id || crypto.randomUUID(), // se API não devolver, gera um id local
-      username: (created as any)?.username ?? name.trim(),
-      email: (created as any)?.email ?? email.trim(),
-      provider: (created as any)?.provider ?? "",
-      linkedin: (created as any)?.linkedin ?? "",
-      lattes_id: (created as any)?.lattes_id ?? "",
-      orcid: (created as any)?.orcid ?? "",
-      ramal: (created as any)?.ramal ?? "",
-      photo_url: (created as any)?.photo_url ?? "",
-      background_url: (created as any)?.background_url ?? "",
-      matricula: (created as any)?.matricula ?? "",
-      verify: (created as any)?.verify ?? true,
-      institution_id: (created as any)?.institution_id ?? "",
-      roles: (created as any)?.roles ?? [],
-      system_identity: (created as any)?.system_identity ?? { id: "", legal_guardian: { id: "", legal_guardians_code: "", legal_guardians_name: "" } },
-    };
-
-    // adiciona no topo da lista local
-    setUsers(prev => [createdUser, ...prev]);
-
-    toast("Usuário criado com sucesso!", {
-      description: `${createdUser.email || createdUser.username} adicionado à lista.`,
-    });
-
-    // limpa e fecha modal
-    setName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-    setIsOpen(false);
-  } catch (error: any) {
-    console.error(error);
-    // trata conflito de e-mail já cadastrado (409) de forma amigável
-    const msg = String(error?.message || "");
-    const conflict = msg.includes("409") || msg.toLowerCase().includes("conflict");
-    toast(conflict ? "E-mail já cadastrado" : "Erro ao criar usuário", {
-      description: conflict
-        ? "Este e-mail já está em uso. Tente outro endereço."
-        : "Não foi possível concluir o cadastro agora.",
-    });
-  } finally {
-    setCreating(false);
-  }
-};
-
+  };
 
   return (
     <div className="flex flex-col  p-8 pt-6">
@@ -436,12 +468,13 @@ export function UsersPage() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
+          {/* Contagem da página atual */}
           <div className="text-2xl font-bold">{users.length}</div>
           <p className="text-xs text-muted-foreground">registrados</p>
         </CardContent>
       </Alert>
 
-       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Alert className="flex mt-8 items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800">
             <div className="bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 rounded-md p-4 border ">
@@ -473,59 +506,58 @@ export function UsersPage() {
 
             <div className="grid gap-1.5">
               <Label>Senha</Label>
-             
-      <div className="relative">
-        <Input
-          id="current"
-          type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="pr-10"
-        />
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-        >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-      </div>
+              <div className="relative">
+                <Input
+                  id="current"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-1.5">
               <Label>Confirmar senha</Label>
-            
-      <div className="relative">
-        <Input
-          id="current"
-          type={showConfirmPassword ? "text" : "password"}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="pr-10"
-        />
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowConfirmPassword((prev) => !prev)}
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-        >
-          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-      </div>
+              <div className="relative">
+                <Input
+                  id="current"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pr-10"
+                />
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
 
           <DialogFooter>
-      
-              <Button variant="ghost" onClick={() => setIsOpen(false)}>
-                <ArrowUUpLeft size={16} /> Cancelar
-              </Button>
-      
+            <Button variant="ghost" onClick={() => setIsOpen(false)}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+
             <Button onClick={handleCreateUser} disabled={creating}>
               {creating ? <Loader2 className="animate-spin " size={16} /> : <Plus className="" size={16} />}
               Adicionar usuário
@@ -544,28 +576,28 @@ export function UsersPage() {
           <AccordionTrigger className="px-0">
             <HeaderResultTypeHome
               title={"Todos os usuários"}
-              icon={<Users size={24} />}
+              icon={<Users size={24} className="text-gray-400"/>}
             />
           </AccordionTrigger>
 
           <AccordionContent className="p-0">
             {loading && (
-             <ResponsiveMasonry
-              columnsCountBreakPoints={{
-                350: 2,
-                750: 3,
-                900: 4,
-                1200: 6,
-                1500: 6,
-                1700: 7,
-              }}
-            >
-              <Masonry gutter="16px">
-                 {items.map((item, index) => (
-                              <div key={index}>{item}</div>
-                            ))}
+              <ResponsiveMasonry
+                columnsCountBreakPoints={{
+                  350: 2,
+                  750: 3,
+                  900: 4,
+                  1200: 6,
+                  1500: 6,
+                  1700: 7,
+                }}
+              >
+                <Masonry gutter="16px">
+                  {items.map((item, index) => (
+                    <div key={index}>{item}</div>
+                  ))}
                 </Masonry>
-                </ResponsiveMasonry>
+              </ResponsiveMasonry>
             )}
 
             {!loading && users.length === 0 && (
@@ -574,83 +606,126 @@ export function UsersPage() {
               </div>
             )}
 
-            <ResponsiveMasonry
-              columnsCountBreakPoints={{
-                350: 2,
-                750: 3,
-                900: 4,
-                1200: 6,
-                1500: 6,
-                1700: 7,
-              }}
-            >
-              <Masonry gutter="16px">
-                {users.map((u) => {
-                  const bgImage = `${urlGeral}user/upload/${encodeURIComponent(
-                    u.id || ""
-                  )}/icon`;
-                  // const status = u.verify ? "Ativo" : "Inativo";
+            {!loading && users.length > 0 && (
+              <ResponsiveMasonry
+                columnsCountBreakPoints={{
+                  350: 2,
+                  750: 3,
+                  900: 4,
+                  1200: 6,
+                  1500: 6,
+                  1700: 7,
+                }}
+              >
+                <Masonry gutter="16px">
+                  {users.map((u) => {
+                    const bgImage = `${urlGeral}user/upload/${encodeURIComponent(
+                      u.id || ""
+                    )}/icon`;
 
-                  return (
-                    <div
-                      key={u.id}
-                      onClick={() => openEditDialog(u)}
-                      className="flex group min-h-[300px] w-full cursor-pointer relative"
-                    >
-                      <Alert
-                        className="flex p-0 flex-col flex-1 gap-4 bg-cover bg-no-repeat bg-center rounded-md overflow-hidden"
-                        style={{ backgroundImage: `url("${bgImage}")` }}
+                    return (
+                      <div
+                        key={u.id}
+                        onClick={() => openEditDialog(u)}
+                        className="flex group min-h-[300px] w-full cursor-pointer relative"
                       >
-                        <div className="bg-[#000000] bg-opacity-30 hover:bg-opacity-70 transition-all absolute inset-0" />
-                        <div className="relative flex flex-col justify-between h-full">
-                          {/* Header do card */}
-                          <div className="p-4 flex justify-between items-start">
-                            {/* Botões no canto superior direito */}
-                            <div className="z-[1] w-full flex gap-3 justify-end">
-                              <div className="flex gap-3">
-                               {hasDeletarUsuarios && (
-                                 <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openDeleteDialog(u);
-                                  }}
-                                  variant="destructive"
-                                  className="h-8 w-8 p-0 text-white hidden group-hover:flex"
-                                  title="Excluir usuário"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                               )}
+                        <Alert
+                          className="flex p-0 flex-col flex-1 gap-4 bg-cover bg-no-repeat bg-center rounded-md overflow-hidden"
+                          style={{ backgroundImage: `url("${bgImage}")` }}
+                        >
+                          <div className="bg-[#000000] bg-opacity-30 hover:bg-opacity-70 transition-all absolute inset-0" />
+                          <div className="relative flex flex-col justify-between h-full">
+                            <div className="p-4 flex justify-between items-start">
+                              <div className="z-[1] w-full flex gap-3 justify-end">
+                                <div className="flex gap-3">
+                                  {hasDeletarUsuarios && (
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDeleteDialog(u);
+                                      }}
+                                      variant="destructive"
+                                      className="h-8 w-8 p-0 text-white hidden group-hover:flex"
+                                      title="Excluir usuário"
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Rodapé / Infos */}
-                          <div className="flex gap-2 px-6 flex-col pb-6 w-full h-full text-white justify-end">
-                            <div className="flex gap-1 flex-col">
-                              <div className="flex items-center gap-2">
-                                <CardTitle className="text-lg font-medium">
-                                  {u.username || "(sem nome)"}
-                                </CardTitle>
-                              </div>
+                            <div className="flex gap-2 px-6 flex-col pb-6 w-full h-full text-white justify-end">
+                              <div className="flex gap-1 flex-col">
+                                <div className="flex items-center gap-2">
+                                  <CardTitle className="text-lg font-medium">
+                                    {u.username || "(sem nome)"}
+                                  </CardTitle>
+                                </div>
 
-                              <div className="group-hover:flex hidden items-center flex-wrap gap-1  mb-2">
-                                <div className="flex gap-1 text-sm  items-center truncate ">
-                                  {u.email}
+                                <div className="group-hover:flex hidden items-center flex-wrap gap-1  mb-2">
+                                  <div className="flex gap-1 text-sm  items-center truncate ">
+                                    {u.email}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </Alert>
-                    </div>
-                  );
-                })}
-              </Masonry>
-            </ResponsiveMasonry>
+                        </Alert>
+                      </div>
+                    );
+                  })}
+                </Masonry>
+              </ResponsiveMasonry>
+            )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* ===== Paginação ===== */}
+      <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+        <span className="text-sm text-muted-foreground">Itens por página:</span>
+        <Select
+          value={limit.toString()}
+          onValueChange={(value) => {
+            const newLimit = parseInt(value);
+            setOffset(0);
+            setLimit(newLimit);
+            handleNavigate(0, newLimit);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Itens" />
+          </SelectTrigger>
+          <SelectContent>
+            {[12, 24, 36, 48, 84, 162].map((val) => (
+              <SelectItem key={val} value={val.toString()}>
+                {val}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="w-full flex justify-center items-center gap-10 mt-8">
+        <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+            disabled={isFirstPage}
+          >
+            <ChevronLeft size={16} className="mr-2" />
+            Anterior
+          </Button>
+          <Button
+            onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+            disabled={isLastPage}
+          >
+            Próximo
+            <ChevronRight size={16} className="ml-2" />
+          </Button>
+        </div>
+      </div>
 
       {/* ===== Dialog de Edição ===== */}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -758,7 +833,6 @@ export function UsersPage() {
           <div className="space-y-2 mb-4">
             <Label>Digite para confirmar</Label>
             <Input
-            
               value={deleteText}
               onChange={(e) => setDeleteText(e.target.value)}
               autoFocus

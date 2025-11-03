@@ -1,62 +1,69 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { ArrowRight, Trash, X } from "lucide-react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MagnifyingGlass } from "phosphor-react";
-import { Alert } from "../../../ui/alert";
-import { Input } from "../../../ui/input";
-import { Button } from "../../../ui/button";
+import { Trash, X, Search as SearchIcon } from "lucide-react";
+import { Alert } from "../ui/alert";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
+import { Dialog, DialogContent } from "../ui/dialog";
+import { useModal } from "../hooks/use-modal-store";
 import { toast } from "sonner";
-import type { StepBaseProps } from "../novo-item";
-import { useQuery } from "../../../modal/search-modal-patrimonio";
-import { UserContext } from "../../../../context/context";
-import { Switch } from "../../../ui/switch";
+import { UserContext } from "../../context/context";
 
+// =====================
+// Tipos
+// =====================
 export interface PatrimoniosSelecionados {
   term: string;
   type: "cod" | "atm";
 }
 
-// 🔎 Tipos internos só para UI
 type SearchItem =
   | { type: "cod"; bem_cod: string; bem_dgv: string }
   | { type: "atm"; bem_num_atm: string };
 
 type AdvancedItem = {
   type: "advanced";
-  cod_label?: string;   // asset_code-asset_check_digit
-  display: string;      // rótulo mostrado no chip
-  id?: string;          // para de-dup
+  cod_label?: string; // asset_code-asset_check_digit
+  display: string; // rótulo mostrado no chip
+  id?: string; // para de-dup
 };
 
 const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> => i.type === "cod";
 const isAtm = (i: SearchItem): i is Extract<SearchItem, { type: "atm" }> => i.type === "atm";
 
-export function PesquisaStep({
-  value_item,
-  onValidityChange,
-  onStateChange,
-  type,
-  step
-}: StepBaseProps<"pesquisa">) {
-  const [itemType, setItemType] = useState<"cod" | "atm">((type as any) ?? "cod");
-  const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] =
-    useState<PatrimoniosSelecionados[]>(
-      value_item && type ? [{ term: String(value_item), type: String(type) as "cod" | "atm" }] : []
-    );
-  const [input, setInput] = useState("");
+// =====================
+// Componente (DENTRO DO DIALOG)
+// =====================
+export default function SearchCodAtmModalExact() {
+  const navigate = useNavigate();
+  const { urlGeral } = useContext(UserContext);
+  const { onClose, isOpen, type } = useModal();
+   const isModalOpen = isOpen && type === 'search-patrimonio-exact';
 
   // ========= API base =========
-  const { urlGeral } = useContext(UserContext);
   const API_SEARCH_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/search`;
   const API_ADV_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/?q=`;
 
-  // ========= Controle de busca avançada =========
+  // ========= Estados =========
+  const [itemType, setItemType] = useState<"cod" | "atm">("cod");
+  const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<PatrimoniosSelecionados[]>([]);
+  const [input, setInput] = useState("");
   const [advanced, setAdvanced] = useState(false);
+  const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
+  const [advancedResults, setAdvancedResults] = useState<AdvancedItem[]>([]);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (isModalOpen) {
+      // foca no input quando abrir
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [isModalOpen]);
 
   // ========= Helpers da API =========
-  async function fetchArrayByKey(
-    url: string,
-    key: "asset_identifier" | "atm_number"
-  ): Promise<string[]> {
+  async function fetchArrayByKey(url: string, key: "asset_identifier" | "atm_number"): Promise<string[]> {
     try {
       const res = await fetch(url, { headers: { Accept: "application/json" } });
       if (!res.ok) return [];
@@ -73,13 +80,11 @@ export function PesquisaStep({
   const searchAtmNumber = (q: string) =>
     fetchArrayByKey(`${API_SEARCH_BASE}/atm-number?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "atm_number");
 
-  // ========= Busca avançada (GET /assets/q=) =========
+  // ========= Busca avançada (GET /assets?q=) =========
   const searchAdvanced = async (q: string): Promise<AdvancedItem[]> => {
     if (!q.trim()) return [];
     try {
-      const res = await fetch(`${API_ADV_BASE}${encodeURIComponent(q)}`, {
-        headers: { Accept: "application/json" },
-      });
+      const res = await fetch(`${API_ADV_BASE}${encodeURIComponent(q)}`, { headers: { Accept: "application/json" } });
       if (!res.ok) return [];
       const json = await res.json();
       const assets: any[] = Array.isArray(json?.assets) ? json.assets : [];
@@ -95,7 +100,6 @@ export function PesquisaStep({
 
         const cod_label = asset_code && asset_check_digit ? `${asset_code}-${asset_check_digit}` : undefined;
 
-        // Monta um label amigável (ajuste conforme preferir)
         const parts: string[] = [];
         if (cod_label) parts.push(cod_label);
         if (atm_number) parts.push(`ATM ${atm_number}`);
@@ -110,11 +114,10 @@ export function PesquisaStep({
           type: "advanced",
           cod_label,
           display,
-          id: a?.id ? String(a.id) : cod_label || `${atm_number}|${serial_number}|${asset_description}`
+          id: a?.id ? String(a.id) : cod_label || `${atm_number}|${serial_number}|${asset_description}`,
         };
       });
 
-      // De-dup por id
       const uniq = new Map<string, AdvancedItem>();
       for (const it of items) {
         const k = it.id || it.display;
@@ -126,65 +129,32 @@ export function PesquisaStep({
     }
   };
 
-  // ========= Normalização de input =========
+  // ========= Normalização =========
   const normalizeInput = (value: string): string => {
     value = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    value = value.replace(/[^A-Za-z0-9\s-]/g, ""); // permite 'X' para ATM também
+    value = value.replace(/[^A-Za-z0-9\s-]/g, ""); // mantém números, letras, espaço e hifen
     return value;
   };
 
-  // Estados de resultados
-  const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
-  const [advancedResults, setAdvancedResults] = useState<AdvancedItem[]>([]);
-
-  // Rehidrata quando o Wizard já tem valor salvo
-  useEffect(() => {
-    if (value_item && type) {
-      const next = { term: String(value_item), type: String(type) as "cod" | "atm" };
-      const same =
-        itemsSelecionadosPopUp.length === 1 &&
-        itemsSelecionadosPopUp[0].term === next.term &&
-        itemsSelecionadosPopUp[0].type === next.type;
-      if (!same) {
-        setItemType(next.type);
-        setItensSelecionadosPopUp([next]);
-      }
-    }
-    // Nota: não limpamos local aqui quando o pai não manda valor,
-    // para não gerar “ping-pong” com o efeito da URL.
-  }, [value_item, type, itemsSelecionadosPopUp]);
-
-  useEffect(() => {
-    onValidityChange(itemsSelecionadosPopUp.length > 0);
-  }, [itemsSelecionadosPopUp, onValidityChange]);
-
-  useEffect(() => {
-    if (itemsSelecionadosPopUp.length > 0) {
-      const { type, term } = itemsSelecionadosPopUp[0];
-      onStateChange?.({ type, value_item: term });
-    }
-  }, [itemsSelecionadosPopUp, onStateChange]);
-
   // ========= Busca por input =========
-  const runSearch = async (rawInput: string, forceTreatAsCodFormatter = false) => {
-    const input = normalizeInput(rawInput).trim();
-    if (input.replace(/-/g, "").length < 1) {
+  const runSearch = async (rawInput: string) => {
+    const _input = normalizeInput(rawInput).trim();
+    if (_input.replace(/-/g, "").length < 1) {
       setFilteredItems([]);
       setAdvancedResults([]);
       return;
     }
 
     if (advanced) {
-      const adv = await searchAdvanced(input);
+      const adv = await searchAdvanced(_input);
       setAdvancedResults(adv);
       setFilteredItems([]);
       return;
     }
 
-    // Busca simples
     const [assetIdentifiers, atmNumbers] = await Promise.all([
-      searchAssetIdentifier(input),
-      searchAtmNumber(input),
+      searchAssetIdentifier(_input),
+      searchAtmNumber(_input),
     ]);
 
     const codItems: SearchItem[] = (assetIdentifiers || []).map((id) => {
@@ -207,30 +177,21 @@ export function PesquisaStep({
     setAdvancedResults([]);
   };
 
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const handleChangeInput = (value: string) => {
     runSearch(value);
     setInput(value);
   };
 
   const handleChangeInputCod = (value: string) => {
-    // Somente números
     let cleanValue = value.replace(/[^0-9]/g, "");
-
     const originalValue = cleanValue;
     cleanValue = cleanValue.replace(/^0+/, "");
-    if (originalValue !== cleanValue) {
-      toast.info("Zeros à esquerda foram removidos.");
-    }
+    if (originalValue !== cleanValue) toast.info("Zeros à esquerda foram removidos.");
 
-    // Formata com hífen no último dígito (ex.: 12345-7)
     let formattedValue = cleanValue;
-    if (cleanValue.length > 1) {
-      formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
-    }
+    if (cleanValue.length > 1) formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
 
-    runSearch(formattedValue, true);
+    runSearch(formattedValue);
     setInput(formattedValue);
   };
 
@@ -240,54 +201,68 @@ export function PesquisaStep({
     setItensSelecionadosPopUp(newItems);
   };
 
-  // 🔗 Seleção no modo simples
   const handleSelectItemSimple = (it: SearchItem) => {
     const label = isCod(it) ? `${it.bem_cod}-${it.bem_dgv}` : it.bem_num_atm;
     const finalType: "cod" | "atm" = isCod(it) ? "cod" : "atm";
-    handlePesquisa(label, finalType);
+
+    const nextItems =
+      finalType === itemType
+        ? [...itemsSelecionadosPopUp, { term: label, type: finalType }]
+        : [{ term: label, type: finalType }];
+
+    setItemType(finalType);
+    setItensSelecionadosPopUp(nextItems);
+    setInput("");
   };
 
-  // 🔗 Seleção no modo avançado (sempre vai como COD)
   const handleSelectItemAdvanced = (it: AdvancedItem) => {
     if (!it.cod_label) {
       toast.error("Este item não possui identificador (código-dígito).");
       return;
     }
-    handlePesquisa(it.cod_label, "cod");
-  };
-
-  const handlePesquisa = (value: string, type: "cod" | "atm") => {
-    setInput("");
-
-    const nextItems =
-      type === itemType
-        ? [...itemsSelecionadosPopUp, { term: value, type }]
-        : [{ term: value, type }];
-
-    setItemType(type);
+    const nextItems = [{ term: it.cod_label, type: "cod" as const }];
+    setItemType("cod");
     setItensSelecionadosPopUp(nextItems);
+    setInput("");
   };
 
-  const queryUrl = useQuery();
-  const cod = queryUrl.get("cod");
+  // ========= Ação principal: navegar para /buscar-patrimonio =========
+  const handleGoToBuscarPatrimonio = () => {
+    // Regra: exige um COD (código-dígito)
+    let label: string | undefined;
 
-  useEffect(() => {
-    if (cod) setInput(cod);
-  }, [cod]);
+    if (itemsSelecionadosPopUp.length > 0 && itemsSelecionadosPopUp[0].type === "cod") {
+      label = itemsSelecionadosPopUp[0].term;
+    } else if (/^\d+-\d$/.test(input.trim())) {
+      label = input.trim();
+    }
+
+    if (!label) {
+      toast("Tente novamente", {
+        description: "Selecione um identificador (código-dígito) válido para pesquisar.",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+      return;
+    }
+
+    const [bem_cod, bem_dgv] = label.split("-");
+    if (!bem_cod || !bem_dgv) {
+      toast.error("Identificador inválido. Formato esperado: 12345-6");
+      return;
+    }
+
+    navigate(`/buscar-patrimonio?bem_cod=${encodeURIComponent(bem_cod)}&bem_dgv=${encodeURIComponent(bem_dgv)}`);
+    onClose();
+  };
+
+  const handleEnterPress: React.KeyboardEventHandler<HTMLDivElement> = (event) => {
+    if (event.key === "Enter") handleGoToBuscarPatrimonio();
+  };
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
-      <div className="flex gap-2">
-        <div className="flex justify-between items-center h-fit mt-2 w-8">
-          <p className="text-lg">{step}</p>
-          <ArrowRight size={16} />
-        </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
-          Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
-        </h1>
-      </div>
-
-      <div className="ml-8">
+    <Dialog open={isModalOpen} onOpenChange={onClose}>
+      <DialogContent className="p-0 border-none min-w-[60vw] bg-transparent dark:bg-transparent" onKeyDown={handleEnterPress}>
+        {/* BARRA (cópia exata do layout da sua barra, com botão Pesquisar) */}
         <Alert className="h-14 bg-white p-2 flex items-center gap-3 justify-between">
           <div className="flex items-center gap-2 w-full flex-1">
             <div className="w-10 min-w-10">
@@ -296,10 +271,7 @@ export function PesquisaStep({
 
             <div className="flex w-full whitespace-nowrap gap-2 items-center">
               {itemsSelecionadosPopUp.map((valor, index) => (
-                <div
-                  key={`${valor.term}-${index}`}
-                  className="flex whitespace-nowrap gap-2 items-center"
-                >
+                <div key={`${valor.term}-${index}`} className="flex whitespace-nowrap gap-2 items-center">
                   <div
                     className={`flex gap-2 items-center h-10 p-2 px-4 capitalize rounded-md text-xs ${
                       valor.type === "cod"
@@ -310,11 +282,7 @@ export function PesquisaStep({
                     } text-white border-0`}
                   >
                     {valor.term.replace(/[|;]/g, "")}
-                    <X
-                      size={12}
-                      onClick={() => handleRemoveItem(index)}
-                      className="cursor-pointer"
-                    />
+                    <X size={12} onClick={() => handleRemoveItem(index)} className="cursor-pointer" />
                   </div>
                 </div>
               ))}
@@ -331,8 +299,7 @@ export function PesquisaStep({
                   type="text"
                   ref={inputRef}
                   value={input}
-                  autoFocus={true}
-                 
+                  autoFocus
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />
               )}
@@ -343,26 +310,32 @@ export function PesquisaStep({
             <p className="text-xs font-medium">Busca avançada</p>
             <Switch checked={advanced} onCheckedChange={setAdvanced} />
             {itemsSelecionadosPopUp.length > 0 && (
-              <Button
-                size={"icon"}
-                variant={"ghost"}
-                onClick={() => setItensSelecionadosPopUp([])}
-              >
+              <Button size={"icon"} variant={"ghost"} onClick={() => setItensSelecionadosPopUp([])}>
                 <Trash size={16} />
               </Button>
             )}
+
+            <Button
+              onClick={handleGoToBuscarPatrimonio}
+              size={"icon"}
+              className={`text-white border-0 ${
+                itemType === "cod"
+                  ? "bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700"
+                  : itemType === "atm"
+                  ? "bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700"
+                  : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              }`}
+              title="Pesquisar"
+            >
+              <SearchIcon size={16} />
+            </Button>
           </div>
         </Alert>
 
-{filteredItems.length == 0 && (
-<p className="mt-8 text-xs font-medium text-gray-500">*Para códigos ATM que começam com "A", substituir por 90 ou 20</p>
-)}
-        
-
         {/* Resultados */}
-        {/* MODO AVANÇADO: uma única sessão */}
+        {/* MODO AVANÇADO */}
         {advanced && input.trim().length >= 1 && advancedResults.length !== 0 && (
-          <div className="w-full mt-4">
+          <Alert className="w-full mt-4">
             <div className="flex flex-col gap-8">
               <div>
                 <p className="uppercase font-medium text-xs mb-3">Busca avançada</p>
@@ -372,10 +345,9 @@ export function PesquisaStep({
                       key={it.id ?? index}
                       title={it.display}
                       onClick={() => handleSelectItemAdvanced(it)}
-                      className={`flex gap-2 h-8 cursor-pointer transition-all
-                                  bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800
-                                  items-center p-2 px-3 rounded-md text-xs
-                                  ${it.cod_label ? "" : "opacity-60"}`}
+                      className={`flex gap-2 h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs ${
+                        it.cod_label ? "" : "opacity-60"
+                      }`}
                     >
                       {it.display}
                     </div>
@@ -383,12 +355,12 @@ export function PesquisaStep({
                 </div>
               </div>
             </div>
-          </div>
+          </Alert>
         )}
 
-        {/* MODO SIMPLES: duas sessões (cod/atm) */}
+        {/* MODO SIMPLES */}
         {!advanced && input.trim().length >= 1 && filteredItems.length !== 0 && (
-          <div className="w-full mt-4">
+          <Alert className="w-full mt-4">
             <div className="flex flex-col gap-8">
               {filteredItems.some(isCod) && (
                 <div>
@@ -433,9 +405,9 @@ export function PesquisaStep({
                 </div>
               )}
             </div>
-          </div>
+          </Alert>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

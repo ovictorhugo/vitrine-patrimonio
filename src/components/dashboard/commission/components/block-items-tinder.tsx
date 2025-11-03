@@ -16,6 +16,7 @@ import { useModal } from "../../../hooks/use-modal-store";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../ui/carousel";
 import { CardContent } from "../../../ui/card";
 import { CatalogEntry } from "../../itens-vitrine/itens-vitrine";
+import { JUSTIFICATIVAS_DESFAZIMENTO } from "../../itens-vitrine/JUSTIFICATIVAS_DESFAZIMENTO";
 
 /* ===== Tipos e utils originais (inalterados) ===== */
 type UUID = string;
@@ -84,51 +85,7 @@ const varsFrom = (e: CatalogEntry) => {
 
 /* ===== Presets ===== */
 type JustPreset = { id: string; label: string; build: (e: CatalogEntry) => string };
-const JUSTIFICATIVAS_DESFAZIMENTO: JustPreset[] = [
-  { id: "sicpat-baixado-ou-nao-localizado", label: "Número patrimonial baixado / não localizado no SICPAT",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material ? `um(a) ${material}` : "um bem";
-      return `Trata-se de ${alvo} cujo número patrimonial já foi baixado ou não se encontra disponível no SICPAT; recomenda-se a baixa por não possuir valor de uso nem de venda.`;
-    },
-  },
-  { id: "antigo-depreciado-in-rfb-1700-2017", label: "Item antigo/depreciado (≥10 anos, IN RFB nº 1.700/2017)",
-    build: (e) => {
-      const { material, ano } = varsFrom(e);
-      const alvo = material || "bem";
-      const anoTxt = ano || "[ano]";
-      return `Trata-se de ${alvo} de ${anoTxt}, com mais de 10 anos de uso; conforme a IN RFB nº 1.700/2017 (depreciação por desgaste, obsolescência e uso), recomenda-se a baixa.`;
-    },
-  },
-  { id: "danificado-ou-quebrado", label: "Item danificado/quebrado (sem condições de uso)",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "bem (mesa, armário, monitor, etc.)";
-      return `Trata-se de ${alvo} danificado/quebrado, sem valor de uso ou venda. Recomenda-se o descarte.`;
-    },
-  },
-  { id: "fragmento-ou-parte-de-bem", label: "Parte/fragmento de bem (resto de móvel/equipamento)",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "pedaço/resto de equipamento";
-      return `Trata-se de ${alvo} sem patrimônio, sem valor de uso nem de venda. Recomenda-se a baixa.`;
-    },
-  },
-  { id: "eletronico-antigo-ou-obsoleto", label: "Equipamento eletrônico antigo/obsoleto e/ou quebrado",
-    build: (e) => {
-      const { material, isEletronico } = varsFrom(e);
-      const alvo = material || (isEletronico ? "equipamento eletrônico" : "equipamento");
-      return `Trata-se de ${alvo} obsoleto/danificado, sem valor de uso nem de venda. Recomenda-se a baixa.`;
-    },
-  },
-  { id: "destinacao-doacao", label: "Destinação: Doação",
-    build: (e) => {
-      const { material } = varsFrom(e);
-      const alvo = material || "item";
-      return `Trata-se de ${alvo} sem valor de uso para a unidade. Recomenda-se a baixa do acervo e a destinação do bem para Doação.`;
-    },
-  },
-];
+
 
 /* ===== SwipeCard (inalterado) ===== */
 function SwipeCard({
@@ -315,6 +272,8 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
     setJustificativa("");
   };
 
+  const {onClose} = useModal()
+
   /* Confirmar: mantém remoção do alvo (não restaura), e dispara onRemove */
   const handleConfirmMove = async () => {
     if (!target || !toKey) return;
@@ -335,6 +294,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
     setToKey("");
     setSelectedPreset("");
     setJustificativa("");
+    onClose()
   };
 
   /* 4) Swipe:
@@ -396,7 +356,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
       <div className="group shadow-lg h-full flex flex-col cursor-pointer" onClick={() => onOpen('catalog-modal', { ...entry })}>
         <div className="relative w-full bg-white dark:bg-neutral-950 rounded-t-lg">
           <Carousel className="w-full flex items-center">
-            <CarouselContent>
+            <CarouselContent>               
               {imgs?.map((img, index) => {
                 const bg = buildImgUrl(img.file_path);
                 return (
@@ -414,7 +374,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
               })}
             </CarouselContent>
             <div className="w-full hidden absolute justify-between group-hover:flex p-3">
-              <CarouselPrevious variant="outline" className="z-[999999999]" />
+              <CarouselPrevious variant="outline" className="" />
               <CarouselNext variant="outline" />
             </div>
           </Carousel>

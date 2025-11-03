@@ -161,20 +161,10 @@ export function UserPublicPage() {
             };
           }, []);
 
-            const tabs = [
-                       
-            
-              { id: "bens", label: "Patrimônios", icon: Package },
-              { id: "inventario", label: "Inventários", icon: ListChecks },
-             { id: "anunciados", label: "Vitrine e desfazimento", icon: Recycle },
-             
-            ];
-
+        
 
             
-              const tab = queryUrl.get('tab');
-              const [value, setValue] = useState(tab || tabs[0].id)
-            
+    
 
               
      type UploadFolder = "profile" | "background";
@@ -334,7 +324,7 @@ export function UserPublicPage() {
              </Helmet>
        
              <main className="grid grid-cols-1 ">
-                <Tabs defaultValue={tabs[0].id} value={value} className="">
+           
                     <div className="md:p-8 p-4 pb-0">
                     <div    style={{ backgroundImage: `url(${urlBackground})` }} className="bg-eng-blue bg-no-repeat bg-center bg-cover border dark:border-neutral-800 w-full rounded-md h-[300px]">
 <div className={`w-full h-full rounded-md bg-black/25 pb-0 md:pb-0 p-4 md:p-8 flex-col flex justify-between `}>
@@ -360,7 +350,7 @@ export function UserPublicPage() {
                       "
                                     >
                                         <h1 className="flex-1 shrink-0 text-white whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                                           Usuário
+                                           Página do usuário
                                         </h1>
                                     </div>
                                 </div>
@@ -384,10 +374,10 @@ export function UserPublicPage() {
                             <div className="flex justify-end items-end flex-1 w-full ">
                                 <div className="flex justify-between w-full gap-8">
  <div className="absolute">
-                                        <div className="relative group">
+                                        <div className=" group relative -top-12">
                                               <Avatar className=" rounded-lg  h-24 w-24 relative -top-12 xl:top-0">
                                             <AvatarImage className={'rounded-md h-24 w-24'} src={urlPerfil} />
-                                            <AvatarFallback className="flex items-center justify-center"><DoorClosed size={24} /></AvatarFallback>
+                                            <AvatarFallback className="flex items-center justify-center"><User size={24} /></AvatarFallback>
                                           </Avatar>
                                           {(usuario?.id === user?.id) && (
      <div
@@ -405,35 +395,6 @@ export function UserPublicPage() {
 
                                     </div>
 
-                                    <div className="relative  grid-cols-1 hidden xl:grid">
-                                        <ScrollArea className="relative overflow-x-auto">
-                                            <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                                                {tabs.map(
-                                                    ({ id, label, icon: Icon, }) =>
-                                                    (
-                                                       <div
-                                                                key={id}
-                                                                className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-white" : "border-b-transparent"
-                                                                    }`}
-                                                                onClick={() => setValue(id)}
-                                                            >
-                                                                <Button variant="ghost" className={`m-0 text-white hover:text-eng-blue ${value === id ? "bg-white text-eng-blue" : ""}`}>
-                                                                    <Icon size={16} />
-                                                                    {label}
-                                                                </Button>
-                                                            </div>
-                                                    )
-
-
-                                                )}
-                                            </TabsList>
-                                            <ScrollBar orientation="horizontal" />
-                                        </ScrollArea>
-
-                                        <div>
-
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             </div>
@@ -469,47 +430,19 @@ export function UserPublicPage() {
                         </div>
 
                         <div>
-                            <div className="px-8 md:px-8">
-                                <div className="relative grid grid-cols-1 xl:hidden">
-                                    <ScrollArea className="relative w-full overflow-x-auto">
-                                        <div className="flex w-full gap-2">
-                                            <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent border pt-2 px-2 dark:bg-neutral-800 w-full">
-                                                {tabs.map(({ id, label, icon: Icon}) => (
-                                                  (
-                                                        <div
-                                                            key={id}
-                                                            className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-[#719CB8]" : "border-b-transparent"
-                                                                }`}
-                                                            onClick={() => setValue(id)}
-                                                        >
-                                                            <Button variant="ghost" className="m-0">
-                                                                <Icon size={16} />
-                                                                {label}
-                                                            </Button>
-                                                        </div>
-                                                    )
-
-                                                ))}
-                                            </TabsList>
-                                        </div>
-                                        <ScrollBar orientation="horizontal" />
-                                    </ScrollArea>
-                                    <div></div>
-                                </div>
-                            </div>
+                            
 
                         </div>
 
 
 
+<div className="p-8 pt-0">
+  <BlockItemsVitrine workflow="VITRINE" type={'user_id'} value={type_search || ''}/>
 
-                        <TabsContent value="visao_geral" className="m-0">
-                    <BlockItemsVitrine workflow="VITRINE" user_id={type_search || ''}/>
-                        </TabsContent>
-
+</div>
                          
                         </div>
-                        </Tabs>
+                     
                         </main>
 
 

@@ -1,40 +1,60 @@
 import { memo, useContext } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../../../ui/alert";
-import { Calendar, User } from "lucide-react";
-import { icons as LucideMap } from "lucide-react";
-import type { NotificationDTO } from "../tabs/notification"; // ajuste o caminho se necessário
+import { Calendar, User as UserIcon, Bell as BellIcon } from "lucide-react";
+import * as LucideMap from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { UserContext } from "../../../../context/context";
 
-type NotificationItemProps = {
-  notification: NotificationDTO;
-  // base do endpoint, ex.: `${urlGeral}notifications` (sem barra final)
-  baseUrl: string;
+/** Tolerante a:
+ *  - Objeto achatado (FlatNotification)
+ *  - Objeto aninhado { id, created_at, notification: { type, detail, source_user } }
+ */
+
+type TypeInfo = { type: string; icon: any; bg_color: string };
+
+type Props = {
+  notification: any; // FlatNotification OU ApiNotificationItem
+  baseUrl: string;   // base sem /my (ex.: https://.../)
   token: string;
-  // fallback por tipo quando NÃO houver detail.icon
-  notificationsTypes: Array<{ type: string; icon: any; bg_color: string }>;
-  // callback para avisar o pai que marcou como lida
+  notificationsTypes: TypeInfo[];
   onMarkedRead?: (id: string) => void;
   className?: string;
 };
 
 /* ========================= Helpers ========================= */
 
-function toKey(name?: string) {
+function normalizeIconKey(name?: string) {
   if (!name) return undefined;
-  const k = name.trim();
-  const lower = k[0].toLowerCase() + k.slice(1);
-  if ((LucideMap as any)[lower]) return lower;
-  if ((LucideMap as any)[k]) return k; // caso já esteja lowercase
+  const cleaned = String(name).trim();
+
+  const candidates = [
+    cleaned,                                   // "Bell"
+    cleaned.toLowerCase(),                     // "bell"
+    cleaned.replace(/[-_](\w)/g, (_, c) => c.toUpperCase()), // "alert-circle" -> "alertCircle"
+    cleaned.charAt(0).toUpperCase() + cleaned.slice(1),      // "bell" -> "Bell"
+  ];
+
+  for (const c of candidates) {
+    if ((LucideMap as any)[c]) return c;
+  }
   return undefined;
 }
 
 function getIconFromDetail(detailIcon?: string) {
-  const key = toKey(detailIcon);
+  const key = normalizeIconKey(detailIcon);
   return key ? (LucideMap as any)[key] : null;
 }
 
-function formatDate(dateString: string) {
+function resolveTypeInfo(
+  type: string | undefined,
+  notificationsTypes: TypeInfo[]
+) {
+  const found = type ? notificationsTypes.find((t) => t.type === type) : null;
+  return found ?? { icon: BellIcon, bg_color: "bg-gray-100" };
+}
+
+function formatDate(dateString?: string) {
+  if (!dateString) return "—";
   const date = new Date(dateString);
   return date.toLocaleString("pt-BR", {
     day: "2-digit",
@@ -46,7 +66,8 @@ function formatDate(dateString: string) {
 }
 
 async function patchRead(baseUrl: string, id: string, token: string) {
-  const res = await fetch(`${baseUrl}/${id}`, {
+  const url = `${baseUrl.replace(/\/+$/, "")}/notifications/${id}`;
+  const res = await fetch(url, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -54,26 +75,12 @@ async function patchRead(baseUrl: string, id: string, token: string) {
     },
     body: JSON.stringify({ read: true }),
   });
-  if (!res.ok) {
-    throw new Error("Falha ao marcar notificação como lida");
-  }
-}
-
-function resolveTypeInfo(
-  type: string | undefined,
-  notificationsTypes: Array<{ type: string; icon: any; bg_color: string }>
-) {
-  if (!type) return { icon: (LucideMap as any).bell, bg_color: "bg-gray-100" };
-  const found = notificationsTypes.find((t) => t.type === type);
-  return found ?? { icon: (LucideMap as any).bell, bg_color: "bg-gray-100" };
+  if (!res.ok) throw new Error("Falha ao marcar notificação como lida");
 }
 
 const hasHttp = (url?: string) => !!url && /^https?:\/\//i.test(url);
 const isInternal = (url?: string) => !!url && url.startsWith("/");
 
-// Obtém o remetente considerando as duas estruturas possíveis:
-// - achatada: notification.source_user
-// - aninhada: notification.notification.source_user
 function getSender(n: any) {
   return n?.source_user ?? n?.notification?.source_user ?? null;
 }
@@ -87,65 +94,54 @@ export const NotificationItemDialog = memo(function NotificationItem({
   notificationsTypes,
   onMarkedRead,
   className,
-}: NotificationItemProps) {
+}: Props) {
   const { urlGeral } = useContext(UserContext);
 
-  // Campos principais (considera estrutura achatada ou aninhada)
-  const type = (notification as any).type ?? (notification as any).notification?.type;
-  const detail =
-    (notification as any).detail ?? (notification as any).notification?.detail ?? {};
-  const created_at =
-    (notification as any).created_at ??
-    (notification as any).notification?.created_at ??
-    new Date().toISOString();
-  const id = (notification as any).id;
+  const envelopeId: string = notification?.id;
+  const created_at: string | undefined =
+    notification?.created_at ?? notification?.notification?.created_at;
 
-  // Remetente
+  const type: string | undefined =
+    notification?.type ?? notification?.notification?.type;
+
+  const detail: any =
+    notification?.detail ?? notification?.notification?.detail ?? {};
+
   const sender = getSender(notification);
-  const senderName: string =
-    sender?.username || sender?.name || sender?.email || "—";
-  const senderEmail: string | undefined = sender?.email;
+  const senderName: string = sender?.username || sender?.name || sender?.email || "—";
 
   const avatarUrl =
     sender?.id && urlGeral
       ? `${urlGeral.replace(/\/+$/, "")}/user/upload/${sender.id}/icon`
       : undefined;
 
-  // 1) ícone pelo detail.icon (lucide map)
   const IconFromDetail = getIconFromDetail(detail?.icon);
-
-  // 2) fallback pelo tipo
   const typeInfo = resolveTypeInfo(type, notificationsTypes);
-  const FallbackIcon = typeInfo.icon;
+  const FallbackIcon = typeInfo.icon || BellIcon;
   const bgColor = typeInfo.bg_color;
-
   const IconComp = IconFromDetail ?? FallbackIcon;
 
-  // Link behavior
   const link: string | undefined = detail?.link;
   const clickable = !!link;
   const external = hasHttp(link);
   const internal = isInternal(link);
 
-  const handleNavigate = () => {
+  const navigate = () => {
     if (!clickable) return;
-
     if (external) {
       window.open(link!, "_blank", "noopener,noreferrer");
     } else if (internal) {
-      // Se usa React Router, substitua por navigate(link!)
       window.location.assign(link!);
     } else {
-      // fallback (se veio algo não http e não começa com "/")
       window.location.assign(link!);
     }
   };
 
   const handleClick = async () => {
     try {
-      await patchRead(baseUrl, id, token);
-      onMarkedRead?.(id);
-      handleNavigate();
+      await patchRead(baseUrl, envelopeId, token);
+      onMarkedRead?.(envelopeId);
+      navigate();
     } catch (e) {
       console.error(e);
     }
@@ -190,15 +186,12 @@ export const NotificationItemDialog = memo(function NotificationItem({
               </AlertDescription>
             )}
 
-            {/* Linha de metadata: data + remetente */}
-            <div className="flex flex-wrap items-center mt-8 gap-3 ">
-              {/* Data */}
+            <div className="flex flex-wrap items-center mt-8 gap-3">
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <Calendar size={12} className="text-gray-400" />
                 <span>{formatDate(created_at)}</span>
               </div>
 
-              {/* Remetente */}
               <div className="flex items-center gap-2 text-xs ">
                 <Avatar className="rounded-md h-4 w-4 shrink-0">
                   {avatarUrl ? (
@@ -207,13 +200,15 @@ export const NotificationItemDialog = memo(function NotificationItem({
                     <AvatarImage className="rounded-md h-5 w-5" src="" />
                   )}
                   <AvatarFallback className="flex items-center justify-center">
-                    <User size={10} />
+                    <UserIcon size={10} />
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs text-gray-500 truncate max-w-[10rem]" title={senderName}>
+                <span
+                  className="text-xs text-gray-500 truncate max-w-[10rem]"
+                  title={senderName}
+                >
                   {senderName}
                 </span>
-               
               </div>
             </div>
           </div>
