@@ -116,8 +116,8 @@ export function SignInModal() {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0  max-w-4xl grid gap-0 grid-cols-2 h-[60vh]">
-        <Alert className="rounded-r-none flex flex-col justify-between p-8 border-0 bg-eng-blue">
+      <DialogContent className="p-0  max-w-4xl grid gap-0 lg:grid-cols-2 min-h-[60vh] rounded-lg">
+        <Alert className="rounded-r-none hidden lg:flex flex-col justify-between p-8 border-0 bg-eng-blue">
 
                      <div className="flex items-center gap-2">
                      <div className="h-8 flex items-center gap-2"><SymbolEEWhite/></div>

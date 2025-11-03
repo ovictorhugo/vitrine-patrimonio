@@ -18,6 +18,7 @@ import { useTheme } from "next-themes";
 import { UserContext } from "../context/context";
 import { SymbolEEWhite } from "./svg/SymbolEEWhite";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type Team = {
   name: string;
@@ -30,6 +31,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
   const [activeTeam, setActiveTeam] = React.useState<Team | undefined>(teams?.[0]);
   const { setPermission, urlGeral, setRole, role, loggedIn } = React.useContext(UserContext);
   const { theme } = useTheme();
+  const navigate = useNavigate()
 
   // carrega role inicial do localStorage, se existir
   React.useEffect(() => {
@@ -75,6 +77,8 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
         },
       });
 
+      navigate('/')
+
       const data = await response.json();
       if (data) {
         // aplica primeiro as permissões, depois o papel (evita corrida visual)
@@ -83,7 +87,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
         setActiveTeam(team);
         localStorage.setItem("permission", JSON.stringify(data));
         localStorage.setItem("role", JSON.stringify(team.name));
-
+        
         toast("Você alternou as permissões", {
           description: `Acessando como ${team.name}`,
           action: { label: "Fechar", onClick: () => {} },

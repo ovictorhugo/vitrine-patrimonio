@@ -353,6 +353,7 @@ export function PerfilSegurancaDashboard() {
                 value={data.email}
                 onChange={(e) => setData({ ...data, email: e.target.value })}
                 type="email"
+                disabled
               />
             </div>
 

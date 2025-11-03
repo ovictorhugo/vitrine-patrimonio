@@ -24,7 +24,7 @@ import React, {
 import ReactDOM from "react-dom/client";
 import { Tabs, TabsContent } from "../../ui/tabs";
 import { Progress } from "../../ui/progress";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib";
 
 import { InicioStep } from "./steps/inicio";
@@ -1108,7 +1108,12 @@ return (
         </div>
 
         <div>
-          <Button size={'sm'}><File size={16}/> Baixar manual</Button>
+      <a href="/apresentacao_sistema.pdf" target="_blank" rel="noopener noreferrer">
+  <Button size="sm">
+    <File size={16} /> Baixar manual
+  </Button>
+</a>
+
         </div>
         </div>
 
