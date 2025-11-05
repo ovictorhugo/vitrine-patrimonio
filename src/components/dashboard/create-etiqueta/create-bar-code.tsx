@@ -168,6 +168,7 @@ export function CreateBarCode() {
                       type={wizard.pesquisa?.type}
                       initialData={wizard.formulario}
                       step={idx + 1}
+                       showLocation={true}
                     />
                   )}
 

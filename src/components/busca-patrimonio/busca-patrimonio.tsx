@@ -225,37 +225,75 @@ export function BuscaPatrimonio() {
   const isCurrentSaved = existingIndex >= 0;
 
   // mapeia (se necessário) os dados do formulário para Asset
-  const mapFormularioToAsset = (form?: Patrimonio): Asset | undefined => {
-    if (!form) return undefined;
-    // ⚠️ Ajuste este mapper conforme o shape real de `Patrimonio`
-    // Abaixo, tentamos casar os campos com base no que você forneceu de Asset
-    const asset: Partial<Asset> = {
-      id: (form as any)?.id ?? "",
-      asset_code: (form as any)?.asset_code ?? (form as any)?.bem_cod ?? "",
-      asset_check_digit: (form as any)?.asset_check_digit ?? (form as any)?.bem_dgv ?? "",
-      atm_number: (form as any)?.atm_number ?? (form as any)?.bem_num_atm ?? null,
-      serial_number: (form as any)?.serial_number ?? null,
-      asset_status: (form as any)?.asset_status ?? "",
-      asset_value: (form as any)?.asset_value ?? "",
-      asset_description: (form as any)?.asset_description ?? (form as any)?.descricao ?? "",
-      csv_code: (form as any)?.csv_code ?? "",
-      accounting_entry_code: (form as any)?.accounting_entry_code ?? "",
-      item_brand: (form as any)?.item_brand ?? null,
-      item_model: (form as any)?.item_model ?? null,
-      group_type_code: (form as any)?.group_type_code ?? "",
-      group_code: (form as any)?.group_code ?? "",
-      expense_element_code: (form as any)?.expense_element_code ?? "",
-      subelement_code: (form as any)?.subelement_code ?? "",
-      is_official: Boolean((form as any)?.is_official),
-      material: (form as any)?.material ?? {},
-      legal_guardian: (form as any)?.legal_guardian ?? {},
-      location: (form as any)?.location ?? {},
-    };
+const mapFormularioToAsset = (form?: Patrimonio): Asset | undefined => {
+  if (!form) return undefined;
 
-    // validação mínima
-    if (!asset.asset_code && !asset.atm_number) return undefined;
-    return asset as Asset;
+  const f: any = form;
+
+  // Monta location + setor + organização + unidade preservando estruturas existentes
+  const loc: any = {
+    ...(f.location ?? {}),
+    id: f.location?.id ?? f.location_id ?? (f.location ?? {}).id ?? "",
+    location_name: f.location?.location_name ?? f.location?.name ?? "",
+    location_code: f.location?.location_code ?? "",
   };
+
+  // Setor
+  const sector: any = {
+    ...(f.sector ?? loc.sector ?? {}),
+    id: f.sector?.id ?? loc.sector?.id ?? "",
+    sector_name: f.sector?.sector_name ?? f.sector?.name ?? loc.sector?.sector_name ?? "",
+    sector_code: f.sector?.sector_code ?? loc.sector?.sector_code ?? "",
+  };
+
+  // Organização (Agency)
+  const agency: any = {
+    ...(f.agency ?? sector.agency ?? {}),
+    id: f.agency?.id ?? sector.agency?.id ?? "",
+    agency_name: f.agency?.agency_name ?? f.agency?.name ?? sector.agency?.agency_name ?? "",
+    agency_code: f.agency?.agency_code ?? sector.agency?.agency_code ?? "",
+  };
+
+  // Unidade (Unit)
+  const unit: any = {
+    ...(f.unit ?? agency.unit ?? {}),
+    id: f.unit?.id ?? agency.unit?.id ?? "",
+    unit_name: f.unit?.unit_name ?? f.unit?.name ?? agency.unit?.unit_name ?? "",
+    unit_code: f.unit?.unit_code ?? agency.unit?.unit_code ?? "",
+  };
+
+  // re-encadeia hierarquia
+  agency.unit = unit;
+  sector.agency = agency;
+  loc.sector = sector;
+
+  const asset: Partial<Asset> = {
+    id: f?.id ?? "",
+    asset_code: f?.asset_code ?? f?.bem_cod ?? "",
+    asset_check_digit: f?.asset_check_digit ?? f?.bem_dgv ?? "",
+    atm_number: f?.atm_number ?? f?.bem_num_atm ?? null,
+    serial_number: f?.serial_number ?? null,
+    asset_status: f?.asset_status ?? "",
+    asset_value: f?.asset_value ?? "",
+    asset_description: f?.asset_description ?? f?.descricao ?? "",
+    csv_code: f?.csv_code ?? "",
+    accounting_entry_code: f?.accounting_entry_code ?? "",
+    item_brand: f?.item_brand ?? null,
+    item_model: f?.item_model ?? null,
+    group_type_code: f?.group_type_code ?? "",
+    group_code: f?.group_code ?? "",
+    expense_element_code: f?.expense_element_code ?? "",
+    subelement_code: f?.subelement_code ?? "",
+    is_official: Boolean(f?.is_official),
+    material: f?.material ?? {},
+    legal_guardian: f?.legal_guardian ?? {},
+    // inclui toda a cadeia aqui:
+    location: loc,
+  };
+
+  if (!asset.asset_code && !asset.atm_number) return undefined;
+  return asset as Asset;
+};
 
   // salvar/remover (toggle) o resultado atual
   const toggleSaveCurrent = useCallback(() => {
@@ -300,51 +338,75 @@ export function BuscaPatrimonio() {
   const downloadCSV = useCallback(() => {
     if (!saved.length) return;
 
-    const headers = [
-      "id","asset_code","asset_check_digit","atm_number","serial_number","asset_status",
-      "asset_value","asset_description","csv_code","accounting_entry_code",
-      "item_brand","item_model","group_type_code","group_code",
-      "expense_element_code","subelement_code","is_official",
-      "material_id","material_name",
-      "legal_guardian_id","legal_guardian_name",
-      "location_id","location_name",
-      "search_type","search_value","saved_at"
-    ];
+  const headers = [
+  "id","asset_code","asset_check_digit","atm_number","serial_number","asset_status",
+  "asset_value","asset_description","csv_code","accounting_entry_code",
+  "item_brand","item_model","group_type_code","group_code",
+  "expense_element_code","subelement_code","is_official",
+  "material_id","material_name",
+  "legal_guardian_id","legal_guardian_name",
 
-    const rows = saved.map((s) => {
-      const a = s.asset;
-      return [
-        a?.id ?? "",
-        a?.asset_code ?? "",
-        a?.asset_check_digit ?? "",
-        a?.atm_number ?? "",
-        a?.serial_number ?? "",
-        a?.asset_status ?? "",
-        a?.asset_value ?? "",
-        a?.asset_description ?? "",
-        a?.csv_code ?? "",
-        a?.accounting_entry_code ?? "",
-        a?.item_brand ?? "",
-        a?.item_model ?? "",
-        a?.group_type_code ?? "",
-        a?.group_code ?? "",
-        a?.expense_element_code ?? "",
-        a?.subelement_code ?? "",
-        String(a?.is_official ?? ""),
-        (a as any)?.material?.id ?? "",
-        (a as any)?.material?.name ?? "",
-        (a as any)?.legal_guardian?.id ?? "",
-        (a as any)?.legal_guardian?.name ?? "",
-        (a as any)?.location?.id ?? "",
-        (a as any)?.location?.name ?? "",
-        s.pesquisa.type,
-        s.pesquisa.value_item,
-        new Date(s.createdAt).toISOString()
-      ].map((v) => {
-        const str = `${v ?? ""}`;
-        return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-      }).join(",");
-    });
+  // 🆕 Unidade / Organização / Setor / Local
+  "unit_id","unit_name",
+  "agency_id","agency_name",
+  "sector_id","sector_name",
+  "location_id","location_name",
+
+  "search_type","search_value","saved_at"
+];
+
+
+  const rows = saved.map((s) => {
+  const a = s.asset as any;
+  const unit = a?.location?.sector?.agency?.unit ?? {};
+  const agency = a?.location?.sector?.agency ?? {};
+  const sector = a?.location?.sector ?? {};
+  const location = a?.location ?? {};
+
+  return [
+    a?.id ?? "",
+    a?.asset_code ?? "",
+    a?.asset_check_digit ?? "",
+    a?.atm_number ?? "",
+    a?.serial_number ?? "",
+    a?.asset_status ?? "",
+    a?.asset_value ?? "",
+    a?.asset_description ?? "",
+    a?.csv_code ?? "",
+    a?.accounting_entry_code ?? "",
+    a?.item_brand ?? "",
+    a?.item_model ?? "",
+    a?.group_type_code ?? "",
+    a?.group_code ?? "",
+    a?.expense_element_code ?? "",
+    a?.subelement_code ?? "",
+    String(a?.is_official ?? ""),
+    a?.material?.id ?? "",
+    a?.material?.name ?? "",
+    a?.legal_guardian?.id ?? "",
+    a?.legal_guardian?.name ?? "",
+
+    // 🆕 Unidade / Organização / Setor / Local
+    unit?.id ?? "",
+    unit?.unit_name ?? unit?.name ?? "",
+    agency?.id ?? "",
+    agency?.agency_name ?? agency?.name ?? "",
+    sector?.id ?? "",
+    sector?.sector_name ?? sector?.name ?? "",
+    location?.id ?? "",
+    location?.location_name ?? location?.name ?? "",
+
+    s.pesquisa.type,
+    s.pesquisa.value_item,
+    new Date(s.createdAt).toISOString(),
+  ]
+    .map((v) => {
+      const str = `${v ?? ""}`;
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    })
+    .join(",");
+});
+
 
     const csv = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -435,6 +497,7 @@ export function BuscaPatrimonio() {
                       type={wizard.pesquisa?.type}
                       initialData={wizard.formulario}
                       step={idx + 1}
+                      showLocation={true}
                     />
                   )}
                 </TabsContent>

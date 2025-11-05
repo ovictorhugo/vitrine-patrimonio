@@ -138,32 +138,23 @@ export function PesquisaStep({
   const [advancedResults, setAdvancedResults] = useState<AdvancedItem[]>([]);
 
   // Rehidrata quando o Wizard já tem valor salvo
-  useEffect(() => {
-    if (value_item && type) {
-      const next = { term: String(value_item), type: String(type) as "cod" | "atm" };
-      const same =
-        itemsSelecionadosPopUp.length === 1 &&
-        itemsSelecionadosPopUp[0].term === next.term &&
-        itemsSelecionadosPopUp[0].type === next.type;
-      if (!same) {
-        setItemType(next.type);
-        setItensSelecionadosPopUp([next]);
-      }
-    }
-    // Nota: não limpamos local aqui quando o pai não manda valor,
-    // para não gerar “ping-pong” com o efeito da URL.
-  }, [value_item, type, itemsSelecionadosPopUp]);
+useEffect(() => {
+  if (!value_item || !type) return;
+  if (didHydrate.current) return;
+  setItemType(String(type) as "cod" | "atm");
+  setItensSelecionadosPopUp([{ term: String(value_item), type: String(type) as "cod" | "atm" }]);
+  didHydrate.current = true;
+}, [value_item, type]);
 
-  useEffect(() => {
-    onValidityChange(itemsSelecionadosPopUp.length > 0);
-  }, [itemsSelecionadosPopUp, onValidityChange]);
+useEffect(() => {
+  const has = itemsSelecionadosPopUp.length > 0;
+  onValidityChange(has);
+  if (has) {
+    const { type, term } = itemsSelecionadosPopUp[0];
+    onStateChange?.({ type, value_item: term });
+  }
+}, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
 
-  useEffect(() => {
-    if (itemsSelecionadosPopUp.length > 0) {
-      const { type, term } = itemsSelecionadosPopUp[0];
-      onStateChange?.({ type, value_item: term });
-    }
-  }, [itemsSelecionadosPopUp, onStateChange]);
 
   // ========= Busca por input =========
   const runSearch = async (rawInput: string, forceTreatAsCodFormatter = false) => {
@@ -234,11 +225,31 @@ export function PesquisaStep({
     setInput(formattedValue);
   };
 
-  const handleRemoveItem = (index: number) => {
-    const newItems = [...itemsSelecionadosPopUp];
-    newItems.splice(index, 1);
-    setItensSelecionadosPopUp(newItems);
-  };
+  // evita rehidratar várias vezes a partir das props
+const didHydrate = useRef(false);
+
+
+const handleRemoveItem = (index: number) => {
+  setItensSelecionadosPopUp(prev => {
+    const arr = prev.filter((_, i) => i !== index);
+    if (arr.length === 0) {
+      // limpa no pai também
+      onStateChange?.({ type: undefined as any, value_item: undefined as any });
+      onValidityChange(false);
+    }
+    return arr;
+  });
+};
+
+useEffect(() => {
+  const has = itemsSelecionadosPopUp.length > 0;
+  onValidityChange(has);
+  if (has) {
+    const { type, term } = itemsSelecionadosPopUp[0];
+    onStateChange?.({ type, value_item: term });
+  }
+}, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
+
 
   // 🔗 Seleção no modo simples
   const handleSelectItemSimple = (it: SearchItem) => {
@@ -355,7 +366,7 @@ export function PesquisaStep({
         </Alert>
 
 {filteredItems.length == 0 && (
-<p className="mt-8 text-xs font-medium text-gray-500">*Para códigos ATM que começam com "A", substituir por 90 ou 20</p>
+<p className="mt-8 text-xs font-medium text-gray-500">*Para códigos ATM que começam com "A", substituir por 19 ou 20</p>
 )}
         
 

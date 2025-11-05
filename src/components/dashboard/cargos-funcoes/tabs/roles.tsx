@@ -1330,7 +1330,7 @@ const [isCAL, setIsCAL] = useState(false);
                                       <Skeleton className="h-10 w-full" />
                                     </div>
                                   ) : usersForRole?.length > 0 ? (
-                                    <div className="flex-col flex gap-3 overflow-y-auto max-h-[320px]">
+                                    <div className="flex-col flex gap-3 overflow-y-auto max-h-[350px]">
                                       {usersForRole.map((u) => (
                                         <Alert key={u.id}>
                                           <div className="group flex items-center justify-between ">

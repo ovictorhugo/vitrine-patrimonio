@@ -47,9 +47,19 @@ export function Admin() {
 
   const [isOn, setIsOn] = useState(true);
   const queryUrl = useQuery();
-  const tab = queryUrl.get("tab");
-  const [value, setValue] = useState(tab || tabs[0].id);
+ const rawTab = queryUrl.get("tab");
+// abas "visíveis": quando condition !== true
+const visibleTabs = useMemo(() => tabs.filter(t => !t.condition), [tabs]);
 
+// id da primeira aba disponível
+const firstAvailableTabId = visibleTabs[0]?.id ?? tabs[0].id;
+
+// se a query aponta para uma aba visível, usa; senão, primeira disponível
+const initialTab = useMemo(() => {
+  return visibleTabs.some(t => t.id === rawTab) ? (rawTab as string) : firstAvailableTabId;
+}, [rawTab, visibleTabs, firstAvailableTabId]);
+
+const [value, setValue] = useState<string>(initialTab);
   // ===== Scroll dos tabs
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -189,7 +199,7 @@ const WORKFLOW_STATUS_META: Record<
                         {WORKFLOWS.map(({ key, name }) => {
               const { Icon } = getMeta(key);
                           return (
-                            <CarouselItem key={key} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                            <CarouselItem key={key} className="basis-1/4">
                               <Alert className="p-0">
                                 <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
                                   <CardTitle className="text-sm truncate font-medium">{name}</CardTitle>

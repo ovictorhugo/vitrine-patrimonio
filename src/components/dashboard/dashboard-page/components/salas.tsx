@@ -197,16 +197,18 @@ export function Salas() {
                       <Link key={location.id} to={`/dashboard/sala?loc_id=${location.id}`} className="w-64">
                         <Alert className="w-64 flex justify-between flex-col aspect-square cursor-pointer">
                          <div>
-                               <div className="flex items-center gap-2 flex-wrap">
-                                  
-                                      <div
-                                      
-                                        className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-1 flex-wrap"
-                                      >
-                                  {location.sector.agency.agency_name}  <ChevronRight size={14} /> {location.sector.sector_name}
-                                      </div>
-                                   
-                                  </div>
+                             <div className="flex items-center gap-2">
+  <div className="flex items-center gap-1 min-w-0">
+    <p className="truncate text-sm text-gray-500 dark:text-gray-300 ">
+      {location.sector.agency.agency_name}
+    </p>
+    <ChevronRight size={14} className="flex-shrink-0" />
+    <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+      {location.sector.sector_name}
+    </p>
+  </div>
+</div>
+
                          </div>
                           <p className="text-xl  font-semibold whitespace-normal">
                             {location.location_name}

@@ -1,4 +1,4 @@
-import { ChevronLeft, DoorClosed, DoorOpen, Home, List, ListChecks, LoaderCircle, Mail, Package, Recycle, Undo2, Upload, User } from "lucide-react";
+import { ChevronLeft, DoorClosed, DoorOpen, Home, List, ListChecks, LoaderCircle, Mail, Package, Recycle, Store, Undo2, Upload, User } from "lucide-react";
 import { Button } from "../ui/button";
 import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -443,8 +443,8 @@ export function UserPublicPage() {
           <AccordionItem value="item-1">
             <AccordionTrigger className="px-0">
               <HeaderResultTypeHome
-                title={"Todos os itens anunciados"}
-                icon={<Package size={24} className="text-gray-400" />}
+                title={"Todos os itens anunciados na vitrine"}
+                icon={<Store size={24} className="text-gray-400" />}
               />
             </AccordionTrigger>
   

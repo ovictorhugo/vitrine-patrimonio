@@ -146,15 +146,17 @@ export function FormularioStep({
   type,
   step,
   initialData,
-}: StepBaseProps<"formulario"> & { initialData?: Patrimonio }) {
+  showLocation,
+}: StepBaseProps<"formulario"> & { initialData?: Patrimonio, showLocation?: boolean }) {
   const { urlGeral, apiKeyBackend } = useContext(UserContext) as {
     urlGeral: string;
     apiKeyBackend?: string;
   };
 
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Patrimonio>(initialData ?? blankPatrimonio());
-
+  const [data, setData] = useState<Patrimonio>(
+  initialData ? normalizeAsset(initialData as any) : blankPatrimonio()
+);
   // Debounce do valor vindo do passo anterior
   const debouncedValue = useDebounced(value_item ?? "", 500);
 
@@ -522,6 +524,27 @@ export function FormularioStep({
                 />
               </div>
             </div>
+
+          {showLocation && (
+              <div className="grid gap-4 w-full grid-cols-1 md:grid-cols-4">
+                          <div className="grid gap-2">
+                            <Label>Unidade</Label>
+                            <Input disabled value={data.unit.unit_name} />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Organização</Label>
+                            <Input disabled value={data.agency.agency_name} />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Setor / Departamento</Label>
+                            <Input disabled value={data.sector.sector_name} />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Local de guarda</Label>
+                            <Input disabled value={data.location.location_name} />
+                          </div>
+                        </div>
+          )}
 
           </div>
         </div>

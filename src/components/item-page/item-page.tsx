@@ -1461,6 +1461,7 @@ if(catalog) {
           <div className="lg:w-[420px] flex flex-col gap-8 lg:min-w-[420px] w-full">
            <ButtonTransference catalog={catalog}/>
            
+           <Link to={`/user?id=${catalog.user?.id}`} target="_blank">
            <Alert className="p-8">
              <div className="flex gap-3 items-center">
                                 <Avatar className="rounded-md h-12 w-12">
@@ -1478,6 +1479,7 @@ if(catalog) {
                                 </div>
                               </div>
            </Alert>
+           </Link>
            
           <Link to={`/buscar-patrimonio?bem_cod=${asset?.asset_code}&bem_dgv=${asset?.asset_check_digit}`}>
           <div className={`flex   `} >

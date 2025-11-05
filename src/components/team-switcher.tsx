@@ -157,6 +157,11 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
               onClick={() => {
                 // Modo padrão (sem cargo/permissão)
                 fetchDataPerm({ name: "Visitante", id: "", plan: "Usuário" });
+                 toast("Você alternou as permissões", {
+          description: `Acessando como Modo padrão`,
+          action: { label: "Fechar", onClick: () => {} },
+        });
+         navigate('/')
               }}
               className="gap-2 p-2"
             >

@@ -114,9 +114,13 @@ const [justTxt, setJustTxt] = useState<string>("");
 
 const fillPreset = useCallback((id: string) => {
   const p = JUSTIFICATIVAS_DESFAZIMENTO.find((x) => x.id === id);
-  if (!p) return;
-  const texto = p.build(entry); // gera a justificativa personalizada com base no item
-  setJustTxt((curr) => (curr?.trim() ? curr : texto));
+  // se quiser limpar quando "nenhum" for escolhido (id vazio):
+  if (!p) {
+    setJustTxt("");
+    return;
+  }
+  const texto = p.build(entry);
+  setJustTxt(texto); // <-- sobrescreve SEMPRE
 }, [entry]);
 
   const handleClickAction = (target: WorkflowTarget) => {
@@ -347,18 +351,20 @@ setJustTxt("");
   value={presetId}
   onValueChange={(val) => {
     setPresetId(val);
-    fillPreset(val);
+    fillPreset(val); // atualiza imediatamente o textarea
   }}
 >
   <SelectTrigger className="w-full">
     <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
   </SelectTrigger>
-  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+  <SelectContent position="popper" className="z-[99999]" align="center" side="bottom" sideOffset={6}>
     {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
       <SelectItem key={p.id} value={p.id}>
         {p.label}
       </SelectItem>
     ))}
+    {/* opcional: item para “limpar” */}
+    {/* <SelectItem value="">Nenhum (limpar justificativa)</SelectItem> */}
   </SelectContent>
 </Select>
 

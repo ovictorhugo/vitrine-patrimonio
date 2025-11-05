@@ -422,7 +422,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
   return (
     <div className="w-full">
       {/* Deck */}
-      <div className="relative mx-auto max-w-[480px] w-full" style={{ height: 640 }}>
+      <div className="relative isolate mx-auto max-w-[480px] w-full" style={{ height: 640, isolation: "isolate" }}>
         {visible.length === 0 && (
           <Alert className="h-full flex items-center justify-center text-center">
             <div>
@@ -439,7 +439,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
           const translateY = i * 12;
 
           return (
-            <div key={item.id} className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 + depth }}>
+            <div key={item.id} className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 + depth }}>
               <div className="w-full h-full" style={{ transform: `translateY(${translateY}px) scale(${scale})`, transition: "transform 200ms ease" }}>
                 {isTop ? (
                   <SwipeCard onSwiped={handleSwiped}>
@@ -447,7 +447,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
                       <div className="relative select-none h-full">
                         {progress > 0.2 && (
                           <div className="absolute left-6 top-6 rotate-[-12deg] z-10">
-                            <div className="px-4 py-2 border-2 border-green-500 text-green-600 font-bold text-xl rounded-lg  ">
+                            <div className="px-4 py-2 border-2 border-green-500 text-green-500 font-bold text-xl rounded-lg  ">
                               APROVAR
                             </div>
                           </div>
@@ -542,10 +542,10 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um modelo..." />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                  <SelectContent position="popper" className="z-[99999]" align="center" side="bottom" sideOffset={6}>
                     {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.label}
+                       {p.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

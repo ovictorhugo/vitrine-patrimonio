@@ -19,6 +19,7 @@ import {
   Users,
   ClipboardCheck,
   Bug,
+  User,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -110,8 +111,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
       ],
       projects: [
         { name: "Página Inicial", url: "/", icon: Home },
-        ...(loggedIn && isDefaultRole
-          ? [{ name: "Dashboard", url: "/dashboard", icon: LayoutDashboard }]
+        ...(loggedIn 
+          ? [{ name: "Minha página", url: "/dashboard", icon: User }]
           : []),
         ...(hasAdministrativo
           ? [{ name: "Administrativo", url: "/dashboard/administrativo", icon: SlidersHorizontal }]

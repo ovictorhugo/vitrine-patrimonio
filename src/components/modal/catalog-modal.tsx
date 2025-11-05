@@ -1315,6 +1315,7 @@ console.log(catalog)
 
                  
                        {/* Anunciante (mantém como já está) */}
+<Link to={`/user?id=${catalog.user?.id}`} target="_blank">
 <Alert className="mt-8">
   <div className="flex gap-3 items-center">
     <Avatar className="rounded-md h-12 w-12">
@@ -1334,6 +1335,7 @@ console.log(catalog)
     </div>
   </div>
 </Alert>
+</Link>
 
 {/* Revisor + Justificativa (apenas quando houver algo) */}
 {((shouldShowReviewer && reviewerFromCommission) || (shouldShowJustification && justificationText)) && (

@@ -9,6 +9,7 @@ import { Button } from "../../../ui/button";
 import { UserContext } from "../../../../context/context";
 import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 import { CatalogEntry } from "./adm-comission";
+import { DownloadPdfButton } from "../../../download/download-pdf-button";
 
 
 
@@ -83,9 +84,18 @@ export function ListaFinalDesfazimento() {
               icon={<Trash size={24} className="text-gray-400" />}
             />
             <div className="flex items-center gap-2">
+              
+              {/* NOVO: botão de PDF */}
+              <DownloadPdfButton
+                workflowStatus="DESFAZIMENTO"
+                filename="lista_final_desfazimento.pdf"
+                label="Baixar PDF"
+              
+              />
+
               <Button variant={'outline'} onClick={onDownload} disabled={loading || items.length === 0}>
                 <Download size={16} />
-                Baixar resultado
+                Download CSV
               </Button>
               <AccordionTrigger className="px-0" />
             </div>

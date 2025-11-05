@@ -624,6 +624,7 @@ Agrupe os itens em coleções para o acompanhamento, controle e <strong classNam
       </DragDropContext>
 
       <AddToCollectionDrawer
+      type={'SMAL'}
         open={openAdd} onOpenChange={(o)=>setOpenAdd(o)}
         baseUrl={urlGeral} headers={authHeaders}
         collectionId={null} onItemsAdded={handleItemsAdded}

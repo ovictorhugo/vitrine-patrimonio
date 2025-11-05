@@ -260,12 +260,14 @@ export function AddToCollectionDrawer({
   headers,
   collectionId, // opcional
   onItemsAdded,
+  type
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   baseUrl: string;                // ex: urlGeral
   headers: HeadersInit;           // ex: authHeaders
   collectionId?: string | null;
+  type?: string
   onItemsAdded: (newItems: CollectionItem[]) => void;
 }) {
   /* ================== Estado de coleção ================== */
@@ -281,7 +283,7 @@ export function AddToCollectionDrawer({
     if (!needsCollectionSelect || !open) return;
     (async () => {
       try {
-        const res = await fetch(`${baseUrl}collections/`, { headers });
+        const res = await fetch(`${baseUrl}collections/?type=${type}`, { headers });
         if (!res.ok) throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
         const data: CollectionsListResponse = await res.json();
         setCollections(
@@ -458,12 +460,21 @@ const fetchLocationsP = useCallback(
     });
   };
 
+  const toggleSelectAll = () => {
+  if (selectedIds.size === catalogList.length) {
+    // Já todos selecionados → limpa tudo
+    setSelectedIds(new Set());
+  } else {
+    // Seleciona todos
+    setSelectedIds(new Set(catalogList.map((c) => c.id)));
+  }
+};
+
   const fetchCatalogForPopup = useCallback(async () => {
     try {
       setLoadingAddList(true);
       const params = new URLSearchParams();
       params.set("only_uncollected", "true");
-      params.set("workflow_status", "DESFAZIMENTO");
       if (q) params.set("q", q);
       if (materialId) params.set("material_id", materialId);
       if (guardianId) params.set("legal_guardian_id", guardianId);
@@ -471,6 +482,8 @@ const fetchLocationsP = useCallback(
       if (agencyIdP) params.set("agency_id", agencyIdP);
       if (sectorIdP) params.set("sector_id", sectorIdP);
       if (locationIdP) params.set("location_id", locationIdP);
+      if (type == 'SMAL') params.set("workflow_status", "DESFAZIMENTO");
+      if (type == 'COMPRAS') params.set("workflow_status", "ALIENACAO");
 
       const url = `${baseUrl}catalog/?${params.toString()}`;
       const res = await fetch(url, { headers });
@@ -616,6 +629,17 @@ const fetchLocationsP = useCallback(
           <div className=" flex justify-between">
             <DialogTitle className="text-2xl  font-medium">Adicionar itens à coleção de desfazimento</DialogTitle>
          
+         <div className="flex gap-2">
+           <Button
+    variant="outline"
+   
+    onClick={toggleSelectAll}
+    disabled={catalogList.length === 0}
+  >
+    {selectedIds.size === catalogList.length && catalogList.length > 0
+      ? "Desmarcar todos"
+      : "Selecionar todos"}
+  </Button>
             <Button
               variant="outline"
               size="icon"
@@ -624,6 +648,7 @@ const fetchLocationsP = useCallback(
             >
               {isFullscreen ? <Minimize size={16} /> : <Expand size={16} />}
             </Button>
+         </div>
           </div>
           <DialogDescription className="text-zinc-500">
             Selecione itens do catálogo para inserir na coleção.
@@ -633,8 +658,8 @@ const fetchLocationsP = useCallback(
         {/* Se não veio collectionId, mostrar seletor de coleção */}
         {needsCollectionSelect && (
           <>
-            <Separator className="my-4" />
-            <div className="mb-4">
+         
+            <div className="">
               <Combobox
                 items={collections}
                 value={selectedCollectionId}
@@ -670,7 +695,7 @@ const fetchLocationsP = useCallback(
           </Button>
 
           <div className="mx-14">
-            <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide" onScroll={checkScrollability}>
+            <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide h-auto" onScroll={checkScrollability}>
                   <div className="flex gap-3 items-center">
                     <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
                       <div>
