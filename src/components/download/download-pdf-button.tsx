@@ -185,7 +185,7 @@ export function DownloadPdfButton({
               boxSizing: "border-box",
             }}
           >
-            <ItemPatrimonioDownload {...it} />
+          
           </div>
         ))}
       </div>
