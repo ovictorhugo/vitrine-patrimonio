@@ -25,7 +25,7 @@ import { useModal } from "../hooks/use-modal-store";
 import QRCode from "react-qr-code";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
 import { LikeButton } from "./like-button";
-import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_META } from "../modal/catalog-modal";
+import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_META, WorkflowEvent } from "../modal/catalog-modal";
 import { usePermissions } from "../permissions";
 import { Tabs, TabsContent } from "../ui/tabs";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
@@ -362,34 +362,33 @@ export function ItemPage() {
 
   const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
   
-    useEffect(() => {
-      let timeouts: NodeJS.Timeout[] = [];
-    
-     
-        setLoadingMessage(" Estamos criando o registro, gerando o catálogo e enviando as imagens.");
-    
-        timeouts.push(setTimeout(() => {
-          setLoadingMessage("Estamos quase lá, continue aguardando...");
-        }, 5000));
-    
-        timeouts.push(setTimeout(() => {
-          setLoadingMessage("Só mais um pouco...");
-        }, 10000));
-    
-        timeouts.push(setTimeout(() => {
-          setLoadingMessage("Está demorando mais que o normal... estamos tentando enviar tudo.");
-        }, 15000));
-    
-        timeouts.push(setTimeout(() => {
-          setLoadingMessage("Estamos empenhados em concluir, aguarde só mais um pouco");
-        }, 15000));
-      
-    
-      return () => {
-        // Limpa os timeouts ao desmontar ou quando isOpen mudar
-        timeouts.forEach(clearTimeout);
-      };
-    }, []);
+     useEffect(() => {
+            let timeouts: NodeJS.Timeout[] = [];
+          
+           
+              setLoadingMessage("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Estamos quase lá, continue aguardando...");
+              }, 5000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Só mais um pouco...");
+              }, 10000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo.");
+              }, 15000));
+          
+              timeouts.push(setTimeout(() => {
+                setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco");
+              }, 15000));
+       
+            return () => {
+              // Limpa os timeouts ao desmontar ou quando isOpen mudar
+              timeouts.forEach(clearTimeout);
+            };
+          }, []);     
   
 const {theme} = useTheme()
 
@@ -703,6 +702,185 @@ const workflowAnunciados = firstStatus === "VITRINE";
   }, []);
 
   const [value, setValue] = useState("visao_geral");
+
+  //////////////JUSTIFICVATIVA E AVALIADOR
+  // === Visibilidade ===
+  /**
+   * ===========================================================
+   * BLOCO DE EXIBIÇÃO: REVISOR E JUSTIFICATIVA
+   * -----------------------------------------------------------
+   * Este trecho é responsável por exibir informações do revisor
+   * e/ou justificativa dentro do histórico de workflows
+   * do catálogo patrimonial.
+   *
+   * As informações são extraídas diretamente do campo `detail`
+   * de cada evento de workflow.
+   *
+   * === REGRAS DE EXIBIÇÃO ===================================
+   * 
+   * ➤ Revisor:
+   *    - Só deve ser mostrado se o status atual (`workflow_status`)
+   *      estiver entre:
+   *        • REVIEW_REQUESTED_COMISSION
+   *        • REJEITADOS_COMISSAO
+   *        • DESFAZIMENTO
+   *        • DESCARTADOS
+   *    - O revisor SEMPRE é obtido do primeiro evento
+   *      com `workflow_status === "REVIEW_REQUESTED_COMISSION"`,
+   *      a partir de `detail.reviewers[0]`.
+   *
+   * ➤ Justificativa:
+   *    - Só deve ser mostrada se o status atual estiver entre:
+   *        • REJEITADOS_COMISSAO
+   *        • DESFAZIMENTO
+   *        • DESCARTADOS
+   *    - A origem varia conforme o status atual:
+   *        • Se REJEITADOS_COMISSAO → vem do primeiro evento
+   *          com `workflow_status === "REJEITADOS_COMISSAO"`
+   *        • Se DESFAZIMENTO ou DESCARTADOS → vem do primeiro
+   *          evento com `workflow_status === "DESFAZIMENTO"`
+   *    - O campo usado é `detail.justificativa`
+   *
+   * ===========================================================
+   */
+  
+  // -----------------------------------------------------------
+  // 1️⃣ Conjuntos de status de visibilidade
+// === Conjuntos de visibilidade ===
+const REVIEWER_VISIBLE_STATUSES = new Set([
+  "REVIEW_REQUESTED_COMISSION",
+  "REJEITADOS_COMISSAO",
+  "DESFAZIMENTO",
+  "DESCARTADOS",
+  // novos (vitrine/desfazimento)
+  "REVIEW_REQUESTED_VITRINE",
+  "ADJUSTMENT_VITRINE",
+  "REVIEW_REQUESTED_DESFAZIMENTO",
+  "ADJUSTMENT_DESFAZIMENTO",
+]);
+
+const JUSTIFICATION_VISIBLE_STATUSES = new Set([
+  "REJEITADOS_COMISSAO",
+  "DESFAZIMENTO",
+  "DESCARTADOS",
+  // novos (vitrine/desfazimento)
+  "REVIEW_REQUESTED_VITRINE",
+  "ADJUSTMENT_VITRINE",
+  "REVIEW_REQUESTED_DESFAZIMENTO",
+  "ADJUSTMENT_DESFAZIMENTO",
+]);
+
+// === Util: achar o primeiro evento com um dos status
+function findFirstWorkflowByStatuses(
+  list:any,
+  statuses: string[]
+): WorkflowEvent | undefined {
+  if (!list?.length) return undefined;
+  return list.find((ev) => statuses.includes(ev.workflow_status));
+}
+
+// === Util: acessar detail (sempre "detail", conforme alinhado)
+function getDetail(ev?: WorkflowEvent | null): Record<string, any> | undefined {
+  if (!ev) return undefined;
+  return (ev as any).detail ?? undefined;
+}
+
+// === Util: pegar justificativa do detail
+function pickJustificativa(detail?: Record<string, any>): string | undefined {
+  if (!detail) return undefined;
+  const j = detail.justificativa;
+  return typeof j === "string" && j.trim() ? j : undefined;
+}
+
+// === Util: normalizar um "user" de event.user
+function pickUserFromEvent(ev?: WorkflowEvent | null): { id?: string; username?: string } | undefined {
+  const u = (ev as any)?.user;
+  if (u && (u.id || u.username)) {
+    return { id: u.id, username: u.username };
+  }
+  return undefined;
+}
+
+const currentStatus = lastWorkflow?.workflow_status ?? "";
+const shouldShowReviewer = REVIEWER_VISIBLE_STATUSES.has(currentStatus);
+const shouldShowJustification = JUSTIFICATION_VISIBLE_STATUSES.has(currentStatus);
+
+// ---------------- Revisor ----------------
+// 1) Comissão (preferência): do primeiro REVIEW_REQUESTED_COMISSION -> detail.reviewers[0]
+// 2) Fallback geral da comissão: se não houver reviewers, tentar event.user do mesmo REVIEW_REQUESTED_COMISSION
+// 3) Vitrine/Desfazimento (ajustes): do primeiro ADJUSTMENT_VITRINE ou ADJUSTMENT_DESFAZIMENTO -> event.user
+const reviewerFromCommission = useMemo(() => {
+  if (!shouldShowReviewer) return undefined;
+
+  // Comissão: pega do primeiro REVIEW_REQUESTED_COMISSION
+  const firstCommission = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REVIEW_REQUESTED_COMISSION"]);
+  const commissionDetail = getDetail(firstCommission);
+  const reviewerFromDetail = commissionDetail?.reviewers?.[0];
+
+  if (reviewerFromDetail && (reviewerFromDetail.id || reviewerFromDetail.username)) {
+    return reviewerFromDetail as { id?: string; username?: string };
+  }
+
+  // Fallback: user do próprio evento de comissão
+  const reviewerFromCommissionUser = pickUserFromEvent(firstCommission);
+  if (reviewerFromCommissionUser) return reviewerFromCommissionUser;
+
+  // Se o status atual é de Vitrine/Desfazimento (review/adjustment), permitir revisor via ADJUSTMENT.user
+  if (
+    [
+      "REVIEW_REQUESTED_VITRINE",
+      "ADJUSTMENT_VITRINE",
+      "REVIEW_REQUESTED_DESFAZIMENTO",
+      "ADJUSTMENT_DESFAZIMENTO",
+    ].includes(currentStatus)
+  ) {
+    const firstAdjustment =
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+    const reviewerFromAdjustmentUser = pickUserFromEvent(firstAdjustment);
+    if (reviewerFromAdjustmentUser) return reviewerFromAdjustmentUser;
+  }
+
+  return undefined;
+}, [shouldShowReviewer, currentStatus, catalog?.workflow_history]);
+
+// ---------------- Justificativa ----------------
+// Regras:
+// - REJEITADOS_COMISSAO  -> do primeiro REJEITADOS_COMISSAO (detail.justificativa)
+// - DESFAZIMENTO/DESCARTADOS -> do primeiro DESFAZIMENTO (detail.justificativa)
+// - REVIEW_REQUESTED_COMISSION -> do primeiro REVIEW_REQUESTED_COMISSION (detail.justificativa)
+// - REVIEW_REQUESTED_VITRINE / ADJUSTMENT_VITRINE / REVIEW_REQUESTED_DESFAZIMENTO / ADJUSTMENT_DESFAZIMENTO
+//      -> do primeiro ADJUSTMENT_VITRINE OU ADJUSTMENT_DESFAZIMENTO (detail.justificativa)
+const justificationText = useMemo(() => {
+  if (!shouldShowJustification) return undefined;
+
+  let wf: WorkflowEvent | undefined;
+
+  if (currentStatus === "REJEITADOS_COMISSAO") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REJEITADOS_COMISSAO"]);
+  } else if (currentStatus === "DESFAZIMENTO" || currentStatus === "DESCARTADOS") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["DESFAZIMENTO"]);
+  } else if (currentStatus === "REVIEW_REQUESTED_COMISSION") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REVIEW_REQUESTED_COMISSION"]);
+  } else if (
+    [
+      "REVIEW_REQUESTED_VITRINE",
+      "ADJUSTMENT_VITRINE",
+      "REVIEW_REQUESTED_DESFAZIMENTO",
+      "ADJUSTMENT_DESFAZIMENTO",
+    ].includes(currentStatus)
+  ) {
+    wf =
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+  } else {
+    return undefined;
+  }
+
+  const detail = getDetail(wf);
+  return pickJustificativa(detail);
+}, [shouldShowJustification, currentStatus, catalog?.workflow_history]);
+  //////////////////////////////////////////////////
 
   if (loading) {
     return (
@@ -1112,6 +1290,43 @@ if(catalog) {
             </div>
 
             
+
+{/* Revisor + Justificativa (apenas quando houver algo) */}
+{((shouldShowReviewer && reviewerFromCommission) || (shouldShowJustification && justificationText)) && (
+  <Alert className="mt-8">
+    {shouldShowReviewer && reviewerFromCommission && (
+      <div className="flex gap-3 items-center">
+        <Avatar className="rounded-md h-12 w-12">
+          <AvatarImage
+            src={
+              reviewerFromCommission.id
+                ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
+                : undefined
+            }
+          />
+          <AvatarFallback className="flex items-center justify-center">
+            <User size={16} />
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm w-fit text-gray-500">Parecerista</p>
+          <p className="text-black dark:text-white font-medium text-lg truncate">
+            {reviewerFromCommission.username ?? "Não informado"}
+          </p>
+        </div>
+      </div>
+    )}
+
+    {shouldShowJustification && justificationText && (
+      <div className={reviewerFromCommission ? "mt-4" : ""}>
+        <p className=" w-fit text-gray-500 mb-2">Justificativa</p>
+        <p className="text-gray-500 text-sm text-justify">
+          {justificationText}
+        </p>
+      </div>
+    )}
+  </Alert>
+)}
 
             {/* Material / Metadados rápidos */}
             <Separator className="mt-8 mb-2" />

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../novo-item";
-import { Archive, ArrowRight, CheckIcon, HelpCircle, Hourglass, MoveRight, XIcon } from "lucide-react";
+import { Archive, ArrowRight, CheckIcon, HelpCircle, Hourglass, LoaderCircle, MoveRight, XIcon } from "lucide-react";
 import { Input } from "../../../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
@@ -237,14 +237,14 @@ export function FormularioStep({
           // se não veio nada, zera para não “congelar” dados antigos
           setData(blankPatrimonio());
         }
+
+         if (abortRef.current === ac) {
+          setLoading(false);
+          abortRef.current = null;
+        }
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("Erro ao buscar patrimônio:", err);
-        }
-      } finally {
-        if (abortRef.current === ac) {
-          setLoading(false);
-          abortRef.current = null;
         }
       }
     })();
@@ -289,6 +289,51 @@ export function FormularioStep({
   const showCard =
     Boolean(data.asset_code);
 
+         const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+          
+              useEffect(() => {
+                let timeouts: NodeJS.Timeout[] = [];
+              
+               
+                  setLoadingMessage("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
+              
+                  timeouts.push(setTimeout(() => {
+                    setLoadingMessage("Estamos quase lá, continue aguardando...");
+                  }, 5000));
+              
+                  timeouts.push(setTimeout(() => {
+                    setLoadingMessage("Só mais um pouco...");
+                  }, 10000));
+              
+                  timeouts.push(setTimeout(() => {
+                    setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo.");
+                  }, 15000));
+              
+                  timeouts.push(setTimeout(() => {
+                    setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco");
+                  }, 15000));
+                
+              
+                return () => {
+                  // Limpa os timeouts ao desmontar ou quando isOpen mudar
+                  timeouts.forEach(clearTimeout);
+                };
+              }, []);
+    
+   if (loading) {
+            return (
+              <div className="flex justify-center items-center h-full">
+              <div className="w-full flex flex-col items-center justify-center h-full">
+                <div className="text-eng-blue mb-4 animate-pulse">
+                  <LoaderCircle size={108} className="animate-spin" />
+                </div>
+                <p className="font-medium text-lg max-w-[500px] text-center">
+                  {loadingMessage}
+                </p>
+              </div>
+            </div>
+            );
+          }
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">

@@ -12,6 +12,8 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { BlockItemsVitrine } from "../homepage/components/block-items-vitrine";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import { HeaderResultTypeHome } from "../header-result-type-home";
 
 interface Permission {
   id: string;
@@ -437,7 +439,21 @@ export function UserPublicPage() {
 
 
 <div className="p-8 pt-0">
+   <Accordion type="single" collapsible defaultValue="item-1">
+          <AccordionItem value="item-1">
+            <AccordionTrigger className="px-0">
+              <HeaderResultTypeHome
+                title={"Todos os itens anunciados"}
+                icon={<Package size={24} className="text-gray-400" />}
+              />
+            </AccordionTrigger>
+  
+            <AccordionContent className="p-0">
   <BlockItemsVitrine workflow="VITRINE" type={'user_id'} value={type_search || ''}/>
+
+            </AccordionContent>
+            </AccordionItem>
+            </Accordion>
 
 </div>
                          

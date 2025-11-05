@@ -18,6 +18,7 @@ import {
   Home,
   Users,
   ClipboardCheck,
+  Bug,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -102,7 +103,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           icon: DotsThree,
           isActive: true,
           items: [
-            { title: "Feedback", icon: Info, onClick: () => onOpen("relatar-problema") },
+            { title: "Feedback", icon: Bug, onClick: () => onOpen("relatar-problema") },
             { title: "Informações", url: "/informacoes", icon: Info },
           ],
         },

@@ -69,7 +69,7 @@ import { Badge } from "../../../ui/badge";
 import { Separator } from "../../../ui/separator";
 import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
-import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, DragUpdate, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Alert } from "../../../ui/alert";
 import { ArrowUUpLeft, MagnifyingGlass } from "phosphor-react";
 
@@ -362,6 +362,11 @@ function Combobox({
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((i) => i.id === value) || null;
+  
+  /////////////////////////////////
+
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>
@@ -730,82 +735,7 @@ export function AdmComission() {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
 
-    const fromKey = (source.droppableId ?? "").trim();
-    const toKey = (destination.droppableId ?? "").trim();
-    if (fromKey === toKey) return;
-
-    const validTo =
-      toKey === COL_SEM_REVISOR ||
-      commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
-    if (!validTo) {
-      toast.error("Destino inválido para reatribuição.");
-      return;
-    }
-
-    const fromList = board[fromKey] ?? [];
-    const entry = fromList[source.index];
-    if (!entry) return;
-
-    const prevBoard = board;
-    const prevEntries = entries;
-
-    // Monta reviewers como objetos { id, username } para o estado local
-    let reviewersNew: ReviewerRef[] = [];
-    if (toKey !== COL_SEM_REVISOR) {
-      const u = commissionUsers.find((u) => (u.id ?? "").trim() === toKey);
-      if (!u) {
-        toast.error("Revisor de destino não encontrado.");
-        return;
-      }
-      reviewersNew = [
-        {
-          id: (u.id ?? "").trim(),
-          username: (u.username ?? u.email ?? "Usuário").trim(),
-        },
-      ];
-    }
-
-    // Atualiza otimistamente o histórico do item (WF_DETAIL_SOURCE_A)
-    const patchEntry = (it: CatalogEntry): CatalogEntry => {
-      const hist = sortedHistoryDesc(it);
-      const idx = hist.findIndex(
-        (h) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A
-      );
-      if (idx === -1) return it;
-
-      const current = hist[idx];
-      const newDetail = { ...(current.detail ?? {}), reviewers: reviewersNew };
-      const newHist = [...hist];
-      newHist[idx] = { ...current, detail: newDetail };
-
-      return { ...it, workflow_history: newHist };
-    };
-
-    const patched = patchEntry(entry);
-
-    // Move no board
-    const newFrom = Array.from(prevBoard[fromKey] ?? []);
-    const i = newFrom.findIndex((x) => x.id === entry.id);
-    if (i >= 0) newFrom.splice(i, 1);
-
-    const newTo = [patched, ...Array.from(prevBoard[toKey] ?? [])];
-
-    setBoard({ ...prevBoard, [fromKey]: newFrom, [toKey]: newTo });
-    setEntries((old) => old.map((it) => (it.id === entry.id ? patched : it)));
-
-    // PUT real — mantém a API antiga: envia apenas os IDs (string[])
-    const reviewerIds = reviewersNew.map((r) => r.id); // [] quando SEM_REVISOR
-    const ok = await putReviewers(entry, reviewerIds);
-    if (!ok) {
-      // rollback
-      setBoard(prevBoard);
-      setEntries(prevEntries);
-    }
-  };
 
 const handleConfirmMove = async () => {
   // ... (se tiver alguma chamada de API aqui, mantenha)
@@ -949,6 +879,153 @@ const handleCancelMove = () => {
     return () => clearTimeout(t);
   }, [columns, board]);
 
+  // === Autoscroll horizontal durante drag ===
+const boardScrollRef = useRef<HTMLDivElement>(null);
+
+// controle do loop
+const draggingRef = useRef(false);
+const rafIdRef = useRef<number | null>(null);
+const pointerXRef = useRef<number>(0);
+
+// zona quente e velocidade
+const EDGE_PX = 140;
+const MAX_STEP = 40;
+const BASE_STEP = 12;
+
+// refs das colunas para scrollIntoView no destino
+const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const stopAutoScrollLoop = () => {
+  if (rafIdRef.current != null) {
+    cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = null;
+  }
+};
+
+const autoScrollTick = () => {
+  if (!draggingRef.current) return stopAutoScrollLoop();
+  const el = boardScrollRef.current;
+  if (!el) return stopAutoScrollLoop();
+
+  const rect = el.getBoundingClientRect();
+  const style = getComputedStyle(el);
+  const padL = parseFloat(style.paddingLeft || "0");
+  const padR = parseFloat(style.paddingRight || "0");
+  const rectLeft = rect.left + padL;
+  const rectRight = rect.right - padR;
+
+  const x = pointerXRef.current;
+
+  let dx = 0;
+  if (x - rectLeft < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (x - rectLeft));
+    dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  } else if (rectRight - x < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (rectRight - x));
+    dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  }
+
+  if (dx !== 0) el.scrollBy({ left: dx, behavior: "auto" });
+  rafIdRef.current = requestAnimationFrame(autoScrollTick);
+};
+
+const handlePointerMoveWhileDrag = (ev: PointerEvent) => {
+  pointerXRef.current = ev.clientX;
+  if (rafIdRef.current == null && draggingRef.current) {
+    rafIdRef.current = requestAnimationFrame(autoScrollTick);
+  }
+};
+
+const handleDragStart = () => {
+  draggingRef.current = true;
+  document.addEventListener("pointermove", handlePointerMoveWhileDrag);
+  stopAutoScrollLoop();
+  rafIdRef.current = requestAnimationFrame(autoScrollTick);
+};
+
+const handleDragUpdate = (update: DragUpdate) => {
+  const destId = update.destination?.droppableId?.trim();
+  if (!destId) return;
+  const colEl = colRefs.current[destId];
+  if (!colEl) return;
+  colEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+};
+
+// sua lógica atual vai aqui
+const handleDragEndDrop = async (result: DropResult) => {
+  // === COPIE daqui o conteúdo do seu handleDragEnd atual ===
+  const { source, destination } = result;
+  if (!destination) return;
+
+  const fromKey = (source.droppableId ?? "").trim();
+  const toKey = (destination.droppableId ?? "").trim();
+  if (fromKey === toKey) return;
+
+  const validTo =
+    toKey === COL_SEM_REVISOR ||
+    commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
+  if (!validTo) {
+    toast.error("Destino inválido para reatribuição.");
+    return;
+  }
+
+  const fromList = board[fromKey] ?? [];
+  const entry = fromList[source.index];
+  if (!entry) return;
+
+  const prevBoard = board;
+  const prevEntries = entries;
+
+  let reviewersNew: ReviewerRef[] = [];
+  if (toKey !== COL_SEM_REVISOR) {
+    const u = commissionUsers.find((u) => (u.id ?? "").trim() === toKey);
+    if (!u) {
+      toast.error("Revisor de destino não encontrado.");
+      return;
+    }
+    reviewersNew = [{ id: (u.id ?? "").trim(), username: (u.username ?? u.email ?? "Usuário").trim() }];
+  }
+
+  const patchEntry = (it: CatalogEntry): CatalogEntry => {
+    const hist = sortedHistoryDesc(it);
+    const idx = hist.findIndex((h) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A);
+    if (idx === -1) return it;
+    const current = hist[idx];
+    const newDetail = { ...(current.detail ?? {}), reviewers: reviewersNew };
+    const newHist = [...hist];
+    newHist[idx] = { ...current, detail: newDetail };
+    return { ...it, workflow_history: newHist };
+  };
+
+  const patched = patchEntry(entry);
+
+  const newFrom = Array.from(prevBoard[fromKey] ?? []);
+  const i = newFrom.findIndex((x) => x.id === entry.id);
+  if (i >= 0) newFrom.splice(i, 1);
+
+  const newTo = [patched, ...Array.from(prevBoard[toKey] ?? [])];
+
+  setBoard({ ...prevBoard, [fromKey]: newFrom, [toKey]: newTo });
+  setEntries((old) => old.map((it) => (it.id === entry.id ? patched : it)));
+
+  const reviewerIds = reviewersNew.map((r) => r.id); // [] quando SEM_REVISOR
+  const ok = await putReviewers(entry, reviewerIds);
+  if (!ok) {
+    setBoard(prevBoard);
+    setEntries(prevEntries);
+  }
+};
+
+// wrapper que encerra o autoscroll e chama o drop
+const handleDragEnd = (result: DropResult) => {
+  draggingRef.current = false;
+  document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
+  stopAutoScrollLoop();
+  void handleDragEndDrop(result);
+};
+
+
+
   return (
     <div className="p-4 md:p-8  gap-8 flex flex-col h-full">
       <main className="flex flex-col gap-4  flex-1 min-h-0 overflow-hidden">
@@ -1089,8 +1166,12 @@ const handleCancelMove = () => {
         {/* Board / Expandido */}
         {expandedColumn === null ? (
           <div className={`relative flex-1 `}>
-            <div className="h-full overflow-x-auto overflow-y-hidden pb-2">
-              <DragDropContext onDragEnd={handleDragEnd}>
+            <div ref={boardScrollRef} className="h-full overflow-x-auto overflow-y-hidden pb-2">
+            <DragDropContext
+  onDragStart={handleDragStart}
+ onDragUpdate={handleDragUpdate}
+  onDragEnd={handleDragEnd}
+>
                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
                     const items = board[col.key] ?? [];
@@ -1106,6 +1187,7 @@ const handleCancelMove = () => {
                     return (
                       <Alert
                         key={col.key}
+                        ref={(el) => (colRefs.current[col.key] = el)}
                         className="w-[320px] min-w-[320px]  h-full flex flex-col min-h-0 overflow-hidden"
                       >
                         <div className="flex items-center justify-between gap-2 mb-2 min-w-0">

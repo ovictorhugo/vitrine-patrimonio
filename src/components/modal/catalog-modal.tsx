@@ -68,6 +68,7 @@ import { Tabs, TabsContent } from "../ui/tabs";
 import { usePermissions } from "../permissions";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog from "../homepage/components/transfer-tab-catalog";
+import { ButtonTransference } from "../item-page/button-transference";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -184,7 +185,7 @@ type WorkflowStatus =
   | "ARCHIVED"
   | string;
 
-type WorkflowEvent = {
+export type WorkflowEvent = {
   id: string;
   detail?: Record<string, any>;
   workflow_status: string;
@@ -703,6 +704,7 @@ firstStatus === "REJEITADOS_COMISSAO"
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "transferencia", label: `Pedidos de transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:!((hasCatalogo || (user?.id == catalog?.user?.id)) && workflowAnunciados) },
+    { id: "solicitar-transferencia", label: `Solicitar transferência`, icon: ArrowRightLeft, condition:!(!((user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
   ];
 
@@ -756,120 +758,183 @@ firstStatus === "REJEITADOS_COMISSAO"
 
 
 //////////////JUSTIFICVATIVA E AVALIADOR
+// === Visibilidade ===
+/**
+ * ===========================================================
+ * BLOCO DE EXIBIÇÃO: REVISOR E JUSTIFICATIVA
+ * -----------------------------------------------------------
+ * Este trecho é responsável por exibir informações do revisor
+ * e/ou justificativa dentro do histórico de workflows
+ * do catálogo patrimonial.
+ *
+ * As informações são extraídas diretamente do campo `detail`
+ * de cada evento de workflow.
+ *
+ * === REGRAS DE EXIBIÇÃO ===================================
+ * 
+ * ➤ Revisor:
+ *    - Só deve ser mostrado se o status atual (`workflow_status`)
+ *      estiver entre:
+ *        • REVIEW_REQUESTED_COMISSION
+ *        • REJEITADOS_COMISSAO
+ *        • DESFAZIMENTO
+ *        • DESCARTADOS
+ *    - O revisor SEMPRE é obtido do primeiro evento
+ *      com `workflow_status === "REVIEW_REQUESTED_COMISSION"`,
+ *      a partir de `detail.reviewers[0]`.
+ *
+ * ➤ Justificativa:
+ *    - Só deve ser mostrada se o status atual estiver entre:
+ *        • REJEITADOS_COMISSAO
+ *        • DESFAZIMENTO
+ *        • DESCARTADOS
+ *    - A origem varia conforme o status atual:
+ *        • Se REJEITADOS_COMISSAO → vem do primeiro evento
+ *          com `workflow_status === "REJEITADOS_COMISSAO"`
+ *        • Se DESFAZIMENTO ou DESCARTADOS → vem do primeiro
+ *          evento com `workflow_status === "DESFAZIMENTO"`
+ *    - O campo usado é `detail.justificativa`
+ *
+ * ===========================================================
+ */
 
-// === Helpers para revisor/justificativa baseados em workflow.detail ===
-const FIRST_COMMISSION_STATUS = "REVIEW_REQUESTED_COMISSION";
-const JUSTIFY_FROM_STATUSES = new Set(["REJEITADOS_COMISSAO", "DESFAZIMENTO"]);
-const COMMISSION_BLOCK_STATUSES = new Set([
+// -----------------------------------------------------------
+  // 1️⃣ Conjuntos de status de visibilidade
+// === Conjuntos de visibilidade ===
+const REVIEWER_VISIBLE_STATUSES = new Set([
   "REVIEW_REQUESTED_COMISSION",
   "REJEITADOS_COMISSAO",
   "DESFAZIMENTO",
   "DESCARTADOS",
+  // novos (vitrine/desfazimento)
+  "REVIEW_REQUESTED_VITRINE",
+  "ADJUSTMENT_VITRINE",
+  "REVIEW_REQUESTED_DESFAZIMENTO",
+  "ADJUSTMENT_DESFAZIMENTO",
 ]);
 
-function firstTruthy<T>(...vals: (T | null | undefined)[]) {
-  return vals.find((v) => {
-    if (typeof v === "string") return v.trim().length > 0;
-    return v != null;
-  });
-}
+const JUSTIFICATION_VISIBLE_STATUSES = new Set([
+  "REJEITADOS_COMISSAO",
+  "DESFAZIMENTO",
+  "DESCARTADOS",
+  // novos (vitrine/desfazimento)
+  "REVIEW_REQUESTED_VITRINE",
+  "ADJUSTMENT_VITRINE",
+  "REVIEW_REQUESTED_DESFAZIMENTO",
+  "ADJUSTMENT_DESFAZIMENTO",
+]);
 
-type ReviewerObj = { id?: string | number; username?: string; name?: string } | undefined;
-
-function takeFirstReviewerFromDetail(detail?: Record<string, any>): ReviewerObj {
-  if (!detail) return undefined;
-
-  const candidates = [
-    detail.reviewers,
-    detail.reviwers, // variação/typo
-    detail.reviewes, // variação/typo
-    detail.revisor,
-  ].filter(Boolean);
-
-  for (const c of candidates) {
-    if (Array.isArray(c)) {
-      const first = c[0];
-      if (first && (first.id || first.username || first.name)) return first;
-    } else if (c && (c.username || c.name || c.id)) {
-      return c as ReviewerObj;
-    }
-  }
-  return undefined;
-}
-
-function pickJustificationFromDetail(detail?: Record<string, any>): string | undefined {
-  const j = firstTruthy<string>(detail?.justificativa, detail?.justification, detail?.reason);
-  return typeof j === "string" ? j : undefined;
-}
-
+// === Util: achar o primeiro evento com um dos status
 function findFirstWorkflowByStatuses(
-  list: WorkflowEvent[] | undefined | null,
+  list:any,
   statuses: string[]
 ): WorkflowEvent | undefined {
   if (!list?.length) return undefined;
   return list.find((ev) => statuses.includes(ev.workflow_status));
 }
 
-// Status atual (seguro)
-const currentStatus = lastWorkflow?.workflow_status;
-
-// Deve mostrar bloco de comissão?
-const shouldShowCommissionBlock = COMMISSION_BLOCK_STATUSES.has(currentStatus ?? "");
-
-// Primeiro REVIEW_REQUESTED_COMISSION para extrair revisor
-const firstReviewRequestedComission = useMemo(
-  () =>
-    (catalog?.workflow_history ?? []).find(
-      (ev) => ev.workflow_status === FIRST_COMMISSION_STATUS
-    ) ?? null,
-  [catalog?.workflow_history]
-);
-
-// Normaliza "detail" vs "details" => sempre retorna o objeto de details
-function getDetailsFromEvent(ev?: WorkflowEvent | null): Record<string, any> | undefined {
+// === Util: acessar detail (sempre "detail", conforme alinhado)
+function getDetail(ev?: WorkflowEvent | null): Record<string, any> | undefined {
   if (!ev) return undefined;
-  // prioriza "details" (como você pediu), mas aceita "detail" se vier assim
-  return (ev as any).details ?? (ev as any).detail ?? undefined;
+  return (ev as any).detail ?? undefined;
 }
 
-function pickJustificationFromDetails(details?: Record<string, any>): string | undefined {
-  if (!details) return undefined;
-  const j = details.justificativa ?? details.justification ?? details.reason;
+// === Util: pegar justificativa do detail
+function pickJustificativa(detail?: Record<string, any>): string | undefined {
+  if (!detail) return undefined;
+  const j = detail.justificativa;
   return typeof j === "string" && j.trim() ? j : undefined;
 }
 
-
-// Revisor (se existir)
-const reviewerFromCommission = useMemo(() => {
-  if (!shouldShowCommissionBlock) return undefined;
-
-  const firstCommission = findFirstWorkflowByStatuses(catalog?.workflow_history, [
-    "REVIEW_REQUESTED_COMISSION",
-  ]);
-  const details = getDetailsFromEvent(firstCommission);
-
-  const rev = details?.reviewers?.[0];
-  if (rev && (rev.id || rev.username)) {
-    return rev as { id?: string; username?: string };
+// === Util: normalizar um "user" de event.user
+function pickUserFromEvent(ev?: WorkflowEvent | null): { id?: string; username?: string } | undefined {
+  const u = (ev as any)?.user;
+  if (u && (u.id || u.username)) {
+    return { id: u.id, username: u.username };
   }
   return undefined;
-}, [shouldShowCommissionBlock, catalog?.workflow_history]);
+}
 
-// Justificativa conforme regra:
+const currentStatus = lastWorkflow?.workflow_status ?? "";
+const shouldShowReviewer = REVIEWER_VISIBLE_STATUSES.has(currentStatus);
+const shouldShowJustification = JUSTIFICATION_VISIBLE_STATUSES.has(currentStatus);
+
+// ---------------- Revisor ----------------
+// 1) Comissão (preferência): do primeiro REVIEW_REQUESTED_COMISSION -> detail.reviewers[0]
+// 2) Fallback geral da comissão: se não houver reviewers, tentar event.user do mesmo REVIEW_REQUESTED_COMISSION
+// 3) Vitrine/Desfazimento (ajustes): do primeiro ADJUSTMENT_VITRINE ou ADJUSTMENT_DESFAZIMENTO -> event.user
+const reviewerFromCommission = useMemo(() => {
+  if (!shouldShowReviewer) return undefined;
+
+  // Comissão: pega do primeiro REVIEW_REQUESTED_COMISSION
+  const firstCommission = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REVIEW_REQUESTED_COMISSION"]);
+  const commissionDetail = getDetail(firstCommission);
+  const reviewerFromDetail = commissionDetail?.reviewers?.[0];
+
+  if (reviewerFromDetail && (reviewerFromDetail.id || reviewerFromDetail.username)) {
+    return reviewerFromDetail as { id?: string; username?: string };
+  }
+
+  // Fallback: user do próprio evento de comissão
+  const reviewerFromCommissionUser = pickUserFromEvent(firstCommission);
+  if (reviewerFromCommissionUser) return reviewerFromCommissionUser;
+
+  // Se o status atual é de Vitrine/Desfazimento (review/adjustment), permitir revisor via ADJUSTMENT.user
+  if (
+    [
+      "REVIEW_REQUESTED_VITRINE",
+      "ADJUSTMENT_VITRINE",
+      "REVIEW_REQUESTED_DESFAZIMENTO",
+      "ADJUSTMENT_DESFAZIMENTO",
+    ].includes(currentStatus)
+  ) {
+    const firstAdjustment =
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+    const reviewerFromAdjustmentUser = pickUserFromEvent(firstAdjustment);
+    if (reviewerFromAdjustmentUser) return reviewerFromAdjustmentUser;
+  }
+
+  return undefined;
+}, [shouldShowReviewer, currentStatus, catalog?.workflow_history]);
+
+// ---------------- Justificativa ----------------
+// Regras:
+// - REJEITADOS_COMISSAO  -> do primeiro REJEITADOS_COMISSAO (detail.justificativa)
+// - DESFAZIMENTO/DESCARTADOS -> do primeiro DESFAZIMENTO (detail.justificativa)
+// - REVIEW_REQUESTED_COMISSION -> do primeiro REVIEW_REQUESTED_COMISSION (detail.justificativa)
+// - REVIEW_REQUESTED_VITRINE / ADJUSTMENT_VITRINE / REVIEW_REQUESTED_DESFAZIMENTO / ADJUSTMENT_DESFAZIMENTO
+//      -> do primeiro ADJUSTMENT_VITRINE OU ADJUSTMENT_DESFAZIMENTO (detail.justificativa)
 const justificationText = useMemo(() => {
-  if (!shouldShowCommissionBlock) return undefined;
+  if (!shouldShowJustification) return undefined;
 
-  // Sempre pegar o PRIMEIRO workflow que seja DESFAZIMENTO ou REJEITADOS_COMISSAO
-  const wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
-    "DESFAZIMENTO",
-    "REJEITADOS_COMISSAO",
-  ]);
+  let wf: WorkflowEvent | undefined;
 
-  const details = getDetailsFromEvent(wf);
-  return pickJustificationFromDetails(details);
-}, [shouldShowCommissionBlock, catalog?.workflow_history]);
+  if (currentStatus === "REJEITADOS_COMISSAO") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REJEITADOS_COMISSAO"]);
+  } else if (currentStatus === "DESFAZIMENTO" || currentStatus === "DESCARTADOS") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["DESFAZIMENTO"]);
+  } else if (currentStatus === "REVIEW_REQUESTED_COMISSION") {
+    wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REVIEW_REQUESTED_COMISSION"]);
+  } else if (
+    [
+      "REVIEW_REQUESTED_VITRINE",
+      "ADJUSTMENT_VITRINE",
+      "REVIEW_REQUESTED_DESFAZIMENTO",
+      "ADJUSTMENT_DESFAZIMENTO",
+    ].includes(currentStatus)
+  ) {
+    wf =
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
+      findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+  } else {
+    return undefined;
+  }
 
-
+  const detail = getDetail(wf);
+  return pickJustificativa(detail);
+}, [shouldShowJustification, currentStatus, catalog?.workflow_history]);
+  //////////////////////////////////////////////////
 
 console.log(catalog)
   const content = () => {
@@ -1271,13 +1336,12 @@ console.log(catalog)
 </Alert>
 
 {/* Revisor + Justificativa (apenas quando houver algo) */}
-{shouldShowCommissionBlock && (reviewerFromCommission || justificationText) && (
+{((shouldShowReviewer && reviewerFromCommission) || (shouldShowJustification && justificationText)) && (
   <Alert className="mt-8">
-    {reviewerFromCommission && (
+    {shouldShowReviewer && reviewerFromCommission && (
       <div className="flex gap-3 items-center">
         <Avatar className="rounded-md h-12 w-12">
           <AvatarImage
-            className=""
             src={
               reviewerFromCommission.id
                 ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
@@ -1289,7 +1353,7 @@ console.log(catalog)
           </AvatarFallback>
         </Avatar>
         <div>
-          <p className="text-sm w-fit text-gray-500">Revisor</p>
+          <p className="text-sm w-fit text-gray-500">Parecerista</p>
           <p className="text-black dark:text-white font-medium text-lg truncate">
             {reviewerFromCommission.username ?? "Não informado"}
           </p>
@@ -1297,10 +1361,10 @@ console.log(catalog)
       </div>
     )}
 
-    {justificationText && (
+    {shouldShowJustification && justificationText && (
       <div className={reviewerFromCommission ? "mt-4" : ""}>
-        <p className="text-sm w-fit text-gray-500">Justificativa</p>
-        <p className="text-black dark:text-white whitespace-pre-wrap">
+        <p className=" w-fit text-gray-500 mb-2">Justificativa</p>
+        <p className="text-gray-500 text-sm text-justify">
           {justificationText}
         </p>
       </div>
@@ -1416,6 +1480,14 @@ console.log(catalog)
       // opcional: refetch do catálogo ou setState local, se quiser
     }}
   />
+                    </TabsContent>
+
+                        {/* ===== Transferência ===== */}
+                    <TabsContent value="solicitar-transferencia">
+                    <ButtonTransference
+                    catalog={catalog}
+                    />
+
                     </TabsContent>
 
   {/* ===== Movimentação ===== */}

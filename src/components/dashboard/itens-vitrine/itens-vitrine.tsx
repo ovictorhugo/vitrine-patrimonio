@@ -69,7 +69,7 @@ import { Badge } from "../../ui/badge";
 import { Separator } from "../../ui/separator";
 import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
-import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, DragUpdate, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Alert } from "../../ui/alert";
 import { ArrowUUpLeft, MagnifyingGlass } from "phosphor-react";
 import { CardItemDropdown } from "./card-item-dropdown";
@@ -584,7 +584,7 @@ export function ItensVitrine() {
     if (sectorId) fetchLocations(sectorId);
   }, [sectorId, fetchLocations]);
 
-  const [tab, setTab] = useState<BoardKind>("vitrine");
+  const [tab, setTab] = useState<BoardKind>("desfazimento");
   const [showFilters, setShowFilters] = useState(true);
 
   // Filtros
@@ -774,56 +774,149 @@ export function ItensVitrine() {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
-    const fromKey = (source.droppableId ?? "").trim();
-    const toKey = (destination.droppableId ?? "").trim();
-    if (fromKey === toKey) return;
+  // dentro do componente ItensVitrine()
+const boardScrollRef = useRef<HTMLDivElement>(null);
 
-    const fromList = board[fromKey] ?? [];
-    const entry = fromList[source.index];
-    if (!entry) return;
+// controle do loop de autoscroll durante drag
+const draggingRef = useRef(false);
+const rafIdRef = useRef<number | null>(null);
+const pointerXRef = useRef<number>(0);
 
-    const needs = rulesFor(toKey);
+const stopAutoScrollLoop = () => {
+  if (rafIdRef.current != null) {
+    cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = null;
+  }
+};
 
-    const prevBoard = board;
-    const prevEntries = entries;
+// constantes
+const EDGE_PX = 140;      // antes 80
+const MAX_STEP = 40;      // antes 30
+const BASE_STEP = 12;     // antes 10
 
-    const optimisticHistory: WorkflowHistoryItem = {
-      id: crypto.randomUUID(),
-      catalog_id: entry.id,
-      user: entry.user,
-      workflow_status: toKey,
-      detail: {},
-      created_at: new Date().toISOString(),
-    };
-    const optimisticEntry: CatalogEntry = {
-      ...entry,
-      workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
-    };
-    const newFrom = Array.from(prevBoard[fromKey] ?? []);
-    const idx = newFrom.findIndex((x) => x.id === entry.id);
-    if (idx >= 0) newFrom.splice(idx, 1);
-    const newTo = [optimisticEntry, ...Array.from(prevBoard[toKey] ?? [])];
+const autoScrollTick = () => {
+  if (!draggingRef.current) return stopAutoScrollLoop();
+  const el = boardScrollRef.current;
+  if (!el) return stopAutoScrollLoop();
 
-    setBoard({ ...prevBoard, [fromKey]: newFrom, [toKey]: newTo });
-    setEntries((old) => old.map((it) => (it.id === entry.id ? optimisticEntry : it)));
+  // compensa padding do container (pra borda “pegar” mais cedo)
+  const rect = el.getBoundingClientRect();
+  const style = getComputedStyle(el);
+  const padL = parseFloat(style.paddingLeft || "0");
+  const padR = parseFloat(style.paddingRight || "0");
+  const rectLeft  = rect.left  + padL;
+  const rectRight = rect.right - padR;
 
-    if (needs.requireJustification || needs.extraFields?.length) {
-      setSnapshotBoard(prevBoard);
-      setSnapshotEntries(prevEntries);
-      setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
-      setMoveModalOpen(true);
-      return;
-    }
+  const x = pointerXRef.current;
 
-    const ok = await postWorkflowChange(optimisticEntry, toKey, {});
-    if (!ok) {
-      setBoard(prevBoard);
-      setEntries(prevEntries);
-    }
+  let dx = 0;
+  if (x - rectLeft < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (x - rectLeft));
+    dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  } else if (rectRight - x < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (rectRight - x));
+    dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  }
+
+  if (dx !== 0) el.scrollBy({ left: dx, behavior: "auto" });
+  rafIdRef.current = requestAnimationFrame(autoScrollTick);
+};
+
+
+const handlePointerMoveWhileDrag = (ev: PointerEvent) => {
+  pointerXRef.current = ev.clientX;
+  // garante que o loop esteja rodando
+  if (rafIdRef.current == null && draggingRef.current) {
+    rafIdRef.current = requestAnimationFrame(autoScrollTick);
+  }
+};
+
+const handleDragStart = () => {
+  draggingRef.current = true;
+  document.addEventListener("pointermove", handlePointerMoveWhileDrag);
+  // inicia o loop
+  stopAutoScrollLoop();
+  rafIdRef.current = requestAnimationFrame(autoScrollTick);
+};
+
+const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+
+// handler de update
+const handleDragUpdate = (update: DragUpdate) => {
+  const destId = update.destination?.droppableId?.trim();
+  if (!destId) return;
+  const el = colRefs.current[destId];
+  if (!el) return;
+
+  // usa o próprio wrapper que rola
+  el.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+    inline: "center",
+  });
+};
+
+// preserva sua lógica existente de onDragEnd
+const handleDragEndDrop = async (result: DropResult) => {
+  // === SEU handleDragEnd atual, inalterado ===
+  const { source, destination } = result;
+  if (!destination) return;
+  const fromKey = (source.droppableId ?? "").trim();
+  const toKey = (destination.droppableId ?? "").trim();
+  if (fromKey === toKey) return;
+  const fromList = board[fromKey] ?? [];
+  const entry = fromList[source.index];
+  if (!entry) return;
+
+  const needs = rulesFor(toKey);
+  const prevBoard = board;
+  const prevEntries = entries;
+
+  const optimisticHistory: WorkflowHistoryItem = {
+    id: crypto.randomUUID(),
+    catalog_id: entry.id,
+    user: entry.user,
+    workflow_status: toKey,
+    detail: {},
+    created_at: new Date().toISOString(),
   };
+  const optimisticEntry: CatalogEntry = {
+    ...entry,
+    workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
+  };
+  const newFrom = Array.from(prevBoard[fromKey] ?? []);
+  const idx = newFrom.findIndex((x) => x.id === entry.id);
+  if (idx >= 0) newFrom.splice(idx, 1);
+  const newTo = [optimisticEntry, ...Array.from(prevBoard[toKey] ?? [])];
+
+  setBoard({ ...prevBoard, [fromKey]: newFrom, [toKey]: newTo });
+  setEntries((old) => old.map((it) => (it.id === entry.id ? optimisticEntry : it)));
+
+  if (needs.requireJustification || needs.extraFields?.length) {
+    setSnapshotBoard(prevBoard);
+    setSnapshotEntries(prevEntries);
+    setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
+    setMoveModalOpen(true);
+    return;
+  }
+
+  const ok = await postWorkflowChange(optimisticEntry, toKey, {});
+  if (!ok) {
+    setBoard(prevBoard);
+    setEntries(prevEntries);
+  }
+};
+
+const handleDragEnd = (result: DropResult) => {
+  // limpa autoscroll
+  draggingRef.current = false;
+  document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
+  stopAutoScrollLoop();
+
+  // chama sua lógica normal
+  void handleDragEndDrop(result);
+};
 
 // 5) Antes de fechar ao confirmar, marque o motivo "confirm" e limpe snapshots
 const handleConfirmMove = async () => {
@@ -1086,6 +1179,15 @@ const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
   });
 };
 
+useEffect(() => {
+  return () => {
+    document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
+    draggingRef.current = false;
+    if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = null;
+  };
+}, []);
+
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
@@ -1266,8 +1368,13 @@ const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
               showFilters ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]" : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
             }`}
           >
-            <div className="h-full overflow-x-auto overflow-y-hidden pb-2">
-              <DragDropContext onDragEnd={handleDragEnd}>
+            <div   ref={boardScrollRef} className="h-full overflow-x-auto overflow-y-hidden pb-2">
+             <DragDropContext
+  onDragStart={handleDragStart}
+  onDragEnd={handleDragEnd}
+   onDragUpdate={handleDragUpdate}
+>
+
                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
                     const items = board[col.key] ?? [];
@@ -1277,7 +1384,7 @@ const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
                     const { Icon } = meta;
 
                     return (
-                      <Alert key={col.key} className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden">
+                      <Alert key={col.key} ref={(el) => (colRefs.current[col.key] = el)} className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden">
                         <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -74,6 +74,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../ui/select";
+import { Checkbox } from "../../../ui/checkbox";
 
 /* ============================
    Types
@@ -793,6 +794,8 @@ export function Roles({
   const { hasPermissoes } = usePermissions();
 
   const membersCount = (roleId: string) => roleUsers[roleId]?.length ?? 0;
+const [isCAL, setIsCAL] = useState(false);
+
 
   return (
     <div className="p-8 gap-8 flex flex-col">
@@ -854,49 +857,65 @@ export function Roles({
             <p className="font-medium">Adicionar cargo</p>
           </Alert>
         </DialogTrigger>
+<DialogContent>
+  <DialogHeader>
+    <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+      Adicionar cargo
+    </DialogTitle>
+    <DialogDescription className="text-zinc-500">
+      Crie um perfil de acesso com nome e descrição.
+    </DialogDescription>
+  </DialogHeader>
 
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Adicionar cargo
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              Crie um perfil de acesso com nome e descrição.
-            </DialogDescription>
-          </DialogHeader>
+  <Separator className="my-4" />
 
-          <Separator className="my-4" />
+  <div className="grid gap-4">
+   <Alert className="flex items-center gap-2">
+  <Checkbox
+    checked={isCAL}
+    onCheckedChange={(checked) => {
+      setIsCAL(!!checked);
+      if (checked && !name.startsWith("CAL - ")) {
+        setName(`CAL - ${name}`);
+      } else if (!checked && name.startsWith("CAL - ")) {
+        setName(name.replace(/^CAL - /, ""));
+      }
+    }}
+  />
+  <Label>É uma Comissão de Apoio Local (CAL)?</Label>
+</Alert>
 
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <Label>Nome</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Descrição</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="ghost">
-                <ArrowUUpLeft size={16} /> Cancelar
-              </Button>
-            </DialogClose>
-            <Button onClick={handleCreateRole} disabled={creating}>
-              {creating ? (
-                <Loader2 className="animate-spin " size={16} />
-              ) : (
-                <Plus className="" size={16} />
-              )}
-              Adicionar cargo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+    <div className="grid gap-1.5">
+      <Label>Nome</Label>
+      <Input value={name} onChange={(e) => setName(e.target.value)} />
+    </div>
+
+    <div className="grid gap-1.5">
+      <Label>Descrição</Label>
+      <Textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+    </div>
+  </div>
+
+  <DialogFooter>
+    <DialogClose asChild>
+      <Button variant="ghost">
+        <ArrowUUpLeft size={16} /> Cancelar
+      </Button>
+    </DialogClose>
+    <Button onClick={handleCreateRole} disabled={creating}>
+      {creating ? (
+        <Loader2 className="animate-spin " size={16} />
+      ) : (
+        <Plus className="" size={16} />
+      )}
+      Adicionar cargo
+    </Button>
+  </DialogFooter>
+</DialogContent>
       </Dialog>
 
       {/* Criar permissão global */}

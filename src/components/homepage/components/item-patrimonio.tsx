@@ -344,7 +344,6 @@ const navigate = useNavigate();
         {/* Imagens */}
         <Carousel
           className="w-full flex items-center"
-       
         >
           <CarouselContent>
             {props.images?.map((img, index) => {
@@ -389,7 +388,11 @@ const navigate = useNavigate();
       </p>
 
       {/* Avatar: não encolhe */}
-      <Avatar
+      
+
+      <Tooltip>
+  <TooltipTrigger>
+    <Avatar
         onClick={(event) => {
           event.stopPropagation();
           window.open(`/user?id=${props.user.id}`, "_blank");
@@ -399,6 +402,11 @@ const navigate = useNavigate();
         <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
         <AvatarFallback><User size={12} /></AvatarFallback>
       </Avatar>
+  </TooltipTrigger>
+  <TooltipContent>
+    <p>{props.user.username}</p>
+  </TooltipContent>
+</Tooltip>
     </div>
           <p className="text-sm line-clamp-1 text-gray-500 ">
           {props.description}

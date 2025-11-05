@@ -29,7 +29,7 @@ const normalize = (text: string) =>
 const comissaoRoles = (user?.roles ?? []).filter(({ name }) => {
   const n = normalize(name).toUpperCase();              // ex.: "Comissão Apoio Local" -> "COMISSAO APOIO LOCAL"
   const tokens = n.split(/[^A-Z0-9]+/).filter(Boolean); // ["COMISSAO","APOIO","LOCAL"]
-  return tokens.includes("COMISSAO") || tokens.includes("CAL");
+  return tokens.includes("CAL");
 });
 
 

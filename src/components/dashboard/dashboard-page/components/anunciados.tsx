@@ -537,7 +537,7 @@ export function Anunciados(props: {
 
   // Abas
   type BoardState = BoardKind;
-  const [tab, setTab] = useState<BoardState>("vitrine");
+  const [tab, setTab] = useState<BoardState>("desfazimento");
 
   // Filtro vindo do pai OU querystring
   const qs = new URLSearchParams(location.search);
@@ -653,7 +653,7 @@ const normalize = (text: string) =>
     .toUpperCase();                       // tudo maiúsculo
 
 const comissaoRoles = user?.roles?.filter((role) =>
-  normalize(role.name).includes("COMISSAO")
+  normalize(role.name).includes("CAL")
 );
 
 const [selectedRoleId, setSelectedRoleId] = useState<string>(comissaoRoles?.[0]?.id ?? "");
