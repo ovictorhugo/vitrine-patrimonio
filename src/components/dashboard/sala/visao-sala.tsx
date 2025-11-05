@@ -216,7 +216,7 @@ export function VisaoSala() {
             
               { id: "bens", label: "Patrimônios", icon: Package },
               { id: "inventario", label: "Inventários", icon: ListChecks },
-             { id: "anunciados", label: "Vitrine e desfazimento", icon: Recycle },
+             { id: "anunciados", label: "Itens cadastrados", icon: Recycle },
              
             ];
 

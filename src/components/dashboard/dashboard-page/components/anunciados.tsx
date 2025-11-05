@@ -669,7 +669,7 @@ const [selectedRoleId, setSelectedRoleId] = useState<string>(comissaoRoles?.[0]?
   
       if(f?.type === "user_id") url.searchParams.set("user_id", f.value);  
        if(f?.type === "role_id" && selectedRoleId) url.searchParams.set("role_id", selectedRoleId);  
-    
+    if(f?.type === "location_id") url.searchParams.set("location_id", f.value);  
 
     return url.toString();
   }, []);

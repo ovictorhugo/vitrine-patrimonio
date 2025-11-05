@@ -53,6 +53,7 @@ import { ArrowUUpLeft } from "phosphor-react";
 import { usePermissions } from "../../../permissions";
 import { Badge } from "../../../ui/badge";
 import { Tabs, TabsContent } from "../../../ui/tabs";
+import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
 
 // ================== Types ==================
 type UUID = string;
@@ -312,6 +313,19 @@ export function CollectionPage() {
     })();
   }, [urlGeral, authHeaders]);
 
+    const tabs = [
+    { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
+  { id: "finalizados", label: "Processos finalizados", icon:Recycle },
+
+  ];
+
+
+    const tab = queryUrl.get("tab");
+  const inv_id = queryUrl.get("inv_id") || ""; // ← INVENTORY_ID vem da URL
+  const [value, setValue] = useState(tab || tabs[0].id);
+
+ 
+
   // ===== GET /collection_items/ (com filtros) =====
   const fetchCollectionItems = useCallback(async () => {
     try {
@@ -325,8 +339,9 @@ export function CollectionPage() {
       if (qMain) params.set("q", qMain);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
-
-      params.set("workflow_status", 'DESFAZIMENTO')
+ if (value == 'finalizados') params.set("workflow_status",'DESCARTADOS');
+if (value == 'lfd') params.set("workflow_status",'DESFAZIMENTO');
+    
 
       const url = `${urlGeral}collections/${collection_id}/items/${params.toString() ? `?${params.toString()}` : ""}`;
 
@@ -357,6 +372,7 @@ export function CollectionPage() {
     materialIdMain,
     guardianIdMain,
     collection_id,
+    value
   ]);
 
   useEffect(() => {
@@ -709,18 +725,13 @@ export function CollectionPage() {
   
 
   
-  const tabs = [
-    { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
-  { id: "finalizados", label: "Processos finalizados", icon:Recycle },
-
-  ];
 
   const [isOn, setIsOn] = useState(true);
-  const tab = queryUrl.get("tab");
-  const inv_id = queryUrl.get("inv_id") || ""; // ← INVENTORY_ID vem da URL
-  const [value, setValue] = useState(tab || tabs[0].id);
 
- 
+    const skeletons = useMemo(
+      () => Array.from({ length: 12 }, (_, index) => <Skeleton key={index} className="w-full rounded-md aspect-square" />),
+      []
+    );
 
   if (loadingList && !collection) {
     return (
@@ -1075,7 +1086,39 @@ export function CollectionPage() {
                   </TabsContent>
 
                   <TabsContent value="finalizados">
+<div className="p-8 pt-0">
+   <Accordion type="single" collapsible defaultValue="item-1">
+          <AccordionItem value="item-1">
+            <AccordionTrigger className="px-0">
+              <HeaderResultTypeHome title={"Todos os itens"} icon={<Package size={24} className="text-gray-400" />} />
+            </AccordionTrigger>
 
+            <AccordionContent className="p-0">
+              {loadingList ? (
+               <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                  {skeletons.map((item, index) => (
+            <div className="w-full" key={index}>
+              {item}
+            </div>
+          ))}
+                </div>
+              ) : items.length === 0 ? (
+                <div className="items-center justify-center w-full flex text-center pt-6">Nenhum item adicionado.</div>
+              ) : (
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                  {items.map((item) => (
+                     <ItemPatrimonio
+                                  key={item.id}
+                                  {...item.catalog}
+                               
+                                />
+                  ))}
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+</div>
                   </TabsContent>
                   </Tabs>
 
@@ -1149,7 +1192,7 @@ export function CollectionPage() {
             </DialogTitle>
             <DialogDescription className="text-zinc-500">
               {countDesfazimento > 0
-                ? `Você está prestes a enviar ${countDesfazimento} ${Number(countDesfazimento) === 1 ? "item coletado" : "itens coletados"} para o fluxo 'DESCARTADOS'.`
+                ? `Você está prestes a enviar ${countDesfazimento} ${Number(countDesfazimento) === 1 ? "item coletado" : "itens coletados"} para o fluxo 'Processos Finalizados'.`
                 : "Nenhum item coletado encontrado."}
             </DialogDescription>
           </DialogHeader>
