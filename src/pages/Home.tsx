@@ -5,11 +5,10 @@ import { UserContext } from "../context/context";
 import { GeralProvider } from "../components/provider/geral-provider";
 import { useModalHomepage } from "../components/hooks/use-modal-homepage";
 import { useLocation } from "react-router-dom";
-import { useModalBackground } from "../components/hooks/use-modal-background";
+
 import SimpleLayout from "../layout/simple-layout";
 export function Home() {
     const { onOpen } = useModalHomepage();
-    const { onOpen:onOpenBg } = useModalBackground();
     const {isCollapsed, navCollapsedSize, defaultLayout} = useContext(UserContext)
 
     const location = useLocation();

@@ -591,8 +591,13 @@ export function CatalogModal() {
   const titulo = asset?.material?.material_name || asset?.item_model || asset?.item_brand || "Item sem nome";
   const valorFormatado = money(asset?.asset_value);
 
-  const locCatalogoParts = chain(catalog?.location);
-  const locAssetParts = chain(asset?.location);
+const locCatalogoParts = chain(catalog?.location) ?? [];
+const visibleCatalogParts = !loggedIn ? locCatalogoParts.slice(0, 2) : locCatalogoParts;
+
+  const locAssetParts = chain(asset?.location) ?? [];
+
+// Se não estiver logado, mostra só Agency e Unit (primeiros 2 itens)
+const visibleParts = !loggedIn ? locAssetParts.slice(0, 2) : locAssetParts;
   const isSameLocation = locCatalogoParts.join(" > ") === locAssetParts.join(" > ");
 
   const qualisColor: Record<string, string> = {
@@ -1180,7 +1185,9 @@ console.log(catalog)
                                       </div>
                                     )}
 
-                                    {!!asset?.legal_guardian &&
+                                   {loggedIn && (
+                                    <>
+                                     {!!asset?.legal_guardian &&
                                       asset.legal_guardian.legal_guardians_name !== "None" && (
                                         <div className="flex gap-1 items-center">
                                           <Avatar className="rounded-md h-5 w-5">
@@ -1197,6 +1204,8 @@ console.log(catalog)
                                           </p>
                                         </div>
                                       )}
+                                      </>
+                                   )}
                                   </div>
                                 </div>
                               </div>
@@ -1270,9 +1279,9 @@ console.log(catalog)
                                 <MapPin size={16} />
                                 <p className="text-sm uppercase font-bold">Local de tombamento:</p>
 
-                                {locAssetParts.length ? (
+                                {visibleParts.length ? (
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    {locAssetParts.map((p, i) => (
+                                    {visibleParts.map((p, i) => (
                                       <div
                                         key={i}
                                         className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
@@ -1292,9 +1301,9 @@ console.log(catalog)
                                   <MapPin size={16} />
                                   <p className="text-sm uppercase font-bold">Local atual:</p>
 
-                                  {locCatalogoParts.length ? (
+                                  {visibleCatalogParts.length ? (
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      {locCatalogoParts.map((p, i) => (
+                                      {visibleCatalogParts.map((p, i) => (
                                         <div
                                           key={i}
                                           className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
@@ -1315,7 +1324,8 @@ console.log(catalog)
 
                  
                        {/* Anunciante (mantém como já está) */}
-<Link to={`/user?id=${catalog.user?.id}`} target="_blank">
+{loggedIn && (
+  <Link to={`/user?id=${catalog.user?.id}`} target="_blank">
 <Alert className="mt-8">
   <div className="flex gap-3 items-center">
     <Avatar className="rounded-md h-12 w-12">
@@ -1336,11 +1346,12 @@ console.log(catalog)
   </div>
 </Alert>
 </Link>
+)}
 
 {/* Revisor + Justificativa (apenas quando houver algo) */}
 {((shouldShowReviewer && reviewerFromCommission) || (shouldShowJustification && justificationText)) && (
   <Alert className="mt-8">
-    {shouldShowReviewer && reviewerFromCommission && (
+    {shouldShowReviewer && reviewerFromCommission && loggedIn &&  (
       <div className="flex gap-3 items-center">
         <Avatar className="rounded-md h-12 w-12">
           <AvatarImage
@@ -1379,7 +1390,9 @@ console.log(catalog)
                       
 
                         {/* Histórico */}
-                        <Separator className="mt-8 mb-2" />
+                      {loggedIn && (
+                        <>
+                          <Separator className="mt-8 mb-2" />
                         <Accordion type="single" collapsible>
                           <AccordionItem value="item-1">
                             <div className="flex ">
@@ -1469,6 +1482,8 @@ console.log(catalog)
                             </AccordionContent>
                           </AccordionItem>
                         </Accordion>
+                        </>
+                      )}
                       </div>
                     </TabsContent>
 

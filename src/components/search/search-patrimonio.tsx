@@ -6,7 +6,6 @@ import { UserContext } from "../../context/context";
 import { Play, Search, Trash, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { SelectTypeSearch } from "./select-type-search";
 import { useQuery } from "../modal/search-modal-patrimonio";
 import { useNavigate } from "react-router-dom";
 
@@ -87,7 +86,7 @@ export function SearchPatrimonio(props:Props) {
         <div className="w-10 min-w-10">
         <Play size={16} className=" whitespace-nowrap w-10" />
         </div>
-          <SelectTypeSearch />
+        
           <div className="flex w-full">
           <div className='flex w-fit whitespace-nowrap gap-2 items-center'>
           {patrimoniosSelecionados.map((valor, index) => (

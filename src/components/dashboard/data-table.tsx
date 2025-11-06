@@ -33,7 +33,6 @@ import { Button } from "../../components/ui/button";
 import { useState } from "react";
 import { Input } from "../ui/input";
 import { Columns, FileCsv } from "phosphor-react";
-import { useModalResult } from "../hooks/use-modal-result";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -96,7 +95,7 @@ export function DataTable<TData, TValue>({
 
   };
 
-  const { type } = useModalResult()
+
 
   return (
     <div>

@@ -89,7 +89,7 @@ Fundamentação legal: Em conformidade com o art. 4º, inciso III, do Decreto n�
       const { material } = varsFrom(e);
       const alvo = material ? `O(a) ${material}` : "O equipamento";
       return `Parecer técnico:
-${alvo} encontra-se fora de especificação técnica atual ou danificado de forma irreversível, não possuindo valor de uso, de troca ou de venda, tampouco justificativa técnica para manutenção.
+${alvo} encontra-se fora de especificação técnica atual e/ou danificado de forma irreversível, não possuindo valor de uso, de troca ou de venda, tampouco justificativa técnica para manutenção.
 Fundamentação legal: Nos termos do art. 4º, inciso III, do Decreto nº 9.373/2018, enquadra-se como bem irrecuperável. O destino final deve observar a Lei nº 12.305/2010 (art. 33, §1º, inciso II), que determina a logística reversa e o descarte ambientalmente correto de resíduos eletroeletrônicos.`;
     },
   },

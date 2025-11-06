@@ -10,15 +10,13 @@ import {
     CardTitle,
 } from "../ui/card"
 import { Button } from "../ui/button";
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import "firebase/auth";
-import { auth } from "../../lib/firebase";
+
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 
 import { toast } from "sonner"
 
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { UserContext } from "../../context/context";
 
 

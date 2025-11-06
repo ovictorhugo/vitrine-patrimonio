@@ -86,6 +86,9 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           icon: Wrench,
           isActive: true,
           items: [
+               ...(loggedIn
+              ? [{ title: "Solicitar empréstimo", url: "/dashboard/emprestimo-audivisual", icon: Barcode }]
+              : []),
             ...(hasCriarEtiqueta
               ? [{ title: "Criar etiqueta", url: "/dashboard/criar-etiqueta", icon: Barcode }]
               : []),

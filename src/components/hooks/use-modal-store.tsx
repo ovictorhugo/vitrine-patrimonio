@@ -58,13 +58,13 @@ type LegalGuardianDTO = {
   id: string;
 };
 type LocationDTO = {
-  legal_guardian_id: string;
-  sector_id: string;
+  legal_guardian_id?: string;
+  sector_id?: string;
   location_name: string;
   location_code: string;
-  id: string;
-  sector: SectorDTO;
-  legal_guardian: LegalGuardianDTO;
+  id?: string;
+  sector?: SectorDTO;
+  legal_guardian?: LegalGuardianDTO;
 };
 type MaterialDTO = {
   material_code: string;

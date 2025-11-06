@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "../../components/ui/select"
 import { UserContext } from "../../context/context"
-import { useModalResult } from "../hooks/use-modal-result"
+
 import { useLocation, useNavigate } from "react-router-dom"
 import { PatrimoniosSelecionados } from "../../App"
 
@@ -29,7 +29,6 @@ export function SelectTypeNewItem({ itemType, setItemType, setItensSelecionadosP
 
   const resultados = location.pathname == '/dashboard/patrimonios'
 
-  const { onOpen } = useModalResult()
   const queryUrl = useQuery()
 
   let type_search = ''

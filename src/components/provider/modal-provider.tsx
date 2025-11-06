@@ -8,7 +8,7 @@ import { AdicionarEmpenho } from "../modal/adicionar-empenho";
 
 import { useModal } from "../hooks/use-modal-store";
 import { SearchModal } from "../modal/search-modal";
-import { MinhaArea } from "../minha-area/minha-area";
+
 import { SearchModalVitrine } from "../modal/search-modal-vitrine";
 
 
@@ -36,8 +36,6 @@ const ModalContent = () => {
       return <AdicionarEmpenho/>
     case 'search':
       return <SearchModal/>
-    case 'minha-area':
-      return <MinhaArea/>
     case 'search-vitrine':
       return <SearchModalVitrine/>
     case 'search-patrimonio':

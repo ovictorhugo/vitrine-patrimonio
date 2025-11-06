@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, } from '
 
 import  { UserContext }  from '../src/context/context'
 
-import {User as FirebaseAuthUser} from 'firebase/auth'
 import DefaultLayout from './layout/default-layout';
 import { Authentication } from './pages/Authentication';
 import { Admin } from './pages/Admin';

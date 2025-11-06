@@ -10,6 +10,8 @@ import { UserContext } from "../../../../context/context";
 import { Separator } from "../../../ui/separator";
 import { Alert } from "../../../ui/alert";
 import { Badge } from "../../../ui/badge";
+import { log } from "console";
+import { useModal } from "../../../hooks/use-modal-store";
 
 /** ====== Tipos ====== */
 export interface Patrimonio {
@@ -148,10 +150,7 @@ export function FormularioStep({
   initialData,
   showLocation,
 }: StepBaseProps<"formulario"> & { initialData?: Patrimonio, showLocation?: boolean }) {
-  const { urlGeral, apiKeyBackend } = useContext(UserContext) as {
-    urlGeral: string;
-    apiKeyBackend?: string;
-  };
+  const { urlGeral, loggedIn } = useContext(UserContext) 
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Patrimonio>(
@@ -254,7 +253,7 @@ export function FormularioStep({
     return () => {
       ac.abort();
     };
-  }, [url, apiKeyBackend]);
+  }, [url]);
 
   
   const qualisColor: Record<string, string> = {
@@ -321,6 +320,8 @@ export function FormularioStep({
                   timeouts.forEach(clearTimeout);
                 };
               }, []);
+
+              const {onOpen} = useModal()
     
    if (loading) {
             return (
@@ -352,7 +353,7 @@ export function FormularioStep({
       <div className="ml-8">
       {showCard && (
           <>
-          <div className="flex group ">
+          <div className="flex group cursor-pointer " onClick={() => onOpen('patrimonio', {...data})}>
             <div
               className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
                 qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
@@ -392,7 +393,9 @@ export function FormularioStep({
                       </div>
                     )}
 
-                    {!!data.legal_guardian.legal_guardians_name &&
+                    {loggedIn && (
+                      <>
+                      {!!data.legal_guardian.legal_guardians_name &&
                       data.legal_guardian.legal_guardians_name !== "None" && (
                         <div className="flex gap-1 items-center">
                           <Avatar className="rounded-md h-5 w-5">
@@ -409,6 +412,8 @@ export function FormularioStep({
                           </p>
                         </div>
                       )}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -478,12 +483,14 @@ export function FormularioStep({
                 </div>
               </div>
 
-              <div className="grid gap-3 w-full">
+          
+                <div className="grid gap-3 w-full">
                 <Label htmlFor="asset_value">Valor</Label>
                 <div className="flex items-center gap-3">
                   <Input disabled id="asset_value" className="w-full" value={data.asset_value} readOnly />
                 </div>
               </div>
+        
 
               {data.accounting_entry_code && (
                 <div className="grid gap-3 w-full">
@@ -502,7 +509,8 @@ export function FormularioStep({
               </div>
             </div>
 
-            <div className="grid gap-3 w-full">
+           {loggedIn && (
+              <div className="grid gap-3 w-full">
               <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
               <div className="flex items-center gap-3">
                 {data.legal_guardian.legal_guardians_name && (
@@ -524,9 +532,10 @@ export function FormularioStep({
                 />
               </div>
             </div>
+           )}
 
-          {showLocation && (
-              <div className="grid gap-4 w-full grid-cols-1 md:grid-cols-4">
+          {(showLocation ) && (
+              <div className={`grid gap-4 w-full grid-cols-1 ${loggedIn ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
                           <div className="grid gap-2">
                             <Label>Unidade</Label>
                             <Input disabled value={data.unit.unit_name} />
@@ -535,16 +544,23 @@ export function FormularioStep({
                             <Label>Organização</Label>
                             <Input disabled value={data.agency.agency_name} />
                           </div>
-                          <div className="grid gap-2">
+                         {loggedIn && (
+                            <div className="grid gap-2">
                             <Label>Setor / Departamento</Label>
                             <Input disabled value={data.sector.sector_name} />
                           </div>
-                          <div className="grid gap-2">
+                         )}
+
+                          {loggedIn && (
+                            <div className="grid gap-2">
                             <Label>Local de guarda</Label>
                             <Input disabled value={data.location.location_name} />
                           </div>
+                          )}
                         </div>
           )}
+
+          {(!loggedIn ) && ( <p className="mt-4 text-sm ">Para mais informações, acesse com o Minha UFMG</p>)}
 
           </div>
         </div>

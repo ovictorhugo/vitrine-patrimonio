@@ -25,6 +25,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../../context/context";
 import { GaleriaImagens } from "./galeria-images";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
+import { log } from "console";
 
 export interface Images {
   imagens: string[];
@@ -58,7 +59,7 @@ export function PatrimonioModal() {
   const isModalOpen = isOpen && typeModal === "patrimonio";
 
   
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, loggedIn } = useContext(UserContext);
   const [images, setImages] = useState<Images[]>([]);
 
   // ---- campos já no novo schema
@@ -204,7 +205,7 @@ export function PatrimonioModal() {
             </div>
 
             {/* Responsável (legal guardian) */}
-            {(legalGuardianName || legalGuardianCode) && (
+            {((legalGuardianName || legalGuardianCode) && loggedIn) && (
               <>
                 <Separator className="my-4" />
                 <div className="flex gap-3 items-center">
@@ -226,7 +227,7 @@ export function PatrimonioModal() {
             )}
 
             {/* Cadeia de localização */}
-            {(unit || agency || sector || location) && (
+            {(unit || agency || ((sector || location) && loggedIn)) && (
               <div>
                 <Separator className="my-4" />
                 <div className="flex items-center flex-wrap gap-3">
@@ -247,7 +248,7 @@ export function PatrimonioModal() {
                     </>
                   )}
 
-                  {sector && (
+                  {(sector && loggedIn) && (
                     <>
                       <ChevronRight size={16} />
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
@@ -256,7 +257,7 @@ export function PatrimonioModal() {
                     </>
                   )}
 
-                  {location && (
+                  {(location && loggedIn) && (
                     <>
                       <ChevronRight size={16} />
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">

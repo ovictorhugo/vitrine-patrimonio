@@ -32,7 +32,7 @@ export function PatrimonioItem(props: any) {
 
   const conectee = import.meta.env.VITE_BACKEND_CONECTEE || "";
   const { onOpen } = useModal();
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, loggedIn } = useContext(UserContext);
 
   const statusMap: Record<
     string,
@@ -114,7 +114,7 @@ export function PatrimonioItem(props: any) {
             </div>
           )}
 
-          {!!legalGuardianName && (
+          {(!!legalGuardianName && loggedIn) && (
             <div className="flex gap-1 items-center min-w-0">
               <Avatar className="rounded-md h-5 w-5 shrink-0">
                 <AvatarImage

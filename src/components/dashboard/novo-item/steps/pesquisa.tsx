@@ -45,7 +45,7 @@ export function PesquisaStep({
   const [input, setInput] = useState("");
 
   // ========= API base =========
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, loggedIn } = useContext(UserContext);
   const API_SEARCH_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/search`;
   const API_ADV_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/?q=`;
 
@@ -352,8 +352,12 @@ useEffect(() => {
           </div>
 
           <div className="w-fit flex gap-2 items-center">
-            <p className="text-xs font-medium">Busca avançada</p>
+          {loggedIn && (
+            <>
+              <p className="text-xs font-medium">Busca avançada</p>
             <Switch checked={advanced} onCheckedChange={setAdvanced} />
+            </>
+          )}
             {itemsSelecionadosPopUp.length > 0 && (
               <Button
                 size={"icon"}

@@ -13,8 +13,6 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { toast } from "sonner";
 import { UserContext } from "../../context/context";
-import { SelectTypeSearch } from "../search/select-type-search";
-import { SelectTypeNewItem } from "../search/select-type-new-item";
 
 interface Csv {
   bem_cod: string

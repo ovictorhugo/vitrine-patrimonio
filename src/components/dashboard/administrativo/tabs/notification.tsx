@@ -711,8 +711,8 @@ const fetchInventories = async () => {
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={!(deleteTarget && deleteText.trim() === deleteTarget.key) || deleting}>
-              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              <Trash size={16} /> Confirmar exclusão
+              {deleting ? <Loader2 className=" h-4 w-4 animate-spin" /> : <Trash size={16} />}
+               Confirmar exclusão
             </Button>
           </DialogFooter>
         </DialogContent>
