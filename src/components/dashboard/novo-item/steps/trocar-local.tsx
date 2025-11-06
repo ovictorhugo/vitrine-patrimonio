@@ -58,6 +58,16 @@ type TrocarLocalStepProps = {
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const hasValidId = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
+/** Debounce simples */
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
 export function TrocarLocalStep({
   flowShort,
   initialData,
@@ -101,6 +111,17 @@ export function TrocarLocalStep({
   const [openAgency, setOpenAgency] = useState(false);
   const [openSector, setOpenSector] = useState(false);
   const [openLocation, setOpenLocation] = useState(false);
+
+  // ===== termos de busca (com debounce) =====
+  const [unitQ, setUnitQ] = useState("");
+  const [agencyQ, setAgencyQ] = useState("");
+  const [sectorQ, setSectorQ] = useState("");
+  const [locationQ, setLocationQ] = useState("");
+
+  const unitQd = useDebounced(unitQ);
+  const agencyQd = useDebounced(agencyQ);
+  const sectorQd = useDebounced(sectorQ);
+  const locationQd = useDebounced(locationQ);
 
   // Objetos atuais (derivados das listas)
   const selectedUnitObj = useMemo(() => units.find(u => u.id === selectedUnit) ?? null, [units, selectedUnit]);
@@ -164,15 +185,16 @@ export function TrocarLocalStep({
 
   const token = localStorage.getItem("jwt_token");
 
-  /* ===== Fetchers ===== */
-  const fetchUnits = useCallback(async () => {
+  /* ===== Fetchers (com ?q=) ===== */
+  const fetchUnits = useCallback(async (q?: string) => {
     setLoading(p => ({ ...p, units: true }));
     try {
-      const res = await fetch(`${baseUrl}/units/`, {
+      const qs = q ? `?q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`${baseUrl}/units/${qs}`, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       const json: { units: Unit[] } = await res.json();
@@ -180,21 +202,24 @@ export function TrocarLocalStep({
       setUnits(list);
     } catch (e) {
       console.error("Erro ao buscar unidades:", e);
+      setUnits([]);
     } finally {
       setLoading(p => ({ ...p, units: false }));
     }
   }, [baseUrl, token]);
   
-  const fetchAgenciesByUnit = useCallback(async (unitId: string) => {
+  const fetchAgenciesByUnit = useCallback(async (unitId: string, q?: string) => {
     if (!hasValidId(unitId)) return;
     const myReq = ++unitReqIdRef.current; // versão desta chamada
     setLoading(p => ({ ...p, agencies: true }));
     try {
-      const res = await fetch(`${baseUrl}/agencies/?unit_id=${encodeURIComponent(unitId)}`, {
+      const params = new URLSearchParams({ unit_id: unitId });
+      if (q) params.set("q", q);
+      const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       const json: { agencies: Agency[] } = await res.json();
@@ -203,21 +228,24 @@ export function TrocarLocalStep({
       setAgencies(list);
     } catch (e) {
       if (unitReqIdRef.current === myReq) console.error("Erro ao buscar organizações da unidade:", e);
+      if (unitReqIdRef.current === myReq) setAgencies([]);
     } finally {
       if (unitReqIdRef.current === myReq) setLoading(p => ({ ...p, agencies: false }));
     }
   }, [baseUrl, token]);
   
-  const fetchSectorsByAgency = useCallback(async (agencyId: string) => {
+  const fetchSectorsByAgency = useCallback(async (agencyId: string, q?: string) => {
     if (!hasValidId(agencyId)) return;
     const myReq = ++agencyReqIdRef.current;
     setLoading(p => ({ ...p, sectors: true }));
     try {
-      const res = await fetch(`${baseUrl}/sectors/?agency_id=${encodeURIComponent(agencyId)}`, {
+      const params = new URLSearchParams({ agency_id: agencyId });
+      if (q) params.set("q", q);
+      const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       const json: { sectors: Sector[] } = await res.json();
@@ -226,21 +254,24 @@ export function TrocarLocalStep({
       setSectors(list);
     } catch (e) {
       if (agencyReqIdRef.current === myReq) console.error("Erro ao buscar setores:", e);
+      if (agencyReqIdRef.current === myReq) setSectors([]);
     } finally {
       if (agencyReqIdRef.current === myReq) setLoading(p => ({ ...p, sectors: false }));
     }
   }, [baseUrl, token]);
   
-  const fetchLocationsBySector = useCallback(async (sectorId: string) => {
+  const fetchLocationsBySector = useCallback(async (sectorId: string, q?: string) => {
     if (!hasValidId(sectorId)) return;
     const myReq = ++sectorReqIdRef.current;
     setLoading(p => ({ ...p, locations: true }));
     try {
-      const res = await fetch(`${baseUrl}/locations/?sector_id=${encodeURIComponent(sectorId)}`, {
+      const params = new URLSearchParams({ sector_id: sectorId });
+      if (q) params.set("q", q);
+      const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       const json: { locations: Location[] } = await res.json();
@@ -249,13 +280,14 @@ export function TrocarLocalStep({
       setLocations(list);
     } catch (e) {
       if (sectorReqIdRef.current === myReq) console.error("Erro ao buscar localizações:", e);
+      if (sectorReqIdRef.current === myReq) setLocations([]);
     } finally {
       if (sectorReqIdRef.current === myReq) setLoading(p => ({ ...p, locations: false }));
     }
   }, [baseUrl, token]);
   
-  // Montagem: unidades
-  useEffect(() => { fetchUnits(); }, [fetchUnits]);
+  // Montagem/Atualização: unidades conforme busca
+  useEffect(() => { fetchUnits(unitQd); }, [fetchUnits, unitQd]);
 
   /* ===== Reset util ===== */
   const resetBelow = useCallback((level: "unit" | "agency" | "sector") => {
@@ -293,21 +325,21 @@ export function TrocarLocalStep({
     if (unitId === selectedUnit) return;
     if (!applyingRef.current) resetBelow("unit");
     setSelectedUnit(unitId);
-    fetchAgenciesByUnit(unitId);
+    fetchAgenciesByUnit(unitId, agencyQd);
   };
 
   const handleAgencyChange = (agencyId: string) => {
     if (agencyId === selectedAgency) return;
     if (!applyingRef.current) resetBelow("agency");
     setSelectedAgency(agencyId);
-    fetchSectorsByAgency(agencyId);
+    fetchSectorsByAgency(agencyId, sectorQd);
   };
 
   const handleSectorChange = (sectorId: string) => {
     if (sectorId === selectedSector) return;
     if (!applyingRef.current) resetBelow("sector");
     setSelectedSector(sectorId);
-    fetchLocationsBySector(sectorId);
+    fetchLocationsBySector(sectorId, locationQd);
   };
 
   const handleLocationChange = (locationId: string) => {
@@ -318,24 +350,26 @@ export function TrocarLocalStep({
   useEffect(() => {
     if (!selectedUnit) return;
     if (!applyingRef.current) {
-      // quando vier de hidratação por efeito externo, ainda garantimos fetch
-      fetchAgenciesByUnit(selectedUnit);
+      fetchAgenciesByUnit(selectedUnit, agencyQd);
     }
-  }, [selectedUnit, fetchAgenciesByUnit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUnit, fetchAgenciesByUnit, agencyQd]);
 
   useEffect(() => {
     if (!selectedAgency) return;
     if (!applyingRef.current) {
-      fetchSectorsByAgency(selectedAgency);
+      fetchSectorsByAgency(selectedAgency, sectorQd);
     }
-  }, [selectedAgency, fetchSectorsByAgency]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAgency, fetchSectorsByAgency, sectorQd]);
 
   useEffect(() => {
     if (!selectedSector) return;
     if (!applyingRef.current) {
-      fetchLocationsBySector(selectedSector);
+      fetchLocationsBySector(selectedSector, locationQd);
     }
-  }, [selectedSector, fetchLocationsBySector]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSector, fetchLocationsBySector, locationQd]);
 
   // Emissão para o pai
   const emitReadyRef = useRef(false);
@@ -481,9 +515,14 @@ export function TrocarLocalStep({
                 </PopoverTrigger>
                 <PopoverContent className="w-[360px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar unidade (nome/código/SIAF)..." />
+                    <CommandInput
+                      placeholder="Buscar unidade (nome/código/SIAF)..."
+                      onValueChange={setUnitQ}
+                    />
                     <CommandList>
-                      <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
+                      <CommandEmpty>
+                        {loading.units ? "Carregando..." : "Nenhuma unidade encontrada."}
+                      </CommandEmpty>
                       <CommandGroup>
                         {units.map(u => (
                           <CommandItem
@@ -522,9 +561,18 @@ export function TrocarLocalStep({
                 </PopoverTrigger>
                 <PopoverContent className="w-[360px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar organização (nome/código)..." />
+                    <CommandInput
+                      placeholder="Buscar organização (nome/código)..."
+                      onValueChange={(v) => {
+                        setAgencyQ(v);
+                        // busca incremental enquanto digita (com debounce)
+                        if (selectedUnit) fetchAgenciesByUnit(selectedUnit, v);
+                      }}
+                    />
                     <CommandList>
-                      <CommandEmpty>Nenhuma organização encontrada.</CommandEmpty>
+                      <CommandEmpty>
+                        {loading.agencies ? "Carregando..." : "Nenhuma organização encontrado(a)."}
+                      </CommandEmpty>
                       <CommandGroup>
                         {agencies.map(a => (
                           <CommandItem
@@ -563,9 +611,17 @@ export function TrocarLocalStep({
                 </PopoverTrigger>
                 <PopoverContent className="w-[360px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar setor (nome/código)..." />
+                    <CommandInput
+                      placeholder="Buscar setor (nome/código)..."
+                      onValueChange={(v) => {
+                        setSectorQ(v);
+                        if (selectedAgency) fetchSectorsByAgency(selectedAgency, v);
+                      }}
+                    />
                     <CommandList>
-                      <CommandEmpty>Nenhum setor encontrado.</CommandEmpty>
+                      <CommandEmpty>
+                        {loading.sectors ? "Carregando..." : "Nenhum setor encontrado."}
+                      </CommandEmpty>
                       <CommandGroup>
                         {sectors.map(s => (
                           <CommandItem
@@ -605,9 +661,17 @@ export function TrocarLocalStep({
                 </PopoverTrigger>
                 <PopoverContent className="w-[360px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar local (nome/código)..." />
+                    <CommandInput
+                      placeholder="Buscar local (nome/código)..."
+                      onValueChange={(v) => {
+                        setLocationQ(v);
+                        if (selectedSector) fetchLocationsBySector(selectedSector, v);
+                      }}
+                    />
                     <CommandList>
-                      <CommandEmpty>Nenhum local encontrado.</CommandEmpty>
+                      <CommandEmpty>
+                        {loading.locations ? "Carregando..." : "Nenhum local encontrado."}
+                      </CommandEmpty>
                       <CommandGroup>
                         {locations.map(l => (
                           <CommandItem

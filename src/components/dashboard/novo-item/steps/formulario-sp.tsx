@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../novo-item";
 import { AlertCircle, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
@@ -79,7 +79,7 @@ const blankPatrimonio = (): Patrimonio => ({
   is_official: false,
 });
 
-/** ================= Utilitários ================= */
+/** ================= Utils ================= */
 
 // código: AMDDLLNN
 function gerarCodigo(): string {
@@ -102,6 +102,16 @@ function gerarDgv(code: string): string {
     else if (/[A-Z]/.test(ch)) sum += 10 + (ch.charCodeAt(0) - 65); // A=10 ... Z=35
   }
   return String(sum % 10);
+}
+
+/** debounce hook */
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
 }
 
 /** ================= Componente ================= */
@@ -131,10 +141,21 @@ export function FormularioSpStep({
   const selectedMaterialId = data.material.id ?? "";
   const selectedGuardianId = data.legal_guardian.id ?? "";
 
+  // termos de busca
+  const [materialQ, setMaterialQ] = useState("");
+  const [guardianQ, setGuardianQ] = useState("");
+  const materialQd = useDebounced(materialQ, 300);
+  const guardianQd = useDebounced(guardianQ, 300);
+
+  // loading
   const [loading, setLoading] = useState({
     materials: false,
     guardians: false,
   });
+
+  // proteção contra respostas fora de ordem
+  const materialReqIdRef = useRef(0);
+  const guardianReqIdRef = useRef(0);
 
   /** ---------- Inicializações (NI + geração de código/DGV) ---------- */
   useEffect(() => {
@@ -162,39 +183,47 @@ export function FormularioSpStep({
     onStateChange?.(data);
   }, [data, onStateChange]);
 
-  /** ---------- Fetches das listas ---------- */
+  /** ---------- Fetches das listas (com ?q=) ---------- */
 
-  const fetchMaterials = useCallback(async () => {
+  const fetchMaterials = useCallback(async (q?: string) => {
+    const reqId = ++materialReqIdRef.current;
     setLoading((p) => ({ ...p, materials: true }));
     try {
-      const res = await fetch(`${urlGeral}materials/`, { headers: { Accept: "application/json" } });
+      const params = q ? `?q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`${urlGeral}materials/${params}`, { headers: { Accept: "application/json" } });
       const json: { materials: Material[] } = await res.json();
+      if (materialReqIdRef.current !== reqId) return; // resposta antiga
       setMaterials(Array.isArray(json?.materials) ? json.materials : []);
     } catch (e) {
+      if (materialReqIdRef.current === reqId) setMaterials([]);
       console.error("Erro ao buscar materiais:", e);
     } finally {
-      setLoading((p) => ({ ...p, materials: false }));
+      if (materialReqIdRef.current === reqId) setLoading((p) => ({ ...p, materials: false }));
     }
   }, [urlGeral]);
 
-  const fetchLegalGuardians = useCallback(async () => {
+  const fetchLegalGuardians = useCallback(async (q?: string) => {
+    const reqId = ++guardianReqIdRef.current;
     setLoading((p) => ({ ...p, guardians: true }));
     try {
-      const res = await fetch(`${urlGeral}legal-guardians/`, { headers: { Accept: "application/json" } });
+      const params = q ? `?q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`${urlGeral}legal-guardians/${params}`, { headers: { Accept: "application/json" } });
       const json: { legal_guardians: LegalGuardian[] } = await res.json();
+      if (guardianReqIdRef.current !== reqId) return; // resposta antiga
       setLegalGuardians(Array.isArray(json?.legal_guardians) ? json.legal_guardians : []);
     } catch (e) {
+      if (guardianReqIdRef.current === reqId) setLegalGuardians([]);
       console.error("Erro ao buscar responsáveis:", e);
     } finally {
-      setLoading((p) => ({ ...p, guardians: false }));
+      if (guardianReqIdRef.current === reqId) setLoading((p) => ({ ...p, guardians: false }));
     }
   }, [urlGeral]);
 
+  // carregar inicialmente
   useEffect(() => {
-    fetchMaterials();
-    fetchLegalGuardians();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchMaterials(materialQd);
+    fetchLegalGuardians(guardianQd);
+  }, [fetchMaterials, fetchLegalGuardians, materialQd, guardianQd]);
 
   /** ---------- Handlers ---------- */
 
@@ -293,7 +322,7 @@ export function FormularioSpStep({
                 </div>
               </div>
 
-              {/* Material (Combobox com busca) */}
+              {/* Material (Combobox com busca server-side) */}
               <div className="grid gap-3 w-full">
                 <Label>Material</Label>
 
@@ -314,37 +343,40 @@ export function FormularioSpStep({
                   </PopoverTrigger>
                   <PopoverContent className="w-[360px] p-0">
                     <Command>
-                      <CommandInput placeholder="Buscar material (nome ou código)..." />
+                      <CommandInput
+                        placeholder="Buscar material (nome ou código)..."
+                        onValueChange={(v) => {
+                          setMaterialQ(v);
+                          fetchMaterials(v); // busca incremental com debounce efetivo pelo hook (último vence)
+                        }}
+                      />
                       <CommandList>
-                        <CommandEmpty>Nenhum material encontrado.</CommandEmpty>
+                        <CommandEmpty>{loading.materials ? "Carregando..." : "Nenhum material encontrado."}</CommandEmpty>
                         <CommandGroup>
-  {materials
-    .slice() // copia para não alterar o original
-    .sort((a, b) =>
-      a.material_name.localeCompare(b.material_name, "pt-BR", { sensitivity: "base" })
-    )
-    .map((m) => (
-      <CommandItem
-        key={m.id}
-        value={`${m.material_name} ${m.material_code}`}
-        onSelect={() => {
-          handleMaterialSelect(m.id);
-          setOpenMaterial(false);
-        }}
-      >
-        <Check
-          className={cn(
-            "mr-2 h-4 w-4",
-            selectedMaterialId === m.id ? "opacity-100" : "opacity-0"
-          )}
-        />
-        <div className="flex flex-col">
-          <span className="text-sm">{m.material_name}</span>
-        </div>
-      </CommandItem>
-    ))}
-</CommandGroup>
-
+                          {materials
+                            .slice()
+                            .sort((a, b) => a.material_name.localeCompare(b.material_name, "pt-BR", { sensitivity: "base" }))
+                            .map((m) => (
+                              <CommandItem
+                                key={m.id}
+                                value={`${m.material_name} ${m.material_code}`}
+                                onSelect={() => {
+                                  handleMaterialSelect(m.id);
+                                  setOpenMaterial(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedMaterialId === m.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-sm">{m.material_name}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
                       </CommandList>
                     </Command>
                   </PopoverContent>
@@ -379,7 +411,7 @@ export function FormularioSpStep({
               />
             </div>
 
-            {/* Responsável (Combobox com busca) */}
+            {/* Responsável (Combobox com busca server-side) */}
             <div className="grid gap-3 w-full">
               <Label>Responsável (nome completo)</Label>
               <div className="flex items-center gap-3">
@@ -413,37 +445,42 @@ export function FormularioSpStep({
                     </PopoverTrigger>
                     <PopoverContent className="w-[360px] p-0">
                       <Command>
-                        <CommandInput placeholder="Buscar responsável (nome ou código)..." />
+                        <CommandInput
+                          placeholder="Buscar responsável (nome ou código)..."
+                          onValueChange={(v) => {
+                            setGuardianQ(v);
+                            fetchLegalGuardians(v); // incremental
+                          }}
+                        />
                         <CommandList>
-                          <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
+                          <CommandEmpty>{loading.guardians ? "Carregando..." : "Nenhum responsável encontrado."}</CommandEmpty>
                           <CommandGroup>
-  {legalGuardians
-    .slice() // cria uma cópia para não mutar o array original
-    .sort((a, b) =>
-      a.legal_guardians_name.localeCompare(b.legal_guardians_name, "pt-BR", { sensitivity: "base" })
-    )
-    .map((g) => (
-      <CommandItem
-        key={g.id}
-        value={`${g.legal_guardians_name} ${g.legal_guardians_code}`}
-        onSelect={() => {
-          handleGuardianSelect(g.id);
-          setOpenGuardian(false);
-        }}
-      >
-        <Check
-          className={cn(
-            "mr-2 h-4 w-4",
-            selectedGuardianId === g.id ? "opacity-100" : "opacity-0"
-          )}
-        />
-        <div className="flex flex-col">
-          <span className="text-sm">{g.legal_guardians_name}</span>
-        </div>
-      </CommandItem>
-    ))}
-</CommandGroup>
-
+                            {legalGuardians
+                              .slice()
+                              .sort((a, b) =>
+                                a.legal_guardians_name.localeCompare(b.legal_guardians_name, "pt-BR", { sensitivity: "base" })
+                              )
+                              .map((g) => (
+                                <CommandItem
+                                  key={g.id}
+                                  value={`${g.legal_guardians_name} ${g.legal_guardians_code}`}
+                                  onSelect={() => {
+                                    handleGuardianSelect(g.id);
+                                    setOpenGuardian(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedGuardianId === g.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm">{g.legal_guardians_name}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
                         </CommandList>
                       </Command>
                     </PopoverContent>

@@ -341,6 +341,7 @@ const groupByReviewer = (
 /* =========================
    Combobox
 ========================= */
+// ===== Ajuste no Combobox =====
 type ComboboxItem = { id: UUID; code?: string; label: string };
 
 function Combobox({
@@ -351,6 +352,8 @@ function Combobox({
   emptyText = "Nenhum item encontrado",
   triggerClassName,
   disabled = false,
+  onSearch,          // NOVO
+  isLoading = false, // NOVO
 }: {
   items: ComboboxItem[];
   value?: UUID | null;
@@ -359,13 +362,11 @@ function Combobox({
   emptyText?: string;
   triggerClassName?: string;
   disabled?: boolean;
+  onSearch?: (term: string) => void; // NOVO
+  isLoading?: boolean;               // NOVO
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((i) => i.id === value) || null;
-  
-  /////////////////////////////////
-
-
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -386,8 +387,11 @@ function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0">
         <Command>
-          <CommandInput />
-          <CommandEmpty>{emptyText}</CommandEmpty>
+          <CommandInput
+            placeholder={placeholder}
+            onValueChange={(v) => onSearch?.(v)} // NOVO
+          />
+          <CommandEmpty>{isLoading ? "Carregando..." : emptyText}</CommandEmpty>
           <CommandList className="gap-2 flex flex-col ">
             <CommandGroup className="gap-2 flex flex-col ">
               <CommandItem
@@ -431,6 +435,41 @@ export function AdmComission() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ===== termos digitados =====
+const [unitQ, setUnitQ] = useState("");
+const [agencyQ, setAgencyQ] = useState("");
+const [sectorQ, setSectorQ] = useState("");
+const [locationQ, setLocationQ] = useState("");
+const [materialQ, setMaterialQ] = useState("");
+const [guardianQ, setGuardianQ] = useState("");
+
+// ===== Hook de debounce =====
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+
+// ===== versões com debounce =====
+const unitQd = useDebounced(unitQ);
+const agencyQd = useDebounced(agencyQ);
+const sectorQd = useDebounced(sectorQ);
+const locationQd = useDebounced(locationQ);
+const materialQd = useDebounced(materialQ);
+const guardianQd = useDebounced(guardianQ);
+
+// ===== flags de loading =====
+const [loadingUnits, setLoadingUnits] = useState(false);
+const [loadingAgencies, setLoadingAgencies] = useState(false);
+const [loadingSectors, setLoadingSectors] = useState(false);
+const [loadingLocations, setLoadingLocations] = useState(false);
+const [loadingMaterials, setLoadingMaterials] = useState(false);
+const [loadingGuardians, setLoadingGuardians] = useState(false);
+
   // Hierarquia local
   const [units, setUnits] = useState<UnitDTO[]>([]);
   const [agencies, setAgencies] = useState<AgencyDTO[]>([]);
@@ -444,83 +483,105 @@ export function AdmComission() {
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
   // Fetch listas hierarquia
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${urlGeral}units/`);
-        const json = await res.json();
-        setUnits(json?.units ?? []);
-      } catch {}
-    })();
-  }, [urlGeral]);
+  // Units (com ?q=)
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingUnits(true);
+      const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
+      const res = await fetch(`${urlGeral}units/${qs}`);
+      const json = await res.json();
+      setUnits(json?.units ?? []);
+    } catch {
+      setUnits([]);
+    } finally {
+      setLoadingUnits(false);
+    }
+  })();
+}, [urlGeral, unitQd]);
 
-  const fetchAgencies = useCallback(
-    async (uid: UUID) => {
-      if (!uid) return setAgencies([]);
-      try {
-        const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`);
-        const json = await res.json();
-        setAgencies(json?.agencies ?? []);
-      } catch {
-        setAgencies([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchAgencies = useCallback(
+  async (uid: UUID, q?: string) => {
+    if (!uid) return setAgencies([]);
+    try {
+      setLoadingAgencies(true);
+      const params = new URLSearchParams({ unit_id: uid });
+      if (q) params.set("q", q);
+      const res = await fetch(`${urlGeral}agencies/?${params.toString()}`);
+      const json = await res.json();
+      setAgencies(json?.agencies ?? []);
+    } catch {
+      setAgencies([]);
+    } finally {
+      setLoadingAgencies(false);
+    }
+  },
+  [urlGeral]
+);
 
-  const fetchSectors = useCallback(
-    async (aid: UUID) => {
-      if (!aid) return setSectors([]);
-      try {
-        const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`);
-        const json = await res.json();
-        setSectors(json?.sectors ?? []);
-      } catch {
-        setSectors([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchSectors = useCallback(
+  async (aid: UUID, q?: string) => {
+    if (!aid) return setSectors([]);
+    try {
+      setLoadingSectors(true);
+      const params = new URLSearchParams({ agency_id: aid });
+      if (q) params.set("q", q);
+      const res = await fetch(`${urlGeral}sectors/?${params.toString()}`);
+      const json = await res.json();
+      setSectors(json?.sectors ?? []);
+    } catch {
+      setSectors([]);
+    } finally {
+      setLoadingSectors(false);
+    }
+  },
+  [urlGeral]
+);
 
-  const fetchLocations = useCallback(
-    async (sid: UUID) => {
-      if (!sid) return setLocations([]);
-      try {
-        const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`);
-        const json = await res.json();
-        setLocations(json?.locations ?? []);
-      } catch {
-        setLocations([]);
-      }
-    },
-    [urlGeral]
-  );
+const fetchLocations = useCallback(
+  async (sid: UUID, q?: string) => {
+    if (!sid) return setLocations([]);
+    try {
+      setLoadingLocations(true);
+      const params = new URLSearchParams({ sector_id: sid });
+      if (q) params.set("q", q);
+      const res = await fetch(`${urlGeral}locations/?${params.toString()}`);
+      const json = await res.json();
+      setLocations(json?.locations ?? []);
+    } catch {
+      setLocations([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  },
+  [urlGeral]
+);
+
 
   // Cascata
-  useEffect(() => {
-    setAgencyId(null);
-    setSectorId(null);
-    setLocationId(null);
-    setAgencies([]);
-    setSectors([]);
-    setLocations([]);
-    if (unitId) fetchAgencies(unitId);
-  }, [unitId, fetchAgencies]);
+useEffect(() => {
+  setAgencyId(null);
+  setSectorId(null);
+  setLocationId(null);
+  setAgencies([]);
+  setSectors([]);
+  setLocations([]);
+  if (unitId) fetchAgencies(unitId, agencyQd);
+}, [unitId, fetchAgencies, agencyQd]);
 
-  useEffect(() => {
-    setSectorId(null);
-    setLocationId(null);
-    setSectors([]);
-    setLocations([]);
-    if (agencyId) fetchSectors(agencyId);
-  }, [agencyId, fetchSectors]);
+useEffect(() => {
+  setSectorId(null);
+  setLocationId(null);
+  setSectors([]);
+  setLocations([]);
+  if (agencyId) fetchSectors(agencyId, sectorQd);
+}, [agencyId, fetchSectors, sectorQd]);
 
-  useEffect(() => {
-    setLocationId(null);
-    setLocations([]);
-    if (sectorId) fetchLocations(sectorId);
-  }, [sectorId, fetchLocations]);
-
+useEffect(() => {
+  setLocationId(null);
+  setLocations([]);
+  if (sectorId) fetchLocations(sectorId, locationQd);
+}, [sectorId, fetchLocations, locationQd]);
   const [tab, setTab] = useState<BoardKind>("admComission");
   const [showFilters, setShowFilters] = useState(true);
 
@@ -598,24 +659,41 @@ export function AdmComission() {
   const resetExpandedPagination = () => setExpandedVisible(PAGE_SIZE);
   const showMoreExpanded = () => setExpandedVisible((n) => n + PAGE_SIZE);
 
-  // Fetch filtros
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const [mRes, gRes] = await Promise.all([
-          fetch(`${urlGeral}materials/`),
-          fetch(`${urlGeral}legal-guardians/`),
-        ]);
-        const mJson = await mRes.json();
-        const gJson = await gRes.json();
-        setMaterials(mJson?.materials ?? []);
-        setGuardians(gJson?.legal_guardians ?? []);
-      } catch {
-        toast.error("Falha ao carregar filtros");
-      }
-    };
-    run();
-  }, [urlGeral]);
+  // Materials
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingMaterials(true);
+      const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+      const mRes = await fetch(`${urlGeral}materials/${qs}`);
+      const mJson = await mRes.json();
+      setMaterials(mJson?.materials ?? []);
+    } catch {
+      toast.error("Falha ao carregar materiais");
+      setMaterials([]);
+    } finally {
+      setLoadingMaterials(false);
+    }
+  })();
+}, [urlGeral, materialQd]);
+
+// Legal guardians
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingGuardians(true);
+      const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+      const gRes = await fetch(`${urlGeral}legal-guardians/${qs}`);
+      const gJson = await gRes.json();
+      setGuardians(gJson?.legal_guardians ?? []);
+    } catch {
+      toast.error("Falha ao carregar responsáveis");
+      setGuardians([]);
+    } finally {
+      setLoadingGuardians(false);
+    }
+  })();
+}, [urlGeral, guardianQd]);
 
   // Fetch users comissão
   const fetchCommissionUsers = useCallback(async () => {
@@ -1077,68 +1155,65 @@ const handleDragEnd = (result: DropResult) => {
                       </div>
                     </Alert>
 
-                    <Combobox
-                      items={materialItems}
-                      value={materialId}
-                      onChange={(v) => setMaterialId(v)}
-                      placeholder="Material"
-                    />
-                    <Combobox
-                      items={guardianItems}
-                      value={guardianId}
-                      onChange={(v) => setGuardianId(v)}
-                      placeholder="Responsável"
-                    />
+                 <Combobox
+  items={materialItems}
+  value={materialId}
+  onChange={(v) => setMaterialId(v)}
+  onSearch={setMaterialQ}           // NOVO
+  isLoading={loadingMaterials}       // NOVO
+  placeholder="Material"
+/>
+
+<Combobox
+  items={guardianItems}
+  value={guardianId}
+  onChange={(v) => setGuardianId(v)}
+  onSearch={setGuardianQ}            // NOVO
+  isLoading={loadingGuardians}       // NOVO
+  placeholder="Responsável"
+/>
 
                     <Separator className="h-8" orientation="vertical" />
 
                     {/* ====== NOVOS SELECTS EM CADEIA ====== */}
-                    <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
-                      value={unitId}
-                      onChange={(v) => setUnitId(v)}
-                      placeholder="Unidade"
-                    />
+                   <Combobox
+  items={(units ?? []).map((u) => ({ id: u.id, code: u.unit_code, label: u.unit_name || u.unit_code }))}
+  value={unitId}
+  onChange={(v) => setUnitId(v)}
+  onSearch={setUnitQ}                // NOVO
+  isLoading={loadingUnits}           // NOVO
+  placeholder="Unidade"
+/>
 
-                    <Combobox
-                      items={(agencies ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
-                      value={agencyId}
-                      onChange={(v) => setAgencyId(v)}
-                      placeholder={"Organização"}
-                      disabled={!unitId}
-                    />
+<Combobox
+  items={(agencies ?? []).map((a) => ({ id: a.id, code: a.agency_code, label: a.agency_name || a.agency_code }))}
+  value={agencyId}
+  onChange={(v) => setAgencyId(v)}
+  onSearch={setAgencyQ}              // NOVO
+  isLoading={loadingAgencies}        // NOVO
+  placeholder="Organização"
+  disabled={!unitId}
+/>
 
-                    <Combobox
-                      items={(sectors ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
-                      value={sectorId}
-                      onChange={(v) => setSectorId(v)}
-                      placeholder={"Setor"}
-                      disabled={!agencyId}
-                    />
+<Combobox
+  items={(sectors ?? []).map((s) => ({ id: s.id, code: s.sector_code, label: s.sector_name || s.sector_code }))}
+  value={sectorId}
+  onChange={(v) => setSectorId(v)}
+  onSearch={setSectorQ}              // NOVO
+  isLoading={loadingSectors}         // NOVO
+  placeholder="Setor"
+  disabled={!agencyId}
+/>
 
-                    <Combobox
-                      items={(locations ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
-                      value={locationId}
-                      onChange={(v) => setLocationId(v)}
-                      placeholder="Local de guarda"
-                      disabled={!sectorId}
-                    />
+<Combobox
+  items={(locations ?? []).map((l) => ({ id: l.id, code: l.location_code, label: l.location_name || l.location_code }))}
+  value={locationId}
+  onChange={(v) => setLocationId(v)}
+  onSearch={setLocationQ}            // NOVO
+  isLoading={loadingLocations}       // NOVO
+  placeholder="Local de guarda"
+  disabled={!sectorId}
+/>
 
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                       <Trash size={16} /> Limpar filtros

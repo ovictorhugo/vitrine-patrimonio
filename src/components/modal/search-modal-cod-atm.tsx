@@ -337,6 +337,7 @@ const [itemType, setItemType] = useState('cod')
                     }
                   }}
                   type="text"
+                  maxLength={20}
                   ref={inputRef}
                   value={input}
                    autoFocus={true}

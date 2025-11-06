@@ -343,6 +343,7 @@ useEffect(() => {
                   ref={inputRef}
                   value={input}
                   autoFocus={true}
+                  maxLength={20} // 👈 limite de 10 caracteres
                  
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />

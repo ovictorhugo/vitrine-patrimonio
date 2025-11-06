@@ -267,6 +267,7 @@ export function SearchModal() {
                     <Input
                       ref={inputRef}
                       value={input}
+                      maxLength={20}
                       onChange={(e) => setInput(e.target.value)}
                       type="text"
                     

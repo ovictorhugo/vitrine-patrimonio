@@ -24,6 +24,7 @@ import { BlockItemsVitrine } from "./components/block-items-vitrine";
 import { useTheme } from "next-themes";
 import { useModal } from "../hooks/use-modal-store";
 import { BackgroundAvatarGrid } from "../ui/background-ripple-effect";
+import { BackgroundLines } from "../ui/background-lines";
 
 export function HomeInicial() {
   const [words, setWords] = useState<string[]>([]);
@@ -71,14 +72,7 @@ const {theme} = useTheme()
     </Helmet>
      <div className="absolute top-0 left-0 flex min-h-screen w-full z-[0] ">
     {/* ocupa 100% da largura do pai, altura 320px, quadrados de 48px */}
-<BackgroundAvatarGrid
-height="80vh" 
-cellSize={48} 
 
- borderColor={theme === "dark" ? "#292a2d" : "#d8e1ef"}
-  maxAvatars={12}
-  intervalMs={3000}
-/>
      
     </div>
     <div className="bg-cover   bg-no-repeat bg-center w-full" >

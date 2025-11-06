@@ -268,6 +268,7 @@ export function SearchModalVitrine() {
                     <Input
                       ref={inputRef}
                       value={input}
+                      maxLength={20}
                       onChange={(e) => setInput(e.target.value)}
                       type="text"
                       placeholder="Busque por Código-Dígito, ATM, Material ou Responsável"

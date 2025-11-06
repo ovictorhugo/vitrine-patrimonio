@@ -198,7 +198,7 @@ export function SearchModalPatrimonio() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         type="text"
-
+maxLength={20}
                         className="border-0 w-full bg-transparent max-h-[40px] h-[40px] flex-1 p-0 inline-block"
                       />
                     )}

@@ -292,6 +292,7 @@ export function SearchLocNomModal() {
                   type="text"
                   ref={inputRef}
                   value={input}
+                  maxLength={20}
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />
               )}
