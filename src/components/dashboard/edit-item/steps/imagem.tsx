@@ -37,25 +37,26 @@ import { ArrowUUpLeft } from "phosphor-react";
 type OnValidity = (v: boolean) => void;
 type OnState = (st: Record<string, unknown>) => void;
 
+type ImageItem = {
+  id: string;
+  file_path: string;
+};
+
 type Props = {
   step: number;
   catalogId: string;
   urlGeral: string;
   token?: string | null;
-  existingImageIds?: string[]; // IDs atuais vindos do GET
+  existingImages?: ImageItem[]; // id + file_path vindos do pai
   onValidityChange: OnValidity;
   onStateChange?: OnState;
 };
 
-const buildUrl = (base: string, id: string) => `${base}uploads/${id}.jpg`;
-
-/** deep equal simples p/ arrays */
-const sameArr = (a?: string[], b?: string[]) => {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
+const buildImgUrl = (urlGeral: string, p: string) => {
+  if (!p) return "";
+  if (p.startsWith("http://") || p.startsWith("https://")) return p;
+  const clean = p.startsWith("/") ? p.slice(1) : p;
+  return `${urlGeral}${clean}`;
 };
 
 type CamStatus = "idle" | "requesting" | "granted" | "denied";
@@ -65,36 +66,42 @@ export function ImagemStepEdit({
   catalogId,
   urlGeral,
   token,
-  existingImageIds,
+  existingImages,
   onValidityChange,
   onStateChange,
 }: Props) {
-  /** FONTE DE VERDADE: IDs no backend */
-  const [imageIds, setImageIds] = useState<string[]>(
-    () => existingImageIds ?? []
+  /** FONTE DE VERDADE: imagens no backend (id + file_path) */
+  const [images, setImages] = useState<ImageItem[]>(
+    () => existingImages ?? []
   );
 
   // sincroniza quando o pai muda (evita ping-pong)
   const lastPropRef = useRef<string>("");
   useEffect(() => {
-    if (!Array.isArray(existingImageIds)) return;
-    const incoming = JSON.stringify(existingImageIds);
+    if (!Array.isArray(existingImages)) return;
+    const incoming = JSON.stringify(existingImages);
     if (incoming === lastPropRef.current) return;
-    if (!sameArr(imageIds, existingImageIds)) setImageIds(existingImageIds);
+    setImages(existingImages);
     lastPropRef.current = incoming;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingImageIds]);
+  }, [existingImages]);
 
-  // validade + sinalização pro wizard (mantém chaves compatíveis com o seu NovoItem)
+  // validade + sinalização pro wizard
   const lastSentRef = useRef<string>("");
   useEffect(() => {
-    onValidityChange(imageIds.length >= 4);
-    const payload = JSON.stringify(imageIds);
+    const ids = images.map((img) => img.id);
+    const paths = images.map((img) => img.file_path);
+
+    onValidityChange(ids.length >= 4);
+
+    const payload = JSON.stringify({ ids, paths });
     if (payload !== lastSentRef.current) {
-      onStateChange?.({ images_wizard: imageIds }); // mantém o contrato
+      onStateChange?.({
+        image_ids: ids,
+        image_paths: paths,
+      });
       lastSentRef.current = payload;
     }
-  }, [imageIds, onStateChange, onValidityChange]);
+  }, [images, onStateChange, onValidityChange]);
 
   /** ===== Upload / Camera ===== */
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -213,24 +220,25 @@ export function ImagemStepEdit({
     if (videoRef.current) videoRef.current.srcObject = null;
   };
 
-const capturePhoto = () => {
-  if (!videoRef.current || !canvasRef.current) return;
-  const canvas = canvasRef.current;
-  const video = videoRef.current;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-  setCapturedPhoto(photoDataUrl);
-  setShowPhotoPreview(true);
-  // para o stream, mas ainda não fecha o diálogo
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    setStream(null);
-  }
-  if (videoRef.current) videoRef.current.srcObject = null;
-};
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setCapturedPhoto(photoDataUrl);
+    setShowPhotoPreview(true);
+    // para o stream, mas ainda não fecha o diálogo
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+
   const openUploadDialog = () => setShowUploadDialog(true);
   const openFileDialog = () => {
     setShowUploadDialog(false);
@@ -257,40 +265,40 @@ const capturePhoto = () => {
     }
   };
 
-const teardownCamera = () => {
-  // para o stream
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    setStream(null);
-  }
-  if (videoRef.current) videoRef.current.srcObject = null;
+  const teardownCamera = () => {
+    // para o stream
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
 
-  // fecha e reseta estados de captura
-  setShowCameraDialog(false);
-  setCapturedPhoto(null);
-  setShowPhotoPreview(false);
-
-  // (opcional) reseta status de permissão, se você usa esse estado
-  // setCamStatus?.("idle");
-  // setPermError?.("");
-};
-
-// 2) useEffect para garantir stop ao desmontar o componente (rota/tela)
-useEffect(() => {
-  return () => {
-    teardownCamera();
+    // fecha e reseta estados de captura
+    setShowCameraDialog(false);
+    setCapturedPhoto(null);
+    setShowPhotoPreview(false);
+    // opcional: resetar permissão
+    // setCamStatus("idle");
+    // setPermError("");
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
 
-// 3) feche ao mudar o "open" do Dialog (já chamava stop, troque por teardown)
-const closeCameraDialog = (open: boolean) => {
-  if (!open) {
-    teardownCamera();
-  } else {
-    setShowCameraDialog(true);
-  }
-};
+  // garante stop ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      teardownCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // feche ao mudar o "open" do Dialog
+  const closeCameraDialog = (open: boolean) => {
+    if (!open) {
+      teardownCamera();
+    } else {
+      setShowCameraDialog(true);
+    }
+  };
+
   /** ===== Backend: POST/DELETE/REFRESH ===== */
   const [busy, setBusy] = useState(false);
 
@@ -300,8 +308,11 @@ const closeCameraDialog = (open: boolean) => {
     });
     if (!r.ok) throw new Error(`Falha ao atualizar imagens (${r.status})`);
     const data = await r.json();
-    const ids = (data?.images || []).map((i: any) => i.id);
-    setImageIds(ids);
+    const nextImages: ImageItem[] = (data?.images || []).map((img: any) => ({
+      id: img.id,
+      file_path: img.file_path,
+    }));
+    setImages(nextImages);
   };
 
   const uploadBlob = async (blob: Blob, filename = "image.jpg") => {
@@ -356,7 +367,7 @@ const closeCameraDialog = (open: boolean) => {
 
   const confirmPhoto = async () => {
     if (!capturedPhoto) return;
-     teardownCamera(); // <—
+    teardownCamera();
     try {
       setBusy(true);
       const b = await (await fetch(capturedPhoto)).blob(); // converte dataURL em blob
@@ -374,8 +385,9 @@ const closeCameraDialog = (open: boolean) => {
   };
 
   const handleRemoveByIndex = async (index: number) => {
-    const id = imageIds[index];
-    if (!id) return;
+    const img = images[index];
+    if (!img) return;
+    const id = img.id;
     try {
       setBusy(true);
       const resp = await fetch(
@@ -451,7 +463,9 @@ const closeCameraDialog = (open: boolean) => {
             <PanelRightOpen size={24} />
             <div>
               <p className="font-medium">Passo 3</p>
-              <p className="text-gray-500 text-sm">Imagem lateral ou traseira</p>
+              <p className="text-gray-500 text-sm">
+                Imagem lateral ou traseira
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -468,8 +482,8 @@ const closeCameraDialog = (open: boolean) => {
           <div className="w-full">
             <div className="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
               {Array.from({ length: 4 }).map((_, index) => {
-                const id = imageIds[index];
-                const src = id ? buildUrl(urlGeral, id) : undefined;
+                const img = images[index];
+                const src = img ? buildImgUrl(urlGeral, img.file_path) : undefined;
                 return (
                   <div key={index} className="relative group">
                     {src ? (
@@ -528,7 +542,7 @@ const closeCameraDialog = (open: boolean) => {
                   </DialogDescription>
                 </DialogHeader>
 
-                  <Separator className="my-4" />
+                <Separator className="my-4" />
 
                 <div className="flex flex-col space-y-3">
                   <Button
@@ -571,7 +585,7 @@ const closeCameraDialog = (open: boolean) => {
                   </DialogDescription>
                 </DialogHeader>
 
-  <Separator className="my-4" />
+                <Separator className="my-4" />
 
                 {/* Estados de permissão: idle/requesting/denied mostram UI de ativação; granted mostra seleção + preview */}
                 {camStatus !== "granted" ? (
@@ -584,7 +598,9 @@ const closeCameraDialog = (open: boolean) => {
                         </p>
                       )}
                       {camStatus === "requesting" && (
-                        <p>Solicitando acesso à câmera… confirme no navegador.</p>
+                        <p>
+                          Solicitando acesso à câmera… confirme no navegador.
+                        </p>
                       )}
                       {camStatus === "denied" && (
                         <p className="text-red-600">
@@ -605,14 +621,18 @@ const closeCameraDialog = (open: boolean) => {
                         className="w-full"
                         onClick={() => closeCameraDialog(false)}
                       >
-                    <ArrowUUpLeft size={16}/>      Cancelar
+                        <ArrowUUpLeft size={16} /> Cancelar
                       </Button>
                       <Button
                         className="w-full"
                         onClick={safeInitCamera}
                         disabled={camStatus === "requesting" || !hasMediaDevices}
                       >
-                            {camStatus === "requesting" ? <Loader className="animate-spin" size={16} /> : <Camera size={16} /> }     
+                        {camStatus === "requesting" ? (
+                          <Loader className="animate-spin" size={16} />
+                        ) : (
+                          <Camera size={16} />
+                        )}
                         {camStatus === "requesting"
                           ? "Ativando…"
                           : "Ativar câmera"}
@@ -728,7 +748,10 @@ const closeCameraDialog = (open: boolean) => {
                             src={capturedPhoto ?? ""}
                             alt="Foto capturada"
                             className="w-full rounded-lg"
-                            style={{ maxHeight: "300px", objectFit: "cover" }}
+                            style={{
+                              maxHeight: "300px",
+                              objectFit: "cover",
+                            }}
                           />
                         </div>
 

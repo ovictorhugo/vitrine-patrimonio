@@ -34,6 +34,7 @@ export function Admin() {
                "/dashboard/comissao-apoio-local": "comissao-apoio-local",
                 "/user": "user-public-page",
                   "/dashboard/finalizados": "finalizados",
+                    "/dashboard/audiovisual": "audiovisual",
           
   };
 

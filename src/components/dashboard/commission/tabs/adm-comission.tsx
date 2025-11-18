@@ -23,9 +23,8 @@ import {
   Loader,
   ListTodo,
   User,
+  Eye,
 } from "lucide-react";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import {
   Select,
   SelectContent,
@@ -71,8 +70,7 @@ import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
 import { DragDropContext, DragUpdate, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Alert } from "../../../ui/alert";
-import { ArrowUUpLeft, MagnifyingGlass } from "phosphor-react";
-
+import { ArrowUUpLeft, EyeClosed, MagnifyingGlass } from "phosphor-react";
 import { ScrollArea, ScrollBar } from "../../../ui/scroll-area";
 import { RoleMembers } from "../../cargos-funcoes/components/role-members";
 import { CardItemDropdown } from "../../itens-vitrine/card-item-dropdown";
@@ -80,10 +78,9 @@ import { ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
+import { usePermissions } from "../../../permissions";
 
-/* =========================
-   Tipos do backend
-========================= */
+/* ========================= Tipos do backend ========================= */
 type UUID = string;
 
 type LegalGuardian = {
@@ -92,9 +89,6 @@ type LegalGuardian = {
   id: UUID;
 };
 
-/* =========================
-   Tipos hierarquia local
-========================= */
 type UnitDTO = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
 type AgencyDTO = { id: UUID; agency_name: string; agency_code: string };
 type SectorDTO = { id: UUID; sector_name: string; sector_code: string };
@@ -178,7 +172,7 @@ type ReviewerRef = {
 type WorkflowHistoryItem = {
   workflow_status: string;
   detail?: {
-    reviewers?: ReviewerRef[]; // <— objetos {id, username}
+    reviewers?: ReviewerRef[] | string[];
     [key: string]: any;
   };
   id: UUID;
@@ -222,40 +216,22 @@ export type CatalogEntry = {
 
 type CatalogResponse = {
   catalog_entries: CatalogEntry[];
+  total?: number;
 };
 
 type RoleUsersResponse = {
   users: UserDTO[];
 };
 
-/* =========================
-   Board (colunas dinâmicas por usuário + "Sem revisor")
-========================= */
+/* ========================= Board ========================= */
 const COL_SEM_REVISOR = "SEM_REVISOR";
-
 const WF_FILTER = "REVIEW_REQUESTED_COMISSION";
-const WF_DETAIL_SOURCE_A = "REVIEW_REQUESTED_COMISSION";
-const WF_DESFAZIMENTO = "DESFAZIMENTO";
-
-// Mantemos o objeto e o tipo para seguir o *mesmo padrão* estrutural do exemplo.
-const WORKFLOWS = {
-  admComission: [] as Array<{ key: string; name: string }>,
-} as const;
-type BoardKind = keyof typeof WORKFLOWS;
 
 const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
   [COL_SEM_REVISOR]: { Icon: HelpCircle, colorClass: "text-zinc-500" },
 };
 
-/* =========================
-   Presets (mantidos por paridade visual com o modal, não usados aqui)
-========================= */
-type JustPreset = { id: string; label: string; build: (e: CatalogEntry) => string };
-const JUSTIFICATIVAS_DESFAZIMENTO: JustPreset[] = []; // vazio aqui
-
-/* =========================
-   Regras por coluna (nenhuma exige justificativa nesta página)
-========================= */
+/* ========================= Regras por coluna ========================= */
 type ColumnRule = {
   requireJustification?: boolean;
   extraFields?: Array<{
@@ -267,81 +243,15 @@ type ColumnRule = {
   }>;
 };
 
-// Todas as colunas sem exigência (modal fica inoperante)
 const COLUMN_RULES: Record<string, ColumnRule> = {
   [COL_SEM_REVISOR]: { requireJustification: false },
 };
 
-/* =========================
-   Utils de board
-========================= */
-const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
-  const hist = entry.workflow_history ?? [];
-  if (!hist.length) return undefined;
-  return hist[0];
-};
-
+/* ========================= Utils ========================= */
 const codeFrom = (e: CatalogEntry) =>
   [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
 
-// util defensivo
-const sortedHistoryDesc = (entry: CatalogEntry) =>
-  [...(entry.workflow_history ?? [])].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
-// Pega a *última* entrada relevante que contenha reviewers como objetos {id, username}
-// (mantida para a board — usa o evento REVIEW_REQUESTED_COMISSION)
-const lastReviewersDetail = (entry: CatalogEntry): ReviewerRef[] => {
-  const hist = sortedHistoryDesc(entry);
-  const isTarget = (h: WorkflowHistoryItem) =>
-    (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A;
-
-  const first = hist.find(isTarget);
-  const reviewers = (first?.detail?.reviewers ?? []) as ReviewerRef[];
-  if (!Array.isArray(reviewers)) return [];
-  return reviewers
-    .filter((r) => r && typeof r.id === "string" && typeof r.username === "string")
-    .map((r) => ({ id: (r.id ?? "").trim(), username: r.username.trim() }))
-    .filter((r) => r.id && r.username);
-};
-
-// Agrupa por revisor (para a board)
-const groupByReviewer = (
-  data: CatalogEntry[],
-  columns: { key: string; name: string }[],
-  users: UserDTO[]
-) => {
-  const map: Record<string, CatalogEntry[]> = {};
-  const valid = new Set(columns.map((c) => (c.key ?? "").trim()));
-  for (const col of columns) map[(col.key ?? "").trim()] = [];
-
-  const userIds = new Set(users.map((u) => (u.id ?? "").trim()));
-
-  for (const entry of data) {
-    const reviewers = lastReviewersDetail(entry);
-    const reviewerIds = reviewers
-      .map((r) => (r.id ?? "").trim())
-      .filter((id) => id && userIds.has(id));
-
-    if (!reviewerIds.length) {
-      map[COL_SEM_REVISOR]?.push(entry);
-      continue;
-    }
-
-    // Se houver múltiplos revisores, duplicamos visualmente
-    for (const rid of reviewerIds) {
-      if (valid.has(rid)) map[rid].push(entry);
-      else console.warn(`[Board] Revisor ${rid} não está em 'users'. Omitindo.`);
-    }
-  }
-  return map;
-};
-
-/* =========================
-   Combobox
-========================= */
-// ===== Ajuste no Combobox =====
+/* ========================= Combobox ========================= */
 type ComboboxItem = { id: UUID; code?: string; label: string };
 
 function Combobox({
@@ -352,8 +262,8 @@ function Combobox({
   emptyText = "Nenhum item encontrado",
   triggerClassName,
   disabled = false,
-  onSearch,          // NOVO
-  isLoading = false, // NOVO
+  onSearch,
+  isLoading = false,
 }: {
   items: ComboboxItem[];
   value?: UUID | null;
@@ -362,8 +272,8 @@ function Combobox({
   emptyText?: string;
   triggerClassName?: string;
   disabled?: boolean;
-  onSearch?: (term: string) => void; // NOVO
-  isLoading?: boolean;               // NOVO
+  onSearch?: (term: string) => void;
+  isLoading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((i) => i.id === value) || null;
@@ -389,7 +299,7 @@ function Combobox({
         <Command>
           <CommandInput
             placeholder={placeholder}
-            onValueChange={(v) => onSearch?.(v)} // NOVO
+            onValueChange={(v) => onSearch?.(v)}
           />
           <CommandEmpty>{isLoading ? "Carregando..." : emptyText}</CommandEmpty>
           <CommandList className="gap-2 flex flex-col ">
@@ -400,11 +310,10 @@ function Combobox({
                   setOpen(false);
                 }}
               >
-                <span className="text-muted-foreground font-medium  flex gap-2 items-center">
+                <span className="text-muted-foreground font-medium flex gap-2 items-center">
                   <Trash size={16} /> Limpar filtro
                 </span>
               </CommandItem>
-
               <CommandSeparator className="my-1" />
               {items.map((item) => (
                 <CommandItem
@@ -426,163 +335,185 @@ function Combobox({
   );
 }
 
-/* =========================
-   Componente Principal
-========================= */
+/* ========================= Componente Principal ========================= */
 export function AdmComission() {
   const ROLE_COMISSAO_ID = import.meta.env.VITE_ID_COMISSAO_PERMANENTE;
   const { urlGeral } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ===== termos digitados =====
-const [unitQ, setUnitQ] = useState("");
-const [agencyQ, setAgencyQ] = useState("");
-const [sectorQ, setSectorQ] = useState("");
-const [locationQ, setLocationQ] = useState("");
-const [materialQ, setMaterialQ] = useState("");
-const [guardianQ, setGuardianQ] = useState("");
+  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
-// ===== Hook de debounce =====
-function useDebounced<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
-}
-
-
-// ===== versões com debounce =====
-const unitQd = useDebounced(unitQ);
-const agencyQd = useDebounced(agencyQ);
-const sectorQd = useDebounced(sectorQ);
-const locationQd = useDebounced(locationQ);
-const materialQd = useDebounced(materialQ);
-const guardianQd = useDebounced(guardianQ);
-
-// ===== flags de loading =====
-const [loadingUnits, setLoadingUnits] = useState(false);
-const [loadingAgencies, setLoadingAgencies] = useState(false);
-const [loadingSectors, setLoadingSectors] = useState(false);
-const [loadingLocations, setLoadingLocations] = useState(false);
-const [loadingMaterials, setLoadingMaterials] = useState(false);
-const [loadingGuardians, setLoadingGuardians] = useState(false);
+  // Helper de debounce
+  function useDebounced<T>(value: T, delay = 300) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+      const id = setTimeout(() => setDebounced(value), delay);
+      return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+  }
 
   // Hierarquia local
+  const [unitQ, setUnitQ] = useState("");
+  const [agencyQ, setAgencyQ] = useState("");
+  const [sectorQ, setSectorQ] = useState("");
+  const [locationQ, setLocationQ] = useState("");
+  const [materialQ, setMaterialQ] = useState("");
+  const [guardianQ, setGuardianQ] = useState("");
+
+  const unitQd = useDebounced(unitQ);
+  const agencyQd = useDebounced(agencyQ);
+  const sectorQd = useDebounced(sectorQ);
+  const locationQd = useDebounced(locationQ);
+  const materialQd = useDebounced(materialQ);
+  const guardianQd = useDebounced(guardianQ);
+
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingAgencies, setLoadingAgencies] = useState(false);
+  const [loadingSectors, setLoadingSectors] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [loadingGuardians, setLoadingGuardians] = useState(false);
+
   const [units, setUnits] = useState<UnitDTO[]>([]);
   const [agencies, setAgencies] = useState<AgencyDTO[]>([]);
   const [sectors, setSectors] = useState<SectorDTO[]>([]);
   const [locations, setLocations] = useState<LocationDTO[]>([]);
 
-  // Seleções
   const [unitId, setUnitId] = useState<UUID | null>(null);
   const [agencyId, setAgencyId] = useState<UUID | null>(null);
   const [sectorId, setSectorId] = useState<UUID | null>(null);
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
-  // Fetch listas hierarquia
-  // Units (com ?q=)
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingUnits(true);
-      const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
-      const res = await fetch(`${urlGeral}units/${qs}`);
-      const json = await res.json();
-      setUnits(json?.units ?? []);
-    } catch {
-      setUnits([]);
-    } finally {
-      setLoadingUnits(false);
-    }
-  })();
-}, [urlGeral, unitQd]);
+  // Fetch hierarquia
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingUnits(true);
+        const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
+        const res = await fetch(`${urlGeral}units/${qs}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setUnits(json?.units ?? []);
+      } catch {
+        setUnits([]);
+      } finally {
+        setLoadingUnits(false);
+      }
+    })();
+  }, [urlGeral, token, unitQd]);
 
-const fetchAgencies = useCallback(
-  async (uid: UUID, q?: string) => {
-    if (!uid) return setAgencies([]);
-    try {
-      setLoadingAgencies(true);
-      const params = new URLSearchParams({ unit_id: uid });
-      if (q) params.set("q", q);
-      const res = await fetch(`${urlGeral}agencies/?${params.toString()}`);
-      const json = await res.json();
-      setAgencies(json?.agencies ?? []);
-    } catch {
-      setAgencies([]);
-    } finally {
-      setLoadingAgencies(false);
-    }
-  },
-  [urlGeral]
-);
+  const fetchAgencies = useCallback(
+    async (uid: UUID, q?: string) => {
+      if (!uid) {
+        setAgencies([]);
+        return;
+      }
+      try {
+        setLoadingAgencies(true);
+        const params = new URLSearchParams({ unit_id: uid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${urlGeral}agencies/?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setAgencies(json?.agencies ?? []);
+      } catch {
+        setAgencies([]);
+      } finally {
+        setLoadingAgencies(false);
+      }
+    },
+    [urlGeral, token]
+  );
 
-const fetchSectors = useCallback(
-  async (aid: UUID, q?: string) => {
-    if (!aid) return setSectors([]);
-    try {
-      setLoadingSectors(true);
-      const params = new URLSearchParams({ agency_id: aid });
-      if (q) params.set("q", q);
-      const res = await fetch(`${urlGeral}sectors/?${params.toString()}`);
-      const json = await res.json();
-      setSectors(json?.sectors ?? []);
-    } catch {
-      setSectors([]);
-    } finally {
-      setLoadingSectors(false);
-    }
-  },
-  [urlGeral]
-);
+  const fetchSectors = useCallback(
+    async (aid: UUID, q?: string) => {
+      if (!aid) {
+        setSectors([]);
+        return;
+      }
+      try {
+        setLoadingSectors(true);
+        const params = new URLSearchParams({ agency_id: aid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${urlGeral}sectors/?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setSectors(json?.sectors ?? []);
+      } catch {
+        setSectors([]);
+      } finally {
+        setLoadingSectors(false);
+      }
+    },
+    [urlGeral, token]
+  );
 
-const fetchLocations = useCallback(
-  async (sid: UUID, q?: string) => {
-    if (!sid) return setLocations([]);
-    try {
-      setLoadingLocations(true);
-      const params = new URLSearchParams({ sector_id: sid });
-      if (q) params.set("q", q);
-      const res = await fetch(`${urlGeral}locations/?${params.toString()}`);
-      const json = await res.json();
-      setLocations(json?.locations ?? []);
-    } catch {
-      setLocations([]);
-    } finally {
-      setLoadingLocations(false);
-    }
-  },
-  [urlGeral]
-);
-
+  const fetchLocations = useCallback(
+    async (sid: UUID, q?: string) => {
+      if (!sid) {
+        setLocations([]);
+        return;
+      }
+      try {
+        setLoadingLocations(true);
+        const params = new URLSearchParams({ sector_id: sid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${urlGeral}locations/?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await res.json();
+        setLocations(json?.locations ?? []);
+      } catch {
+        setLocations([]);
+      } finally {
+        setLoadingLocations(false);
+      }
+    },
+    [urlGeral, token]
+  );
 
   // Cascata
-useEffect(() => {
-  setAgencyId(null);
-  setSectorId(null);
-  setLocationId(null);
-  setAgencies([]);
-  setSectors([]);
-  setLocations([]);
-  if (unitId) fetchAgencies(unitId, agencyQd);
-}, [unitId, fetchAgencies, agencyQd]);
+  useEffect(() => {
+    setAgencyId(null);
+    setSectorId(null);
+    setLocationId(null);
+    setAgencies([]);
+    setSectors([]);
+    setLocations([]);
+    if (unitId) fetchAgencies(unitId, agencyQd);
+  }, [unitId, fetchAgencies, agencyQd]);
 
-useEffect(() => {
-  setSectorId(null);
-  setLocationId(null);
-  setSectors([]);
-  setLocations([]);
-  if (agencyId) fetchSectors(agencyId, sectorQd);
-}, [agencyId, fetchSectors, sectorQd]);
+  useEffect(() => {
+    setSectorId(null);
+    setLocationId(null);
+    setSectors([]);
+    setLocations([]);
+    if (agencyId) fetchSectors(agencyId, sectorQd);
+  }, [agencyId, fetchSectors, sectorQd]);
 
-useEffect(() => {
-  setLocationId(null);
-  setLocations([]);
-  if (sectorId) fetchLocations(sectorId, locationQd);
-}, [sectorId, fetchLocations, locationQd]);
-  const [tab, setTab] = useState<BoardKind>("admComission");
+  useEffect(() => {
+    setLocationId(null);
+    setLocations([]);
+    if (sectorId) fetchLocations(sectorId, locationQd);
+  }, [sectorId, fetchLocations, locationQd]);
+
   const [showFilters, setShowFilters] = useState(true);
 
   // Filtros
@@ -592,31 +523,33 @@ useEffect(() => {
   const [guardianId, setGuardianId] = useState<UUID | null>(null);
   const [q, setQ] = useState("");
 
-  // Users da comissão (para formar colunas)
+  // Users da comissão
   const [commissionUsers, setCommissionUsers] = useState<UserDTO[]>([]);
+  const [loadingCommissionUsers, setLoadingCommissionUsers] = useState(false);
 
-  // Catálogo
+  // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
+  const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>({});
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
-  // Colunas = Sem revisor + usuários
+  // Colunas
   const columns = useMemo(
-    () =>
-      [
-        { key: COL_SEM_REVISOR, name: "Sem revisor" },
-        ...commissionUsers.map((u) => ({
-          key: (u.id ?? "").trim(),
-          name: u.username ?? u.email ?? "Usuário",
-        })),
-      ],
+    () => [
+      { key: COL_SEM_REVISOR, name: "Sem revisor" },
+      ...commissionUsers.map((u) => ({
+        key: (u.id ?? "").trim(),
+        name: u.username ?? u.email ?? "Usuário",
+      })),
+    ],
     [commissionUsers]
   );
 
   // Board
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
+  const [hasMoreByCol, setHasMoreByCol] = useState<Record<string, boolean>>({});
 
-  // Modal de mudança de coluna (mantido)
+  // Modal
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<{
     entry?: CatalogEntry;
@@ -633,86 +566,223 @@ useEffect(() => {
   );
   const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(null);
 
-  // Paginação
-  const PAGE_SIZE = 100;
-  const [visibleByCol, setVisibleByCol] = useState<Record<string, number>>({});
+  // Paginação - offset por coluna
+  const PAGE_SIZE = 24;
+  const [offsetByCol, setOffsetByCol] = useState<Record<string, number>>({});
+  const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
   const rulesFor = (colKey?: string): ColumnRule => (!colKey ? {} : COLUMN_RULES[colKey] || {});
 
   useEffect(() => {
-    setVisibleByCol((prev) => {
-      const next = { ...prev };
-      for (const c of columns) {
-        const k = (c.key ?? "").trim();
-        if (typeof next[k] !== "number") next[k] = PAGE_SIZE;
-      }
-      return next;
-    });
+    const initial: Record<string, number> = {};
+    for (const c of columns) {
+      initial[c.key] = 0;
+    }
+    setOffsetByCol(initial);
   }, [columns]);
 
   const showMoreCol = (key: string) => {
     const k = (key ?? "").trim();
-    setVisibleByCol((prev) => ({ ...prev, [k]: (prev[k] ?? PAGE_SIZE) + PAGE_SIZE }));
+    const currentOffset = offsetByCol[k] ?? 0;
+    const newOffset = currentOffset + PAGE_SIZE;
+    fetchColumnData(k, newOffset, true);
   };
 
-  const resetExpandedPagination = () => setExpandedVisible(PAGE_SIZE);
-  const showMoreExpanded = () => setExpandedVisible((n) => n + PAGE_SIZE);
+  const resetExpandedPagination = () => {
+    setExpandedVisible(PAGE_SIZE);
+    if (expandedColumn) {
+      const currentItems = board[expandedColumn]?.length ?? 0;
+      if (currentItems < PAGE_SIZE) {
+        fetchColumnData(expandedColumn, 0, false);
+      }
+    }
+  };
+
+  const showMoreExpanded = () => {
+    if (!expandedColumn) return;
+    const currentItems = board[expandedColumn]?.length ?? 0;
+    const newVisible = expandedVisible + PAGE_SIZE;
+    setExpandedVisible(newVisible);
+
+    // Se ainda tem mais no backend e o que já carregou é menor que o novo visível, busca mais
+    if (hasMoreByCol[expandedColumn] && currentItems < newVisible) {
+      fetchColumnData(expandedColumn, currentItems, true);
+    }
+  };
 
   // Materials
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingMaterials(true);
-      const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
-      const mRes = await fetch(`${urlGeral}materials/${qs}`);
-      const mJson = await mRes.json();
-      setMaterials(mJson?.materials ?? []);
-    } catch {
-      toast.error("Falha ao carregar materiais");
-      setMaterials([]);
-    } finally {
-      setLoadingMaterials(false);
-    }
-  })();
-}, [urlGeral, materialQd]);
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingMaterials(true);
+        const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+        const mRes = await fetch(`${urlGeral}materials/${qs}`);
+        const mJson = await mRes.json();
+        setMaterials(mJson?.materials ?? []);
+      } catch {
+        toast.error("Falha ao carregar materiais");
+        setMaterials([]);
+      } finally {
+        setLoadingMaterials(false);
+      }
+    })();
+  }, [urlGeral, materialQd]);
 
-// Legal guardians
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingGuardians(true);
-      const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
-      const gRes = await fetch(`${urlGeral}legal-guardians/${qs}`);
-      const gJson = await gRes.json();
-      setGuardians(gJson?.legal_guardians ?? []);
-    } catch {
-      toast.error("Falha ao carregar responsáveis");
-      setGuardians([]);
-    } finally {
-      setLoadingGuardians(false);
-    }
-  })();
-}, [urlGeral, guardianQd]);
+  // Legal guardians
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingGuardians(true);
+        const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+        const gRes = await fetch(`${urlGeral}legal-guardians/${qs}`);
+        const gJson = await gRes.json();
+        setGuardians(gJson?.legal_guardians ?? []);
+      } catch {
+        toast.error("Falha ao carregar responsáveis");
+        setGuardians([]);
+      } finally {
+        setLoadingGuardians(false);
+      }
+    })();
+  }, [urlGeral, guardianQd]);
 
   // Fetch users comissão
   const fetchCommissionUsers = useCallback(async () => {
     try {
+      setLoadingCommissionUsers(true);
       const res = await fetch(`${urlGeral}roles/${ROLE_COMISSAO_ID}/users`);
       if (!res.ok) throw new Error();
       const json: RoleUsersResponse = await res.json();
       setCommissionUsers(json?.users ?? []);
     } catch {
       toast.error("Falha ao carregar membros da comissão");
+    } finally {
+      setLoadingCommissionUsers(false);
     }
-  }, [urlGeral]);
+  }, [urlGeral, ROLE_COMISSAO_ID]);
 
-  // Fetch catálogo
-  const fetchCatalog = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchCommissionUsers();
+  }, [fetchCommissionUsers]);
+
+  // Fetch por coluna
+  const fetchColumnData = useCallback(
+    async (colKey: string, offset = 0, append = false) => {
+      if (!colKey) return;
+
+      try {
+        setLoadingColumns((prev) => ({ ...prev, [colKey]: true }));
+
+        const params = new URLSearchParams();
+        params.set("workflow_status", WF_FILTER);
+        params.set("offset", offset.toString());
+        params.set("limit", PAGE_SIZE.toString());
+
+        if (colKey !== COL_SEM_REVISOR) {
+          params.set("reviewer_id", colKey);
+        } else {
+          params.set("reviewer_id", "null");
+        }
+
+        if (materialId) params.set("material_id", materialId);
+        if (guardianId) params.set("legal_guardian_id", guardianId);
+        if (unitId) params.set("unit_id", unitId);
+        if (agencyId) params.set("agency_id", agencyId);
+        if (sectorId) params.set("sector_id", sectorId);
+        if (locationId) params.set("location_id", locationId);
+
+        const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const json: CatalogResponse & { total?: number } = await res.json();
+        const newEntries = json?.catalog_entries ?? [];
+
+        if (typeof json.total === "number") {
+          setTotalByCol((prev) => ({
+            ...prev,
+            [colKey]: json.total as number,
+          }));
+        }
+
+        // Só mostra "Mostrar mais" se veio um lote cheio
+        setHasMoreByCol((prev) => ({
+          ...prev,
+          [colKey]: newEntries.length === PAGE_SIZE && newEntries.length > 0,
+        }));
+
+        if (append) {
+          setBoard((prev) => ({
+            ...prev,
+            [colKey]: [...(prev[colKey] ?? []), ...newEntries],
+          }));
+          setEntries((prev) => {
+            const existingIds = new Set(prev.map((e) => e.id));
+            const filtered = newEntries.filter((e) => !existingIds.has(e.id));
+            return [...prev, ...filtered];
+          });
+          setOffsetByCol((prev) => ({
+            ...prev,
+            [colKey]: offset + PAGE_SIZE,
+          }));
+        } else {
+          setBoard((prev) => ({
+            ...prev,
+            [colKey]: newEntries,
+          }));
+          setEntries((prev) => {
+            const otherCols = prev.filter(() => true);
+            return [...otherCols, ...newEntries];
+          });
+          setOffsetByCol((prev) => ({
+            ...prev,
+            [colKey]: PAGE_SIZE,
+          }));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar coluna:", err);
+        toast.error(`Falha ao carregar ${colKey}`);
+      } finally {
+        setLoadingColumns((prev) => ({ ...prev, [colKey]: false }));
+      }
+    },
+    [
+      urlGeral,
+      token,
+      materialId,
+      guardianId,
+      unitId,
+      agencyId,
+      sectorId,
+      locationId,
+      PAGE_SIZE,
+    ]
+  );
+
+  /* ===== Estatísticas review-commission ===== */
+  type ReviewCommissionStat = {
+    reviewer_id: string | null;
+    reviewer: string;
+    total: number;
+    d0: number;
+    d3: number;
+    w1: number;
+  };
+
+  const [reviewStats, setReviewStats] = useState<ReviewCommissionStat[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  const fetchReviewStats = useCallback(async () => {
     try {
+      setLoadingStats(true);
       const params = new URLSearchParams();
-      params.set("workflow_status", WF_FILTER);
+
       if (materialId) params.set("material_id", materialId);
       if (guardianId) params.set("legal_guardian_id", guardianId);
       if (unitId) params.set("unit_id", unitId);
@@ -720,25 +790,114 @@ useEffect(() => {
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
 
-      const res = await fetch(`${urlGeral}catalog/?${params.toString()}`);
+      const query = params.toString();
+      const url = query
+        ? `${urlGeral}statistics/catalog/stats/review-commission?${query}`
+        : `${urlGeral}statistics/catalog/stats/review-commission`;
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
       if (!res.ok) throw new Error();
-      const json: CatalogResponse = await res.json();
-      setEntries(json?.catalog_entries ?? []);
-    } catch {
-      toast.error("Falha ao carregar catálogo");
+
+      const json: ReviewCommissionStat[] = await res.json();
+      setReviewStats(Array.isArray(json) ? json : []);
+    } catch (err) {
+      console.error("Erro ao buscar estatísticas review-commission:", err);
+      setReviewStats([]);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [
+    urlGeral,
+    token,
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+  ]);
+
+  // total geral esperando avaliação
+  const totalWaiting = useMemo(
+    () => reviewStats.reduce((sum, s) => sum + (s.total ?? 0), 0),
+    [reviewStats]
+  );
+
+  // total por coluna (stats -> totalByCol -> fallback board)
+  const getColumnTotal = useCallback(
+    (colKey: string) => {
+      const stat = reviewStats.find((row) => {
+        if (colKey === COL_SEM_REVISOR) {
+          return row.reviewer_id === null || row.reviewer_id === "null";
+        }
+        return (row.reviewer_id ?? "").trim() === colKey.trim();
+      });
+
+      if (stat) return stat.total ?? 0;
+
+      const total = totalByCol[colKey];
+      if (typeof total === "number") return total;
+
+      return (board[colKey] ?? []).length;
+    },
+    [reviewStats, totalByCol, board]
+  );
+
+  // Fetch inicial/geral: colunas (sequencial) + stats
+  const fetchAllColumns = useCallback(async () => {
+    setLoading(true);
+    setBoard({});
+    setEntries([]);
+    setOffsetByCol({});
+    setTotalByCol({});
+    setHasMoreByCol({});
+
+    try {
+      // Faz uma coluna de cada vez, na ordem
+      for (const col of columns) {
+        await fetchColumnData(col.key, 0, false);
+      }
     } finally {
       setLoading(false);
     }
-  }, [urlGeral, materialId, guardianId, unitId, agencyId, sectorId, locationId]);
+  }, [columns, fetchColumnData]);
 
-  useEffect(() => {
-    fetchCommissionUsers();
-  }, [fetchCommissionUsers]);
+  // Evita múltiplos refresh iniciais (StrictMode, etc.)
+  const initialLoadRef = useRef(false);
 
+  // Carregamento inicial (só depois que a comissão chegou)
   useEffect(() => {
+    if (!commissionUsers.length) return;
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
     setExpandedColumn(null);
-    fetchCatalog();
-  }, [fetchCatalog, tab]);
+    fetchAllColumns();
+    fetchReviewStats();
+  }, [commissionUsers, fetchAllColumns, fetchReviewStats]);
+
+  // Recarregar board + estatística quando filtros mudam (após load inicial)
+  useEffect(() => {
+    if (!commissionUsers.length) return;
+    if (!initialLoadRef.current) return;
+    setExpandedColumn(null);
+    fetchAllColumns();
+    fetchReviewStats();
+  }, [
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    fetchAllColumns,
+    fetchReviewStats,
+    commissionUsers.length,
+  ]);
 
   // Atualiza URL com filtros
   useEffect(() => {
@@ -747,7 +906,6 @@ useEffect(() => {
     else params.delete("material_id");
     if (guardianId) params.set("legal_guardian_id", guardianId);
     else params.delete("legal_guardian_id");
-
     if (unitId) params.set("unit_id", unitId);
     else params.delete("unit_id");
     if (agencyId) params.set("agency_id", agencyId);
@@ -761,38 +919,38 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materialId, guardianId, unitId, agencyId, sectorId, locationId]);
 
-  // Filtro q (client)
-  const filteredEntries = useMemo(() => {
-    if (!q.trim()) return entries;
-    const term = q.trim().toLowerCase();
-    return entries.filter((e) => {
-      const code = codeFrom(e);
-      const haystack = [
-        code,
-        e?.asset?.atm_number,
-        e?.asset?.asset_description,
-        e?.asset?.material?.material_name,
-        e?.asset?.item_brand,
-        e?.asset?.item_model,
-        e?.asset?.serial_number,
-        e?.description,
-        e?.asset?.legal_guardian?.legal_guardians_name,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(term);
-    });
-  }, [entries, q]);
+  // Filtro q (client-side) - aplicado sobre o board já carregado
+  const filteredBoard = useMemo(() => {
+    if (!q.trim()) return board;
 
-  // Board agrupado por revisor
-  useEffect(() => {
-    setBoard(groupByReviewer(filteredEntries, columns, commissionUsers));
-  }, [filteredEntries, columns, commissionUsers]);
+    const term = q.trim().toLowerCase();
+    const filtered: Record<string, CatalogEntry[]> = {};
+
+    for (const [key, items] of Object.entries(board)) {
+      filtered[key] = items.filter((e) => {
+        const code = codeFrom(e);
+        const haystack = [
+          code,
+          e?.asset?.atm_number,
+          e?.asset?.asset_description,
+          e?.asset?.material?.material_name,
+          e?.asset?.item_brand,
+          e?.asset?.item_model,
+          e?.asset?.serial_number,
+          e?.description,
+          e?.asset?.legal_guardian?.legal_guardians_name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    return filtered;
+  }, [board, q]);
 
   // Drag & Drop -> PUT reviewers
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
-
   const putReviewers = async (entry: CatalogEntry | undefined, reviewers: string[]) => {
     if (!entry) return false;
     try {
@@ -802,7 +960,7 @@ useEffect(() => {
           "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : "",
         },
-        body: JSON.stringify(reviewers), // API antiga: só IDs
+        body: JSON.stringify(reviewers),
       });
       if (!res.ok) throw new Error();
       toast.success("Revisor atualizado com sucesso.");
@@ -813,60 +971,205 @@ useEffect(() => {
     }
   };
 
+  const boardScrollRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const rafIdRef = useRef<number | null>(null);
+  const pointerXRef = useRef<number>(0);
+  const currentDestinationRef = useRef<string | null>(null);
 
+  const stopAutoScrollLoop = () => {
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  };
 
-const handleConfirmMove = async () => {
-  // ... (se tiver alguma chamada de API aqui, mantenha)
+  const EDGE_PX = 140;
+  const MAX_STEP = 40;
+  const BASE_STEP = 12;
 
-  // sucesso: NÃO reverter ao fechar
-  closingActionRef.current = "confirm";
-  setSnapshotBoard(null);
-  setSnapshotEntries(null);
-  setMoveModalOpen(false);
+  const autoScrollTick = useCallback(() => {
+    if (!draggingRef.current) return stopAutoScrollLoop();
+    const el = boardScrollRef.current;
+    if (!el) return stopAutoScrollLoop();
 
-  // limpeza adicional
-  setMoveTarget({});
-  setJustificativa("");
-  setExtraValues({});
-};
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    const padL = parseFloat(style.paddingLeft || "0");
+    const padR = parseFloat(style.paddingRight || "0");
+    const rectLeft = rect.left + padL;
+    const rectRight = rect.right - padR;
+    const x = pointerXRef.current;
 
+    let dx = 0;
+    if (x - rectLeft < EDGE_PX) {
+      const dist = Math.max(1, EDGE_PX - (x - rectLeft));
+      dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+    } else if (rectRight - x < EDGE_PX) {
+      const dist = Math.max(1, EDGE_PX - (rectRight - x));
+      dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+    }
+
+    if (dx !== 0) {
+      el.scrollBy({ left: dx, behavior: "auto" });
+    }
+
+    const destId = currentDestinationRef.current;
+    if (destId) {
+      const colEl = colRefs.current[destId];
+      if (colEl) {
+        const containerRect = el.getBoundingClientRect();
+        const colRect = colEl.getBoundingClientRect();
+
+        const colCenterX = colRect.left + colRect.width / 2;
+        const containerCenterX = containerRect.left + containerRect.width / 2;
+
+        const isNotVisible =
+          colRect.right < containerRect.left || colRect.left > containerRect.right;
+        const needsCenter = Math.abs(colCenterX - containerCenterX) > 100;
+
+        if (isNotVisible || needsCenter) {
+          const targetScroll =
+            colEl.offsetLeft - containerRect.width / 2 + colRect.width / 2;
+          el.scrollTo({
+            left: Math.max(0, targetScroll),
+            behavior: "auto",
+          });
+        }
+      }
+    }
+
+    rafIdRef.current = requestAnimationFrame(autoScrollTick);
+  }, []);
+
+  const handlePointerMoveWhileDrag = useCallback(
+    (ev: PointerEvent) => {
+      pointerXRef.current = ev.clientX;
+      if (rafIdRef.current == null && draggingRef.current) {
+        rafIdRef.current = requestAnimationFrame(autoScrollTick);
+      }
+    },
+    [autoScrollTick]
+  );
+
+  const handleDragStart = useCallback(() => {
+    draggingRef.current = true;
+    currentDestinationRef.current = null;
+    document.addEventListener("pointermove", handlePointerMoveWhileDrag);
+    stopAutoScrollLoop();
+    rafIdRef.current = requestAnimationFrame(autoScrollTick);
+  }, [handlePointerMoveWhileDrag, autoScrollTick]);
+
+  const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const handleDragUpdate = useCallback((update: DragUpdate) => {
+    const destId = update.destination?.droppableId?.trim();
+    currentDestinationRef.current = destId || null;
+  }, []);
+
+  const handleDragEndDrop = useCallback(
+    async (result: DropResult) => {
+      const { source, destination } = result;
+      if (!destination) return;
+
+      const fromKey = (source.droppableId ?? "").trim();
+      const toKey = (destination.droppableId ?? "").trim();
+      if (fromKey === toKey) return;
+
+      const validTo =
+        toKey === COL_SEM_REVISOR ||
+        commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
+
+      if (!validTo) {
+        toast.error("Destino inválido para reatribuição.");
+        return;
+      }
+
+      const fromList = board[fromKey] ?? [];
+      const entry = fromList[source.index];
+      if (!entry) return;
+
+      const prevBoard = board;
+      const prevEntries = entries;
+
+      let reviewersNew: string[] = [];
+      if (toKey !== COL_SEM_REVISOR) {
+        reviewersNew = [toKey];
+      }
+
+      const newFrom = fromList.filter((x) => x.id !== entry.id);
+      const newTo = [entry, ...(board[toKey] ?? [])];
+
+      setBoard((old) => ({
+        ...old,
+        [fromKey]: newFrom,
+        [toKey]: newTo,
+      }));
+
+      setEntries((old) => [...old]);
+
+      const ok = await putReviewers(entry, reviewersNew);
+      if (!ok) {
+        setBoard(prevBoard);
+        setEntries(prevEntries);
+      }
+    },
+    [board, entries, commissionUsers, putReviewers]
+  );
+
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      draggingRef.current = false;
+      currentDestinationRef.current = null;
+      document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
+      stopAutoScrollLoop();
+      void handleDragEndDrop(result);
+    },
+    [handlePointerMoveWhileDrag, handleDragEndDrop]
+  );
 
   const closingActionRef = useRef<"confirm" | "cancel" | null>(null);
 
-  const handleModalOpenChange = (open: boolean) => {
-  if (!open) {
-    const reason = closingActionRef.current;
-    closingActionRef.current = null;
-
-    // Só reverte se NÃO foi confirmação
-    if (reason !== "confirm" && snapshotBoard && snapshotEntries) {
-      setBoard(snapshotBoard);
-      setEntries(snapshotEntries);
-    }
-
-    // Limpeza comum
+  const handleConfirmMove = async () => {
+    closingActionRef.current = "confirm";
+    setSnapshotBoard(null);
+    setSnapshotEntries(null);
     setMoveModalOpen(false);
     setMoveTarget({});
     setJustificativa("");
     setExtraValues({});
-    setSnapshotBoard(null);
-    setSnapshotEntries(null);
-  } else {
-    setMoveModalOpen(true);
-  }
-};
+  };
 
-const handleCancelMove = () => {
-  closingActionRef.current = "cancel";
-  setMoveModalOpen(false);
-};
+  const handleModalOpenChange = (open: boolean) => {
+    if (!open) {
+      const reason = closingActionRef.current;
+      closingActionRef.current = null;
 
+      if (reason !== "confirm" && snapshotBoard && snapshotEntries) {
+        setBoard(snapshotBoard);
+        setEntries(snapshotEntries);
+      }
+
+      setMoveModalOpen(false);
+      setMoveTarget({});
+      setJustificativa("");
+      setExtraValues({});
+      setSnapshotBoard(null);
+      setSnapshotEntries(null);
+    } else {
+      setMoveModalOpen(true);
+    }
+  };
+
+  const handleCancelMove = () => {
+    closingActionRef.current = "cancel";
+    setMoveModalOpen(false);
+  };
 
   const clearFilters = () => {
     setMaterialId(null);
     setGuardianId(null);
     setQ("");
-
     setUnitId(null);
     setAgencyId(null);
     setSectorId(null);
@@ -886,13 +1189,14 @@ const handleCancelMove = () => {
     if (a) setAgencyId(a);
     if (s) setSectorId(s);
     if (l) setLocationId(l);
-  }, []); // eslint-disable-line
+  }, []);
 
   const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
     id: m.id,
     code: m.material_code,
     label: m.material_name || m.material_code,
   }));
+
   const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({
     id: g.id,
     code: g.legal_guardians_code,
@@ -904,44 +1208,49 @@ const handleCancelMove = () => {
   }, [expandedColumn]);
 
   const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
-  let itemsToExport: CatalogEntry[] = [];
+    let itemsToExport: CatalogEntry[] = [];
 
-  if (colKey) {
-    const all = board[colKey] ?? [];
-    const isExpanded = expandedColumn === colKey;
-    itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
-  } else {
-    itemsToExport = filteredEntries;
-  }
+    if (colKey) {
+      const all = filteredBoard[colKey] ?? [];
+      const isExpanded = expandedColumn === colKey;
+      itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+    } else {
+      itemsToExport = entries;
+    }
 
-  if (!Array.isArray(itemsToExport)) {
-    console.error("downloadXlsx: itemsToExport não é array", itemsToExport);
-    toast.error("Nada para exportar.");
-    return;
-  }
+    if (!Array.isArray(itemsToExport)) {
+      console.error("downloadXlsx: itemsToExport não é array", itemsToExport);
+      toast.error("Nada para exportar.");
+      return;
+    }
 
-  await handleDownloadXlsx({
-    items: itemsToExport,
-    urlBase: urlGeral,
-    sheetName: "Itens",
-    filename:
-      `itens_${(colKey && (columns.find(c => c.key === colKey)?.name || colKey)) || "todos"}${onlyVisible ? "_visiveis" : ""}`
-        .replace(/\s+/g, "_")
-        .toLowerCase() + ".xlsx"
-  });
-};
+    await handleDownloadXlsx({
+      items: itemsToExport,
+      urlBase: urlGeral,
+      sheetName: "Itens",
+      filename:
+        `itens_${(colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos"}${onlyVisible ? "_visiveis" : ""}`
+          .replace(/\s+/g, "_")
+          .toLowerCase() + ".xlsx",
+    });
+  };
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
   const checkScrollability = () => {
     if (!scrollAreaRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
   };
-  const scrollLeft = () => scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
-  const scrollRight = () => scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+
   useEffect(() => {
     checkScrollability();
     const handleResize = () => checkScrollability();
@@ -949,160 +1258,26 @@ const handleCancelMove = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
-
   useEffect(() => {
-    // quando colunas ou board mudarem, rechecamos
     const t = setTimeout(checkScrollability, 0);
     return () => clearTimeout(t);
   }, [columns, board]);
 
-  // === Autoscroll horizontal durante drag ===
-const boardScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
+      draggingRef.current = false;
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    };
+  }, [handlePointerMoveWhileDrag]);
 
-// controle do loop
-const draggingRef = useRef(false);
-const rafIdRef = useRef<number | null>(null);
-const pointerXRef = useRef<number>(0);
+  const totalItems = useMemo(() => {
+    return Object.values(totalByCol).reduce((sum, count) => sum + count, 0);
+  }, [totalByCol]);
 
-// zona quente e velocidade
-const EDGE_PX = 140;
-const MAX_STEP = 40;
-const BASE_STEP = 12;
-
-// refs das colunas para scrollIntoView no destino
-const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  const stopAutoScrollLoop = () => {
-  if (rafIdRef.current != null) {
-    cancelAnimationFrame(rafIdRef.current);
-    rafIdRef.current = null;
-  }
-};
-
-const autoScrollTick = () => {
-  if (!draggingRef.current) return stopAutoScrollLoop();
-  const el = boardScrollRef.current;
-  if (!el) return stopAutoScrollLoop();
-
-  const rect = el.getBoundingClientRect();
-  const style = getComputedStyle(el);
-  const padL = parseFloat(style.paddingLeft || "0");
-  const padR = parseFloat(style.paddingRight || "0");
-  const rectLeft = rect.left + padL;
-  const rectRight = rect.right - padR;
-
-  const x = pointerXRef.current;
-
-  let dx = 0;
-  if (x - rectLeft < EDGE_PX) {
-    const dist = Math.max(1, EDGE_PX - (x - rectLeft));
-    dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-  } else if (rectRight - x < EDGE_PX) {
-    const dist = Math.max(1, EDGE_PX - (rectRight - x));
-    dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-  }
-
-  if (dx !== 0) el.scrollBy({ left: dx, behavior: "auto" });
-  rafIdRef.current = requestAnimationFrame(autoScrollTick);
-};
-
-const handlePointerMoveWhileDrag = (ev: PointerEvent) => {
-  pointerXRef.current = ev.clientX;
-  if (rafIdRef.current == null && draggingRef.current) {
-    rafIdRef.current = requestAnimationFrame(autoScrollTick);
-  }
-};
-
-const handleDragStart = () => {
-  draggingRef.current = true;
-  document.addEventListener("pointermove", handlePointerMoveWhileDrag);
-  stopAutoScrollLoop();
-  rafIdRef.current = requestAnimationFrame(autoScrollTick);
-};
-
-const handleDragUpdate = (update: DragUpdate) => {
-  const destId = update.destination?.droppableId?.trim();
-  if (!destId) return;
-  const colEl = colRefs.current[destId];
-  if (!colEl) return;
-  colEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-};
-
-// sua lógica atual vai aqui
-const handleDragEndDrop = async (result: DropResult) => {
-  // === COPIE daqui o conteúdo do seu handleDragEnd atual ===
-  const { source, destination } = result;
-  if (!destination) return;
-
-  const fromKey = (source.droppableId ?? "").trim();
-  const toKey = (destination.droppableId ?? "").trim();
-  if (fromKey === toKey) return;
-
-  const validTo =
-    toKey === COL_SEM_REVISOR ||
-    commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
-  if (!validTo) {
-    toast.error("Destino inválido para reatribuição.");
-    return;
-  }
-
-  const fromList = board[fromKey] ?? [];
-  const entry = fromList[source.index];
-  if (!entry) return;
-
-  const prevBoard = board;
-  const prevEntries = entries;
-
-  let reviewersNew: ReviewerRef[] = [];
-  if (toKey !== COL_SEM_REVISOR) {
-    const u = commissionUsers.find((u) => (u.id ?? "").trim() === toKey);
-    if (!u) {
-      toast.error("Revisor de destino não encontrado.");
-      return;
-    }
-    reviewersNew = [{ id: (u.id ?? "").trim(), username: (u.username ?? u.email ?? "Usuário").trim() }];
-  }
-
-  const patchEntry = (it: CatalogEntry): CatalogEntry => {
-    const hist = sortedHistoryDesc(it);
-    const idx = hist.findIndex((h) => (h.workflow_status ?? "").trim() === WF_DETAIL_SOURCE_A);
-    if (idx === -1) return it;
-    const current = hist[idx];
-    const newDetail = { ...(current.detail ?? {}), reviewers: reviewersNew };
-    const newHist = [...hist];
-    newHist[idx] = { ...current, detail: newDetail };
-    return { ...it, workflow_history: newHist };
-  };
-
-  const patched = patchEntry(entry);
-
-  const newFrom = Array.from(prevBoard[fromKey] ?? []);
-  const i = newFrom.findIndex((x) => x.id === entry.id);
-  if (i >= 0) newFrom.splice(i, 1);
-
-  const newTo = [patched, ...Array.from(prevBoard[toKey] ?? [])];
-
-  setBoard({ ...prevBoard, [fromKey]: newFrom, [toKey]: newTo });
-  setEntries((old) => old.map((it) => (it.id === entry.id ? patched : it)));
-
-  const reviewerIds = reviewersNew.map((r) => r.id); // [] quando SEM_REVISOR
-  const ok = await putReviewers(entry, reviewerIds);
-  if (!ok) {
-    setBoard(prevBoard);
-    setEntries(prevEntries);
-  }
-};
-
-// wrapper que encerra o autoscroll e chama o drop
-const handleDragEnd = (result: DropResult) => {
-  draggingRef.current = false;
-  document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
-  stopAutoScrollLoop();
-  void handleDragEndDrop(result);
-};
-
-
+  const { hasAnunciarItem, hasCargosFuncoes } = usePermissions();
+  const [isImage, setIsImage] = useState(false);
 
   return (
     <div className="p-4 md:p-8  gap-8 flex flex-col h-full">
@@ -1115,19 +1290,20 @@ const handleDragEnd = (result: DropResult) => {
             <ListTodo className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{entries.length}</div>
+            <div className="text-2xl font-bold">
+              {loadingStats ? "…" : totalWaiting || 0}
+            </div>
             <p className="text-xs text-muted-foreground">esperando avaliação</p>
           </CardContent>
         </Alert>
 
-        {/* Filtros */}
         {showFilters && (
           <div className="flex gap-4 items-center">
             <div className="relative grid grid-cols-1">
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0  h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1155,65 +1331,80 @@ const handleDragEnd = (result: DropResult) => {
                       </div>
                     </Alert>
 
-                 <Combobox
-  items={materialItems}
-  value={materialId}
-  onChange={(v) => setMaterialId(v)}
-  onSearch={setMaterialQ}           // NOVO
-  isLoading={loadingMaterials}       // NOVO
-  placeholder="Material"
-/>
+                    <Combobox
+                      items={materialItems}
+                      value={materialId}
+                      onChange={(v) => setMaterialId(v)}
+                      onSearch={setMaterialQ}
+                      isLoading={loadingMaterials}
+                      placeholder="Material"
+                    />
 
-<Combobox
-  items={guardianItems}
-  value={guardianId}
-  onChange={(v) => setGuardianId(v)}
-  onSearch={setGuardianQ}            // NOVO
-  isLoading={loadingGuardians}       // NOVO
-  placeholder="Responsável"
-/>
+                    <Combobox
+                      items={guardianItems}
+                      value={guardianId}
+                      onChange={(v) => setGuardianId(v)}
+                      onSearch={setGuardianQ}
+                      isLoading={loadingGuardians}
+                      placeholder="Responsável"
+                    />
 
                     <Separator className="h-8" orientation="vertical" />
 
-                    {/* ====== NOVOS SELECTS EM CADEIA ====== */}
-                   <Combobox
-  items={(units ?? []).map((u) => ({ id: u.id, code: u.unit_code, label: u.unit_name || u.unit_code }))}
-  value={unitId}
-  onChange={(v) => setUnitId(v)}
-  onSearch={setUnitQ}                // NOVO
-  isLoading={loadingUnits}           // NOVO
-  placeholder="Unidade"
-/>
+                    <Combobox
+                      items={(units ?? []).map((u) => ({
+                        id: u.id,
+                        code: u.unit_code,
+                        label: u.unit_name || u.unit_code,
+                      }))}
+                      value={unitId}
+                      onChange={(v) => setUnitId(v)}
+                      onSearch={setUnitQ}
+                      isLoading={loadingUnits}
+                      placeholder="Unidade"
+                    />
 
-<Combobox
-  items={(agencies ?? []).map((a) => ({ id: a.id, code: a.agency_code, label: a.agency_name || a.agency_code }))}
-  value={agencyId}
-  onChange={(v) => setAgencyId(v)}
-  onSearch={setAgencyQ}              // NOVO
-  isLoading={loadingAgencies}        // NOVO
-  placeholder="Organização"
-  disabled={!unitId}
-/>
+                    <Combobox
+                      items={(agencies ?? []).map((a) => ({
+                        id: a.id,
+                        code: a.agency_code,
+                        label: a.agency_name || a.agency_code,
+                      }))}
+                      value={agencyId}
+                      onChange={(v) => setAgencyId(v)}
+                      onSearch={setAgencyQ}
+                      isLoading={loadingAgencies}
+                      placeholder="Organização"
+                      disabled={!unitId}
+                    />
 
-<Combobox
-  items={(sectors ?? []).map((s) => ({ id: s.id, code: s.sector_code, label: s.sector_name || s.sector_code }))}
-  value={sectorId}
-  onChange={(v) => setSectorId(v)}
-  onSearch={setSectorQ}              // NOVO
-  isLoading={loadingSectors}         // NOVO
-  placeholder="Setor"
-  disabled={!agencyId}
-/>
+                    <Combobox
+                      items={(sectors ?? []).map((s) => ({
+                        id: s.id,
+                        code: s.sector_code,
+                        label: s.sector_name || s.sector_code,
+                      }))}
+                      value={sectorId}
+                      onChange={(v) => setSectorId(v)}
+                      onSearch={setSectorQ}
+                      isLoading={loadingSectors}
+                      placeholder="Setor"
+                      disabled={!agencyId}
+                    />
 
-<Combobox
-  items={(locations ?? []).map((l) => ({ id: l.id, code: l.location_code, label: l.location_name || l.location_code }))}
-  value={locationId}
-  onChange={(v) => setLocationId(v)}
-  onSearch={setLocationQ}            // NOVO
-  isLoading={loadingLocations}       // NOVO
-  placeholder="Local de guarda"
-  disabled={!sectorId}
-/>
+                    <Combobox
+                      items={(locations ?? []).map((l) => ({
+                        id: l.id,
+                        code: l.location_code,
+                        label: l.location_name || l.location_code,
+                      }))}
+                      value={locationId}
+                      onChange={(v) => setLocationId(v)}
+                      onSearch={setLocationQ}
+                      isLoading={loadingLocations}
+                      placeholder="Local de guarda"
+                      disabled={!sectorId}
+                    />
 
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                       <Trash size={16} /> Limpar filtros
@@ -1225,7 +1416,7 @@ const handleDragEnd = (result: DropResult) => {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0  h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1233,135 +1424,212 @@ const handleDragEnd = (result: DropResult) => {
               </Button>
             </div>
 
-            {/* ====== Membros do cargo (componente igual ao exemplo) ====== */}
-            <RoleMembers roleId={ROLE_COMISSAO_ID} title="Comissão de desfazimento" />
+            {hasCargosFuncoes && (
+              <RoleMembers
+                roleId={ROLE_COMISSAO_ID}
+                title="Comissão de desfazimento"
+              />
+            )}
+
+            {expandedColumn === null && (
+              <Button
+                onClick={() => setIsImage(!isImage)}
+                variant={"outline"}
+                size={"icon"}
+                className="h-8 min-w-8 "
+              >
+                {isImage ? <EyeClosed size={16} /> : <Eye size={16} />}
+              </Button>
+            )}
           </div>
         )}
 
-        {/* Board / Expandido */}
         {expandedColumn === null ? (
           <div className={`relative flex-1 `}>
-            <div ref={boardScrollRef} className="h-full overflow-x-auto overflow-y-hidden pb-2">
-            <DragDropContext
-  onDragStart={handleDragStart}
- onDragUpdate={handleDragUpdate}
-  onDragEnd={handleDragEnd}
->
-                <div className="flex gap-4 min-w-[980px] h-full">
-                  {columns.map((col) => {
-                    const items = board[col.key] ?? [];
-                    const take = visibleByCol[col.key] ?? PAGE_SIZE;
-                    const slice = items.slice(0, take);
-                    const meta =
-                      WORKFLOW_STATUS_META[col.key] ?? {
+            {/* Skeleton enquanto as colunas (comissão) ainda não chegaram */}
+            {!commissionUsers.length && (loadingCommissionUsers || loading) ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Alert
+                    key={i}
+                    className="w-[320px] min-w-[320px] h-full flex flex-col min-h-[260px] overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                      <Skeleton className="h-8 w-16 rounded-md" />
+                    </div>
+                    <Separator className="mb-2" />
+                    <div className="flex-1 flex flex-col gap-2 pt-2">
+                      <Skeleton className="w-full h-24 rounded-md" />
+                      <Skeleton className="w-full h-24 rounded-md" />
+                    </div>
+                  </Alert>
+                ))}
+              </div>
+            ) : (
+              <div ref={boardScrollRef} className="h-full overflow-x-auto overflow-y-hidden pb-2">
+                <DragDropContext
+                  onDragStart={handleDragStart}
+                  onDragUpdate={handleDragUpdate}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="flex gap-4 min-w-[980px] h-full">
+                    {columns.map((col) => {
+                      const items = filteredBoard[col.key] ?? [];
+                      const meta = WORKFLOW_STATUS_META[col.key] ?? {
                         Icon: HelpCircle,
                         colorClass: "text-zinc-500",
                       };
-                    const { Icon } = meta;
+                      const { Icon } = meta;
 
-                    return (
-                      <Alert
-                        key={col.key}
-                        ref={(el) => (colRefs.current[col.key] = el)}
-                        className="w-[320px] min-w-[320px]  h-full flex flex-col min-h-0 overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                      const totalCol = getColumnTotal(col.key);
+
+                      return (
+                        <Alert
+                          key={col.key}
+                          ref={(el) => (colRefs.current[col.key] = el)}
+                          className="w-[320px] min-w-[320px]  h-full flex flex-col min-h-0 overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Avatar className="h-8 w-8 rounded-md">
-                                <AvatarImage src={`${urlGeral}user/upload/${col.key}/icon`} />
-                                <AvatarFallback className="">
-                                  <User className="h-4 w-4" />
-                                </AvatarFallback>
-                              </Avatar>
-                              <span title={col.name} className="font-semibold truncate">
-                                {col.name}
-                              </span>
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Avatar className="h-8 w-8 rounded-md">
+                                  <AvatarImage
+                                    src={`${urlGeral}user/upload/${col.key}/icon`}
+                                  />
+                                  <AvatarFallback className="">
+                                    <User className="h-4 w-4" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span title={col.name} className="font-semibold truncate">
+                                  {col.name}
+                                </span>
+                              </div>
+                              <Badge variant="outline" className="shrink-0">
+                                {loadingStats ? "…" : totalCol}
+                              </Badge>
                             </div>
-                            <Badge variant="outline" className="shrink-0">
-                              {items.length}
-                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 border"
+                              onClick={() => setExpandedColumn(col.key)}
+                              title="Expandir coluna"
+                            >
+                              <Maximize2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 border"
-                            onClick={() => setExpandedColumn(col.key)}
-                            title="Expandir coluna"
-                          >
-                            <Maximize2 className="h-4 w-4" />
-                          </Button>
-                        </div>
 
-                        <Separator className="mb-2" />
+                          <Separator className="mb-2" />
 
-                        <Droppable droppableId={col.key}>
-                          {(provided, snapshot) => (
-                            <div className="flex-1 min-h-0">
-                              <ScrollArea
-                                className={`relative flex h-[calc(100vh-348px)] ${
-                                  snapshot.isDraggingOver
-                                    ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                    : ""
-                                } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                              >
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
+                          <Droppable droppableId={col.key}>
+                            {(provided, snapshot) => (
+                              <div className="flex-1 min-h-0">
+                                <ScrollArea
+                                  className={`relative flex h-[calc(100vh-348px)] ${
+                                    snapshot.isDraggingOver
+                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                      : ""
+                                  } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                 >
-                                  {loading && !items.length ? (
-                                    <>
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                    </>
-                                  ) : null}
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
+                                  >
+                                    {(loading || loadingColumns[col.key]) && !items.length ? (
+                                      <>
+                                        <Skeleton className="aspect-square w-full rounded-md" />
+                                        <Skeleton className="aspect-square w-full rounded-md" />
+                                      </>
+                                    ) : null}
 
-                                  {slice.map((entry, idx) => (
-                                    <div
-                                      key={entry.id}
-                                      className="min-w-0 w-full max-w-full overflow-hidden"
-                                    >
-                                      <CardItemDropdown entry={entry} index={idx} />
-                                    </div>
-                                  ))}
-
-                                  {provided.placeholder}
-
-                                  {items.length > slice.length ? (
-                                    <div className="pt-2">
-                                      <Button
-                                        variant="outline"
-                                        className="w-full"
-                                        onClick={() => showMoreCol(col.key)}
+                                    {items.map((entry, idx) => (
+                                      <div
+                                        key={entry.id}
+                                        className="min-w-0 w-full max-w-full overflow-hidden"
                                       >
-                                        <Plus size={16} /> Mostrar mais
-                                      </Button>
-                                    </div>
-                                  ) : null}
-                                </div>
+                                        <CardItemDropdown
+                                          entry={entry}
+                                          index={idx}
+                                          isImage={isImage}
+                                        />
+                                      </div>
+                                    ))}
 
-                                <ScrollBar orientation="vertical" />
-                              </ScrollArea>
-                            </div>
-                          )}
-                        </Droppable>
-                      </Alert>
-                    );
-                  })}
-                </div>
-              </DragDropContext>
-            </div>
+                                    {provided.placeholder}
+
+                                    {(() => {
+                                      const total = totalByCol[col.key];
+                                      const hasMore = hasMoreByCol[col.key] ?? false;
+                                      const loaded = items.length;
+
+                                      // mostra "Mostrar mais" se ainda tem mais no backend
+                                      // ou se ainda não carregamos tudo do total conhecido
+                                      const shouldShowMore =
+                                        hasMore ||
+                                        (typeof total === "number" && loaded < total);
+
+                                      return shouldShowMore ? (
+                                        <div className="pt-2">
+                                          <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => showMoreCol(col.key)}
+                                            disabled={loadingColumns[col.key]}
+                                          >
+                                            {loadingColumns[col.key] ? (
+                                              <>
+                                                <Loader size={16} className="animate-spin" />
+                                                Carregando...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Plus size={16} />
+                                                Mostrar mais
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
+                                      ) : null;
+                                    })()}
+                                  </div>
+
+                                  <ScrollBar orientation="vertical" />
+                                </ScrollArea>
+                              </div>
+                            )}
+                          </Droppable>
+                        </Alert>
+                      );
+                    })}
+                  </div>
+                </DragDropContext>
+              </div>
+            )}
           </div>
         ) : (
           <div className="m-0">
             {columns.map((col) => {
               if (expandedColumn !== col.key) return null;
-              const items = board[col.key] ?? [];
+              const items = filteredBoard[col.key] ?? [];
               const slice = items.slice(0, expandedVisible);
-              const meta =
-                WORKFLOW_STATUS_META[col.key] ?? { Icon: HelpCircle, colorClass: "text-zinc-500" };
+              const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                Icon: HelpCircle,
+                colorClass: "text-zinc-500",
+              };
               const { Icon } = meta;
+
+              const totalCol = getColumnTotal(col.key);
+              const loaded = items.length;
+              const hasMore = hasMoreByCol[col.key] ?? false;
+              const hasHiddenLoaded = loaded > expandedVisible;
+
+              const shouldShowMore = hasMore || hasHiddenLoaded;
+
               return (
                 <div key={col.key}>
                   <div className="flex items-center justify-between mb-4">
@@ -1375,11 +1643,19 @@ const handleDragEnd = (result: DropResult) => {
                         </Avatar>
                         <h2 className="text-lg font-semibold">{col.name}</h2>
                       </div>
-
-                      <Badge variant="outline">{items.length}</Badge>
+                      <Badge variant="outline">
+                        {loadingStats ? "…" : totalCol}
+                      </Badge>
                     </div>
 
                     <div className="flex gap-3">
+                      <Button
+                        size={"sm"}
+                        variant="outline"
+                        onClick={() => downloadXlsx(col.key, true)}
+                      >
+                        <Download size={16} /> Baixar visíveis
+                      </Button>
                       <Button
                         size={"sm"}
                         variant="outline"
@@ -1395,15 +1671,28 @@ const handleDragEnd = (result: DropResult) => {
                   </div>
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                 {slice.map((item) => (
+                    {slice.map((item) => (
                       <ItemPatrimonio key={item.id} {...item} onPromptDelete={() => {}} />
                     ))}
                   </div>
 
-                  {items.length > slice.length ? (
+                  {shouldShowMore ? (
                     <div className="flex justify-center mt-8">
-                      <Button onClick={showMoreExpanded}>
-                        <Plus size={16} /> Mostrar mais
+                      <Button
+                        onClick={showMoreExpanded}
+                        disabled={loadingColumns[col.key]}
+                      >
+                        {loadingColumns[col.key] ? (
+                          <>
+                            <Loader size={16} className="animate-spin" />
+                            Carregando...
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={16} />
+                            Mostrar mais
+                          </>
+                        )}
                       </Button>
                     </div>
                   ) : null}
@@ -1414,7 +1703,6 @@ const handleDragEnd = (result: DropResult) => {
         )}
       </main>
 
-      {/* Modal de mudança de revisor (mantido para paridade, não exigido) */}
       <Dialog open={moveModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent>
           <DialogHeader>
@@ -1442,7 +1730,6 @@ const handleDragEnd = (result: DropResult) => {
           <Separator className="my-4" />
 
           <div className="space-y-4">
-            {/* Mantemos a área por compatibilidade visual */}
             <div className="grid gap-2">
               <Label htmlFor="just">Observação (opcional)</Label>
               <Textarea
@@ -1479,9 +1766,9 @@ const handleDragEnd = (result: DropResult) => {
           </div>
 
           <DialogFooter className="gap-2">
-           <Button variant="ghost" onClick={handleCancelMove}>
-  <X size={16} /> Cancelar
-</Button>
+            <Button variant="ghost" onClick={handleCancelMove}>
+              <X size={16} /> Cancelar
+            </Button>
             <Button disabled={posting} onClick={handleConfirmMove}>
               {posting ? (
                 <>

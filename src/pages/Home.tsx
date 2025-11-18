@@ -26,6 +26,9 @@ export function Home() {
         } else if(location.pathname == '/informacoes') {
             onOpen('informacoes')
       
+        } else if(location.pathname == '/emprestimo-audivisual') {
+            onOpen('emprestimo-audivisual')
+      
         } 
     }, [location]);
 

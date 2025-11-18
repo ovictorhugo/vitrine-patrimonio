@@ -44,6 +44,11 @@ interface CatalogImageDTO {
   file_path: string;
 }
 
+type ImageItem = {
+  id: string;
+  file_path: string;
+};
+
 interface CatalogResponseDTO {
   id: string;
   situation: "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
@@ -67,8 +72,16 @@ type WizardState = {
     isOpen?: boolean;
   };
   estado?: { estado_previo: EstadoKind };
-  "informacoes-adicionais"?: { observacao?: string; situacao?: string };
-  imagens?: { image_ids: string[] };
+ "informacoes-adicionais"?: { 
+    observacao?: string; 
+    situacao?: string;
+    tuMaiorIgual10?: boolean;        // 👈 novo
+    obsolescenciaAlta?: boolean;     // 👈 novo
+  };
+  imagens?: { 
+    image_ids: string[];
+    image_paths: string[];
+  };
 };
 
 /* ===================== Utils ===================== */
@@ -152,7 +165,7 @@ function deriveTLFromAssetLocation(loc?: LocationDTO | null) {
 export function EditItemVitrine() {
   const routerLocation = useLocation();
   const navigate = useNavigate();
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, loggedIn } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token");
 
   const searchParams = new URLSearchParams(routerLocation.search);
@@ -196,7 +209,10 @@ export function EditItemVitrine() {
             situacao: data.conservation_status || "",
             observacao: data.description || "",
           },
-          imagens: { image_ids: (data.images || []).map((i) => i.id) },
+           imagens: { 
+      image_ids:  (data.images || []).map((i) => i.id),
+      image_paths: (data.images || []).map((i) => i.file_path),
+    },
         });
 
         // marca como válidos (ajuste caso precise validação real por field)
@@ -338,6 +354,8 @@ export function EditItemVitrine() {
       description: "As alterações e o workflow inicial foram registrados.",
     });
     setActive("final");
+navigate(`/dashboard`);
+
   } catch (err: any) {
     console.error(err);
     toast("Erro ao salvar", { description: err?.message || "Tente novamente." });
@@ -408,6 +426,7 @@ export function EditItemVitrine() {
         "REVIEW_REQUESTED_VITRINE",
         "REVIEW_REQUESTED_DESFAZIMENTO",
         "ADJUSTMENT_DESFAZIMENTO",
+        "REJEITADOS_COMISSAO"
       ];
 
        const firstWorkflow = Array.isArray(catalogData?.workflow_history) && catalogData?.workflow_history.length > 0
@@ -453,7 +472,7 @@ const allWorkflows = [
             );
           }
 
-  if (!catalogData) {
+  if (!catalogData && !loggedIn) {
     return (
      <div
                 className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
@@ -560,9 +579,7 @@ const allWorkflows = [
                     value="trocar-local"
                     step={STEPS.findIndex(st => st.key === "trocar-local") + 1}
                     /* SELECTs: catalog.location */
-                    initialData={deriveTLFromCatalogLocation(catalogData.location) as any}
-                    /* inputs readonly: asset.location */
-                    formSnapshot={deriveTLFromAssetLocation(catalogData.asset?.location || undefined) as any}
+                  
                     isActive={active === "trocar-local"}
                     onStateChange={onStateChangeFactory("trocar-local")}
                     onValidityChange={onValidityChangeFactory("trocar-local")}
@@ -601,7 +618,14 @@ const allWorkflows = [
                     catalogId={catalogId}
                     urlGeral={urlGeral}
                     token={token}
-                    existingImageIds={wizard.imagens?.image_ids}
+                    existingImages={
+      wizard.imagens?.image_ids
+        ? wizard.imagens.image_ids.map((id, idx) => ({
+            id,
+            file_path: wizard.imagens?.image_paths?.[idx] ?? "",
+          }))
+        : []
+    }
                     onValidityChange={onValidityChangeFactory("imagens")}
                     onStateChange={onStateChangeFactory("imagens")}
                   />

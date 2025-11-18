@@ -3,6 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { useContext } from "react";
 import { UserContext } from "../../../context/context";
+import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
 
 /* ===== Tipos (compatíveis com a página) ===== */
 type UUID = string;
@@ -53,7 +54,7 @@ interface CatalogAsset {
   is_official: boolean;
 }
 
-type WorkflowHistoryItem = {
+export type WorkflowHistoryItem = {
   workflow_status: string;
   detail?: Record<string, any>;
   id: UUID;
@@ -104,6 +105,7 @@ type ParentActions = {
 type Props = ParentActions & {
   entry: CatalogEntry;
   index: number;
+  isImage: boolean
 };
 
 export function CardItemDropdown({
@@ -115,31 +117,37 @@ export function CardItemDropdown({
   viewCount,
   onPromptDelete,
   onPromptMove,
+  isImage
 }: Props) {
   // (se precisar de algo do contexto)
   useContext(UserContext);
 
   return (
-    <Draggable draggableId={entry.id} index={index}>
-      {(prov, snap) => (
-        <div
-          ref={prov.innerRef}
-          {...prov.draggableProps}
-          {...prov.dragHandleProps}
-          className={`${snap.isDragging ? "" : ""}`}
-        >
-          <ItemPatrimonio
-            key={entry.id}
-            {...entry}
-            isFavorite={isFavorite}
-            onToggleFavorite={onToggleFavorite}
-            handlePutItem={handlePutItem}
-            viewCount={viewCount}
-            onPromptDelete={onPromptDelete}
-            onPromptMove={onPromptMove}
-          />
-        </div>
-      )}
-    </Draggable>
+     <Draggable draggableId={entry.id} index={index}>
+    {(prov, snap) => (
+      <div
+        ref={prov.innerRef}
+        {...prov.draggableProps}
+        {...prov.dragHandleProps}
+        className={`${snap.isDragging ? "" : ""}`}
+        style={{
+          ...prov.draggableProps.style,
+          pointerEvents: snap.isDragging ? 'none' : 'auto',
+        }}
+      >
+        <ItemPatrimonioKanban
+          key={entry.id}
+          {...entry}
+          isFavorite={isFavorite}
+          onToggleFavorite={onToggleFavorite}
+          handlePutItem={handlePutItem}
+          viewCount={viewCount}
+          onPromptDelete={onPromptDelete}
+          onPromptMove={onPromptMove}
+          isImage={isImage}
+        />
+      </div>
+    )}
+  </Draggable>
   );
 }

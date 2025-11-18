@@ -31,6 +31,7 @@ import { Tabs, TabsContent } from "../ui/tabs";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog, { TransferRequestDTO } from "../homepage/components/transfer-tab-catalog";
 import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
+import { log } from "console";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -423,8 +424,12 @@ const handleVoltar = () => {
   const valorFormatado = money(asset?.asset_value);
 
   const locCatalogoParts = chain(catalog?.location);
+
+  const visibleCatalogParts = !loggedIn ? locCatalogoParts.slice(0, 2) : locCatalogoParts;
+
   const locAssetParts = chain(asset?.location);
 
+const visibleParts = !loggedIn ? locAssetParts.slice(0, 2) : locAssetParts;
     const qualisColor: Record<string, string> = {
     BM: "bg-green-500",
     AE: "bg-red-500",
@@ -648,7 +653,8 @@ const workflowReview =
   firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
   firstStatus === "REVIEW_REQUESTED_VITRINE" ||
   firstStatus === "ADJUSTMENT_VITRINE" ||
-  firstStatus === "ADJUSTMENT_DESFAZIMENTO";
+  firstStatus === "ADJUSTMENT_DESFAZIMENTO" ||
+  firstStatus === "REJEITADOS_COMISSAO";
 
 const workflowAnunciados = firstStatus === "VITRINE";
 
@@ -1124,7 +1130,9 @@ if(catalog) {
                       </div>
                     )}
 
-                    {!!asset?.legal_guardian &&
+                  {loggedIn && (
+                    <>
+                      {!!asset?.legal_guardian &&
                       asset.legal_guardian.legal_guardians_name !== "None" && (
                         <div className="flex gap-1 items-center">
                           <Avatar className="rounded-md h-5 w-5">
@@ -1141,6 +1149,8 @@ if(catalog) {
                           </p>
                         </div>
                       )}
+                      </>
+                  )}
                   </div>
                 </div>
 
@@ -1243,9 +1253,9 @@ if(catalog) {
         <MapPin size={16} />
       <p className="text-sm uppercase font-bold">Local de tombamento:</p>
     
-      {locAssetParts.length ? (
+      {visibleParts.length ? (
         <div className="flex items-center gap-2 flex-wrap">
-          {locAssetParts.map((p, i) => (
+          {visibleParts.map((p, i) => (
             <div
               key={i}
               className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
@@ -1265,9 +1275,9 @@ if(catalog) {
         <MapPin size={16} />
     <p className="text-sm uppercase font-bold">Local atual:</p>
 
-    {locCatalogoParts.length ? (
+    {visibleCatalogParts.length ? (
       <div className="flex items-center gap-2 flex-wrap">
-        {locCatalogoParts.map((p, i) => (
+        {visibleCatalogParts.map((p, i) => (
           <div
             key={i}
             className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
@@ -1328,10 +1338,14 @@ if(catalog) {
   </Alert>
 )}
 
-            {/* Material / Metadados rápidos */}
+     {/* Material / Metadados rápidos */}
+           {loggedIn && (
+         
             <Separator className="mt-8 mb-2" />
+           )}
            
-           <Accordion  type="single" collapsible defaultValue="item-1">
+          {loggedIn && (
+             <Accordion  type="single" collapsible defaultValue="item-1">
                 <AccordionItem value="item-1" >
                 <div className="flex ">
                 <HeaderResultTypeHome title="Histórico na plataforma" icon={<Workflow size={24} className="text-gray-400" />}>
@@ -1426,6 +1440,7 @@ if(catalog) {
 </AccordionContent>
                 </AccordionItem>
                 </Accordion>
+          )}
           </div>
 </TabsContent>
 

@@ -47,6 +47,7 @@ import {
   Clock,
   LoaderCircle,
   ListTodo,
+  File,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -69,6 +70,7 @@ import { usePermissions } from "../permissions";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog from "../homepage/components/transfer-tab-catalog";
 import { ButtonTransference } from "../item-page/button-transference";
+import { DocumentsTabCatalog } from "../homepage/components/documents-tab-catalog";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -686,7 +688,8 @@ useEffect(() => {
     firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
     firstStatus === "REVIEW_REQUESTED_VITRINE" ||
     firstStatus === "ADJUSTMENT_VITRINE" ||
-    firstStatus === "ADJUSTMENT_DESFAZIMENTO";
+    firstStatus === "ADJUSTMENT_DESFAZIMENTO" ||
+    firstStatus === "REJEITADOS_COMISSAO"
 
     const isComissao = 
      firstStatus === "REVIEW_REQUESTED_COMISSION" ||
@@ -708,9 +711,11 @@ firstStatus === "REJEITADOS_COMISSAO"
 
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
+     { id: "documentos", label: "Documentos", icon: File },
     { id: "transferencia", label: `Pedidos de transferência${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:!((hasCatalogo || (user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "solicitar-transferencia", label: `Solicitar transferência`, icon: ArrowRightLeft, condition:!(!((user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
+    { id: "pareceristas", label: "Pareceristas", icon: Users, condition:!hasCatalogo },
   ];
 
   // Componente principal
@@ -1016,7 +1021,7 @@ console.log(catalog)
               <Tooltip>
                 <TooltipTrigger>
                   <Link  to={`/dashboard/editar-item?id=${catalog.id}`}>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" onClick={() => onClose()} size="icon">
                       <Pencil size={16} />
                     </Button>
                   </Link>
@@ -1499,6 +1504,17 @@ console.log(catalog)
   />
                     </TabsContent>
 
+                        <TabsContent value="documentos">
+                      <DocumentsTabCatalog
+    catalog={catalog}
+    urlGeral={urlGeral}
+    token={token}
+    onChange={() => {
+      // opcional: refetch do catálogo ou setState local, se quiser
+    }}
+  />
+                    </TabsContent>
+
                         {/* ===== Transferência ===== */}
                     <TabsContent value="solicitar-transferencia">
                     <ButtonTransference
@@ -1506,6 +1522,10 @@ console.log(catalog)
                     />
 
                     </TabsContent>
+
+                      <TabsContent value="pareceristas">
+
+                      </TabsContent>
 
   {/* ===== Movimentação ===== */}
                     {hasCatalogo && (

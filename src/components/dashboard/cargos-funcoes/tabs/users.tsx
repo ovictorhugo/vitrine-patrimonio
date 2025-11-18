@@ -38,7 +38,7 @@ import { UserContext } from "../../../../context/context";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { Separator } from "../../../ui/separator";
-import { ArrowUUpLeft } from "phosphor-react";
+import { ArrowUUpLeft, MagnifyingGlass } from "phosphor-react";
 import { Skeleton } from "../../../ui/skeleton";
 import { usePermissions } from "../../../permissions";
 import { set } from "date-fns";
@@ -71,6 +71,7 @@ type SystemIdentity = {
 };
 
 export type APIUser = {
+  password?: string;
   id: string;
   username: string;
   email: string;
@@ -93,7 +94,9 @@ type GetUsersResponse = {
 };
 
 type PutUserPayload = {
+  password: string;
   username: string;
+  id: string;
   email: string;
   provider: string;
   linkedin: string;
@@ -110,9 +113,10 @@ type PutUserPayload = {
 /** ====== COMPONENTE ====== **/
 
 export function UsersPage() {
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, role } = useContext(UserContext);
   const [users, setUsers] = useState<APIUser[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+   const [pesquisaInput, setPesquisaInput] = useState("");
 
   // Controle do Dialog de edição
   const [open, setOpen] = useState<boolean>(false);
@@ -120,7 +124,9 @@ export function UsersPage() {
 
   // Form do Dialog (PUT)
   const [form, setForm] = useState<PutUserPayload>({
+    password: "",
     username: "",
+    id:"",
     email: "",
     provider: "",
     linkedin: "",
@@ -133,6 +139,8 @@ export function UsersPage() {
     verify: true,
     institution_id: "",
   });
+
+
 
   // ---- Estados para exclusão ----
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
@@ -172,7 +180,7 @@ export function UsersPage() {
     setLoading(true);
     try {
       // padrão: /users/?offset=...&limit=...
-      const url = `${urlGeral}users/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`;
+      const url = `${urlGeral}users/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}&q=${pesquisaInput}`;
 
       const resp = await fetch(url, {
         mode: "cors",
@@ -203,12 +211,14 @@ export function UsersPage() {
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlGeral, offset, limit]);
+  }, [urlGeral, offset, limit, pesquisaInput]);
 
   /** ========== HANDLERS EDIÇÃO ========== **/
   const openEditDialog = (u: APIUser) => {
     setSelectedUserId(u.id);
     setForm({
+      password:u.password ?? "",
+      id: u.id,
       username: u.username ?? "",
       email: u.email ?? "",
       provider: u.provider ?? "",
@@ -474,6 +484,19 @@ export function UsersPage() {
         </CardContent>
       </Alert>
 
+        <Alert className="h-14 mt-8 p-2 flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2 w-full flex-1">
+                      <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
+                      <Input
+                        value={pesquisaInput}
+                        onChange={(e) => setPesquisaInput(e.target.value)}
+                        type="text"
+                        className="border-0 w-full"
+                      />
+                    </div>
+                    <div className="w-fit" />
+                  </Alert>
+
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Alert className="flex mt-8 items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800">
@@ -734,9 +757,12 @@ export function UsersPage() {
             <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
               Editar informações de {form.username}
             </DialogTitle>
+            
             <DialogDescription className="text-zinc-500 ">
               Atualize os campos e clique em <b>Salvar</b>.
             </DialogDescription>
+
+           
           </DialogHeader>
 
           <Separator className="my-4" />
@@ -798,6 +824,20 @@ export function UsersPage() {
                 </Button>
               </div>
             </div>
+
+           
+
+             {role == "Administrador" && (
+                <div className="flex flex-col gap-2 w-full">
+                <Label>Identificador</Label>
+                <Input
+                disabled
+                  value={form.id}
+              
+                />
+              </div>
+             
+            )}
           </div>
 
           <DialogFooter className="mt-4">

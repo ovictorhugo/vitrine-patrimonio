@@ -20,6 +20,8 @@ import {
   ClipboardCheck,
   Bug,
   User,
+  Video,
+  SquarePlay,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -55,6 +57,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
     hasDepartamento,
     hasComissaoApoioLocal,
     hasFinalizados,
+    hasAudiovisual
   } = usePermissions();
 
   // true quando permission já foi preenchido (mesmo que vazio)
@@ -87,7 +90,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           isActive: true,
           items: [
                ...(loggedIn
-              ? [{ title: "Solicitar empréstimo", url: "/dashboard/emprestimo-audivisual", icon: Barcode }]
+              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audivisual", icon: Video }]
               : []),
             ...(hasCriarEtiqueta
               ? [{ title: "Criar etiqueta", url: "/dashboard/criar-etiqueta", icon: Barcode }]
@@ -127,6 +130,16 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
                 name: adminLabel("Movimentação"),
                 url: "/dashboard/movimentacao",
                 icon: adminIcon(ArrowRightLeft, LayoutDashboard),
+              },
+            ]
+          : []),
+
+             ...(hasAudiovisual
+          ? [
+              {
+                name: adminLabel("Audiovisual"),
+                url: "/dashboard/audiovisual",
+                icon: adminIcon(SquarePlay, LayoutDashboard),
               },
             ]
           : []),

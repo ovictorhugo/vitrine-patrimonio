@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { Files } from "../homepage/components/documents-tab-catalog";
 
 /** Todos os tipos de modal usados no app */
 export type ModalType =
@@ -78,7 +79,7 @@ export interface ModalData {
   name?: string;
 
   workflow_status?: string;
-
+files?:Files
   asset_code?: string;
   asset_check_digit?: string;
   atm_number?: string;

@@ -159,8 +159,8 @@ type Props = CatalogEntry & {
   onPromptDelete?: () => void;
   onPromptMove?: () => void;
   /** Otimizações durante drag: */
-  thumbOnly?: boolean; // usa miniaturas (seu backend puder fornecer)
-  noImages?: boolean; // não renderiza imagens (clone do DnD)
+  thumbOnly?: boolean;   // usa miniaturas (seu backend puder fornecer)
+  noImages?: boolean;    // não renderiza imagens (clone do DnD)
   /** Seleção visual externa (coluna/expandido) */
   selected?: boolean;
 };
@@ -201,11 +201,10 @@ const calculateDifference = (createdAt?: string) => {
 
 /** Gera variantes responsivas caso seu backend aceite query de redimensionamento (?w=, ?q=) */
 const buildResponsiveSrcSet = (base: string) => {
-  const add = (w: number) =>
-    `${base}${base.includes("?") ? "&" : "?"}w=${w}&q=75 ${w}w`;
+  // se o backend aceitar `?w=` e `?q=`, use:
+  const add = (w: number) => `${base}${base.includes("?") ? "&" : "?"}w=${w}&q=75 ${w}w`;
   return [320, 480, 640, 960, 1280].map(add).join(", ");
 };
-
 const sizes =
   "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 20vw";
 
@@ -231,10 +230,7 @@ function ItemPatrimonioBase(props: Props) {
   const navigate = useNavigate();
 
   const isFavorite = !!props.isFavorite;
-  const diff = useMemo(
-    () => calculateDifference(props.created_at),
-    [props.created_at]
-  );
+  const diff = useMemo(() => calculateDifference(props.created_at), [props.created_at]);
 
   const materialNome =
     props.asset?.material?.material_name ??
@@ -251,8 +247,7 @@ function ItemPatrimonioBase(props: Props) {
     firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
     firstStatus === "REVIEW_REQUESTED_VITRINE" ||
     firstStatus === "ADJUSTMENT_VITRINE" ||
-    firstStatus === "ADJUSTMENT_DESFAZIMENTO" ||
-    firstStatus === "REJEITADOS_COMISSAO"
+    firstStatus === "ADJUSTMENT_DESFAZIMENTO";
 
   const workflowAnunciados = firstStatus === "VITRINE";
 
@@ -261,26 +256,6 @@ function ItemPatrimonioBase(props: Props) {
 
   // Borda de seleção (quando usado na visão com multiseleção)
   const selectedClass = props.selected ? "ring-2 ring-primary" : "";
-
-  // ========= PRIMEIRA IMAGEM APENAS =========
-  const firstImg = props.images?.[0];
-  let firstImgSrc = "";
-  let firstImgSrcSet = "";
-  let firstImgPlaceholder = "";
-
-  if (firstImg && !props.noImages) {
-    const original = buildImgUrl(urlGeral, firstImg.file_path);
-
-    const baseForSet = props.thumbOnly
-      ? `${original}${original.includes("?") ? "&" : "?"}format=jpeg`
-      : original;
-
-    firstImgSrc = baseForSet;
-    firstImgSrcSet = buildResponsiveSrcSet(baseForSet);
-    firstImgPlaceholder = `${baseForSet}${
-      baseForSet.includes("?") ? "&" : "?"
-    }w=24&q=10`;
-  }
 
   return (
     <div
@@ -301,14 +276,8 @@ function ItemPatrimonioBase(props: Props) {
                     className={`text-white h-6 py-1 text-xs group-hover:hidden font-medium ${diff.bgColor}`}
                   >
                     {diff.months > 0
-                      ? `${diff.months} ${
-                          diff.months === 1 ? "mês" : "meses"
-                        } e ${diff.days} ${
-                          diff.days === 1 ? "dia" : "dias"
-                        }`
-                      : `${diff.days} ${
-                          diff.days === 1 ? "dia" : "dias"
-                        }`}
+                      ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
+                      : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
                   </Badge>
 
                   <Badge
@@ -322,8 +291,7 @@ function ItemPatrimonioBase(props: Props) {
 
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono ou permissão) */}
-              {(((props.user.id === user?.id) || hasCatalogo) &&
-                workflowReview) && (
+              {(((props.user.id === user?.id) || hasCatalogo) && workflowReview) && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -338,9 +306,7 @@ function ItemPatrimonioBase(props: Props) {
               )}
 
               {/* Deletar (somente dono ou permissão) */}
-              {(((props.user.id === user?.id) || hasCatalogo) &&
-                workflowReview &&
-                props.onPromptDelete) && (
+              {(((props.user.id === user?.id) || hasCatalogo) && workflowReview) && props.onPromptDelete && (
                 <Button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -355,7 +321,7 @@ function ItemPatrimonioBase(props: Props) {
               )}
 
               {/* Favoritar (apenas Vitrine) */}
-              {loggedIn && workflowAnunciados && (
+              {(loggedIn && workflowAnunciados) && (
                 <div onClick={(e) => e.stopPropagation()}>
                   <LikeButton id={props.id} />
                 </div>
@@ -364,7 +330,7 @@ function ItemPatrimonioBase(props: Props) {
           </div>
         </div>
 
-        {/* ===== Imagem única com otimização ===== */}
+        {/* ===== Imagens com otimização ===== */}
         <Carousel className="w-full flex items-center" setApi={setApi}>
           <CarouselContent>
             {/* Clone/drag: não renderiza imagens */}
@@ -376,46 +342,47 @@ function ItemPatrimonioBase(props: Props) {
                   </Alert>
                 </div>
               </CarouselItem>
-            ) : firstImg ? (
-              <CarouselItem key={firstImg.id}>
-                <div>
-                  <Alert className="rounded-b-none border-b-0 p-0">
-                    <CardContent className="flex aspect-square justify-end p-0">
-                      <LazyLoadImage
-                        src={firstImgSrc}
-                        srcSet={firstImgSrcSet}
-                        sizes={sizes}
-                        alt={materialNome}
-                        effect="blur"
-                        placeholderSrc={firstImgPlaceholder}
-                        width="100%"
-                        height="100%"
-                        wrapperClassName="w-full h-full"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                        className="rounded-t-lg"
-                      />
-                    </CardContent>
-                  </Alert>
-                </div>
-              </CarouselItem>
             ) : (
-              // Sem imagens: apenas placeholder "vazio"
-              <CarouselItem>
-                <div>
-                  <Alert className="bg-center rounded-b-none border-b-0 bg-muted">
-                    <CardContent className="flex aspect-square justify-end p-0" />
-                  </Alert>
-                </div>
-              </CarouselItem>
+              (props.images ?? []).map((img, index) => {
+                const original = buildImgUrl(urlGeral, img.file_path);
+
+                // Se tiver 'thumbOnly', tente apontar para uma rota de miniatura do seu backend (ajuste conforme sua API):
+                const baseForSet = props.thumbOnly
+                  ? `${original}${original.includes("?") ? "&" : "?"}format=jpeg`
+                  : original;
+
+                const srcSet = buildResponsiveSrcSet(baseForSet);
+
+                return (
+                  <CarouselItem key={img.id ?? index}>
+                    <div>
+                      <Alert className="rounded-b-none border-b-0 p-0">
+                        <CardContent className="flex aspect-square justify-end p-0">
+                          <LazyLoadImage
+                            src={baseForSet}
+                            srcSet={srcSet}
+                            sizes={sizes}
+                            alt={materialNome}
+                            effect="blur"
+                            placeholderSrc={`${baseForSet}${baseForSet.includes("?") ? "&" : "?"}w=24&q=10`}
+                            width="100%"
+                            height="100%"
+                            wrapperClassName="w-full h-full"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
+                        </CardContent>
+                      </Alert>
+                    </div>
+                  </CarouselItem>
+                );
+              })
             )}
           </CarouselContent>
 
-          {/* Setas continuam, mas com 1 imagem não vão fazer nada – visualmente ok */}
-        
+          <div className="w-full hidden absolute justify-between group-hover:flex p-3">
+            <CarouselPrevious variant="outline" />
+            <CarouselNext variant="outline" />
+          </div>
         </Carousel>
       </div>
 
@@ -428,9 +395,7 @@ function ItemPatrimonioBase(props: Props) {
             </p>
 
             <p className="text-sm flex items-center gap-1 whitespace-nowrap shrink-0">
-              <Barcode size={16} />{" "}
-              {assetCode}
-              {assetDgv ? `-${assetDgv}` : ""}
+              <Barcode size={16} /> {assetCode}{assetDgv ? `-${assetDgv}` : ""}
             </p>
 
             <Tooltip>
@@ -442,12 +407,8 @@ function ItemPatrimonioBase(props: Props) {
                   }}
                   className="h-6 w-6 rounded-md shrink-0"
                 >
-                  <AvatarImage
-                    src={`${urlGeral}user/upload/${props.user.id}/icon`}
-                  />
-                  <AvatarFallback>
-                    <User size={12} />
-                  </AvatarFallback>
+                  <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
+                  <AvatarFallback><User size={12} /></AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent>
@@ -464,8 +425,7 @@ function ItemPatrimonioBase(props: Props) {
 
       <div
         className={`h-2 border rounded-b-md border-t-0 ${
-          qualisColor[csvCodTrimmed as keyof typeof qualisColor] ||
-          "bg-zinc-300"
+          qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
         }`}
       />
     </div>
@@ -473,18 +433,14 @@ function ItemPatrimonioBase(props: Props) {
 }
 
 /** Evita re-render desnecessário durante o drag */
-export const ItemPatrimonio = React.memo(
-  ItemPatrimonioBase,
-  (prev, next) => {
-    return (
-      prev.id === next.id &&
-      prev.selected === next.selected &&
-      prev.noImages === next.noImages &&
-      prev.thumbOnly === next.thumbOnly &&
-      prev.asset?.asset_code === next.asset?.asset_code &&
-      prev.asset?.asset_check_digit === next.asset?.asset_check_digit &&
-      (prev.images?.[0]?.file_path ?? "") ===
-        (next.images?.[0]?.file_path ?? "")
-    );
-  }
-);
+export const ItemPatrimonio = React.memo(ItemPatrimonioBase, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.selected === next.selected &&
+    prev.noImages === next.noImages &&
+    prev.thumbOnly === next.thumbOnly &&
+    prev.asset?.asset_code === next.asset?.asset_code &&
+    prev.asset?.asset_check_digit === next.asset?.asset_check_digit &&
+    (prev.images?.[0]?.file_path ?? "") === (next.images?.[0]?.file_path ?? "")
+  );
+});

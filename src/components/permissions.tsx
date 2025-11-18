@@ -35,6 +35,7 @@ const hasComissaoApoioLocal = useMemo(() => has("COMISSAO_DE_APOIO_LOCAL"), [has
   const hasSalas = useMemo(() => has("SALAS"), [has]);
   const hasInventario = useMemo(() => has("INVENTARIO"), [has]);
   const hasFinalizados = useMemo(() => has("FINALIZADOS"), [has]);
+  const hasAudiovisual = useMemo(() => has("AUDIOVISUAL"), [has]);
 
 return {
     has, // opcional: verificador dinâmico
@@ -58,6 +59,7 @@ return {
     hasComissaoApoioLocal,
     hasSalas,
     hasInventario,
-    hasFinalizados
+    hasFinalizados,
+    hasAudiovisual
   };
 }

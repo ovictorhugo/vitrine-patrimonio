@@ -7,11 +7,15 @@ import {
   Barcode,
   Check,
   ChevronLeft,
+  Copy,
   Download,
   File,
   LayoutDashboard,
   LoaderCircle,
   Plus,
+  Bookmark,
+  BookmarkPlus,
+  Trash2,
 } from "lucide-react";
 import React, {
   useCallback,
@@ -41,12 +45,20 @@ import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
 import { Alert } from "../../ui/alert";
 
+/* ➕ UI para Dialog/lista */
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../ui/dialog";
+import { ScrollArea } from "../../ui/scroll-area";
+import { Badge } from "../../ui/badge";
+import { Separator } from "../../ui/separator";
+
 /* =======================================================================================
    ⬇⬇⬇  BLOCO DE UTILIDADES DE PLAQUETA (mesmo esquema do componente Etiqueta)  ⬇⬇⬇
    ======================================================================================= */
 
 import QRCode from "react-qr-code";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
+import { ArrowUUpLeft } from "phosphor-react";
+import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
 
 /* Código de Barras Code128B (SVG inline) */
 const CODE128_PATTERNS = [
@@ -150,7 +162,7 @@ const qrUrlFrom = (d: Patrimonio) => {
     : d.atm_number || (d as any)?.id || "Sistema Patrimônio";
 };
 
-/* Variantes de etiqueta (iguais às do componente Etiqueta) */
+/* Variantes de etiqueta */
 type LabelProps = { data: Patrimonio } & React.HTMLAttributes<HTMLDivElement>;
 
 const MiniLabel: React.FC<LabelProps> = ({ data, className = "", ...rest }) => {
@@ -241,7 +253,7 @@ const MediumLabel: React.FC<LabelProps> = ({ data, className = "", ...rest }) =>
 /** Conversão: 1 mm ≈ 3.779528 px (96 DPI) */
 const MM_TO_PX = (mm: number) => Math.round(mm * 3.779528);
 
-/** Medidas físicas (mm) – mesmas do exemplo Etiqueta */
+/** Medidas físicas (mm) */
 const SIZE_PRESETS_MM: Record<"d" | "a" | "b", { w: number; h: number; label: string }> = {
   d: { w: 50, h: 20, label: "Pequena" },
   a: { w: 70, h: 30, label: "Média" },
@@ -449,7 +461,13 @@ export type StepPropsMap = {
   informacoes: {};
   "informacoes-adicionais": { 
     flowShort: FlowMode; 
-    initialData?: { observacao?: string; situacao?: string };
+   initialData?: { 
+    observacao?: string; 
+    situacao?: string;
+    tuMaiorIgual10?: boolean;        // 👈 novo
+    obsolescenciaAlta?: boolean;     // 👈 novo
+     docs?: File[];
+  };
     estadoAtual?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
   };
   "trocar-local": {
@@ -477,7 +495,13 @@ type WizardState = {
   inicio?: { flowShort?: FlowMode };
   pesquisa?: { value_item?: string; type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc" };
   informacoes?: Record<string, unknown>;
-  "informacoes-adicionais"?: { observacao?: string; situacao?: string };
+ "informacoes-adicionais"?: { 
+    observacao?: string; 
+    situacao?: string;
+    tuMaiorIgual10?: boolean;        // 👈 novo
+    obsolescenciaAlta?: boolean;     // 👈 novo
+    docs?: File[];
+  };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   estado?: { estado_previo: "quebrado" | "ocioso" | "anti-economico" | "recuperavel" };
@@ -520,6 +544,18 @@ function deriveTrocarLocalFromFormulario(form?: Patrimonio) {
   return { agency_id, unit_id, sector_id, location_id, agency, unit, sector, location };
 }
 
+/* =========================
+   🔹 NOVO: tipo e estado de itens salvos
+   ========================= */
+type SavedLabelItem = {
+  id: string;
+  createdAt: string; // ISO
+  data: Patrimonio;  // dados da plaqueta
+  assetId?: string | null;
+  catalogId?: string | null;
+  sizeKey: "d" | "a" | "b"; // tamanho escolhido ao salvar
+};
+
 export function NovoItem() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -540,8 +576,50 @@ export function NovoItem() {
   const [createdAssetId, setCreatedAssetId] = useState<string | null>(null);
   const [createdCatalogId, setCreatedCatalogId] = useState<string | null>(null);
 
-  // ========== ESTADO LOCAL PARA GERAR PLAQUETA NO FINISHED ==========
+  // ========== ESTADO LOCAL PARA GERAR PLAQUETA NO FINISHED ==========  (também usado no PDF em lote)
   const [selectedSize, setSelectedSize] = useState<"d" | "a" | "b">("b"); // d=Pequena, a=Média, b=Grande
+
+  type SavedItem = {
+  id: string;
+  data: Patrimonio;            // snapshot em memória do item
+  sizeKey: "d" | "a" | "b";    // tamanho escolhido quando salvou
+  assetId?: string | null;
+  catalogId?: string | null;
+  createdAt: string;           // ISO
+};
+
+
+  // 🔹 NOVO: Itens salvos (memória + localStorage)
+const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+const [openSavedDialog, setOpenSavedDialog] = useState(false);
+  const [showNewSavedDot, setShowNewSavedDot] = useState(false);
+
+// Se quiser um título curto para lista:
+const getShortLabel = (p?: Patrimonio) => {
+  const code = getLabelCode(p);
+  return code || p?.material?.material_name || p?.asset_description || "Item";
+};
+
+// ⬇️ Salvar o item final da tela de sucesso (sem localStorage — só memória):
+const addFinishedToSaved = useCallback(() => {
+  const dataForLabel: Patrimonio | undefined =
+    flow === "desfazimento" ? wizard["formulario-sp"] : wizard.formulario;
+
+  if (!dataForLabel) return false;
+  const hasCode = Boolean(dataForLabel.asset_code || dataForLabel.atm_number);
+  if (!hasCode) return false;
+
+  const item: SavedItem = {
+    id: `${Date.now()}`,
+    data: dataForLabel,
+    sizeKey: selectedSize,
+    assetId: createdAssetId,
+    catalogId: createdCatalogId,
+    createdAt: new Date().toISOString(),
+  };
+  setSavedItems((prev) => [item, ...prev]);
+  return true;
+}, [flow, wizard, selectedSize, createdAssetId, createdCatalogId]);
 
   // Confetes (lazy import)
   const launchConfetti = useCallback(async () => {
@@ -556,7 +634,7 @@ export function NovoItem() {
         if (Date.now() < end) requestAnimationFrame(frame);
       })();
     } catch {
-      // silencioso se a lib não estiver disponível
+      // silencioso
     }
   }, []);
   useEffect(() => { if (finished) launchConfetti(); }, [finished, launchConfetti]);
@@ -791,6 +869,29 @@ export function NovoItem() {
     setCreatedCatalogId(null);
   }, []);
 
+  // 🔹 NOVO: salva o item atual (apenas se tiver dados mínimos) — usado no botão "Cadastrar outro item"
+  const saveCurrentFinishedItem = useCallback(() => {
+    const dataForLabel: Patrimonio | undefined =
+      flow === "desfazimento" ? wizard["formulario-sp"] : wizard.formulario;
+
+    if (!dataForLabel) return false;
+
+    const hasCode = Boolean(dataForLabel.asset_code || dataForLabel.atm_number);
+    if (!hasCode) return false;
+
+    const item: SavedLabelItem = {
+      id: `${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      data: dataForLabel,
+      assetId: createdAssetId,
+      catalogId: createdCatalogId,
+      sizeKey: selectedSize,
+    };
+    setSavedItems(prev => [item, ...prev]);
+   
+    return true;
+  }, [flow, wizard, createdAssetId, createdCatalogId, selectedSize]);
+
   // +++ SUBSTITUI o handleFinish por este +++
   const handleFinish = useCallback(async () => {
     setIsFinishing(true);
@@ -884,6 +985,39 @@ export function NovoItem() {
       const ok = await uploadImages(catalogId, imgs, urlGeral);
       if (!ok) return;
 
+      // 6) upload dos documentos probatórios (se houver)  ⬅ INSERIR DEPOIS DE OBTER catalogId
+const infoAdicDocs: File[] = (wizard["informacoes-adicionais"]?.docs ?? []) as File[];
+if (infoAdicDocs.length > 0) {
+  for (const f of infoAdicDocs) {
+    const fd = new FormData();
+    fd.append("file", f, f.name);
+    // se o backend aceitar metadados, pode incluir (ex.: tipo do documento):
+    // fd.append("kind", "comprovacao");
+
+    const upDoc = await fetch(`${urlGeral}catalog/${catalogId}/files`, {
+      method: "POST",
+      headers: {
+        // ⚠️ NÃO definir Content-Type manualmente ao enviar FormData
+        'Authorization': `Bearer ${token}`,
+      },
+      body: fd,
+    });
+
+    if (upDoc.ok) {
+       toast("Documento anexado", {
+        description: "Documento de justificativa atribuido ao item",
+        action: { label: "Fechar", onClick: () => {} },
+      });
+    }
+
+    if (!upDoc.ok) {
+      const txt = await upDoc.text().catch(() => "");
+      throw new Error(`Falha ao subir documento (${upDoc.status}): ${txt}`);
+    }
+  }
+}
+
+
       // sucesso 🎉
       setCreatedAssetId(assetId || null);
       setCreatedCatalogId(catalogId || null);
@@ -906,9 +1040,8 @@ export function NovoItem() {
     }
   }, [flow, wizard, urlGeral, token]);
 
-  /* ======== DOWNLOAD DA PLAQUETA NO FINISHED (mesma lógica da EtiquetaStepCB) ======== */
+  /* ======== DOWNLOAD DA PLAQUETA (individual) ======== */
   const handleDownloadPlaqueta = useCallback(async () => {
-    // Decide qual "data" usar para montar a plaqueta:
     const dataForLabel: Patrimonio | undefined =
       flow === "desfazimento" ? wizard["formulario-sp"] : wizard.formulario;
 
@@ -922,7 +1055,7 @@ export function NovoItem() {
     try {
       const { jsPDF } = await import("jspdf");
 
-      // Render off-screen a etiqueta com medidas físicas exatas
+      // Render off-screen a etiqueta
       const canvas = await renderOffscreenAndCapture(
         <PrintableLabel data={dataForLabel} sizeKey={selectedSize} />,
         { foreignObjectRendering: false }
@@ -945,6 +1078,143 @@ export function NovoItem() {
       toast("Erro ao gerar PDF", { description: "Tente novamente." });
     }
   }, [flow, wizard, selectedSize]);
+
+  // 🔹 Helper para obter código exibido
+  const getLabelCode = (p?: Patrimonio) => {
+    if (!p) return "";
+    try {
+      const fc = typeof fullCodeFrom === "function" ? fullCodeFrom(p) : undefined;
+      if (fc) return String(fc);
+    } catch {}
+    return String(p.asset_code || p.atm_number || "");
+  };
+
+  /* ========= NOVO: Funções do Dialog ========= */
+
+  const handleRemoveSaved = useCallback((id: string) => {
+    setSavedItems(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  const handleClearAllSaved = useCallback(() => {
+    setSavedItems([]);
+  }, []);
+
+  const downloadCSV = useCallback(() => {
+    if (!savedItems.length) return;
+    const headers = [
+      "id","createdAt","asset_code","asset_check_digit","atm_number",
+      "serial_number","asset_status","asset_value","asset_description",
+      "material_name","location_name","sizeKey"
+    ];
+    const rows = savedItems.map(s => {
+      const d: any = s.data || {};
+      const row = [
+        s.id,
+        s.createdAt,
+        d.asset_code ?? "",
+        d.asset_check_digit ?? "",
+        d.atm_number ?? "",
+        d.serial_number ?? "",
+        d.asset_status ?? "",
+        d.asset_value ?? "",
+        d.asset_description ?? "",
+        d.material?.material_name ?? "",
+        d.location?.location_name ?? "",
+        s.sizeKey
+      ].map(v => {
+        const str = `${v ?? ""}`;
+        return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      }).join(",");
+      return row;
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const aEl = document.createElement("a");
+    aEl.href = url;
+    aEl.download = `itens-cadastrados-${new Date().toISOString().slice(0,19)}.csv`;
+    document.body.appendChild(aEl);
+    aEl.click();
+    document.body.removeChild(aEl);
+    URL.revokeObjectURL(url);
+  }, [savedItems]);
+
+  // Baixa UMA plaqueta (do item salvo)
+  const downloadSingleSavedLabel = useCallback(async (item: SavedLabelItem) => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const canvas = await renderOffscreenAndCapture(
+        <PrintableLabel data={item.data} sizeKey={selectedSize} />,
+        { foreignObjectRendering: false }
+      );
+      const imgData = canvas.toDataURL("image/png");
+      const { w, h } = SIZE_PRESETS_MM[selectedSize];
+
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const x = Math.round(((pageW - w) / 2) * 100) / 100;
+      const y = Math.round(((pageH - h) / 2) * 100) / 100;
+
+      const code = getLabelCode(item.data);
+      pdf.addImage(imgData, "PNG", x, y, w, h);
+      pdf.save(`etiqueta_${code || item.id}.pdf`);
+    } catch (e) {
+      console.error(e);
+      toast("Erro ao gerar PDF desta plaqueta.");
+    }
+  }, [selectedSize]);
+
+  // Baixa TODAS as plaquetas (grid A4, auto paginate)
+  const downloadAllSavedLabels = useCallback(async () => {
+    if (!savedItems.length) {
+      toast("Nenhum item salvo para gerar PDF.");
+      return;
+    }
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+
+      const { w: Lw, h: Lh } = SIZE_PRESETS_MM[selectedSize];
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const margin = 10; // mm
+      const gap = 4;     // mm
+
+      const cols = Math.max(1, Math.floor((pageW - 2*margin + gap) / (Lw + gap)));
+      const rows = Math.max(1, Math.floor((pageH - 2*margin + gap) / (Lh + gap)));
+      const perPage = cols * rows;
+
+      let pageIndex = 0;
+      for (let i = 0; i < savedItems.length; i++) {
+        if (i > 0 && i % perPage === 0) {
+          pdf.addPage();
+          pageIndex++;
+        }
+        const idxInPage = i % perPage;
+        const col = idxInPage % cols;
+        const row = Math.floor(idxInPage / cols);
+
+        const x = margin + col * (Lw + gap);
+        const y = margin + row * (Lh + gap);
+
+        const item = savedItems[i];
+        const canvas = await renderOffscreenAndCapture(
+          <PrintableLabel data={item.data} sizeKey={selectedSize} />,
+          { foreignObjectRendering: false }
+        );
+        const imgData = canvas.toDataURL("image/png");
+        pdf.addImage(imgData, "PNG", x, y, Lw, Lh);
+      }
+
+      pdf.save(`plaquetas_${savedItems.length}itens_${selectedSize}.pdf`);
+      toast("PDF gerado com sucesso!");
+    } catch (e) {
+      console.error(e);
+      toast("Erro ao gerar PDF com todas as plaquetas.");
+    }
+  }, [savedItems, selectedSize]);
 
   /* ===================== RENDER ===================== */
   const [loadingMessage, setLoadingMessage] = useState(
@@ -993,223 +1263,372 @@ export function NovoItem() {
   }
 
   // Tela de SUCESSO (após finalizar) — agora com o MESMO esquema de plaqueta do "etiqueta"
-if (finished) {
-  // Exibe a plaqueta apenas se o flow for "desfazimento"
-  const isDesfazimento = flow === "desfazimento";
-  const dataForLabel: Patrimonio | undefined = isDesfazimento ? wizard["formulario-sp"] : undefined;
-  const canShowPlaqueta = !!(
-    isDesfazimento &&
-    dataForLabel &&
-    (dataForLabel.asset_code || dataForLabel.atm_number)
-  );
+  if (finished) {
+    const isDesfazimento = flow === "desfazimento";
+    const dataForLabel: Patrimonio | undefined = isDesfazimento ? wizard["formulario-sp"] : undefined;
+    const canShowPlaqueta = !!(
+      isDesfazimento &&
+      dataForLabel &&
+      (dataForLabel.asset_code || dataForLabel.atm_number)
+    );
+    const labelCode = getLabelCode(dataForLabel);
 
-  return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
-      <div className="flex gap-2">
-        <div className="flex justify-between items-center h-fit mt-2 w-8">
-          <p className="text-lg">{(STEPS.findIndex(s => s.key === "final") + 1) || 0}</p>
-          <ArrowRight size={16} />
-        </div>
-        <h1 className="mb-10 text-4xl font-semibold max-w-[700px]">
-          Parabéns, cadastro concluído!
-        </h1>
-      </div>
-
-      {/* PREVIEW + AÇÕES */}
-      <div className="ml-8 grid gap-4">
-
-        {/* Seletor de tamanho da plaqueta (apenas se for desfazimento) */}
-        {canShowPlaqueta && (
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            className="w-full gap-3"
-            onValueChange={(v) => v && setSelectedSize(v as any)}
-            value={selectedSize}
-          >
-            <ToggleGroupItem className="w-full" value="d">Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)</ToggleGroupItem>
-            <ToggleGroupItem className="w-full" value="a">Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)</ToggleGroupItem>
-            <ToggleGroupItem className="w-full" value="b">Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)</ToggleGroupItem>
-          </ToggleGroup>
-        )}
-
-        {/* Card de Plaqueta (somente para desfazimento) */}
-        {canShowPlaqueta && (
-          <Alert className="flex items-center gap-8">
-            <div className="flex gap-2 flex-1">
-              <Barcode size={24} />
-              <div>
-                <p className="font-medium">Plaqueta de identificação</p>
-                <p className="text-gray-500 text-sm">
-                  Geramos a plaqueta com tamanho físico exato (mm). Clique para baixar em <strong>PDF</strong>.
-                </p>
-              </div>
+    return (
+      <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+        {/* Header com botão de Itens cadastrados */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-2 items-center">
+            <div className="flex justify-between items-center h-fit mt-2 w-8">
+              <p className="text-lg">{(STEPS.findIndex(s => s.key === "final") + 1) || 0}</p>
+              <ArrowRight size={16} />
             </div>
-            <Button
-              className="h-8 w-8"
-              variant={"ghost"}
-              size={"icon"}
-              onClick={handleDownloadPlaqueta}
-            >
-              <Download size={16} />
-            </Button>
-          </Alert>
-        )}
+            <h1 className="text-4xl font-semibold max-w-[700px]">
+              Parabéns, cadastro concluído!
+            </h1>
+          </div>
 
-        {/* Botões finais */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <Button onClick={resetToNewForm}><Plus size={16} />Cadastrar outro item</Button>
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            <LayoutDashboard size={16} /> Ir para o dashboard
-          </Button>
+          <div className="flex items-center gap-2">
+           
+          </div>
         </div>
+
+        {/* PREVIEW + AÇÕES */}
+        <div className="ml-8 grid gap-4">
+          {/* Seletor de tamanho da plaqueta */}
+          {canShowPlaqueta && (
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              className="w-full gap-3"
+              onValueChange={(v) => v && setSelectedSize(v as any)}
+              value={selectedSize}
+            >
+              <ToggleGroupItem className="w-full" value="d">Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)</ToggleGroupItem>
+              <ToggleGroupItem className="w-full" value="a">Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)</ToggleGroupItem>
+              <ToggleGroupItem className="w-full" value="b">Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)</ToggleGroupItem>
+            </ToggleGroup>
+          )}
+
+          {/* Card de Plaqueta */}
+          {canShowPlaqueta && (
+            <Alert className="flex items-center gap-8">
+              <div className="flex gap-2 flex-1">
+                <Barcode size={24} />
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-medium">Plaqueta de identificação</p>
+                    <p className="text-gray-500 text-sm">
+                      Geramos a plaqueta com tamanho físico exato (mm). Clique para baixar em <strong>PDF</strong>.
+                    </p>
+                  </div>
+
+                  {labelCode && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-500">Código da plaqueta:</span>
+                      <span className="font-mono text-sm text-gray-500 font-semibold tracking-widest select-all">
+                        {labelCode}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(labelCode);
+                            toast("Código copiado!", { description: labelCode });
+                          } catch {
+                            toast("Não foi possível copiar", { description: "Copie manualmente." });
+                          }
+                        }}
+                      >
+                        <Copy size={16} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                className="h-8 w-8"
+                variant="ghost"
+                size="icon"
+                onClick={handleDownloadPlaqueta}
+                title="Baixar PDF da plaqueta"
+              >
+                <Download size={16} />
+              </Button>
+            </Alert>
+          )}
+
+          {/* Botões finais */}
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={() => {
+                const savedOk = saveCurrentFinishedItem();
+                if (savedOk) toast("Item salvo na lista de cadastrados.");
+                resetToNewForm();
+              }}
+            >
+              <Plus size={16} />
+              Cadastrar outro item
+            </Button>
+
+            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+              <LayoutDashboard size={16} /> Ir para o dashboard
+            </Button>
+          </div>
+        </div>
+
+      
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Wizard normal
- 
-  // Wizard normal (fim do componente)
-return (
-  <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
-    <Helmet>
-      <title>Anunciar item | Sistema Patrimônio</title>
-      <meta name="description" content={`Anunciar item | Sistema Patrimônio`} />
-      <meta name="robots" content="index, follow" />
-    </Helmet>
+  return (
+    <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
+      <Helmet>
+        <title>Anunciar item | Sistema Patrimônio</title>
+        <meta name="description" content={`Anunciar item | Sistema Patrimônio`} />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
 
-    <Progress className="absolute top-0 left-0  h-1 z-[5]" value={((idx + 1) / total) * 100} />
+      <Progress className="absolute top-0 left-0  h-1 z-[5]" value={((idx + 1) / total) * 100} />
 
-    <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
-      <div className="w-full flex flex-col gap-8 h-full">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-          <Button
-            onClick={() => {
-              const path = location.pathname;
-              const hasQuery = location.search.length > 0;
-              if (hasQuery) navigate(path);
-              else {
-                const seg = path.split("/").filter(Boolean);
-                if (seg.length > 1) { seg.pop(); navigate("/" + seg.join("/")); }
-                else navigate("/");
-              }
-            }}
-            variant="outline"
-            size="icon"
-            className="h-7 w-7"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Voltar</span>
-          </Button>
+      <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
+        <div className="w-full flex flex-col gap-8 h-full">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  const path = location.pathname;
+                  const hasQuery = location.search.length > 0;
+                  if (hasQuery) navigate(path);
+                  else {
+                    const seg = path.split("/").filter(Boolean);
+                    if (seg.length > 1) { seg.pop(); navigate("/" + seg.join("/")); }
+                    else navigate("/");
+                  }
+                }}
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
 
-          <h1 className="text-xl font-semibold tracking-tight">Anunciar item</h1>
-        </div>
-
-        <div>
-      <a href="/apresentacao_sistema.pdf" target="_blank" rel="noopener noreferrer">
-  <Button size="sm">
-    <File size={16} /> Baixar manual
-  </Button>
-</a>
-
-        </div>
-        </div>
-
-        <div className="flex flex-col h-full flex-1  w-full gap-8">
-          <Tabs
-            value={active}
-            onValueChange={(v) => {
-              const targetIndex = STEPS.findIndex((s) => s.key === (v as StepKey));
-              if (targetIndex !== -1 && (targetIndex <= idx || STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true))) {
-                setActive(v as StepKey);
-              }
-            }}
-            className="h-full flex-1"
-          >
-            {STEPS.map((s) => (
-              <TabsContent key={s.key} value={s.key} className="m-0 h-full">
-                {s.key === "inicio" && <InicioStep    {...attachCommon("inicio")} step={idx + 1} />}
-                {s.key === "informacoes" && <InformacoesStep  {...attachCommon("informacoes")}  step={idx + 1} />}
-
-                {s.key === "pesquisa" && (
-                  <PesquisaStep
-                    {...attachCommon("pesquisa")}
-                    value_item={wizard.pesquisa?.value_item}
-                    type={wizard.pesquisa?.type}
-                    step={idx + 1}
-                  />
-                )}
-
-                {s.key === "formulario" && (
-                  <FormularioStep
-                    {...attachCommon("formulario")}
-                    value_item={wizard.pesquisa?.value_item}
-                    type={wizard.pesquisa?.type}
-                    initialData={wizard.formulario}
-                    step={idx + 1}
-                  />
-                )}
-
-                {s.key === "formulario-sp" && (
-                  <FormularioSpStep
-                    {...attachCommon("formulario-sp")}
-                    value_item={wizard.pesquisa?.value_item}
-                    type={wizard.pesquisa?.type}
-                    initialData={wizard["formulario-sp"]}
-                    step={idx + 1}
-                  />
-                )}
-
-                {s.key === "trocar-local" && (
-                  <TrocarLocalStep {...attachCommon("trocar-local")} step={idx + 1} />
-                )}
-
-                {s.key === "informacoes-adicionais" && (
-                  <InformacoesAdicionaisStep {...attachCommon("informacoes-adicionais")} step={idx + 1}/>
-                )}
-
-                {s.key === "estado" && <EstadoStep {...attachCommon("estado")} step={idx + 1}/>}
-
-                {s.key === "imagens" && (
-                  <ImagemStep
-                    {...attachCommon("imagens")}
-                    imagens={wizard.imagens?.images_wizard}
-                    step={idx + 1}
-                  />
-                )}
-
-                {s.key === "final" && <FinalStep {...attachCommon("final")} allData={wizard} step={idx + 1} />}
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          <div className="flex justify-between items-center h-fit">
-            <div>
-              {STEPS.slice(0, idx + 1).map((s) => (
-                <span key={s.key} className={cn("mr-2", valid[s.key] ? "text-emerald-600" : "text-amber-600")}>●</span>
-              ))}
+              <h1 className="text-xl font-semibold tracking-tight">Anunciar item</h1>
             </div>
 
-            <div className="flex items-center">
-              <Button variant="outline" size="lg" className="rounded-r-none" onClick={goPrev} disabled={idx === 0}>
-                <ArrowLeft size={16} /> Anterior
-              </Button>
+            <div className="flex items-center gap-2">
+              <a href="/apresentacao_sistema.pdf" target="_blank" rel="noopener noreferrer">
+                <Button size="sm">
+                  <File size={16} /> Baixar manual
+                </Button>
+              </a>
+
+              {/* 🔹 Botão Itens cadastrados também no header do fluxo normal */}
               <Button
-                size="lg"
-                className="rounded-l-none"
-                onClick={isLast ? handleFinish : goNext}
-                disabled={isLast ? !canFinish : !canGoNext}
+                variant="outline"
+                onClick={() => { setOpenSavedDialog(true); setShowNewSavedDot(false); }}
+                className="relative"
+                title="Ver itens cadastrados"
               >
-                {isLast ? <>Finalizar <Check size={16} /></> : <>Próximo <ArrowRight size={16} /></>}
+                <Bookmark size={16} />
+                Itens cadastrados
+                <Badge variant="outline" className="ml-2">{savedItems.length}</Badge>
+                {showNewSavedDot && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-eng-blue rounded-full animate-pulse" />
+                )}
               </Button>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
-  </div>
-);
 
+          <div className="flex flex-col h-full flex-1  w-full gap-8">
+            <Tabs
+              value={active}
+              onValueChange={(v) => {
+                const targetIndex = STEPS.findIndex((s) => s.key === (v as StepKey));
+                if (targetIndex !== -1 && (targetIndex <= idx || STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true))) {
+                  setActive(v as StepKey);
+                }
+              }}
+              className="h-full flex-1"
+            >
+              {STEPS.map((s) => (
+                <TabsContent key={s.key} value={s.key} className="m-0 h-full">
+                  {s.key === "inicio" && <InicioStep    {...attachCommon("inicio")} step={idx + 1} />}
+                  {s.key === "informacoes" && <InformacoesStep  {...attachCommon("informacoes")}  step={idx + 1} />}
+
+                  {s.key === "pesquisa" && (
+                    <PesquisaStep
+                      {...attachCommon("pesquisa")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "formulario" && (
+                    <FormularioStep
+                      {...attachCommon("formulario")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      initialData={wizard.formulario}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "formulario-sp" && (
+                    <FormularioSpStep
+                      {...attachCommon("formulario-sp")}
+                      value_item={wizard.pesquisa?.value_item}
+                      type={wizard.pesquisa?.type}
+                      initialData={wizard["formulario-sp"]}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "trocar-local" && (
+                    <TrocarLocalStep {...attachCommon("trocar-local")} step={idx + 1} />
+                  )}
+
+                  {s.key === "informacoes-adicionais" && (
+                    <InformacoesAdicionaisStep {...attachCommon("informacoes-adicionais")} step={idx + 1}/>
+                  )}
+
+                  {s.key === "estado" && <EstadoStep {...attachCommon("estado")} step={idx + 1}/>}
+
+                  {s.key === "imagens" && (
+                    <ImagemStep
+                      {...attachCommon("imagens")}
+                      imagens={wizard.imagens?.images_wizard}
+                      step={idx + 1}
+                    />
+                  )}
+
+                  {s.key === "final" && <FinalStep {...attachCommon("final")} allData={wizard} step={idx + 1} />}
+                </TabsContent>
+              ))}
+            </Tabs>
+
+            <div className="flex justify-between items-center h-fit">
+              <div>
+                {STEPS.slice(0, idx + 1).map((s) => (
+                  <span key={s.key} className={cn("mr-2", valid[s.key] ? "text-emerald-600" : "text-amber-600")}>●</span>
+                ))}
+              </div>
+
+              <div className="flex items-center">
+                <Button variant="outline" size="lg" className="rounded-r-none" onClick={goPrev} disabled={idx === 0}>
+                  <ArrowLeft size={16} /> Anterior
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-l-none"
+                  onClick={isLast ? handleFinish : goNext}
+                  disabled={isLast ? !canFinish : !canGoNext}
+                >
+                  {isLast ? <>Finalizar <Check size={16} /></> : <>Próximo <ArrowRight size={16} /></>}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Dialog reutilizado no fluxo normal */}
+      <Dialog open={openSavedDialog} onOpenChange={setOpenSavedDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Itens cadastrados</DialogTitle>
+            <DialogDescription className="text-zinc-500 ">
+              Itens salvos nesta sessão (e guardados no seu navegador).
+            </DialogDescription>
+          </DialogHeader>
+
+          <Separator className="my-4" />
+
+          <div className="flex items-center justify-between">
+            <Badge variant="outline">Total: {savedItems.length} {savedItems.length == 1 ? "item" : "itens"}</Badge>
+            <div className="flex items-center gap-2">
+              
+
+           
+              <Button variant="outline" size="sm" onClick={downloadAllSavedLabels} disabled={!savedItems.length}>
+                <Download className="h-4 w-4 " />
+                PDF (todas as plaquetas)
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleClearAllSaved} disabled={!savedItems.length}>
+                <Trash2 className="h-4 w-4 " />
+                Limpar todos
+              </Button>
+            </div>
+          </div>
+
+{savedItems.length > 0 && (
+  <div className="w-full">
+            <ToggleGroup
+                type="single"
+                variant="outline"
+                className="gap-2 w-full"
+                onValueChange={(v) => v && setSelectedSize(v as any)}
+                value={selectedSize}
+              >
+                <ToggleGroupItem className="w-full" value="d">50×20 mm</ToggleGroupItem>
+                <ToggleGroupItem className="w-full" value="a">70×30 mm</ToggleGroupItem>
+                <ToggleGroupItem className="w-full" value="b">90×45 mm</ToggleGroupItem>
+              </ToggleGroup>
+          </div>
+)}
+        
+
+          <ScrollArea className="h-[380px] ">
+            {!savedItems.length && (
+              <div className="text-center mt-8" >
+                  <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">^_^</p>
+          <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+ Nenhum resultado salvo ainda.
+          </h1>
+             
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 ">
+              {savedItems.map((s) => {
+                const code = getLabelCode(s.data);
+                return (
+                   <div key={s.id}>
+                                   
+                  
+                                    {/* Renderização completa do Asset */}
+                                     <PatrimonioItem {...s.data} />
+                  
+                                    <div className="flex items-center gap-2 my-4">
+                                      <Button className="w-full" size="sm" onClick={() => downloadSingleSavedLabel(s)}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                      </Button>
+                                      <Button className="w-full" size="sm" variant="outline" onClick={() => handleRemoveSaved(s.id)}>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Excluir
+                                      </Button>
+                                    </div>
+                                  </div>
+               
+                );
+              })}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpenSavedDialog(false)}>
+              <ArrowUUpLeft size={16} />   Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

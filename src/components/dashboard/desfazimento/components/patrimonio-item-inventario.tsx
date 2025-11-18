@@ -1,20 +1,40 @@
 // src/pages/desfazimento/components/PatrimonioItemCollection.tsx
 import { Alert } from "../../../ui/alert";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
+
 import {
-  Archive, HelpCircle, Hourglass, MoveRight, User, X, Check, Loader2,
-  RefreshCcw, Trash,
+  Archive,
+  HelpCircle,
+  Hourglass,
+  MoveRight,
+  User,
+  X,
+  Check,
+  Loader2,
+  RefreshCcw,
+  Trash,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Badge } from "../../../ui/badge";
-import { useContext, useMemo, useState, MouseEvent, useCallback } from "react";
+import { useContext, useMemo, useState, useCallback } from "react";
 import { useModal } from "../../../hooks/use-modal-store";
 import { UserContext } from "../../../../context/context";
 
 import {
-  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
 } from "../../../ui/carousel";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "../../../ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Input } from "../../../ui/input";
@@ -45,11 +65,11 @@ type Props = {
   entry: CatalogEntry;
 
   // novos props para operações da collection
-  collectionId: string;     // /collections/{collection_id}
-  itemId: string;           // /collections/{collection_id}/items/{item_id}
+  collectionId: string; // /collections/{collection_id}
+  itemId: string; // /collections/{collection_id}/items/{item_id}
 
   // valores iniciais vindos do pai
-  sel: string;              // "true" | "false"
+  sel: string; // "true" | "false"
   comm: string;
 
   isLocked?: boolean;
@@ -75,10 +95,11 @@ export function PatrimonioItemCollection({
   onUpdated,
   onDeleted,
 }: Props) {
-  if (!entry) return null;
-
   const { onOpen } = useModal();
   const { urlGeral } = useContext(UserContext);
+  const { hasColecoes } = usePermissions();
+
+  if (!entry) return null;
 
   const conectee = import.meta.env.VITE_BACKEND_CONECTEE || "";
   const asset = entry.asset;
@@ -87,7 +108,13 @@ export function PatrimonioItemCollection({
   const csvCodTrimmed = (asset.csv_code || "").toString().trim();
   const bemStaTrimmed = (asset.asset_status || "").toString().trim();
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<
+    string,
+    {
+      text: string;
+      icon: JSX.Element;
+    }
+  > = {
     NO: { text: "Normal", icon: <Check size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -108,24 +135,27 @@ export function PatrimonioItemCollection({
   };
 
   // =========== estado local de edição ===========
-  const [statusValue, setStatusValue] = useState<"true" | "false">(sel === "true" ? "true" : "false");
+  const [statusValue, setStatusValue] = useState<"true" | "false">(
+    sel === "true" ? "true" : "false"
+  );
   const [commentValue, setCommentValue] = useState<string>(comm ?? "");
 
   // =========== dialog imagem ===========
   const [openImage, setOpenImage] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
-  const openImageDialog = (e: MouseEvent, url: string) => {
+  const openImageDialog = (e: any, url: string) => {
     e.stopPropagation();
     setSelectedImg(url);
     setOpenImage(true);
   };
-  const stop = (e: MouseEvent) => e.stopPropagation();
+
+  const stop = (e: any) => e.stopPropagation();
 
   // abre modal patrimônio (card)
-  const handleOpen = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleOpen = (event: any) => {
     event.stopPropagation();
-    onOpen('catalog-modal', { ...entry });
+    onOpen("catalog-modal", { ...entry });
   };
 
   // urls das imagens
@@ -137,98 +167,108 @@ export function PatrimonioItemCollection({
   // =========== PUT atualizar ===========
   const [updating, setUpdating] = useState(false);
 
-  const handleUpdate = useCallback(async (e: MouseEvent) => {
-    e.stopPropagation();
+  const handleUpdate = useCallback(
+    async (e: any) => {
+      e.stopPropagation();
 
-    if (!collectionId || !itemId) {
-      toast("IDs insuficientes para atualizar.");
-      return;
-    }
-
-    try {
-      setUpdating(true);
-
-      const token = localStorage.getItem("jwt_token");
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-
-      const payload = {
-        status: statusValue === "true",
-        comment: commentValue ?? "",
-      };
-
-      const url = `${urlGeral}collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}`;
-      const res = await fetch(url, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Falha ao atualizar (HTTP ${res.status}).`);
+      if (!collectionId || !itemId) {
+        toast("IDs insuficientes para atualizar.");
+        return;
       }
 
-      // sucesso — atualiza o pai localmente (sem refetch)
-      onUpdated?.(payload);
+      try {
+        setUpdating(true);
 
-      toast.success("Item atualizado com sucesso.");
-    } catch (err: any) {
-      toast("Erro ao atualizar item", { description: err?.message || String(err) });
-    } finally {
-      setUpdating(false);
-    }
-  }, [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral]);
+        const token = localStorage.getItem("jwt_token");
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
+
+        const payload = {
+          status: statusValue === "true",
+          comment: commentValue ?? "",
+        };
+
+        const url = `${urlGeral}collections/${encodeURIComponent(
+          collectionId
+        )}/items/${encodeURIComponent(itemId)}`;
+        const res = await fetch(url, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(txt || `Falha ao atualizar (HTTP ${res.status}).`);
+        }
+
+        // sucesso — atualiza o pai localmente (sem refetch)
+        onUpdated?.(payload);
+
+        toast.success("Item atualizado com sucesso.");
+      } catch (err: any) {
+        toast("Erro ao atualizar item", {
+          description: err?.message || String(err),
+        });
+      } finally {
+        setUpdating(false);
+      }
+    },
+    [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral]
+  );
 
   // =========== DELETE item da coleção ===========
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = useCallback(async (e: MouseEvent) => {
-    e.stopPropagation();
+  const handleDelete = useCallback(
+    async (e: any) => {
+      e.stopPropagation();
 
-    if (!collectionId || !itemId) {
-      toast("IDs insuficientes para deletar.");
-      return;
-    }
-
-    try {
-      setDeleting(true);
-
-      const token = localStorage.getItem("jwt_token");
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-
-      const url = `${urlGeral}collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}`;
-      const res = await fetch(url, {
-        method: "DELETE",
-        headers,
-      });
-
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Falha ao deletar (HTTP ${res.status}).`);
+      if (!collectionId || !itemId) {
+        toast("IDs insuficientes para deletar.");
+        return;
       }
 
-      toast.success("Item removido da coleção.");
-      setDeleteOpen(false);
+      try {
+        setDeleting(true);
 
-      // ✅ sinaliza para o pai remover da lista, passando o id correto do CollectionItem
-      onDeleted?.(itemId);
-    } catch (err: any) {
-      toast("Erro ao deletar item", { description: err?.message || String(err) });
-    } finally {
-      setDeleting(false);
-    }
-  }, [collectionId, itemId, onDeleted, urlGeral]);
+        const token = localStorage.getItem("jwt_token");
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
 
-     const { hasColecoes
-} = usePermissions();
+        const url = `${urlGeral}collections/${encodeURIComponent(
+          collectionId
+        )}/items/${encodeURIComponent(itemId)}`;
+        const res = await fetch(url, {
+          method: "DELETE",
+          headers,
+        });
 
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(txt || `Falha ao deletar (HTTP ${res.status}).`);
+        }
+
+        toast.success("Item removido da coleção.");
+        setDeleteOpen(false);
+
+        // ✅ sinaliza para o pai remover da lista, passando o id correto do CollectionItem
+        onDeleted?.(itemId);
+      } catch (err: any) {
+        toast("Erro ao deletar item", {
+          description: err?.message || String(err),
+        });
+      } finally {
+        setDeleting(false);
+      }
+    },
+    [collectionId, itemId, onDeleted, urlGeral]
+  );
 
   return (
     <>
@@ -249,7 +289,8 @@ export function PatrimonioItemCollection({
               <div className="flex items-center gap-3 p-4 pb-0">
                 <div className="flex items-center gap-2 mb-4 min-w-0 w-full">
                   <p className="font-semibold text-left whitespace-nowrap shrink-0">
-                    {asset.asset_code?.toString().trim()} - {asset.asset_check_digit}
+                    {asset.asset_code?.toString().trim()} -{" "}
+                    {asset.asset_check_digit}
                   </p>
 
                   {hasAtm && (
@@ -321,48 +362,61 @@ export function PatrimonioItemCollection({
             </div>
 
             {/* Coluna carrossel */}
-            <div className="p-4 w-full flex-1 max-w-[600px]">
-              <div className="w-full select-none">
-                <Carousel className="w-full flex gap-4 items-center">
-                  {/* Prev/Next com stopPropagation */}
-                  <div onClick={stop}>
-                    <CarouselPrevious variant="outline" />
-                  </div>
+          <div className="p-4 w-full flex-1 max-w-[600px]">
+  <div className="w-full select-none">
+    <Carousel className="w-full flex gap-4 items-center">
+      {/* Prev/Next com stopPropagation */}
+      <div onClick={stop}>
+        <CarouselPrevious variant="outline" />
+      </div>
 
-                  <CarouselContent>
-                    {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
-                      <CarouselItem
-                        key={url ?? index}
-                        className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
-                      >
-                        {/* Wrapper com tamanho consistente */}
-                        <div
-                          className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
-                          onClick={stop}
-                        >
-                          {url ? (
-                            <Alert
-                              style={{ backgroundImage: `url(${url})` }}
-                              className="absolute inset-0 h-full w-full object-cover bg-center bg-cover bg-no-repeat"
-                              onClick={(e) => openImageDialog(e, url)}
-                              draggable={false}
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-                              Sem imagens
-                            </div>
-                          )}
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-
-                  <div onClick={stop}>
-                    <CarouselNext variant="outline" />
-                  </div>
-                </Carousel>
-              </div>
+      <CarouselContent>
+        {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
+          <CarouselItem
+            key={url ?? index}
+            className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
+          >
+            {/* Wrapper com tamanho consistente */}
+            <div
+              className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
+              onClick={
+                url
+                  ? (e) => openImageDialog(e, url) // 🔥 abre o modal
+                  : stop                           // se não tiver imagem, só impede propagação
+              }
+            >
+              {url ? (
+                <LazyLoadImage
+                  src={url}
+                  alt={materialName}
+                  effect="blur"
+                  width="100%"
+                  height="100%"
+                  wrapperClassName="absolute inset-0 h-full w-full"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                  className="rounded-md"
+                  draggable={false}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                  Sem imagens
+                </div>
+              )}
             </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+
+      <div onClick={stop}>
+        <CarouselNext variant="outline" />
+      </div>
+    </Carousel>
+  </div>
+</div>
           </Alert>
 
           {/* Barra de edição (status/comment + atualizar + deletar) */}
@@ -370,41 +424,43 @@ export function PatrimonioItemCollection({
             <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
               <p>Coleta:</p>
 
-             <ToggleGroup
-  type="single"
-  value={statusValue}
-  onValueChange={(v) => v && setStatusValue(v as "true" | "false")}
-  className="flex gap-2"
-  variant="outline"
->
-  <ToggleGroupItem
-    onClick={stop}
-    value="true"
-    aria-label="OK"
-    className="
-      w-10 h-10 border
-      data-[state=on]:bg-green-700 data-[state=on]:text-white
-      dark:data-[state=on]:bg-green-700
-      hover:bg-muted/40 transition
-    "
-  >
-    <Check size={16} />
-  </ToggleGroupItem>
+              <ToggleGroup
+                type="single"
+                value={statusValue}
+                onValueChange={(v) =>
+                  v && setStatusValue(v as "true" | "false")
+                }
+                className="flex gap-2"
+                variant="outline"
+              >
+                <ToggleGroupItem
+                  onClick={stop}
+                  value="true"
+                  aria-label="OK"
+                  className="
+                    w-10 h-10 border
+                    data-[state=on]:bg-green-700 data-[state=on]:text-white
+                    dark:data-[state=on]:bg-green-700
+                    hover:bg-muted/40 transition
+                  "
+                >
+                  <Check size={16} />
+                </ToggleGroupItem>
 
-  <ToggleGroupItem
-    onClick={stop}
-    value="false"
-    aria-label="Com problema"
-    className="
-      w-10 h-10 border
-      data-[state=on]:bg-red-600 data-[state=on]:text-white
-      dark:data-[state=on]:bg-red-700
-      hover:bg-muted/40 transition
-    "
-  >
-    <X size={16} />
-  </ToggleGroupItem>
-</ToggleGroup>
+                <ToggleGroupItem
+                  onClick={stop}
+                  value="false"
+                  aria-label="Com problema"
+                  className="
+                    w-10 h-10 border
+                    data-[state=on]:bg-red-600 data-[state=on]:text-white
+                    dark:data-[state=on]:bg-red-700
+                    hover:bg-muted/40 transition
+                  "
+                >
+                  <X size={16} />
+                </ToggleGroupItem>
+              </ToggleGroup>
 
               <Input
                 placeholder="Observações"
@@ -420,20 +476,31 @@ export function PatrimonioItemCollection({
                 disabled={updating || isLocked}
                 variant="outline"
               >
-                {updating ? <Loader2 size={16} className=" animate-spin" /> : <RefreshCcw size={16} />}
+                {updating ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <RefreshCcw size={16} />
+                )}
                 Atualizar
               </Button>
 
-           {hasColecoes && (
+              {hasColecoes && (
                 <Button
-                variant="destructive"
-                onClick={(e) => { stop(e); setDeleteOpen(true); }}
-                disabled={isLocked || deleting}
-                size={'icon'}
-              >
-                {deleting ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16}  />}
-              </Button>
-           )}
+                  variant="destructive"
+                  onClick={(e) => {
+                    stop(e);
+                    setDeleteOpen(true);
+                  }}
+                  disabled={isLocked || deleting}
+                  size="icon"
+                >
+                  {deleting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Trash size={16} />
+                  )}
+                </Button>
+              )}
             </div>
           </Alert>
         </div>
@@ -465,9 +532,12 @@ export function PatrimonioItemCollection({
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent onClick={stop}>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Remover item da coleção</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Remover item da coleção
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Tem certeza que deseja remover este item da coleção de desfazimento? Esta ação não pode ser desfeita.
+              Tem certeza que deseja remover este item da coleção de
+              desfazimento? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
 
@@ -475,8 +545,16 @@ export function PatrimonioItemCollection({
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16} className="" />}
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Trash size={16} />
+              )}
               Remover
             </Button>
           </DialogFooter>

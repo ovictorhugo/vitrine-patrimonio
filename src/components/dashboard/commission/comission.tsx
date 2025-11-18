@@ -3,7 +3,7 @@ import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/context";
-import { BriefcaseBusiness, ChevronLeft, ChevronRight, ListTodo, Trash, Users } from "lucide-react";
+import { BarChart, BriefcaseBusiness, ChevronLeft, ChevronRight, ListTodo, Trash, Users } from "lucide-react";
 
 import { Tabs, TabsContent } from "../../ui/tabs";
 import { ListaFinalDesfazimento } from "./tabs/lista-final-desfazimento";
@@ -11,6 +11,7 @@ import { MeusItens } from "./tabs/meus-itens";
 import AdmComission from "./tabs/adm-comission";
 import { usePermissions } from "../../permissions";
 import { useQuery } from "../../authentication/signIn";
+import { Estatistica } from "./tabs/estatistica";
 export function Comission() {
       const { urlGeral, permission } = useContext(UserContext);
       const navigate = useNavigate();
@@ -25,7 +26,8 @@ export function Comission() {
               
   const tabs = [
     { id: "meus-items", label: "Meus itens para avaliação", icon: ListTodo },
-        { id: "adm-comission", label: "Administração da comissão", icon: Users, condition: !hasAdministracaoDaComissao },
+        { id: "adm-comission", label: "Pareceristas", icon: Users, condition: !hasAdministracaoDaComissao },
+         { id: "estatistica", label: "Estatísticas", icon: BarChart, condition: !hasAdministracaoDaComissao },
          { id: "lfd", label: "Lista Final de desfazimento", icon: Trash },
   ];
 
@@ -181,6 +183,10 @@ export function Comission() {
 
                          <TabsContent value="lfd" className="m-0 p-0">
                              <ListaFinalDesfazimento/>
+                          </TabsContent>
+
+                           <TabsContent value="estatistica" className="m-0 p-0">
+                             <Estatistica/>
                           </TabsContent>
 
                            

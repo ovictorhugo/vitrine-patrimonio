@@ -88,6 +88,7 @@
     "react-dropzone": "^14.2.3",
     "react-firebase-hooks": "^5.1.1",
     "react-helmet": "^6.1.0",
+    "react-lazy-load-image-component": "^1.6.3",
     "react-qr-code": "^2.0.15",
     "react-resizable-panels": "^2.0.19",
     "react-responsive-masonry": "^2.2.0",

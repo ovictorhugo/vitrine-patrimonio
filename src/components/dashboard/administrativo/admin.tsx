@@ -1,4 +1,4 @@
-import { Archive, Bell, Bug, ChevronLeft, ChevronRight, Clock, HelpCircle, Hourglass, ListChecks, ListTodo, Recycle, Settings, Store, Trash, Users, Wrench, XCircle } from "lucide-react";
+import { Archive, Bell, Bug, ChevronLeft, ChevronRight, Clock, File, HelpCircle, Hourglass, ListChecks, ListTodo, Recycle, Settings, Store, Trash, Users, Wrench, XCircle } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -16,6 +16,9 @@ import { Feedback } from "./tabs/feedback";
 import { Configuration } from "./tabs/configuration";
 import { usePermissions } from "../../permissions";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../ui/carousel";
+import { GraficoStatusCatalogo } from "../dashboard-page/components/chart-workflows";
+import { Documentos } from "./tabs/documentos";
+import { ChartRadialDesfazimento } from "./components/chart-radial-desfazimento";
 
 export type StatusCount = { status: string; count: number };
 const WORKFLOWS = [
@@ -42,6 +45,7 @@ export function Admin() {
     { id: "inventario", label: "Inventário", icon: ListChecks, condition:!hasInventario },
         { id: "notification", label: "Notificações", icon: Bell },
          { id: "feedback", label: "Feedback", icon:Bug },
+          { id: "documentos", label: "Documentos", icon:File },
           { id: 'configuration', label: "Configurações", icon: Settings, condition:!hasConfiguracoes },
   ];
 
@@ -219,6 +223,17 @@ const WORKFLOW_STATUS_META: Record<
                       </div>
                     </Carousel>
 
+             <div className="mt-8">
+              <GraficoStatusCatalogo
+      stats={statsMap}
+      workflows={WORKFLOWS.map(({ key, name }) => ({ key, name }))}
+      title="Todos os itens da plataforma"
+    />
+
+    <div className="grid md:grid-cols-2 gap-8 mt-8">
+        <ChartRadialDesfazimento counts={statsMap} />
+    </div>
+             </div>
        
         </div>
 
@@ -282,7 +297,10 @@ const WORKFLOW_STATUS_META: Record<
                 </div>
 
                 <div className="hidden xl:flex xl:flex-nowrap gap-2">
-                  <div className="md:flex md:flex-nowrap gap-2">i</div>
+                  <div className="md:flex md:flex-nowrap gap-2">
+
+
+                  </div>
                 </div>
               </div>
             </div>
@@ -298,6 +316,13 @@ const WORKFLOW_STATUS_META: Record<
 
               <TabsContent value='feedback'>
             <Feedback />
+          </TabsContent>
+
+             <TabsContent value="documentos">
+            <Documentos 
+             urlGeral={urlGeral} // adapte para o seu caso
+        token={token || ''}
+            />
           </TabsContent>
 
           {hasConfiguracoes && (

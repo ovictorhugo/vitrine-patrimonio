@@ -565,6 +565,7 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
+
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> & {
@@ -586,9 +587,8 @@ const SidebarMenuButton = React.forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
-    const { isMobile, state } = useSidebar()
-
     const { setItensSelecionados } = React.useContext(UserContext)
+    const { open } = useSidebar() // <- não vamos mais usar o toggle aqui
 
     const button = (
       <Comp
@@ -596,30 +596,57 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(
+          "relative isolate", // <- cria novo stacking context p/ evitar cortes
+          sidebarMenuButtonVariants({ variant, size }),
+          className
+        )}
         {...props}
       />
     )
 
-    if (!tooltip) {
-      return button
+    // sem tooltip, retorna o botão
+    if (!tooltip) return button
+
+    // normaliza tooltip
+    const tooltipProps: React.ComponentProps<typeof TooltipContent> =
+      typeof tooltip === "string" ? { children: tooltip } : tooltip
+
+    // se o sidebar está ABERTO, não mostra tooltip
+    if (open) {
+      return (
+        <div
+          onClick={() => {
+            setItensSelecionados([])
+            // não expande/fecha sidebar
+          }}
+        >
+          {button}
+        </div>
+      )
     }
 
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
-    }
-    const { toggleSidebar, open } = useSidebar()
+    // sidebar FECHADO -> mostra tooltip
     return (
-      <Tooltip >
-        <TooltipTrigger className="" onClick={() => {
-          setItensSelecionados([])
-          if(!open) {
-            toggleSidebar()
-          }
-        }} asChild>{button}</TooltipTrigger>
-       
+      <Tooltip>
+        <TooltipTrigger
+          asChild
+          onClick={() => {
+            setItensSelecionados([])
+            // não expande sidebar
+          }}
+        >
+          {button}
+        </TooltipTrigger>
+
+        <TooltipContent
+          // z-index bem alto + isolamento já no botão
+          className="z-[999999999999999]"
+          side="right"
+          align="center"
+         
+          {...tooltipProps}
+        />
       </Tooltip>
     )
   }

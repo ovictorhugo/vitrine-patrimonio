@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { BlockItemsVitrine } from "../homepage/components/block-items-vitrine";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
 import { HeaderResultTypeHome } from "../header-result-type-home";
+import { usePermissions } from "../permissions";
+import { Anunciados } from "../dashboard/dashboard-page/components/anunciados";
 
 interface Permission {
   id: string;
@@ -66,6 +68,7 @@ export function UserPublicPage() {
        const [loading, setLoading] = useState(true);
      const [user, setUser] = useState<UserResponseDTO | null>(null);
         const location = useLocation();
+        const {hasMovimentacao} = usePermissions()
            const token = localStorage.getItem("jwt_token");
         useEffect(() => {
     const locId = type_search?.trim();
@@ -438,7 +441,13 @@ export function UserPublicPage() {
 
 
 
-<div className="p-8 pt-0">
+{hasMovimentacao ? (
+     <Anunciados
+        filter={{ type: "user_id", value: type_search || '' }}
+        />
+):(
+
+  <div className="p-8 pt-0">
    <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <AccordionTrigger className="px-0">
@@ -456,6 +465,7 @@ export function UserPublicPage() {
             </Accordion>
 
 </div>
+)}
                          
                         </div>
                      

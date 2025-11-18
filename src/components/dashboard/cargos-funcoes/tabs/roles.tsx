@@ -244,7 +244,7 @@ export function Roles({
     Record<string, boolean>
   >({});
 
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, role:roleContext } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
   const authHeaders: HeadersInit = useMemo(
     () => ({
@@ -307,7 +307,7 @@ export function Roles({
     } finally {
       setLoadingList(false);
     }
-  }, [urlGeral, authHeaders, offset, limit]);
+  }, [urlGeral, authHeaders, offset, limit, pesquisaInput]);
 
   // 🔹 Carrega usuários de UM cargo
   const fetchRoleUsers = useCallback(
@@ -337,25 +337,32 @@ export function Roles({
     [urlGeral, authHeaders]
   );
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoadingUsers(true);
-      const res = await fetch(`${urlGeral}users/`, {
-        method: "GET",
-        headers: authHeaders,
-      });
-      await assertOk(res, "Falha ao carregar usuários");
-      const data = await safeJson<UsersResponse>(res);
-      setAllUsers(Array.isArray(data?.users) ? data!.users : []);
-    } catch (e: any) {
-      toast("Erro ao carregar usuários", {
-        description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => {} },
-      });
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [urlGeral, authHeaders]);
+const fetchUsers = useCallback(async () => {
+  try {
+    setLoadingUsers(true);
+    const res = await fetch(`${urlGeral}users/?q=${encodeURIComponent(userSearch)}`, {
+      method: "GET",
+      headers: authHeaders,
+    });
+    await assertOk(res, "Falha ao carregar usuários");
+    const data = await safeJson<UsersResponse>(res);
+    setAllUsers(Array.isArray(data?.users) ? data.users : []);
+  } catch (e: any) {
+    toast("Erro ao carregar usuários", {
+      description: e?.message || String(e),
+      action: { label: "Fechar", onClick: () => {} },
+    });
+  } finally {
+    setLoadingUsers(false);
+  }
+}, [urlGeral, authHeaders, userSearch]);
+
+useEffect(() => {
+  // opcional: evitar fetch com string vazia ou muito curta
+  // if (!userSearch.trim()) return;
+  fetchUsers();
+}, [fetchUsers]);
+
 
   const fetchPermissions = useCallback(async () => {
     try {
@@ -1007,10 +1014,16 @@ const [isCAL, setIsCAL] = useState(false);
                           <Alert className="p-0">
                             <CardHeader className="flex group flex-row py-0 items-start bg-neutral-200 rounded-t-md dark:bg-neutral-700">
                               <div className="flex items-center justify-between w-full">
-                                <CardTitle className="group flex items-center w-fit gap-2 text-lg py-6">
+                                <CardTitle className="group flex flex-col  w-fit gap-1 text-lg py-6">
                                   <div className="w-fit flex gap-2 items-center">
                                     {role.name}
                                   </div>
+
+                                 {roleContext == 'Administrador' && (
+                                   <div className="text-xs font-normal ">
+                                    {role.id}
+                                  </div>
+                                 )}
                                 </CardTitle>
                                 <div className="flex gap-3 items-center">
                                   {/* Permissões */}
@@ -1228,8 +1241,8 @@ const [isCAL, setIsCAL] = useState(false);
                                             <div className="p-4 text-sm text-center text-gray-500">
                                               Carregando...
                                             </div>
-                                          ) : filteredUsers.length > 0 ? (
-                                            filteredUsers.map((u) => (
+                                          ) : allUsers.length > 0 ? (
+                                            allUsers.map((u) => (
                                               <Button
                                                 variant={"ghost"}
                                                 key={u.id}

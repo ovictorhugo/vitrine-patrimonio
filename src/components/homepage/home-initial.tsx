@@ -9,7 +9,7 @@ import { Button } from "../ui/button";
 import { Armchair, ArrowRight, Camera, ChalkboardSimple, ComputerTower, Desktop, DotsThree, Folder, Ladder, Laptop, MagnifyingGlass, Phone, Printer, ProjectorScreen, Scales, Television, Timer, Wrench } from "phosphor-react";
 
 import { Helmet } from "react-helmet";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Fan, Heart, Info, Package, RefreshCcw, Trash, User, WalletCards } from "lucide-react";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
@@ -25,12 +25,24 @@ import { useTheme } from "next-themes";
 import { useModal } from "../hooks/use-modal-store";
 import { BackgroundAvatarGrid } from "../ui/background-ripple-effect";
 import { BackgroundLines } from "../ui/background-lines";
+import { useQuery } from "../authentication/signIn";
+
+type Material = {
+  material_code: string;
+  material_name: string;
+  id: string;
+};
+
+type MaterialsResponse = {
+  materials: Material[];
+};
 
 export function HomeInicial() {
-  const [words, setWords] = useState<string[]>([]);
+ const [words, setWords] = useState<MaterialsResponse | null>(null);
 const { urlGeral } = useContext(UserContext);
 
-let urlPalavrasChaves = `${urlGeral}assets/search/material_name`;
+let urlPalavrasChaves = `${urlGeral}catalog/search/materials?workflow_status=VITRINE`;
+
 
 useEffect(() => {
   const fetchData = async () => {
@@ -38,14 +50,17 @@ useEffect(() => {
       const response = await fetch(urlPalavrasChaves, {
         mode: "cors",
         headers: {
-          "Content-Type": "application/json", // ← ajustado
+          "Content-Type": "application/json",
         },
       });
 
-      const data = await response.json();
+      const data: MaterialsResponse = await response.json();
+      console.log("URL:", urlPalavrasChaves);
+      console.log("DATA:", data);
 
-      if (data && Array.isArray(data.material_name)) {
-        setWords(data.material_name); // ← pega apenas o array de material_name
+      // agora salva o objeto inteiro
+      if (data && Array.isArray(data.materials)) {
+        setWords(data);
       }
     } catch (err) {
       console.error("Erro ao buscar palavras-chave:", err);
@@ -53,10 +68,31 @@ useEffect(() => {
   };
 
   fetchData();
-}, [urlPalavrasChaves]);
+}, []);
 
 
-function handlePesquisaChange(term: string) {
+
+const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
+  if (val && val.trim().length > 0) sp.set(key, val);
+  else sp.delete(key);
+};
+
+const location = useLocation();
+const navigate = useNavigate();
+const queryUrl = useQuery();
+
+function handlePesquisaChange(material: Material) {
+  // Clona os params atuais da URL
+  const params = new URLSearchParams(queryUrl.toString());
+
+  // Atualiza ou remove o parâmetro usando seu helper
+  setParamOrDelete(params, "material_ids", material.id);
+
+  // Navega para a mesma rota com os novos parâmetros
+  navigate({
+    pathname: location.pathname,
+    search: `?${params.toString()}`,
+  });
 
 
 }
@@ -76,7 +112,6 @@ const {theme} = useTheme()
      
     </div>
     <div className="bg-cover   bg-no-repeat bg-center w-full" >
-  
 
         <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
           <Link to={'/informacoes'} className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12} /><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba o que é e como utilizar a plataforma<ArrowRight size={12} /></Link>
@@ -90,35 +125,32 @@ const {theme} = useTheme()
             <Search />
           </div>
 
-          <div className="hidden md:flex flex-wrap gap-3 z-[2] w-full lg:w-[60vw]">
-
-            {words.slice(0, 10).map((word, index) => (
-              <div
-                key={index}
-                className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
-                onClick={() => {
-                  handlePesquisaChange(word)
-
-                }}
-              >
-                {word}
-              </div>
-            ))}
-          </div>
+         <div className="hidden md:flex flex-wrap gap-3 z-[2] w-full lg:w-[60vw]">
+  {(words?.materials ?? []).slice(0, 10).map((material, index) => (
+    <div
+      key={material.id ?? index}
+      className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
+      onClick={() => {
+        handlePesquisaChange(material);
+      }}
+    >
+      {material.material_name}
+    </div>
+  ))}
+</div>
 
           <div className="flex md:hiddeen justify-center md:hidden flex-wrap gap-3 z-[3] w-full lg:hidden">
-            {words.slice(0, 5).map((word, index) => (
-              <div
-                key={index}
-                className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
-                onClick={() => {
-                  handlePesquisaChange(word)
-      
-                }}
-              >
-                {word}
-              </div>
-            ))}
+            {(words?.materials ?? []).slice(0, 10).map((material, index) => (
+    <div
+      key={material.id ?? index}
+      className={`flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs`}
+      onClick={() => {
+        handlePesquisaChange(material);
+      }}
+    >
+      {material.material_name}
+    </div>
+  ))}
           </div>
         </div>
 
