@@ -32,10 +32,53 @@ type LocationDTO = {
 type UserDTO = { id: UUID; username?: string; email?: string; photo_url?: string | null };
 
 export type TransferRequestDTO = {
-  id: UUID;
-  status: "PENDING" | "DECLINED" | "ACCEPTABLE" | string;
-  user: UserDTO;
-  location: LocationDTO;
+  id: string;
+  status: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string;
+    lattes_id: string;
+    orcid: string;
+    ramal: string;
+    photo_url: string;
+    background_url: string;
+    matricula: string;
+    verify: boolean;
+    institution_id: string;
+  };
+  location: {
+    legal_guardian_id: string;
+    sector_id: string;
+    location_name: string;
+    location_code: string;
+    id: string;
+    sector: {
+      agency_id: string;
+      sector_name: string;
+      sector_code: string;
+      id: string;
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: string;
+        id: string;
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: string;
+        };
+      };
+    };
+    legal_guardian: {
+      legal_guardians_code: string;
+      legal_guardians_name: string;
+      id: string;
+    };
+  };
 };
 
 type WorkflowEvent = {

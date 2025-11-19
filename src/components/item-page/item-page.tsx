@@ -8,7 +8,7 @@ import { Badge } from "../ui/badge";
 import { Alert } from "../ui/alert";
 import { Separator } from "../ui/separator";
 import { Card, Carousel } from "../ui/apple-cards-carousel";
-import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft, XCircle, Wrench, Users, Store, Clock} from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft, XCircle, Wrench, Users, Store, Clock, FileIcon} from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -32,6 +32,8 @@ import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-
 import TransferTabCatalog, { TransferRequestDTO } from "../homepage/components/transfer-tab-catalog";
 import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 import { log } from "console";
+import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
+import { DocumentsTabCatalog, Files } from "../homepage/components/documents-tab-catalog";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -141,13 +143,13 @@ type WorkflowHistoryItem = {
     username: string;
     email: string;
     provider: string;
-    linkedin: string | null;
-    lattes_id: string | null;
-    orcid: string | null;
-    ramal: string | null;
-    photo_url: string | null;
-    background_url: string | null;
-    matricula: string | null;
+    linkedin: string 
+    lattes_id: string 
+    orcid: string 
+    ramal: string 
+    photo_url: string 
+    background_url: string 
+    matricula: string 
     verify: boolean;
     institution_id: UUID;
   };
@@ -163,18 +165,19 @@ type WorkflowHistoryItem = {
   conservation_status: string;
   description: string;
   asset: AssetDTO;
+    files:Files[]
    user: {
     id: UUID;
     username: string;
     email: string;
     provider: string;
-    linkedin: string | null;
-    lattes_id: string | null;
-    orcid: string | null;
-    ramal: string | null;
-    photo_url: string | null;
-    background_url: string | null;
-    matricula: string | null;
+    linkedin: string 
+    lattes_id: string 
+    orcid: string 
+    ramal: string 
+    photo_url: string 
+    background_url: string 
+    matricula: string 
     verify: boolean;
     institution_id: UUID;
   };
@@ -252,7 +255,7 @@ const money = (v?: string) => {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 };
 
-const chain = (loc?: LocationDTO | null) => {
+const chain = (loc?: LocationDTO ) => {
   if (!loc || !loc.sector) return [];
   const s = loc.sector;
   const a = s.agency;
@@ -290,7 +293,7 @@ export function ItemPage() {
   const catalogId = query.get("id") || ""; // <-- novo: pega ?id= da URL
 
   const [loading, setLoading] = useState(true);
-  const [catalog, setCatalog] = useState<CatalogResponseDTO | null>(null);
+  const [catalog, setCatalog] = useState<CatalogResponseDTO>();
   const [deleting, setDeleting] = useState(false);
 
   const fetchCatalog = useCallback(async () => {
@@ -671,8 +674,10 @@ const workflowAnunciados = firstStatus === "VITRINE";
 
  const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
+     { id: "documentos", label: "Documentos", icon: FileIcon },
     { id: "transferencia", label: `Pedidos de transferência ${transfers?.length ? ` (${transfers.length})` : ""}`, icon: Archive, condition:!((hasCatalogo || (user?.id == catalog?.user?.id)) && workflowAnunciados) },
     { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition:!hasCatalogo },
+     { id: "pareceristas", label: "Pareceristas", icon: Users, condition:!hasCatalogo },
   ];
 
   // Componente principal
@@ -1470,6 +1475,26 @@ if(catalog) {
   />
                     </TabsContent>
                     )}
+
+
+                        <TabsContent value="documentos">
+                                          <DocumentsTabCatalog
+                        catalog={catalog}
+                        urlGeral={urlGeral}
+                        token={token}
+                        onChange={() => {
+                          // opcional: refetch do catálogo ou setState local, se quiser
+                        }}
+                      />
+                                        </TabsContent>
+
+                                           <TabsContent value="pareceristas">
+                                        <ReviewersCatalogModal
+                                        catalog={catalog}
+                                        roleId={import.meta.env.VITE_ID_COMISSAO_PERMANENTE}
+                                        />
+                                                              </TabsContent>
+                                        
           </Tabs>
 
           {/* Coluna lateral */}

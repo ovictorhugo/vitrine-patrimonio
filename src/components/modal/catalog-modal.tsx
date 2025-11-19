@@ -70,7 +70,8 @@ import { usePermissions } from "../permissions";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog from "../homepage/components/transfer-tab-catalog";
 import { ButtonTransference } from "../item-page/button-transference";
-import { DocumentsTabCatalog } from "../homepage/components/documents-tab-catalog";
+import { DocumentsTabCatalog, Files } from "../homepage/components/documents-tab-catalog";
+import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -215,6 +216,7 @@ export interface CatalogResponseDTO {
   } | null;
   location?: LocationDTO | null;
   images: CatalogImageDTO[];
+  files:Files[]
   workflow_history?: WorkflowEvent[];
     transfer_requests: TransferRequest[]
 }
@@ -1524,7 +1526,10 @@ console.log(catalog)
                     </TabsContent>
 
                       <TabsContent value="pareceristas">
-
+<ReviewersCatalogModal
+catalog={catalog}
+roleId={import.meta.env.VITE_ID_COMISSAO_PERMANENTE}
+/>
                       </TabsContent>
 
   {/* ===== Movimentação ===== */}

@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
 import { Skeleton } from "../../../ui/skeleton";
-import { ListTodo } from "lucide-react";
+import { File, ListTodo } from "lucide-react";
 import { UserContext } from "../../../../context/context";
 import { toast } from "sonner";
 import { Button } from "../../../ui/button";
@@ -13,6 +13,7 @@ import { BlockItemsComissionScroll } from "../components/block-items-tinder";
 import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
 import { Alert } from "../../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
+import { Link } from "react-router-dom";
 
 export function MeusItens() {
   const [catalogs, setCatalogs] = useState<CatalogEntry[]>([]);
@@ -98,6 +99,10 @@ export function MeusItens() {
               icon={<ListTodo size={24} className="" />}
             >
               <div className="hidden md:flex gap-3 mr-3">
+             <Link target="_blank" to={'https://1drv.ms/w/c/19cbb0e3f3a61d59/EVHqrzYOHn5JsW32vCVTc7kBHHsjW8GY7H-01b5OmcvYrQ?e=nYXS26'}>
+             <Button><File size={16}/>Manual da comissão</Button>
+             
+             </Link>
                 <Button
                   onClick={() => setTypeVisu("rows")}
                   variant={typeVisu === "block" ? "ghost" : "outline"}

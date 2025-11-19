@@ -322,32 +322,9 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8">
       {/* Controles de paginação (itens por página) */}
-      <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
-        <span className="text-sm text-muted-foreground">Itens por página:</span>
-        <Select
-          value={limit.toString()}
-          onValueChange={(value) => {
-            const newLimit = parseInt(value);
-            setOffset(0);
-            setLimit(newLimit);
-            handleNavigate(0, newLimit);
-          }}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Itens" />
-          </SelectTrigger>
-          <SelectContent>
-            {[12, 24, 36, 48, 84, 162].map((val) => (
-              <SelectItem key={val} value={val.toString()}>
-                {val}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
+     
       {/* GRID de arquivos */}
       {loading ? (
         <div className="w-full flex items-center justify-center py-10 text-sm text-muted-foreground">
@@ -355,7 +332,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
         </div>
       ) : (
         <>
-          {fileList.length > 0 && <Separator />}
+       
 
           {fileList.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -457,6 +434,31 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
           )}
         </>
       )}
+
+       <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+        <span className="text-sm text-muted-foreground">Itens por página:</span>
+        <Select
+          value={limit.toString()}
+          onValueChange={(value) => {
+            const newLimit = parseInt(value);
+            setOffset(0);
+            setLimit(newLimit);
+            handleNavigate(0, newLimit);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Itens" />
+          </SelectTrigger>
+          <SelectContent>
+            {[12, 24, 36, 48, 84, 162].map((val) => (
+              <SelectItem key={val} value={val.toString()}>
+                {val}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
 
       {/* Controles de paginação (Anterior / Próximo) */}
       <div className="w-full flex justify-center items-center gap-10 mt-4">

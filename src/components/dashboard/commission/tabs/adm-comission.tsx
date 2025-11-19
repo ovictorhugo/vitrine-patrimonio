@@ -1448,8 +1448,8 @@ export function AdmComission() {
           <div className={`relative flex-1 `}>
             {/* Skeleton enquanto as colunas (comissão) ainda não chegaram */}
             {!commissionUsers.length && (loadingCommissionUsers || loading) ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {Array.from({ length: 3 }).map((_, i) => (
+              <div className="flex  gap-4 mt-4">
+                {Array.from({ length: 7 }).map((_, i) => (
                   <Alert
                     key={i}
                     className="w-[320px] min-w-[320px] h-full flex flex-col min-h-[260px] overflow-hidden"
@@ -1463,8 +1463,8 @@ export function AdmComission() {
                     </div>
                     <Separator className="mb-2" />
                     <div className="flex-1 flex flex-col gap-2 pt-2">
-                      <Skeleton className="w-full h-24 rounded-md" />
-                      <Skeleton className="w-full h-24 rounded-md" />
+                      <Skeleton className="w-full aspect-square rounded-md" />
+                      <Skeleton className="w-full aspect-square rounded-md" />
                     </div>
                   </Alert>
                 ))}

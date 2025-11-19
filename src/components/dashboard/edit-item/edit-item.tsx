@@ -14,11 +14,12 @@ import { toast } from "sonner";
 import { FormularioStep, Patrimonio } from "../novo-item/steps/formulario";
 import { TrocarLocalStep } from "../novo-item/steps/trocar-local";
 import { EstadoStep } from "../novo-item/steps/estado";
-import { InformacoesAdicionaisStep } from "../novo-item/steps/informacoes-adicionais";
+
 import { FinalStep } from "../novo-item/steps/final";
 
 /* Aba de imagens (edição) */
 import { ImagemStepEdit } from "./steps/imagem";
+import { InformacoesAdicionaisStep } from "./steps/informacoes-adicionais";
 
 /* ===================== Tipos locais (DTO) ===================== */
 /** Renomeados para evitar colisão estrutural com tipos internos dos steps */
