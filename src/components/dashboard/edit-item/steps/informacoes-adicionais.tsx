@@ -14,6 +14,14 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
+type ExistingFileDTO = {
+  id: string;
+  file_path: string;
+  file_name: string;
+  content_type: string;
+};
+
+
 import React, {
   useEffect,
   useMemo,
@@ -21,6 +29,7 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useContext,
 } from "react";
 import { Textarea } from "../../../ui/textarea";
 import { Label } from "../../../ui/label";
@@ -34,6 +43,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { StepBaseProps } from "../../novo-item/novo-item";
+import { UserContext } from "../../../../context/context";
 
 type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
 
@@ -51,11 +61,25 @@ export type InformacoesAdicionaisRef = {
   validateBeforeNext: () => boolean;
 };
 
+
 export const InformacoesAdicionaisStep = forwardRef<
   InformacoesAdicionaisRef,
-  StepBaseProps<"informacoes-adicionais"> & { estadoAtual?: EstadoKind }
+  StepBaseProps<"informacoes-adicionais"> & {
+    estadoAtual?: EstadoKind;
+    existingFiles?: ExistingFileDTO[];
+    catalogId: string;        // 👈 novo: id do próprio catalog
+  }
 >(function InformacoesAdicionaisStep(
-  { onValidityChange, step, onStateChange, initialData, estadoAtual },
+  {
+    onValidityChange,
+    step,
+    onStateChange,
+    initialData,
+    estadoAtual,
+    existingFiles,
+
+    catalogId,              // 👈 pega daqui
+  },
   ref
 ) {
   const [observacao, setObservacao] = useState(initialData?.observacao ?? "");
@@ -409,6 +433,51 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
   //   },
   // });
 
+  const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>(existingFiles ?? []);
+
+// Se a prop mudar (ex: re-hidratação), sincroniza:
+useEffect(() => {
+  setServerFiles(existingFiles ?? []);
+}, [existingFiles]);
+
+const {urlGeral} = useContext(UserContext)
+ const token = localStorage.getItem("jwt_token") || "";
+
+const handleDeleteFile = useCallback(
+  async (file: ExistingFileDTO) => {
+    try {
+      const resp = await fetch(
+        `${urlGeral}catalog/${catalogId}/files/${file.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(`Falha ao remover arquivo (${resp.status}): ${txt}`);
+      }
+
+      // Remove da lista local
+      setServerFiles((prev) => prev.filter((f) => f.id !== file.id));
+
+      toast("Documento removido com sucesso!", {
+        description: file.file_name,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast("Erro ao remover documento", {
+        description: e?.message || "Tente novamente.",
+      });
+    }
+  },
+  [urlGeral, token]
+);
+
 
 
   return (
@@ -571,6 +640,44 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                     </ul>
                   </div>
                 )}
+
+{serverFiles && serverFiles.length > 0 && (
+  <div className="mb-4">
+    <Label>Documentos já anexados a este bem</Label>
+    <ul className="text-xs space-y-2 mt-2">
+      {serverFiles.map((f) => (
+        <Alert key={f.id} className="flex group items-center justify-between">
+          <div className="flex items-center gap-2 min-h-8 w-full">
+            <FileText size={16} />
+            <span className="truncate max-w-[75%]">
+              {f.file_name} ({f.content_type || "arquivo"})
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+             className="h-8 w-8 hidden group-hover:flex" 
+              onClick={() =>
+                window.open(f.file_path, "_blank", "noopener,noreferrer")
+              }
+              title="Abrir em nova aba"
+            >
+              <ScanEye size={16} />
+            </Button>
+
+                            <Button variant='destructive' size="icon" className="h-8 w-8 hidden group-hover:flex"    onClick={() => handleDeleteFile(f)}>
+                           <Trash size={16} />
+                          </Button>
+
+          </div>
+        </Alert>
+      ))}
+    </ul>
+  </div>
+)}
+
+
               </div>
             </>
           )}

@@ -216,7 +216,7 @@ export interface CatalogResponseDTO {
   } | null;
   location?: LocationDTO | null;
   images: CatalogImageDTO[];
-  files:Files[]
+  files: Files | Files[] | null | undefined;
   workflow_history?: WorkflowEvent[];
     transfer_requests: TransferRequest[]
 }

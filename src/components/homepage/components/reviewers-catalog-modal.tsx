@@ -214,9 +214,7 @@ export function ReviewersCatalogModal({ catalog, roleId }: Props) {
                   </Avatar>
                   <span className="truncate">
                     {selectedUser.username}{" "}
-                    <span className="text-xs text-muted-foreground">
-                      ({selectedUser.email})
-                    </span>
+                   
                   </span>
                 </>
               ) : (
@@ -281,9 +279,7 @@ export function ReviewersCatalogModal({ catalog, roleId }: Props) {
                       </Avatar>
                       <span className="truncate text-sm">
                         {u.username}{" "}
-                        <span className="text-[11px] text-muted-foreground">
-                          ({u.email})
-                        </span>
+                      
                       </span>
                     </CommandItem>
                   );
@@ -294,11 +290,6 @@ export function ReviewersCatalogModal({ catalog, roleId }: Props) {
         </PopoverContent>
       </Popover>
 
-      {error && (
-        <p className="text-xs text-red-500">
-          {error}
-        </p>
-      )}
 
       <div className="flex justify-end">
         <Button

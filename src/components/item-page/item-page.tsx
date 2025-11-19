@@ -165,7 +165,7 @@ type WorkflowHistoryItem = {
   conservation_status: string;
   description: string;
   asset: AssetDTO;
-    files:Files[]
+    files: Files | Files[] | null | undefined;
    user: {
     id: UUID;
     username: string;

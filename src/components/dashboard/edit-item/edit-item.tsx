@@ -63,6 +63,15 @@ interface CatalogResponseDTO {
   location?: LocationDTO | null;
   images: CatalogImageDTO[];
   workflow_history?: any[];
+   files?: CatalogFileDTO[]; 
+}
+
+interface CatalogFileDTO {
+  id: string;
+  catalog_id: string;
+  file_path: string;
+  file_name: string;
+  content_type: string;
 }
 
 type WizardState = {
@@ -78,6 +87,7 @@ type WizardState = {
     situacao?: string;
     tuMaiorIgual10?: boolean;        // 👈 novo
     obsolescenciaAlta?: boolean;     // 👈 novo
+     docs?: File[]; 
   };
   imagens?: { 
     image_ids: string[];
@@ -457,6 +467,9 @@ const allWorkflows = [
   ...WORKFLOWS.desfazimento,
 ];
 
+const flowShort = catalogData?.asset?.is_official === true
+  ? "vitrine"
+  : "desfazimento";
 
   if (loading) {
             return (
@@ -575,18 +588,21 @@ const allWorkflows = [
                 )}
 
                 {/* TROCAR LOCAL */}
-                {s.key === "trocar-local" && (
-                  <TrocarLocalStep
-                    value="trocar-local"
-                    step={STEPS.findIndex(st => st.key === "trocar-local") + 1}
-                    /* SELECTs: catalog.location */
-                  
-                    isActive={active === "trocar-local"}
-                    onStateChange={onStateChangeFactory("trocar-local")}
-                    onValidityChange={onValidityChangeFactory("trocar-local")}
-                    flowShort="vitrine"
-                  />
-                )}
+           { s.key === "trocar-local" && (
+  <TrocarLocalStep
+    value="trocar-local"
+    step={STEPS.findIndex(st => st.key === "trocar-local") + 1}
+    // SELECTs: usa catalog.location para os selects editáveis
+    initialData={deriveTLFromCatalogLocation(catalogData?.location) as any}
+    // inputs apenas leitura: usa asset.location original
+    formSnapshot={deriveTLFromAssetLocation(catalogData?.asset?.location || undefined) as any}
+    isActive={active === "trocar-local"}
+    onStateChange={onStateChangeFactory("trocar-local")}
+    onValidityChange={onValidityChangeFactory("trocar-local")}
+     flowShort={flowShort} 
+  />
+)}
+
 
                 {/* ESTADO */}
                 {s.key === "estado" && (
@@ -600,17 +616,21 @@ const allWorkflows = [
                 )}
 
                 {/* INFORMAÇÕES ADICIONAIS */}
-                {s.key === "informacoes-adicionais" && (
-                  <InformacoesAdicionaisStep
-                    value="informacoes-adicionais"
-                    step={STEPS.findIndex(st => st.key === "informacoes-adicionais") + 1}
-                    initialData={wizard["informacoes-adicionais"]}
-                    estadoAtual={wizard.estado?.estado_previo}
-                    flowShort="vitrine"
-                    onStateChange={onStateChangeFactory("informacoes-adicionais")}
-                    onValidityChange={onValidityChangeFactory("informacoes-adicionais")}
-                  />
-                )}
+{ s.key === "informacoes-adicionais" && (
+  <InformacoesAdicionaisStep
+    value="informacoes-adicionais"
+    step={STEPS.findIndex(st => st.key === "informacoes-adicionais") + 1}
+    flowShort="vitrine"                            // 👈 OBRIGATÓRIO (FlowMode)
+    initialData={wizard["informacoes-adicionais"]}
+    estadoAtual={wizard.estado?.estado_previo}
+    existingFiles={catalogData?.files ?? []}       // 👈 arquivos que já vieram da API
+                                 // 👈 para o DELETE
+    catalogId={catalogData?.id || ''}                     // 👈 id do próprio catálogo
+    onStateChange={onStateChangeFactory("informacoes-adicionais")}
+    onValidityChange={onValidityChangeFactory("informacoes-adicionais")}
+  />
+)}
+
 
                 {/* IMAGENS */}
                 {s.key === "imagens" && (
