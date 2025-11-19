@@ -35,6 +35,7 @@ export function Admin() {
                 "/user": "user-public-page",
                   "/dashboard/finalizados": "finalizados",
                     "/dashboard/audiovisual": "audiovisual",
+                          "/dashboard/salas": "salas",
           
   };
 

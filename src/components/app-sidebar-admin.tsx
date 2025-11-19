@@ -22,6 +22,7 @@ import {
   User,
   Video,
   SquarePlay,
+  DoorOpen,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -57,7 +58,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
     hasDepartamento,
     hasComissaoApoioLocal,
     hasFinalizados,
-    hasAudiovisual
+    hasAudiovisual,
+    hasSalas
   } = usePermissions();
 
   // true quando permission já foi preenchido (mesmo que vazio)
@@ -140,6 +142,16 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
                 name: adminLabel("Audiovisual"),
                 url: "/dashboard/audiovisual",
                 icon: adminIcon(SquarePlay, LayoutDashboard),
+              },
+            ]
+          : []),
+
+              ...(hasSalas
+          ? [
+              {
+                name: 'Salas',
+                url: "/dashboard/salas",
+                icon: DoorOpen,
               },
             ]
           : []),

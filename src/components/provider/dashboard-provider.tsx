@@ -29,6 +29,7 @@ import { ComissaoApoioLocal } from "../dashboard/comissao-apoio-local/comissao-a
 import { UserPublicPage } from "../user-public-page/user-public-page";
 import { Finalizados } from "../dashboard/finalizados/finalizados-page";
 import { Audiovisual } from "../dashboard/audiovisual/audiovisual";
+import { AllSalas } from "../dashboard/salas/all-salas";
 
 
 
@@ -77,6 +78,8 @@ const ModalContent = () => {
         return <Finalizados/>
       case 'audiovisual':
         return <Audiovisual/>
+      case 'salas':
+      return <AllSalas/>
     default:
       return null;
   }

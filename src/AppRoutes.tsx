@@ -26,7 +26,8 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
     hasDepartamento,
     hasComissaoApoioLocal,
     hasFinalizados,
-    hasAudiovisual
+    hasAudiovisual,
+    hasSalas
   } = usePermissions();
 
   return (
@@ -80,6 +81,13 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
         path='/dashboard/audiovisual'
         element={
           <ProtectedRoute element={<Admin />} hasPermission={hasAudiovisual} />
+        }
+      />
+
+         <Route
+        path='/dashboard/salas'
+        element={
+          <ProtectedRoute element={<Admin />} hasPermission={hasSalas} />
         }
       />
 

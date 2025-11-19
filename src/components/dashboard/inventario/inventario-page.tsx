@@ -62,7 +62,7 @@ type Agency = { id: string; agency_name: string; agency_code: string; unit_id: s
 type Sector = { id: string; sector_name: string; sector_code: string; agency_id: string; agency: Agency };
 type LegalGuardian = { id: string; legal_guardians_code: string; legal_guardians_name: string };
 
-type LocationMy = {
+export type LocationMy = {
   id: string;
   location_name: string;
   location_code: string;
@@ -763,7 +763,7 @@ const [invenarioSalaOpen, setInvenarioSalaOpen] = useState(false);
               {loadingRooms ? (
                 <div className="text-sm text-muted-foreground">Carregando salas…</div>
               ) : rooms.length === 0 ? (
-                <Alert className="text-sm">Nenhuma sala encontrada.</Alert>
+                <p className="text-sm text-center">Nenhuma sala encontrada.</p>
               ) : (
                 rooms.map((room) => (
                   <button
@@ -773,16 +773,25 @@ const [invenarioSalaOpen, setInvenarioSalaOpen] = useState(false);
                     className="w-64 text-left"
                     title={room.location_name}
                   >
-                    <Alert className="w-64 flex justify-between flex-col aspect-square cursor-pointer">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-1 flex-wrap">
-                            {room.sector?.agency?.agency_name} <ChevronRightIcon size={14} /> {room.sector?.sector_name}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xl font-semibold whitespace-normal">{room.location_name}</p>
-                    </Alert>
+                  <Alert className="w-64 flex justify-between flex-col aspect-square cursor-pointer">
+                         <div>
+                             <div className="flex items-center gap-2">
+  <div className="flex items-center gap-1 min-w-0">
+    <p className="truncate text-sm text-gray-500 dark:text-gray-300 ">
+      {room.sector.agency.agency_name}
+    </p>
+    <ChevronRight size={14} className="flex-shrink-0" />
+    <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+      {room.sector.sector_name}
+    </p>
+  </div>
+</div>
+
+                         </div>
+                          <p className="text-xl  font-semibold whitespace-normal">
+                            {room.location_name}
+                          </p>
+                        </Alert>
                   </button>
                 ))
               )}
