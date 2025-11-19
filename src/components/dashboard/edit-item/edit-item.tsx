@@ -34,7 +34,8 @@ type StepKey =
 type ValidMap = Partial<Record<StepKey, boolean>>;
 type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
 
-interface AgencyDTO { id: string; agency_name: string; agency_code: string; }
+interface AgencyDTO { id: string; agency_name: string; agency_code: string;  unit_id?: string;
+  unit?: UnitDTO;}
 interface UnitDTO   { id: string; unit_name: string; unit_code: string; unit_siaf: string; agency_id?: string; agency?: AgencyDTO; }
 interface SectorDTO { id: string; sector_name: string; sector_code: string; unit_id?: string; unit?: UnitDTO; agency_id?: string; agency?: AgencyDTO; }
 interface LocationDTO { id: string; location_name: string; location_code: string; sector_id?: string; sector?: SectorDTO; }
@@ -137,40 +138,64 @@ const pickLocationIdForPut = (wizard: WizardState, catalog: CatalogResponseDTO):
 /** Para SELECTs do TrocarLocal: usa catalog.location */
 function deriveTLFromCatalogLocation(loc?: LocationDTO | null) {
   if (!loc || !loc.sector) return undefined;
+
   const sector = loc.sector;
-  const agency = sector?.agency;
-  const unit   = sector?.unit;
+  const agency = sector.agency;
+
+  // A API pode mandar unit em dois lugares:
+  // - sector.unit
+  // - sector.agency.unit   (é o caso do seu exemplo)
+  const unitFromSector = (sector as any).unit as UnitDTO | undefined;
+  const unitFromAgency = agency?.unit as UnitDTO | undefined;
+  const unit = unitFromSector || unitFromAgency || null;
+
+  const unitId =
+    unit?.id ||
+    sector.unit_id ||
+    agency?.unit_id ||
+    "";
 
   return {
     location_id: loc.id || "",
-    sector_id:   sector?.id || "",
-    unit_id:     unit?.id || "",
-    agency_id:   agency?.id || "",
+    sector_id: sector.id || "",
+    unit_id: unitId,
+    agency_id: agency?.id || "",
     location: loc || null,
-    sector:   sector || null,
-    unit:     unit || null,
-    agency:   agency || null,
+    sector: sector || null,
+    unit,
+    agency: agency || null,
   };
 }
 
 /** Para inputs readonly do TrocarLocal: usa asset.location */
 function deriveTLFromAssetLocation(loc?: LocationDTO | null) {
   if (!loc || !loc.sector) return undefined;
+
   const sector = loc.sector;
-  const agency = sector?.agency;
-  const unit   = sector?.unit;
+  const agency = sector.agency;
+
+  const unitFromSector = (sector as any).unit as UnitDTO | undefined;
+  const unitFromAgency = agency?.unit as UnitDTO | undefined;
+  const unit = unitFromSector || unitFromAgency || null;
+
+  const unitId =
+    unit?.id ||
+    sector.unit_id ||
+    agency?.unit_id ||
+    "";
 
   return {
     location_id: loc.id || "",
-    sector_id:   sector?.id || "",
-    unit_id:     unit?.id || "",
-    agency_id:   agency?.id || "",
+    sector_id: sector.id || "",
+    unit_id: unitId,
+    agency_id: agency?.id || "",
     location: loc || null,
-    sector:   sector || null,
-    unit:     unit || null,
-    agency:   agency || null,
+    sector: sector || null,
+    unit,
+    agency: agency || null,
   };
 }
+
 
 /* ===================== Componente ===================== */
 export function EditItemVitrine() {
