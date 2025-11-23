@@ -36,6 +36,8 @@ export function Admin() {
                   "/dashboard/finalizados": "finalizados",
                     "/dashboard/audiovisual": "audiovisual",
                           "/dashboard/salas": "salas",
+                            "/dashboard/acervo-historico": "acervo-historico",
+          
           
   };
 

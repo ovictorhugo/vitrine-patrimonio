@@ -691,6 +691,7 @@ export function AdmComission() {
         if (agencyId) params.set("agency_id", agencyId);
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
+ if (q) params.set("q", q);
 
         const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
           headers: {
@@ -762,6 +763,7 @@ export function AdmComission() {
       sectorId,
       locationId,
       PAGE_SIZE,
+      q
     ]
   );
 
@@ -789,7 +791,8 @@ export function AdmComission() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-
+        if (q) params.set("q", q);
+params.set("workflow_status", 'REVIEW_REQUESTED_COMISSION');
       const query = params.toString();
       const url = query
         ? `${urlGeral}statistics/catalog/stats/review-commission?${query}`
@@ -820,6 +823,7 @@ export function AdmComission() {
     agencyId,
     sectorId,
     locationId,
+    q
   ]);
 
   // total geral esperando avaliação
@@ -914,10 +918,11 @@ export function AdmComission() {
     else params.delete("sector_id");
     if (locationId) params.set("location_id", locationId);
     else params.delete("location_id");
-
+if (q) params.set("q", q);
+    else params.delete("q");
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId]);
+  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, q]);
 
   // Filtro q (client-side) - aplicado sobre o board já carregado
   const filteredBoard = useMemo(() => {
@@ -988,59 +993,37 @@ export function AdmComission() {
   const MAX_STEP = 40;
   const BASE_STEP = 12;
 
-  const autoScrollTick = useCallback(() => {
-    if (!draggingRef.current) return stopAutoScrollLoop();
-    const el = boardScrollRef.current;
-    if (!el) return stopAutoScrollLoop();
+const autoScrollTick = useCallback(() => {
+  if (!draggingRef.current) return stopAutoScrollLoop();
+  const el = boardScrollRef.current;
+  if (!el) return stopAutoScrollLoop();
 
-    const rect = el.getBoundingClientRect();
-    const style = getComputedStyle(el);
-    const padL = parseFloat(style.paddingLeft || "0");
-    const padR = parseFloat(style.paddingRight || "0");
-    const rectLeft = rect.left + padL;
-    const rectRight = rect.right - padR;
-    const x = pointerXRef.current;
+  const rect = el.getBoundingClientRect();
+  const style = getComputedStyle(el);
+  const padL = parseFloat(style.paddingLeft || "0");
+  const padR = parseFloat(style.paddingRight || "0");
+  const rectLeft = rect.left + padL;
+  const rectRight = rect.right - padR;
+  const x = pointerXRef.current;
 
-    let dx = 0;
-    if (x - rectLeft < EDGE_PX) {
-      const dist = Math.max(1, EDGE_PX - (x - rectLeft));
-      dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-    } else if (rectRight - x < EDGE_PX) {
-      const dist = Math.max(1, EDGE_PX - (rectRight - x));
-      dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-    }
+  let dx = 0;
+  if (x - rectLeft < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (x - rectLeft));
+    dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  } else if (rectRight - x < EDGE_PX) {
+    const dist = Math.max(1, EDGE_PX - (rectRight - x));
+    dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+  }
 
-    if (dx !== 0) {
-      el.scrollBy({ left: dx, behavior: "auto" });
-    }
+  if (dx !== 0) {
+    el.scrollBy({ left: dx, behavior: "auto" });
+  }
 
-    const destId = currentDestinationRef.current;
-    if (destId) {
-      const colEl = colRefs.current[destId];
-      if (colEl) {
-        const containerRect = el.getBoundingClientRect();
-        const colRect = colEl.getBoundingClientRect();
+  // REMOVIDO: código que centralizava automaticamente a coluna de destino
+  // Isso causava conflito com o scroll nas bordas
 
-        const colCenterX = colRect.left + colRect.width / 2;
-        const containerCenterX = containerRect.left + containerRect.width / 2;
-
-        const isNotVisible =
-          colRect.right < containerRect.left || colRect.left > containerRect.right;
-        const needsCenter = Math.abs(colCenterX - containerCenterX) > 100;
-
-        if (isNotVisible || needsCenter) {
-          const targetScroll =
-            colEl.offsetLeft - containerRect.width / 2 + colRect.width / 2;
-          el.scrollTo({
-            left: Math.max(0, targetScroll),
-            behavior: "auto",
-          });
-        }
-      }
-    }
-
-    rafIdRef.current = requestAnimationFrame(autoScrollTick);
-  }, []);
+  rafIdRef.current = requestAnimationFrame(autoScrollTick);
+}, []);
 
   const handlePointerMoveWhileDrag = useCallback(
     (ev: PointerEvent) => {
@@ -1067,55 +1050,58 @@ export function AdmComission() {
     currentDestinationRef.current = destId || null;
   }, []);
 
-  const handleDragEndDrop = useCallback(
-    async (result: DropResult) => {
-      const { source, destination } = result;
-      if (!destination) return;
+ const handleDragEndDrop = useCallback(
+  async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
 
-      const fromKey = (source.droppableId ?? "").trim();
-      const toKey = (destination.droppableId ?? "").trim();
-      if (fromKey === toKey) return;
+    const fromKey = (source.droppableId ?? "").trim();
+    const toKey = (destination.droppableId ?? "").trim();
+    if (fromKey === toKey) return;
 
-      const validTo =
-        toKey === COL_SEM_REVISOR ||
-        commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
+    const validTo =
+      toKey === COL_SEM_REVISOR ||
+      commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
 
-      if (!validTo) {
-        toast.error("Destino inválido para reatribuição.");
-        return;
-      }
+    if (!validTo) {
+      toast.error("Destino inválido para reatribuição.");
+      return;
+    }
 
-      const fromList = board[fromKey] ?? [];
-      const entry = fromList[source.index];
-      if (!entry) return;
+    // CORREÇÃO: Usar filteredBoard e encontrar pelo draggableId
+    // ao invés de usar board[fromKey][source.index]
+    const fromList = board[fromKey] ?? [];
+    const entry = fromList.find((e) => e.id === draggableId);
+    if (!entry) return;
 
-      const prevBoard = board;
-      const prevEntries = entries;
+    const prevBoard = board;
+    const prevEntries = entries;
 
-      let reviewersNew: string[] = [];
-      if (toKey !== COL_SEM_REVISOR) {
-        reviewersNew = [toKey];
-      }
+    let reviewersNew: string[] = [];
+    if (toKey !== COL_SEM_REVISOR) {
+      reviewersNew = [toKey];
+    }
 
-      const newFrom = fromList.filter((x) => x.id !== entry.id);
-      const newTo = [entry, ...(board[toKey] ?? [])];
+    // Atualizar o board original (não o filtrado)
+    const newFromBoard = (board[fromKey] ?? []).filter((x) => x.id !== entry.id);
+    const newToBoard = [entry, ...(board[toKey] ?? [])];
 
-      setBoard((old) => ({
-        ...old,
-        [fromKey]: newFrom,
-        [toKey]: newTo,
-      }));
+    setBoard((old) => ({
+      ...old,
+      [fromKey]: newFromBoard,
+      [toKey]: newToBoard,
+    }));
 
-      setEntries((old) => [...old]);
+    setEntries((old) => [...old]);
 
-      const ok = await putReviewers(entry, reviewersNew);
-      if (!ok) {
-        setBoard(prevBoard);
-        setEntries(prevEntries);
-      }
-    },
-    [board, entries, commissionUsers, putReviewers]
-  );
+    const ok = await putReviewers(entry, reviewersNew);
+    if (!ok) {
+      setBoard(prevBoard);
+      setEntries(prevEntries);
+    }
+  },
+  [board, board, entries, commissionUsers, putReviewers]
+);
 
   const handleDragEnd = useCallback(
     (result: DropResult) => {
@@ -1211,7 +1197,7 @@ export function AdmComission() {
     let itemsToExport: CatalogEntry[] = [];
 
     if (colKey) {
-      const all = filteredBoard[colKey] ?? [];
+      const all = board[colKey] ?? [];
       const isExpanded = expandedColumn === colKey;
       itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
     } else {
@@ -1478,7 +1464,7 @@ export function AdmComission() {
                 >
                   <div className="flex gap-4 min-w-[980px] h-full">
                     {columns.map((col) => {
-                      const items = filteredBoard[col.key] ?? [];
+                      const items = board[col.key] ?? [];
                       const meta = WORKFLOW_STATUS_META[col.key] ?? {
                         Icon: HelpCircle,
                         colorClass: "text-zinc-500",
@@ -1528,33 +1514,36 @@ export function AdmComission() {
                           <Droppable droppableId={col.key}>
                             {(provided, snapshot) => (
                               <div className="flex-1 min-h-0">
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className="flex flex-col min-h-0 w-full max-w-full"
+                                  >
                                 <ScrollArea
-                                  className={`relative flex h-[calc(100vh-348px)] ${
+                                  className={`relative gap-4 flex-col  flex h-[calc(100vh-348px)] ${
                                     snapshot.isDraggingOver
                                       ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
                                       : ""
                                   } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                 >
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                    className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
-                                  >
+                                 
                                     {(loading || loadingColumns[col.key]) && !items.length ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
-                                        <Skeleton className="aspect-square w-full rounded-md" />
+                                        <Skeleton className="aspect-square w-full mt-2 rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
                                       </>
                                     ) : null}
 
                                     {items.map((entry, idx) => (
                                       <div
                                         key={entry.id}
-                                        className="min-w-0 w-full max-w-full overflow-hidden"
+                                        className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
                                       >
                                         <CardItemDropdown
                                           entry={entry}
                                           index={idx}
+                                          draggableId={entry.id}  // ADICIONAR esta prop
                                           isImage={isImage}
                                         />
                                       </div>
@@ -1574,7 +1563,7 @@ export function AdmComission() {
                                         (typeof total === "number" && loaded < total);
 
                                       return shouldShowMore ? (
-                                        <div className="pt-2">
+                                        <div className="">
                                           <Button
                                             variant="outline"
                                             className="w-full"
@@ -1596,10 +1585,10 @@ export function AdmComission() {
                                         </div>
                                       ) : null;
                                     })()}
-                                  </div>
-
+                                
                                   <ScrollBar orientation="vertical" />
                                 </ScrollArea>
+                                </div>
                               </div>
                             )}
                           </Droppable>
@@ -1615,7 +1604,7 @@ export function AdmComission() {
           <div className="m-0">
             {columns.map((col) => {
               if (expandedColumn !== col.key) return null;
-              const items = filteredBoard[col.key] ?? [];
+              const items = board[col.key] ?? [];
               const slice = items.slice(0, expandedVisible);
               const meta = WORKFLOW_STATUS_META[col.key] ?? {
                 Icon: HelpCircle,

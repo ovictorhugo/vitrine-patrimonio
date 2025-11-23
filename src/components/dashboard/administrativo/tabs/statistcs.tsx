@@ -1,91 +1,38 @@
+import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
+import { Button } from "../../../ui/button";
+import ChartTempoRevisaoComissaoPie from "../../commission/components/ChartTempoRevisaoComissao";
+import ChartTempoRevisaoComissao from "../../commission/components/grafico-comission-REVIEW_REQUESTED";
+import { GraficoStatusCatalogo } from "../../dashboard-page/components/chart-workflows";
+import { ChartRadialDesfazimento } from "../components/chart-radial-desfazimento";
+import { Combobox } from "../../itens-vitrine/itens-vitrine";
+import { WORKFLOWS } from "../admin";
+import { Alert } from "../../../ui/alert";
+import { MagnifyingGlass } from "phosphor-react";
+import { Input } from "../../../ui/input";
 import {
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import {
-  Archive,
-  Clock,
-  HelpCircle,
-  Hourglass,
-  ListTodo,
-  Recycle,
-  Store,
-  Trash,
-  Wrench,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { UserContext } from "../../../../context/context";
-import { GraficoStatusCatalogo } from "../../dashboard-page/components/chart-workflows";
-import { ChartRadialDesfazimento } from "../../administrativo/components/chart-radial-desfazimento";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "../../../ui/carousel";
-import { Alert } from "../../../ui/alert";
-import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
-import ChartTempoRevisaoComissao from "../components/grafico-comission-REVIEW_REQUESTED";
-import ChartTempoRevisaoComissaoPie from "../components/ChartTempoRevisaoComissao";
-
-import { Combobox } from "../../itens-vitrine/itens-vitrine";
 import { Separator } from "../../../ui/separator";
-import { Input } from "../../../ui/input";
-import { MagnifyingGlass } from "phosphor-react";
-import { Button } from "../../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
+import { GraficoStatusCatalogoPorAgencia } from "../../graficos/GraficoStatusCatalogoPorAgencia";
+import { GraficoStatusCatalogoPorLocation } from "../../graficos/GraficoStatusCatalogoPorLocation";
+import { GraficoStatusCatalogoPorLocationTreemap } from "../../graficos/GraficoStatusCatalogoPorLocationTreeMap";
 
-export type StatusCount = { status: string; count: number };
+interface Props {
+  statsMap: Record<string, number>;
+  baseUrl: string;
+  authHeaders: HeadersInit;
+}
 
-const WORKFLOWS = [
-  {
-    key: "REVIEW_REQUESTED_DESFAZIMENTO",
-    name: "Avaliação S. Patrimônio - Desfazimento",
-    Icon: Hourglass,
-  },
-  { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
-  {
-    key: "REVIEW_REQUESTED_COMISSION",
-    name: "LTD - Lista Temporária de Desfazimento",
-    Icon: ListTodo,
-  },
-  { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
-  {
-    key: "DESFAZIMENTO",
-    name: "LFD - Lista Final de Desfazimento",
-    Icon: Trash,
-  },
-  { key: "DESCARTADOS", name: "Processo Finalizado", Icon: Recycle },
-] as const;
-
-export function Estatistica() {
-  const { user, urlGeral } = useContext(UserContext);
+export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const baseUrl = useMemo(
-    () => (urlGeral || "").replace(/\/+$/, ""),
-    [urlGeral]
-  );
-
-  // ===== token + headers (do jeito que você pediu)
-  const token = useMemo(() => localStorage.getItem("jwt_token"), []);
-  const authHeaders: HeadersInit = useMemo(
-    () => ({
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }),
-    [token]
-  );
-
-  // ===== filtros (estado)
+  // ===== filtros (estado local)
   const [q, setQ] = useState("");
   const [materialId, setMaterialId] = useState<string | null>(null);
   const [guardianId, setGuardianId] = useState<string | null>(null);
@@ -94,7 +41,7 @@ export function Estatistica() {
   const [sectorId, setSectorId] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
 
-  // queries dos combobox
+  // queries dos combobox (busca remota)
   const [materialQ, setMaterialQ] = useState("");
   const [guardianQ, setGuardianQ] = useState("");
   const [unitQ, setUnitQ] = useState("");
@@ -102,7 +49,7 @@ export function Estatistica() {
   const [sectorQ, setSectorQ] = useState("");
   const [locationQ, setLocationQ] = useState("");
 
-  // listas
+  // listas vindas do backend
   const [materials, setMaterials] = useState<any[]>([]);
   const [guardians, setGuardians] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
@@ -118,7 +65,7 @@ export function Estatistica() {
   const [loadingSectors, setLoadingSectors] = useState(false);
   const [loadingLocations, setLoadingLocations] = useState(false);
 
-  // ===== inicializa lendo URL (1x)
+  // ===== inicializa filtros lendo a URL (1x ao montar)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
 
@@ -132,7 +79,7 @@ export function Estatistica() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== filtros -> URL
+  // ===== sincroniza filtros -> URL (pai refaz stats)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
 
@@ -149,6 +96,7 @@ export function Estatistica() {
     setOrDelete("sector_id", sectorId);
     setOrDelete("location_id", locationId);
 
+    // reseta pagina quando muda filtro
     params.set("page", "1");
 
     navigate(
@@ -179,7 +127,8 @@ export function Estatistica() {
     setLocationQ("");
   };
 
-  // ===== fetches dos combobox
+  // ===== fetches remotos dos combobox
+
   const fetchMaterials = useCallback(
     async (search = "") => {
       if (!baseUrl) return;
@@ -233,10 +182,9 @@ export function Estatistica() {
         setLoadingUnits(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/units/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/units/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setUnits(json?.units ?? json ?? []);
@@ -279,7 +227,7 @@ export function Estatistica() {
       try {
         setLoadingSectors(true);
         const params = new URLSearchParams();
-        params.set("agency_id", agencyId);
+        params.set("agency_id/", agencyId);
         if (search) params.set("q", search);
         const res = await fetch(
           `${baseUrl}/sectors/?${params.toString()}`,
@@ -344,148 +292,62 @@ export function Estatistica() {
     if (sectorId) fetchLocations(locationQ);
   }, [sectorId, fetchLocations, locationQ]);
 
-  // items para o combobox
+  // transforma em items
   const materialItems = useMemo(
-    () =>
-      (materials ?? []).map((m) => ({
-        id: m.id,
-        code: m.material_code,
-        label: m.material_name || m.material_code,
-      })),
+    () => (materials ?? []).map((m) => ({
+      id: m.id,
+      code: m.material_code,
+      label: m.material_name || m.material_code,
+    })),
     [materials]
   );
 
   const guardianItems = useMemo(
-    () =>
-      (guardians ?? []).map((g) => ({
-        id: g.id,
-        code: g.legal_guardians_code,
-        label: g.legal_guardians_name || g.legal_guardians_code,
-      })),
+    () => (guardians ?? []).map((g) => ({
+      id: g.id,
+      code: g.legal_guardians_code,
+      label: g.legal_guardians_name || g.legal_guardians_code,
+    })),
     [guardians]
   );
 
   const unitItems = useMemo(
-    () =>
-      (units ?? []).map((u) => ({
-        id: u.id,
-        code: u.unit_code,
-        label: u.unit_name || u.unit_code,
-      })),
+    () => (units ?? []).map((u) => ({
+      id: u.id,
+      code: u.unit_code,
+      label: u.unit_name || u.unit_code,
+    })),
     [units]
   );
 
   const agencyItems = useMemo(
-    () =>
-      (agencies ?? []).map((a) => ({
-        id: a.id,
-        code: a.agency_code,
-        label: a.agency_name || a.agency_code,
-      })),
+    () => (agencies ?? []).map((a) => ({
+      id: a.id,
+      code: a.agency_code,
+      label: a.agency_name || a.agency_code,
+    })),
     [agencies]
   );
 
   const sectorItems = useMemo(
-    () =>
-      (sectors ?? []).map((s) => ({
-        id: s.id,
-        code: s.sector_code,
-        label: s.sector_name || s.sector_code,
-      })),
+    () => (sectors ?? []).map((s) => ({
+      id: s.id,
+      code: s.sector_code,
+      label: s.sector_name || s.sector_code,
+    })),
     [sectors]
   );
 
   const locationItems = useMemo(
-    () =>
-      (locations ?? []).map((l) => ({
-        id: l.id,
-        code: l.location_code,
-        label: l.location_name || l.location_code,
-      })),
+    () => (locations ?? []).map((l) => ({
+      id: l.id,
+      code: l.location_code,
+      label: l.location_name || l.location_code,
+    })),
     [locations]
   );
 
-  // ===== stats filtradas pela URL
-  const [statsMap, setStatsMap] = useState<Record<string, number>>({});
-  const [loadingStats, setLoadingStats] = useState(false);
-
-  const buildStatsParamsFromUrl = useCallback(() => {
-    const params = new URLSearchParams(location.search);
-
-    const allowedKeys = [
-      "q",
-      "material_id",
-      "legal_guardian_id",
-      "unit_id",
-      "agency_id",
-      "sector_id",
-      "location_id",
-    ];
-
-    const out = new URLSearchParams();
-    for (const k of allowedKeys) {
-      const v = params.get(k);
-      if (v) out.set(k, v);
-    }
-    return out;
-  }, [location.search]);
-
-  const fetchStats = useCallback(async () => {
-    if (!baseUrl) return;
-    try {
-      setLoadingStats(true);
-      const params = buildStatsParamsFromUrl();
-      const res = await fetch(
-        `${baseUrl}/statistics/catalog/count-by-workflow-status?${params.toString()}`,
-        {
-          method: "GET",
-          headers: authHeaders,
-        }
-      );
-      if (!res.ok) throw new Error();
-      const data: StatusCount[] = await res.json();
-      const map: Record<string, number> = {};
-      for (const row of data || []) {
-        if (row?.status) map[row.status] = row?.count ?? 0;
-      }
-      setStatsMap(map);
-    } catch {
-      setStatsMap({});
-    } finally {
-      setLoadingStats(false);
-    }
-  }, [baseUrl, authHeaders, buildStatsParamsFromUrl]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats, location.search]);
-
-  // ===== meta para ícones/cards
-  const WORKFLOW_STATUS_META: Record<
-    string,
-    { Icon: React.ComponentType<any>; colorClass: string }
-  > = {
-    REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
-    ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
-    VITRINE: { Icon: Store, colorClass: "text-green-600" },
-    AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
-    TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
-
-    REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
-    ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
-    REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
-    REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
-    DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
-    DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
-  };
-
-  const getMeta = (statusKey: string) =>
-    WORKFLOW_STATUS_META[statusKey] ?? {
-      Icon: HelpCircle,
-      colorClass: "text-zinc-500",
-    };
-
-  // ===== scroll horizontal dos filtros
+  // ===== Scroll horizontal dos filtros
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -510,10 +372,9 @@ export function Estatistica() {
   }, []);
 
   return (
-    <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
-
-      {/* ===== FILTROS */}
-      <div className="flex gap-4 items-center mb-2">
+    <div className="m-8">
+      {/* FILTROS */}
+      <div className="flex gap-4 items-center mb-6">
         <div className="relative grid grid-cols-1 w-full">
           <Button
             variant="outline"
@@ -535,7 +396,7 @@ export function Estatistica() {
             >
               <div className="flex gap-3 items-center">
                 <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                <div>
+               <div>
                                      <MagnifyingGlass size={16} className="text-gray-500" />
                                    </div>
                   <Input
@@ -627,51 +488,33 @@ export function Estatistica() {
         </div>
       </div>
 
-      {/* ===== CARDS/WORKFLOWS */}
-      <Carousel className="w-full flex gap-4 px-4 items-center">
-        <div className="absolute left-0 z-[9]">
-          <CarouselPrevious />
-        </div>
-        <CarouselContent className="gap-4">
-          {WORKFLOWS.map(({ key, name }) => {
-            const { Icon } = getMeta(key);
-            return (
-              <CarouselItem key={key} className="basis-1/4">
-                <Alert className="p-0">
-                  <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm truncate font-medium">
-                      {name}
-                    </CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {statsMap[key] || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">registrados</p>
-                  </CardContent>
-                </Alert>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        <div className="absolute right-0 z-[9]">
-          <CarouselNext />
-        </div>
-      </Carousel>
-
-      {/* ===== GRÁFICOS */}
+      {/* GRÁFICOS */}
       <GraficoStatusCatalogo
         stats={statsMap}
         workflows={WORKFLOWS.map(({ key, name }) => ({ key, name }))}
-        title="Itens do Desfazimento"
+        title="Todos os itens da plataforma"
       />
 
-      <ChartTempoRevisaoComissao />
+        <div className="mt-8">
+        <GraficoStatusCatalogoPorAgencia />
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+
+
+       <div className="mt-8">
+        <GraficoStatusCatalogoPorLocationTreemap />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8 mt-8">
+        <ChartRadialDesfazimento counts={statsMap} />
         <ChartTempoRevisaoComissaoPie />
       </div>
+
+      <div className="mt-8">
+        <ChartTempoRevisaoComissao />
+      </div>
+
+      
     </div>
   );
 }

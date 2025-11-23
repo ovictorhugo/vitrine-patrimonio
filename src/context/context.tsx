@@ -64,8 +64,12 @@ interface UserContextType {
   permission: Permission[] , 
   setPermission: React.Dispatch<React.SetStateAction<Permission[]>>,
 
-  urlGeral: string,
+   urlGeral: string,
   setUrlGeral: React.Dispatch<React.SetStateAction<string>>;
+
+
+  timeLoggedIn: number;
+  setTimeLoggedIn: React.Dispatch<React.SetStateAction<number>>;
 
   itemsSelecionados: ItemsSelecionados[] , 
   setItensSelecionados: React.Dispatch<React.SetStateAction<ItemsSelecionados[]>>,
@@ -94,6 +98,9 @@ interface UserContextType {
 export const UserContext = createContext<UserContextType>({
   loggedIn: false,
   setLoggedIn: () => {},
+
+  timeLoggedIn: 0,
+  setTimeLoggedIn: () => { },
   
   user: {} as User,
   setUser: () => {},

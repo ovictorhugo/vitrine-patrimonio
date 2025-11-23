@@ -27,7 +27,8 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
     hasComissaoApoioLocal,
     hasFinalizados,
     hasAudiovisual,
-    hasSalas
+    hasSalas,
+    hasAcervoHistorico
   } = usePermissions();
 
   return (
@@ -88,6 +89,14 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
         path='/dashboard/salas'
         element={
           <ProtectedRoute element={<Admin />} hasPermission={hasSalas} />
+        }
+      />
+
+      
+         <Route
+        path='/dashboard/acervo-historico'
+        element={
+          <ProtectedRoute element={<Admin />} hasPermission={hasAcervoHistorico} />
         }
       />
 

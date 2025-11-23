@@ -333,9 +333,7 @@ export function VisaoSala() {
     };
 
     const {hasSalas} = usePermissions()
-    
-console.log(room?.legal_guardian_id)
-console.log('ertert',user?.system_identity.legal_guardian.id)
+  
         if (loading) {
             return (
               <div className="flex justify-center items-center h-full">
@@ -351,11 +349,10 @@ console.log('ertert',user?.system_identity.legal_guardian.id)
             );
           }
 
-           if (!hasSalas && !(room?.legal_guardian_id == user?.system_identity.legal_guardian.id)) {
+           if (!hasSalas && !(room && (room?.legal_guardian_id == user?.system_identity?.legal_guardian.id))) {
             return (
               <div
                 className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900"
-                
               >
            
           

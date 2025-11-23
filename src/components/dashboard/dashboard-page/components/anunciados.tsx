@@ -67,9 +67,11 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { Input } from "../../../ui/input";
-import { ArrowUUpLeft, Repeat } from "phosphor-react";
+import { ArrowUUpLeft, MagnifyingGlass, Repeat } from "phosphor-react";
 import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 import { GraficoStatusCatalogo } from "./chart-workflows";
+import { Combobox, ComboboxItem } from "../../itens-vitrine/itens-vitrine";
+import { Separator } from "../../../ui/separator";
 
 /* =========================
    Tipos mínimos do backend
@@ -653,6 +655,215 @@ export function Anunciados(props: {
     return h;
   }, [token]);
 
+
+  // ===== debounce helper =====
+function useDebounced<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+// buscas (texto)
+const [q, setQ] = useState("");
+
+// queries dos combobox
+const [materialQ, setMaterialQ] = useState("");
+const [guardianQ, setGuardianQ] = useState("");
+const [unitQ, setUnitQ] = useState("");
+const [agencyQ, setAgencyQ] = useState("");
+const [sectorQ, setSectorQ] = useState("");
+const [locationQ, setLocationQ] = useState("");
+
+const materialQd = useDebounced(materialQ);
+const guardianQd = useDebounced(guardianQ);
+const unitQd = useDebounced(unitQ);
+const agencyQd = useDebounced(agencyQ);
+const sectorQd = useDebounced(sectorQ);
+const locationQd = useDebounced(locationQ);
+
+const [materials, setMaterials] = useState<Material[]>([]);
+const [loadingMaterials, setLoadingMaterials] = useState(false);
+const [materialId, setMaterialId] = useState<UUID | null>(null);
+
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingMaterials(true);
+      const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+      const res = await fetch(`${baseUrl}/materials/${qs}`, {
+        headers: authHeaders,
+      });
+      const json = await res.json();
+      setMaterials(json?.materials ?? []);
+    } catch {
+      setMaterials([]);
+      toast.error("Falha ao carregar materiais");
+    } finally {
+      setLoadingMaterials(false);
+    }
+  })();
+}, [baseUrl, authHeaders, materialQd]);
+
+const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
+const [loadingGuardians, setLoadingGuardians] = useState(false);
+const [guardianId, setGuardianId] = useState<UUID | null>(null);
+
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingGuardians(true);
+      const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+      const res = await fetch(`${baseUrl}/legal-guardians/${qs}`, {
+        headers: authHeaders,
+      });
+      const json = await res.json();
+      setGuardians(json?.legal_guardians ?? []);
+    } catch {
+      setGuardians([]);
+      toast.error("Falha ao carregar responsáveis");
+    } finally {
+      setLoadingGuardians(false);
+    }
+  })();
+}, [baseUrl, authHeaders, guardianQd]);
+
+type UnitDTO = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
+type AgencyDTO = { id: UUID; agency_name: string; agency_code: string };
+type SectorDTO = { id: UUID; sector_name: string; sector_code: string };
+type LocationDTO = { id: UUID; location_name: string; location_code: string };
+
+const [units, setUnits] = useState<UnitDTO[]>([]);
+const [agencies, setAgencies] = useState<AgencyDTO[]>([]);
+const [sectors, setSectors] = useState<SectorDTO[]>([]);
+const [locations, setLocations] = useState<LocationDTO[]>([]);
+
+const [loadingUnits, setLoadingUnits] = useState(false);
+const [loadingAgencies, setLoadingAgencies] = useState(false);
+const [loadingSectors, setLoadingSectors] = useState(false);
+const [loadingLocations, setLoadingLocations] = useState(false);
+
+const [unitId, setUnitId] = useState<UUID | null>(null);
+const [agencyId, setAgencyId] = useState<UUID | null>(null);
+const [sectorId, setSectorId] = useState<UUID | null>(null);
+const [locationId, setLocationId] = useState<UUID | null>(null);
+
+
+// 🔹 itens do Combobox de materiais
+const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
+  id: m.id,
+  code: m.material_code,
+  label: m.material_name || m.material_code,
+}));
+
+// 🔹 itens do Combobox de responsáveis legais
+const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({
+  id: g.id,
+  code: g.legal_guardians_code,
+  label: g.legal_guardians_name || g.legal_guardians_code,
+}));
+// Units
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingUnits(true);
+      const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
+      const res = await fetch(`${baseUrl}/units/${qs}`, { headers: authHeaders });
+      const json = await res.json();
+      setUnits(json?.units ?? []);
+    } catch {
+      setUnits([]);
+    } finally {
+      setLoadingUnits(false);
+    }
+  })();
+}, [baseUrl, authHeaders, unitQd]);
+
+// Agencies
+const fetchAgencies = useCallback(async (uid: UUID, q?: string) => {
+  if (!uid) return setAgencies([]);
+  try {
+    setLoadingAgencies(true);
+    const params = new URLSearchParams({ unit_id: uid });
+    if (q) params.set("q", q);
+    const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
+      headers: authHeaders,
+    });
+    const json = await res.json();
+    setAgencies(json?.agencies ?? []);
+  } catch {
+    setAgencies([]);
+  } finally {
+    setLoadingAgencies(false);
+  }
+}, [baseUrl, authHeaders]);
+
+// Sectors
+const fetchSectors = useCallback(async (aid: UUID, q?: string) => {
+  if (!aid) return setSectors([]);
+  try {
+    setLoadingSectors(true);
+    const params = new URLSearchParams({ agency_id: aid });
+    if (q) params.set("q", q);
+    const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
+      headers: authHeaders,
+    });
+    const json = await res.json();
+    setSectors(json?.sectors ?? []);
+  } catch {
+    setSectors([]);
+  } finally {
+    setLoadingSectors(false);
+  }
+}, [baseUrl, authHeaders]);
+
+// Locations
+const fetchLocations = useCallback(async (sid: UUID, q?: string) => {
+  if (!sid) return setLocations([]);
+  try {
+    setLoadingLocations(true);
+    const params = new URLSearchParams({ sector_id: sid });
+    if (q) params.set("q", q);
+    const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
+      headers: authHeaders,
+    });
+    const json = await res.json();
+    setLocations(json?.locations ?? []);
+  } catch {
+    setLocations([]);
+  } finally {
+    setLoadingLocations(false);
+  }
+}, [baseUrl, authHeaders]);
+
+// Cascata
+useEffect(() => {
+  setAgencyId(null);
+  setSectorId(null);
+  setLocationId(null);
+  setAgencies([]);
+  setSectors([]);
+  setLocations([]);
+  if (unitId) fetchAgencies(unitId, agencyQd);
+}, [unitId, agencyQd, fetchAgencies]);
+
+useEffect(() => {
+  setSectorId(null);
+  setLocationId(null);
+  setSectors([]);
+  setLocations([]);
+  if (agencyId) fetchSectors(agencyId, sectorQd);
+}, [agencyId, sectorQd, fetchSectors]);
+
+useEffect(() => {
+  setLocationId(null);
+  setLocations([]);
+  if (sectorId) fetchLocations(sectorId, locationQd);
+}, [sectorId, locationQd, fetchLocations]);
+
+
   type BoardState = BoardKind;
   const [tab, setTab] = useState<BoardState>("desfazimento");
 
@@ -708,21 +919,41 @@ export function Anunciados(props: {
   };
 
   // Assinatura estável dos filtros
-  const filtersSignature = useMemo(() => {
-    const effectiveType = props.filter?.type ?? urlType;
-    const effectiveValue = props.filter?.value ?? urlValue;
+const filtersSignature = useMemo(() => {
+  const effectiveType = props.filter?.type ?? urlType;
+  const effectiveValue = props.filter?.value ?? urlValue;
 
-    const roleIdToUse =
-      effectiveType === "role_id"
-        ? selectedRoleId || effectiveValue || ""
-        : "";
+  const roleIdToUse =
+    effectiveType === "role_id"
+      ? selectedRoleId || effectiveValue || ""
+      : "";
 
-    return JSON.stringify({
-      type: effectiveType ?? null,
-      value: effectiveValue ?? null,
-      roleId: roleIdToUse || null,
-    });
-  }, [props.filter, urlType, urlValue, selectedRoleId]);
+  return JSON.stringify({
+    type: effectiveType ?? null,
+    value: effectiveValue ?? null,
+    roleId: roleIdToUse || null,
+
+    materialId: materialId || null,
+    guardianId: guardianId || null,
+    unitId: unitId || null,
+    agencyId: agencyId || null,
+    sectorId: sectorId || null,
+    locationId: locationId || null,
+    q: q?.trim() || null,
+  });
+}, [
+  props.filter,
+  urlType,
+  urlValue,
+  selectedRoleId,
+  materialId,
+  guardianId,
+  unitId,
+  agencyId,
+  sectorId,
+  locationId,
+  q,
+]);
 
   // ---------- estado por workflow (board) ----------
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -833,31 +1064,53 @@ export function Anunciados(props: {
   };
 
   /* ====== Helpers de filtros comuns ====== */
-  const buildCommonParams = useCallback(() => {
-    const params = new URLSearchParams();
+ const buildCommonParams = useCallback(() => {
+  const params = new URLSearchParams();
 
-    const effectiveType = props.filter?.type ?? urlType;
-    const effectiveValue = props.filter?.value ?? urlValue;
+  // filtros vindos de props/URL continuam valendo
+  const effectiveType = props.filter?.type ?? urlType;
+  const effectiveValue = props.filter?.value ?? urlValue;
 
-    if (effectiveType === "user_id" && effectiveValue) {
-      params.set("user_id", effectiveValue);
-    }
+  if (effectiveType === "user_id" && effectiveValue) {
+    params.set("user_id", effectiveValue);
+  }
 
-    if (effectiveType === "location_id" && effectiveValue) {
-      params.set("location_id", effectiveValue);
-    }
+  if (effectiveType === "location_id" && effectiveValue) {
+    params.set("location_id", effectiveValue);
+  }
 
-    const roleIdToUse =
-      effectiveType === "role_id"
-        ? selectedRoleId || effectiveValue || ""
-        : "";
+  const roleIdToUse =
+    effectiveType === "role_id"
+      ? selectedRoleId || effectiveValue || ""
+      : "";
 
-    if (roleIdToUse) {
-      params.set("role_id", roleIdToUse);
-    }
+  if (roleIdToUse) {
+    params.set("role_id", roleIdToUse);
+  }
 
-    return params;
-  }, [props.filter, selectedRoleId, urlType, urlValue]);
+  // ✅ NOVOS filtros (iguais ao ItensVitrine)
+  if (materialId) params.set("material_id", materialId);
+  if (guardianId) params.set("legal_guardian_id", guardianId);
+  if (unitId) params.set("unit_id", unitId);
+  if (agencyId) params.set("agency_id", agencyId);
+  if (sectorId) params.set("sector_id", sectorId);
+  if (locationId) params.set("location_id", locationId);
+  if (q?.trim()) params.set("q", q.trim());
+
+  return params;
+}, [
+  props.filter,
+  selectedRoleId,
+  urlType,
+  urlValue,
+  materialId,
+  guardianId,
+  unitId,
+  agencyId,
+  sectorId,
+  locationId,
+  q,
+]);
 
   const buildParamsForStatus = useCallback(
     (statusKey: string, offset = 0, limit = PAGE_SIZE) => {
@@ -1296,6 +1549,43 @@ const onLoadMoreStatus = (statusKey: string) => {
   fetchStatus(statusKey, currentOffset, true);
 };
 
+
+/////////scrool
+ const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollability = () => {
+    if (!scrollAreaRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+  };
+
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+
+  useEffect(() => {
+    checkScrollability();
+    const handleResize = () => checkScrollability();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const clearFilters = () => {
+    setMaterialId(null);
+    setGuardianId(null);
+    setQ("");
+    setUnitId(null);
+    setAgencyId(null);
+    setSectorId(null);
+    setLocationId(null);
+    setAgencies([]);
+    setSectors([]);
+    setLocations([]);
+  };
   return (
     <div className="flex flex-col gap-8 p-8 pt-0">
       {/* Header com toggle de abas */}
@@ -1350,6 +1640,138 @@ const onLoadMoreStatus = (statusKey: string) => {
           </div>
         </div>
       </div>
+
+       <div className="flex gap-4 items-center">
+                  <div className="relative grid grid-cols-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      onClick={scrollLeft}
+                      disabled={!canScrollLeft}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+      
+                    <div className="mx-14">
+                      <div
+                        ref={scrollAreaRef}
+                        className="overflow-x-auto scrollbar-hide"
+                        onScroll={checkScrollability}
+                      >
+                        <div className="flex gap-3 items-center">
+                          <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                            <div>
+                              <MagnifyingGlass size={16} className="text-gray-500" />
+                            </div>
+                            <div className="relative w-full">
+                              <Input
+                                className="border-0 p-0 h-9 flex flex-1 w-full"
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                placeholder="Buscar por código, descrição, material, marca, modelo..."
+                              />
+                            </div>
+                          </Alert>
+      
+                          <Combobox
+                            items={materialItems}
+                            value={materialId}
+                            onChange={(v) => setMaterialId(v)}
+                            onSearch={setMaterialQ}
+                            isLoading={loadingMaterials}
+                            placeholder="Material"
+                          />
+      
+                          <Combobox
+                            items={guardianItems}
+                            value={guardianId}
+                            onChange={(v) => setGuardianId(v)}
+                            onSearch={setGuardianQ}
+                            isLoading={loadingGuardians}
+                            placeholder="Responsável"
+                          />
+      
+                          <Separator className="h-8" orientation="vertical" />
+      
+                          <Combobox
+                            items={(units ?? []).map((u) => ({
+                              id: u.id,
+                              code: u.unit_code,
+                              label: u.unit_name || u.unit_code,
+                            }))}
+                            value={unitId}
+                            onChange={(v) => setUnitId(v)}
+                            onSearch={setUnitQ}
+                            isLoading={loadingUnits}
+                            placeholder="Unidade"
+                          />
+      
+                          <Combobox
+                            items={(agencies ?? []).map((a) => ({
+                              id: a.id,
+                              code: a.agency_code,
+                              label: a.agency_name || a.agency_code,
+                            }))}
+                            value={agencyId}
+                            onChange={(v) => setAgencyId(v)}
+                            onSearch={setAgencyQ}
+                            isLoading={loadingAgencies}
+                            placeholder={"Organização"}
+                            disabled={!unitId}
+                          />
+      
+                          <Combobox
+                            items={(sectors ?? []).map((s) => ({
+                              id: s.id,
+                              code: s.sector_code,
+                              label: s.sector_name || s.sector_code,
+                            }))}
+                            value={sectorId}
+                            onChange={(v) => setSectorId(v)}
+                            onSearch={setSectorQ}
+                            isLoading={loadingSectors}
+                            placeholder={"Setor"}
+                            disabled={!agencyId}
+                          />
+      
+                          <Combobox
+                            items={(locations ?? []).map((l) => ({
+                              id: l.id,
+                              code: l.location_code,
+                              label: l.location_name || l.location_code,
+                            }))}
+                            value={locationId}
+                            onChange={(v) => setLocationId(v)}
+                            onSearch={setLocationQ}
+                            isLoading={loadingLocations}
+                            placeholder="Local de guarda"
+                            disabled={!sectorId}
+                          />
+      
+                          <Button variant="outline" size="sm" onClick={clearFilters}>
+                            <Trash size={16} />
+                            Limpar filtros
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+      
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                      onClick={scrollRight}
+                      disabled={!canScrollRight}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+      
+                 
+      
+                
+                </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
         {/* === Cards de resumo === */}

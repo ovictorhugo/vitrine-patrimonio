@@ -8,7 +8,7 @@ import { Badge } from "../ui/badge";
 import { Alert } from "../ui/alert";
 import { Separator } from "../ui/separator";
 import { Card, Carousel } from "../ui/apple-cards-carousel";
-import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft, XCircle, Wrench, Users, Store, Clock, FileIcon} from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle, MapPin, Trash, Pencil, Home, Undo2, CheckIcon, HelpCircle, Archive, Hourglass, MoveRight, XIcon, User, BadgePercent, Recycle, Hammer, PackageOpen, LucideIcon, WrenchIcon, CheckCircle, Workflow, Calendar, LoaderCircleIcon, ArrowRightLeft, XCircle, Wrench, Users, Store, Clock, FileIcon, BookmarkPlus} from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -34,6 +34,7 @@ import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 import { log } from "console";
 import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
 import { DocumentsTabCatalog, Files } from "../homepage/components/documents-tab-catalog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -623,7 +624,7 @@ const qrUrlFrom = (d: CatalogResponseDTO) => {
     : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
 };
 
-  const {hasCatalogo} = usePermissions()
+  const {hasCatalogo, hasAcervoHistorico} = usePermissions()
 
 const lastWorkflow = useMemo(() => {
   const hist = catalog?.workflow_history ?? [];
@@ -893,6 +894,102 @@ const justificationText = useMemo(() => {
 }, [shouldShowJustification, currentStatus, catalog?.workflow_history]);
   //////////////////////////////////////////////////
 
+      // ====== Acervo Histórico / Toggle ======
+    const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
+  const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
+    currentStatusFromServer === "ACERVO_HISTORICO"
+  );
+  
+  // sincroniza quando abrir outro item/modal
+  useEffect(() => {
+    setIsAcervoHistoricoLocal(
+      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
+    );
+  }, [lastWorkflow?.workflow_status, catalog?.id]);
+  
+  const postWorkflow = useCallback(
+    async (newStatus: string) => {
+      if (!catalog?.id) {
+        toast("Não foi possível alterar o workflow", {
+          description: "ID do catálogo não encontrado.",
+        });
+        return null;
+      }
+  
+      const endpoint = `${urlGeral}catalog/${catalog.id}/workflow`;
+  
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workflow_status: newStatus,
+          detail: { additionalProp1: {} },
+        }),
+      });
+  
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          `Falha ao alterar workflow (${res.status}): ${text || "Erro desconhecido"}`
+        );
+      }
+  
+      return await res.json().catch(() => null);
+    },
+    [catalog?.id, token, urlGeral]
+  );
+  
+  const [addingAcervo, setAddingAcervo] = useState(false);
+  
+  const handleAddToAcervoHistorico = useCallback(async () => {
+    try {
+      setAddingAcervo(true);
+  
+      await postWorkflow("ACERVO_HISTORICO");
+  
+      // ✅ SÓ AQUI muda o botão
+      setIsAcervoHistoricoLocal(true);
+  
+      toast("Item adicionado ao Acervo Histórico ", {
+        description: "Workflow atualizado com sucesso.",
+      });
+  
+    } catch (e: any) {
+      toast("Erro ao adicionar ao Acervo Histórico", {
+        description: e?.message || "Tente novamente.",
+      });
+    } finally {
+      setAddingAcervo(false);
+    }
+  }, [postWorkflow]);
+  
+  const handleBackToReviewRequestedDesfazimento = useCallback(async () => {
+    try {
+      setAddingAcervo(true);
+  
+      await postWorkflow("REVIEW_REQUESTED_DESFAZIMENTO");
+  
+      // ✅ SÓ AQUI muda o botão
+      setIsAcervoHistoricoLocal(false);
+  
+      toast("Item enviado para Avaliação de Desfazimento ", {
+        description: "Workflow atualizado com sucesso.",
+      });
+  
+    } catch (e: any) {
+      toast("Erro ao alterar workflow", {
+        description: e?.message || "Tente novamente.",
+      });
+    } finally {
+      setAddingAcervo(false);
+    }
+  }, [postWorkflow]);
+  
+  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -993,6 +1090,39 @@ if(catalog) {
           <Button onClick={openDelete} variant="destructive" size="sm" disabled={deleting}>
   <Trash size={16} /> Excluir
 </Button>
+     )}
+
+         {hasAcervoHistorico && (
+       <Tooltip>
+         <TooltipTrigger asChild>
+           <Button
+             variant={isAcervoHistoricoLocal ? "default" : "outline"}
+             size="icon"
+             onClick={(e) => {
+               e.stopPropagation();
+               if (isAcervoHistoricoLocal) {
+                 handleBackToReviewRequestedDesfazimento();
+               } else {
+                 handleAddToAcervoHistorico();
+               }
+             }}
+             disabled={addingAcervo}
+           >
+             <BookmarkPlus
+               size={16}
+               className={addingAcervo ? "animate-pulse" : ""}
+             />
+           </Button>
+         </TooltipTrigger>
+     
+         <TooltipContent className="z-[99]">
+           {addingAcervo
+             ? "Atualizando..."
+             : isAcervoHistoricoLocal
+             ? "Enviar para Avaliação de Desfazimento"
+             : "Adicionar ao Acervo Histórico"}
+         </TooltipContent>
+       </Tooltip>
      )}
 
  {/* Favoritar (opcional) */}

@@ -48,6 +48,8 @@ import {
   LoaderCircle,
   ListTodo,
   File,
+  Landmark,
+  BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
@@ -294,6 +296,8 @@ export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
   DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
       DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
+
+            ACERVO_HISTORICO: { Icon: Landmark, colorClass: "text-zinc-500" },
 };
 
 export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
@@ -310,6 +314,9 @@ export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   REJEITADOS_COMISSAO: "Recusados",
   DESFAZIMENTO: "LFD - Lista Final de Desfazimento",
   DESCARTADOS: "Processo Finalizado",
+
+
+  ACERVO_HISTORICO: 'Acervo Histórico'
 };
 
 const money = (v?: string) => {
@@ -497,7 +504,7 @@ export function CatalogModal() {
     DECLINED: "bg-red-600",
   };
 
-  const {hasCatalogo} = usePermissions()
+  const {hasCatalogo, hasAcervoHistorico} = usePermissions()
 
   // Ação: aceitar uma transferência => PUT /catalog/transfer/{transfer_id}?new_status=ACCEPTABLE
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -948,6 +955,106 @@ const justificationText = useMemo(() => {
 }, [shouldShowJustification, currentStatus, catalog?.workflow_history]);
   //////////////////////////////////////////////////
 
+
+
+  /////ACERVO HISYTORICO
+
+    // ====== Acervo Histórico / Toggle ======
+  const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
+const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
+  currentStatusFromServer === "ACERVO_HISTORICO"
+);
+
+// sincroniza quando abrir outro item/modal
+useEffect(() => {
+  setIsAcervoHistoricoLocal(
+    (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
+  );
+}, [lastWorkflow?.workflow_status, catalog?.id]);
+
+const postWorkflow = useCallback(
+  async (newStatus: string) => {
+    if (!catalog?.id) {
+      toast("Não foi possível alterar o workflow", {
+        description: "ID do catálogo não encontrado.",
+      });
+      return null;
+    }
+
+    const endpoint = `${urlGeral}catalog/${catalog.id}/workflow`;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        workflow_status: newStatus,
+        detail: { additionalProp1: {} },
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `Falha ao alterar workflow (${res.status}): ${text || "Erro desconhecido"}`
+      );
+    }
+
+    return await res.json().catch(() => null);
+  },
+  [catalog?.id, token, urlGeral]
+);
+
+const [addingAcervo, setAddingAcervo] = useState(false);
+
+const handleAddToAcervoHistorico = useCallback(async () => {
+  try {
+    setAddingAcervo(true);
+
+    await postWorkflow("ACERVO_HISTORICO");
+
+    // ✅ SÓ AQUI muda o botão
+    setIsAcervoHistoricoLocal(true);
+
+    toast("Item adicionado ao Acervo Histórico ", {
+      description: "Workflow atualizado com sucesso.",
+    });
+
+  } catch (e: any) {
+    toast("Erro ao adicionar ao Acervo Histórico", {
+      description: e?.message || "Tente novamente.",
+    });
+  } finally {
+    setAddingAcervo(false);
+  }
+}, [postWorkflow]);
+
+const handleBackToReviewRequestedDesfazimento = useCallback(async () => {
+  try {
+    setAddingAcervo(true);
+
+    await postWorkflow("REVIEW_REQUESTED_DESFAZIMENTO");
+
+    // ✅ SÓ AQUI muda o botão
+    setIsAcervoHistoricoLocal(false);
+
+    toast("Item enviado para Avaliação de Desfazimento ", {
+      description: "Workflow atualizado com sucesso.",
+    });
+
+  } catch (e: any) {
+    toast("Erro ao alterar workflow", {
+      description: e?.message || "Tente novamente.",
+    });
+  } finally {
+    setAddingAcervo(false);
+  }
+}, [postWorkflow]);
+
+
+
 console.log(catalog)
   const content = () => {
     if (!catalog) {
@@ -1009,39 +1116,73 @@ console.log(catalog)
           <div className="hidden md:flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild >
                   <Link target="_blank" to={`/item?id=${catalog.id}`}>
                     <Button variant="outline" size="icon">
                       <ArrowSquareOut size={16} />
                     </Button>
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>Ir a página</TooltipContent>
+                <TooltipContent className="z-[99]">Ir a página</TooltipContent>
               </Tooltip>
-
+           
   {(((catalog.user.id === user?.id) || hasCatalogo) && workflowReview) && (
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Link  to={`/dashboard/editar-item?id=${catalog.id}`}>
                     <Button variant="outline" onClick={() => onClose()} size="icon">
                       <Pencil size={16} />
                     </Button>
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent>Editar</TooltipContent>
+                <TooltipContent className="z-[99]">Editar</TooltipContent>
               </Tooltip>
   )}
 
  {((((catalog.user.id === user?.id) || hasCatalogo) && workflowReview)) && (
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button onClick={openDelete} variant="destructive" size="icon" disabled={deleting}>
                     <Trash size={16} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Deletar</TooltipContent>
+                <TooltipContent className="z-[99]">Deletar</TooltipContent>
               </Tooltip>
               )}
+
+               {hasAcervoHistorico && (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant={isAcervoHistoricoLocal ? "default" : "outline"}
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isAcervoHistoricoLocal) {
+            handleBackToReviewRequestedDesfazimento();
+          } else {
+            handleAddToAcervoHistorico();
+          }
+        }}
+        disabled={addingAcervo}
+      >
+        <BookmarkPlus
+          size={16}
+          className={addingAcervo ? "animate-pulse" : ""}
+        />
+      </Button>
+    </TooltipTrigger>
+
+    <TooltipContent className="z-[99]">
+      {addingAcervo
+        ? "Atualizando..."
+        : isAcervoHistoricoLocal
+        ? "Enviar para Avaliação de Desfazimento"
+        : "Adicionar ao Acervo Histórico"}
+    </TooltipContent>
+  </Tooltip>
+)}
+
             </TooltipProvider>
 
               {/* Favoritar (opcional) */}

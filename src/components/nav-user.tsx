@@ -110,8 +110,8 @@ const history = useNavigate();
             <DropdownMenuGroup className="px-1">
            <Link to={'/dashboard'}>
            <DropdownMenuItem className="gap-2">
-              <LayoutDashboard size={16} />
-              Minha área
+              <User size={16} />
+              Minha página
             </DropdownMenuItem></Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -123,10 +123,6 @@ const history = useNavigate();
                 Perfil e segurança
               </DropdownMenuItem></Link>
 
-              <DropdownMenuItem className="gap-2">
-                <Bell size={16} />
-                Notificações
-              </DropdownMenuItem>
             
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

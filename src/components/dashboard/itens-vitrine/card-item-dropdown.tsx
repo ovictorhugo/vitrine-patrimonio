@@ -106,6 +106,7 @@ type Props = ParentActions & {
   entry: CatalogEntry;
   index: number;
   isImage: boolean
+  draggableId: string
 };
 
 export function CardItemDropdown({
@@ -117,13 +118,14 @@ export function CardItemDropdown({
   viewCount,
   onPromptDelete,
   onPromptMove,
-  isImage
+  isImage,
+  draggableId
 }: Props) {
   // (se precisar de algo do contexto)
   useContext(UserContext);
 
   return (
-     <Draggable draggableId={entry.id} index={index}>
+   <Draggable draggableId={draggableId} index={index}>
     {(prov, snap) => (
       <div
         ref={prov.innerRef}

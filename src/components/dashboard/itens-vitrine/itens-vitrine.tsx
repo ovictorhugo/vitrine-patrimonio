@@ -306,9 +306,9 @@ const codeFrom = (e: CatalogEntry) =>
   [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
 
 /* ========================= Combobox ========================= */
-type ComboboxItem = { id: UUID; code?: string; label: string };
+export type ComboboxItem = { id: UUID; code?: string; label: string };
 
-function Combobox({
+export function Combobox({
   items,
   value,
   onChange,
@@ -605,6 +605,7 @@ const fetchStatusCounts = useCallback(async () => {
     if (agencyId) params.set("agency_id", agencyId);
     if (sectorId) params.set("sector_id", sectorId);
     if (locationId) params.set("location_id", locationId);
+ if (q) params.set("q", q);
 
     const qs = params.toString();
     const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""}`;
@@ -641,6 +642,7 @@ const fetchStatusCounts = useCallback(async () => {
   agencyId,
   sectorId,
   locationId,
+  q
 ]);
 
 useEffect(() => {
@@ -761,6 +763,7 @@ const resetExpandedPagination = () => {
         if (agencyId) params.set("agency_id", agencyId);
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
+ if (q) params.set("q", q);
 
         const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
           headers: {
@@ -822,6 +825,7 @@ const resetExpandedPagination = () => {
       sectorId,
       locationId,
       PAGE_SIZE,
+      q
     ]
   );
 
@@ -870,12 +874,14 @@ const resetExpandedPagination = () => {
     else params.delete("sector_id");
     if (locationId) params.set("location_id", locationId);
     else params.delete("location_id");
+    if (q) params.set("q", q);
+    else params.delete("q");
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId]);
+  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, q]);
 
   // Filtro q (client) - aplicado sobre o board já carregado
 // Filtro q (client) - aplicado sobre o board já carregado
@@ -1033,21 +1039,23 @@ const handleDragStart = useCallback(() => {
   }, []);
 
 const handleDragEndDrop = async (result: DropResult) => {
-  const { source, destination } = result;
+  const { source, destination, draggableId } = result;
   if (!destination) return;
 
   const fromKey = (source.droppableId ?? "").trim();
   const toKey = (destination.droppableId ?? "").trim();
   if (fromKey === toKey) return;
 
-  const fromList = board[fromKey] ?? [];
-  const entry = fromList[source.index];
+  // ✅ Sempre ache o item pelo draggableId NA LISTA RENDERIZADA
+  const fromVisibleList = board[fromKey] ?? [];
+  const entry = fromVisibleList.find((e) => e.id === draggableId);
+
   if (!entry) return;
 
   const needs = rulesFor(toKey);
-  
-  // Salvar estado anterior para rollback
-  const prevBoard = JSON.parse(JSON.stringify(board)); // Deep clone
+
+  // snapshots para rollback
+  const prevBoard = JSON.parse(JSON.stringify(board));
   const prevEntries = [...entries];
 
   const optimisticHistory: WorkflowHistoryItem = {
@@ -1064,32 +1072,25 @@ const handleDragEndDrop = async (result: DropResult) => {
     workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
   };
 
-  // Atualizar board removendo o item da origem e adicionando no destino
-  // Importante: criar novos arrays, não modificar os existentes
-  const newBoard: Record<string, CatalogEntry[]> = {};
-  
-  for (const [key, items] of Object.entries(board)) {
-    if (key === fromKey) {
-      // Remove da origem
-      newBoard[key] = items.filter((x) => x.id !== entry.id);
-    } else if (key === toKey) {
-      // Adiciona no destino (garantindo que não existe duplicado)
-      const filtered = items.filter((x) => x.id !== entry.id);
-      newBoard[key] = [optimisticEntry, ...filtered];
-    } else {
-      // Mantém as outras colunas iguais
-      newBoard[key] = [...items];
-    }
-  }
+  // ✅ atualização otimista SEM depender de índice
+  const newFromBoard = (board[fromKey] ?? []).filter((x) => x.id !== entry.id);
+  const newToBoard = [
+    optimisticEntry,
+    ...(board[toKey] ?? []).filter((x) => x.id !== entry.id),
+  ];
 
-  // Atualizar estados
-  setBoard(newBoard);
+  setBoard((old) => ({
+    ...old,
+    [fromKey]: newFromBoard,
+    [toKey]: newToBoard,
+  }));
+
   setEntries((old) => {
-    // Remove todas as instâncias do item e adiciona a versão atualizada uma vez
     const filtered = old.filter((it) => it.id !== entry.id);
     return [...filtered, optimisticEntry];
   });
 
+  // modal de justificativa?
   if (needs.requireJustification || needs.extraFields?.length) {
     setSnapshotBoard(prevBoard);
     setSnapshotEntries(prevEntries);
@@ -1098,19 +1099,17 @@ const handleDragEndDrop = async (result: DropResult) => {
     return;
   }
 
-  // ✅ Atualiza estatísticas de forma otimista
-adjustCountsOnMove(fromKey, toKey);
+  // contadores otimistas
+  adjustCountsOnMove(fromKey, toKey);
 
-  // Executar POST de forma assíncrona sem bloquear
-postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
-  if (!ok) {
-    // rollback visual
-    setBoard(prevBoard);
-    setEntries(prevEntries);
-    // rollback dos contadores
-    adjustCountsOnMove(toKey, fromKey);
-  }
-});
+  // POST assíncrono
+  postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
+    if (!ok) {
+      setBoard(prevBoard);
+      setEntries(prevEntries);
+      adjustCountsOnMove(toKey, fromKey); // rollback contadores
+    }
+  });
 };
 
 const handleDragEnd = (result: DropResult) => {
@@ -1129,7 +1128,7 @@ const handleDragEnd = (result: DropResult) => {
     const extra: Record<string, any> = {};
     for (const f of needs.extraFields ?? []) extra[f.name] = extraValues[f.name] ?? "";
 
-    const prevBoard = snapshotBoard ?? filteredBoard;
+    const prevBoard = snapshotBoard ?? board;
     const prevEntries = snapshotEntries ?? entries;
 
     setPosting(true);
@@ -1382,7 +1381,7 @@ const adjustCountsOnMove = useCallback(
   const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
     let itemsToExport: CatalogEntry[] = [];
     if (colKey) {
-      const all = filteredBoard[colKey] ?? [];
+      const all = board[colKey] ?? [];
       const isExpanded = expandedColumn === colKey;
       itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
     } else {
@@ -1674,7 +1673,7 @@ const adjustCountsOnMove = useCallback(
               >
                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
-             const items = filteredBoard[col.key] ?? [];
+             const items = board[col.key] ?? [];
 const slice = items.slice(0, expandedVisible);
 const meta = WORKFLOW_STATUS_META[col.key] ?? {
   Icon: HelpCircle,
@@ -1719,49 +1718,52 @@ const totalForCol = statusCounts[col.key] ?? items.length;
 
                         <Separator className="mb-2" />
 
-                        <Droppable droppableId={col.key}>
-                          {(provided, snapshot) => (
-                            <div className="flex-1 min-h-0">
-                              <ScrollArea
+                     <Droppable droppableId={col.key}>
+  {(provided, snapshot) => (
+    <div className="flex-1 min-h-0">
+      {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+      <div
+        ref={provided.innerRef}
+        {...provided.droppableProps}
+      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+      >
+        <ScrollArea
                                 className={`h-full relative flex ${
                                   snapshot.isDraggingOver
                                     ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
                                     : ""
                                 } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                               >
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className="flex flex-col gap-2 min-w-0 w-full max-w-full pt-2 pr-1"
-                                >
+                             
                                   {(loading || loadingColumns[col.key]) &&
                                   !items.length ? (
                                     <>
                                       <Skeleton className="aspect-square w-full rounded-md" />
-                                      <Skeleton className="aspect-square w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
                                     </>
                                   ) : null}
 
                                   {items.map((entry, idx) => (
                                     <div
                                       key={entry.id}
-                                      className="min-w-0 w-full max-w-full overflow-hidden"
+                                      className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
                                     >
                                       <CardItemDropdown
                                         entry={entry}
                                         index={idx}
+                                        draggableId={entry.id}  // ADICIONAR esta prop
                                         isImage={isImage}
                                         onPromptDelete={() => openDelete(entry.id)}
                                       />
                                     </div>
                                   ))}
 
-                                  {provided.placeholder}
-
-                                 {(() => {
+                              {(() => {
   const totalFromTotals = totalByCol[col.key];
   const totalFromStats = statusCounts[col.key];
 
+  // 1) escolhe total confiável
   let effectiveTotal: number | undefined;
 
   if (typeof totalFromTotals === "number" && totalFromTotals >= items.length) {
@@ -1773,19 +1775,26 @@ const totalForCol = statusCounts[col.key] ?? items.length;
     effectiveTotal = totalFromStats;
   }
 
+  const loaded = items.length;
+
+  // 2) loading inicial (apenas skeleton)
+  const isInitialLoading =
+    (loading || loadingColumns[col.key]) && loaded === 0;
+
+  if (isInitialLoading) return null;
+
+  // 3) decide hasMore mantendo sua regra original
   let hasMore = false;
 
   if (effectiveTotal != null) {
-    // Temos total confiável: só mostra enquanto ainda falta item
-    hasMore = items.length < effectiveTotal;
+    hasMore = loaded < effectiveTotal;
   } else if (!q.trim()) {
-    // Não sabemos o total (ex.: erro 503) -> fallback heurístico
-    hasMore = items.length > 0 && items.length % PAGE_SIZE === 0;
+    hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
   }
 
   if (!hasMore) return null;
 
-  return hasMore ? (
+  return (
     <div className="pt-2">
       <Button
         variant="outline"
@@ -1806,15 +1815,18 @@ const totalForCol = statusCounts[col.key] ?? items.length;
         )}
       </Button>
     </div>
-  ) : null;
+  );
 })()}
 
-                                </div>
+
+
+                              
                                 <ScrollBar orientation="vertical" />
-                              </ScrollArea>
-                            </div>
-                          )}
-                        </Droppable>
+        </ScrollArea>
+      </div>
+    </div>
+  )}
+</Droppable>
                       </Alert>
                     );
                   })}
@@ -1827,7 +1839,7 @@ const totalForCol = statusCounts[col.key] ?? items.length;
             {columns.map((col) => {
               if (expandedColumn !== col.key) return null;
 
-          const items = filteredBoard[col.key] ?? [];
+          const items = board[col.key] ?? [];
 const slice = items.slice(0, expandedVisible);
 const meta = WORKFLOW_STATUS_META[col.key] ?? {
   Icon: HelpCircle,

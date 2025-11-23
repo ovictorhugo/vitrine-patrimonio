@@ -102,7 +102,7 @@ function App() {
   const [permission , setPermission] = useState<Permission[]>([])
   const [itemsSelecionados , setItensSelecionados] = useState<ItemsSelecionados[]>([])
   const [patrimoniosSelecionados , setPatrimoniosSelecionados] = useState<PatrimoniosSelecionados[]>([])
-
+ const [timeLoggedIn, setTimeLoggedIn] = useState("");
   useEffect(() => {
     const storedUser = localStorage.getItem('permission');
 
@@ -137,7 +137,8 @@ function App() {
       bens, setBens,
       itemsSelecionados , setItensSelecionados,
       patrimoniosSelecionados , setPatrimoniosSelecionados,
-      searchType, setSearchType
+      searchType, setSearchType,
+      timeLoggedIn, setTimeLoggedIn
     }}
     >
                <FavoriteProvider>

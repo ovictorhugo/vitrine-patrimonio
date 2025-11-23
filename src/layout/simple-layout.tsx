@@ -18,6 +18,7 @@ import { AppSidebarAdmin } from "../components/app-sidebar-admin";
 import { Separator } from "../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
 import { useModal } from "../components/hooks/use-modal-store";
+import { Badge } from "../components/ui/badge";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -33,7 +34,7 @@ export default function SimpleLayout({
   children
 }: MailProps) {
   
-  const {isCollapsed, setIsCollapsed, loggedIn,user} = useContext(UserContext)
+  const {isCollapsed, setIsCollapsed, loggedIn,user, timeLoggedIn} = useContext(UserContext)
   
   const { isOpen: isOpenHomepage, type: typeHomepage } = useModalHomepage();
   const isModalOpen = isOpenHomepage && typeHomepage === "initial-home";
@@ -86,6 +87,25 @@ export default function SimpleLayout({
       }
     }, [loggedIn]);
 
+
+  const formatRemaining = (totalMs: number) => {
+  const totalSec = Math.max(0, Math.floor(totalMs / 1000));
+
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} dia${days > 1 ? "s" : ""}`);
+  if (hours > 0 || days > 0) parts.push(`${hours}h`);
+  parts.push(`${String(minutes).padStart(2, "0")}m`);
+  parts.push(`${String(seconds).padStart(2, "0")}s`);
+
+  return parts.join(" ");
+};
+
+
     return (
     <div>
       
@@ -132,6 +152,15 @@ export default function SimpleLayout({
                  </Breadcrumb>
               </div>
 
+
+<div>
+    {(loggedIn && timeLoggedIn) && (
+       <Badge variant={'outline'} className="text-gray-500">
+       Sessão restante: {formatRemaining(Number(timeLoggedIn))}
+       </Badge>
+    )}
+ 
+</div>
              
             </div>
             {/* Assuming Header is another component */}

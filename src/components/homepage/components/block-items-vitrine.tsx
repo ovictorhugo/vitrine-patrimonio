@@ -3,16 +3,28 @@ import { UserContext } from "../../../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Repeat, Trash } from "lucide-react";
 import { Button } from "../../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import {  ItemPatrimonio } from "./item-patrimonio";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
+import { ItemPatrimonio } from "./item-patrimonio";
 import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { ArrowUUpLeft } from "phosphor-react";
 import { useQuery } from "../../authentication/signIn";
 import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
-
 
 /* ===== Resposta da API ===== */
 export interface CatalogResponse {
@@ -21,11 +33,11 @@ export interface CatalogResponse {
 
 /* ===== Props ===== */
 interface Props {
-  workflow: string;  
+  workflow: string;
   type?: string;
-  value?: string;            // filtro workflow que vem do pai
-  workflowOptions?: string[]; 
-  user_id?:string   // lista para o popup de movimentação
+  value?: string; // filtro workflow que vem do pai
+  workflowOptions?: string[];
+  user_id?: string; // lista para o popup de movimentação
 }
 
 /* ===== Helpers de URL/filtros (compatível com seu modal) ===== */
@@ -36,6 +48,13 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   else sp.delete(key);
 };
 
+// aceita tanto plural quanto singular (prioriza plural)
+const getPluralOrSingular = (sp: URLSearchParams, pluralKey: string, singularKey: string) =>
+  sp.get(pluralKey) ?? sp.get(singularKey);
+
+const firstFromPluralOrSingular = (sp: URLSearchParams, pluralKey: string, singularKey: string) =>
+  first(getPluralOrSingular(sp, pluralKey, singularKey));
+
 export function BlockItemsVitrine(props: Props) {
   const { urlGeral } = useContext(UserContext);
   const baseUrl = useMemo(() => sanitizeBaseUrl(urlGeral), [urlGeral]);
@@ -45,16 +64,28 @@ export function BlockItemsVitrine(props: Props) {
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // ===== Lê PLURAL do modal na URL =====
+  // ===== Lê PLURAL OU SINGULAR na URL =====
   const initialQ = queryUrl.get("q") || "";
   const [q, setQ] = useState(initialQ);
 
-  const [materialId, setMaterialId] = useState(first(queryUrl.get("material_ids")));
-  const [legalGuardianId, setLegalGuardianId] = useState(first(queryUrl.get("legal_guardian_ids")));
-  const [locationId, setLocationId] = useState(first(queryUrl.get("location_ids")));
-  const [unitId, setUnitId] = useState(first(queryUrl.get("unit_ids")));
-  const [agencyId, setAgencyId] = useState(first(queryUrl.get("agency_ids")));
-  const [sectorId, setSectorId] = useState(first(queryUrl.get("sector_ids")));
+  const [materialId, setMaterialId] = useState(
+    first(queryUrl.get("material_ids") ?? queryUrl.get("material_id"))
+  );
+  const [legalGuardianId, setLegalGuardianId] = useState(
+    first(queryUrl.get("legal_guardian_ids") ?? queryUrl.get("legal_guardian_id"))
+  );
+  const [locationId, setLocationId] = useState(
+    first(queryUrl.get("location_ids") ?? queryUrl.get("location_id"))
+  );
+  const [unitId, setUnitId] = useState(
+    first(queryUrl.get("unit_ids") ?? queryUrl.get("unit_id"))
+  );
+  const [agencyId, setAgencyId] = useState(
+    first(queryUrl.get("agency_ids") ?? queryUrl.get("agency_id"))
+  );
+  const [sectorId, setSectorId] = useState(
+    first(queryUrl.get("sector_ids") ?? queryUrl.get("sector_id"))
+  );
 
   // paginação
   const initialOffset = Number(queryUrl.get("offset") || "0");
@@ -82,8 +113,14 @@ export function BlockItemsVitrine(props: Props) {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const openDelete = (catalogId: string) => { setDeleteTargetId(catalogId); setIsDeleteOpen(true); };
-  const closeDelete = () => { setIsDeleteOpen(false); setDeleteTargetId(null); };
+  const openDelete = (catalogId: string) => {
+    setDeleteTargetId(catalogId);
+    setIsDeleteOpen(true);
+  };
+  const closeDelete = () => {
+    setIsDeleteOpen(false);
+    setDeleteTargetId(null);
+  };
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTargetId) return;
@@ -99,11 +136,11 @@ export function BlockItemsVitrine(props: Props) {
       }
       setItems((prev) => prev.filter((it) => it.id !== deleteTargetId));
       toast("Item excluído com sucesso.");
-        try {
-      window.dispatchEvent(
-        new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
-      );
-    } catch {}
+      try {
+        window.dispatchEvent(
+          new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
+        );
+      } catch {}
       closeDelete();
     } catch (e: any) {
       toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
@@ -125,48 +162,55 @@ export function BlockItemsVitrine(props: Props) {
     setMoveObs("");
     setIsMoveOpen(true);
   };
-  const closeMove = () => { setIsMoveOpen(false); setMoveTargetId(null); setMoveStatus(""); setMoveObs(""); };
+  const closeMove = () => {
+    setIsMoveOpen(false);
+    setMoveTargetId(null);
+    setMoveStatus("");
+    setMoveObs("");
+  };
 
-const handleConfirmMove = useCallback(async () => {
-  if (!moveTargetId || !moveStatus) return;
-  try {
-    setMoving(true);
-    const payload = {
-      workflow_status: moveStatus,
-      detail: { observation: { text: moveObs } },
-    };
-    const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
-      method: "POST",
-      headers: { ...baseHeaders },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) {
-      const t = await r.text().catch(() => "");
-      throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
-    }
-
-    // Se o destino for diferente do workflow do bloco atual, remove o item da lista
-    if (moveStatus !== props.workflow) {
-      setItems((prev) => prev.filter((it) => it.id !== moveTargetId));
-    }
-
-    // Emite o mesmo evento global (mantém consistência com o modal de item)
+  const handleConfirmMove = useCallback(async () => {
+    if (!moveTargetId || !moveStatus) return;
     try {
-      window.dispatchEvent(
-        new CustomEvent("catalog:workflow-updated", {
-          detail: { id: moveTargetId, newStatus: moveStatus },
-        })
-      );
-    } catch {}
+      setMoving(true);
+      const payload = {
+        workflow_status: moveStatus,
+        detail: { observation: { text: moveObs } },
+      };
+      const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
+        method: "POST",
+        headers: { ...baseHeaders },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
+      }
 
-    toast("Movimentação registrada!");
-    closeMove();
-  } catch (e: any) {
-    toast("Erro ao movimentar", { description: e?.message || "Tente novamente." });
-  } finally {
-    setMoving(false);
-  }
-}, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders, props.workflow]);
+      // Se o destino for diferente do workflow do bloco atual, remove o item da lista
+      if (moveStatus !== props.workflow) {
+        setItems((prev) => prev.filter((it) => it.id !== moveTargetId));
+      }
+
+      // Emite o mesmo evento global (mantém consistência com o modal de item)
+      try {
+        window.dispatchEvent(
+          new CustomEvent("catalog:workflow-updated", {
+            detail: { id: moveTargetId, newStatus: moveStatus },
+          })
+        );
+      } catch {}
+
+      toast("Movimentação registrada!");
+      closeMove();
+    } catch (e: any) {
+      toast("Erro ao movimentar", {
+        description: e?.message || "Tente novamente.",
+      });
+    } finally {
+      setMoving(false);
+    }
+  }, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders, props.workflow]);
 
   // ===== Atualiza URL (mantendo PLURAL do modal) e scroll =====
   const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
@@ -176,6 +220,7 @@ const handleConfirmMove = useCallback(async () => {
 
     setParamOrDelete(sp, "q", q);
 
+    // mantém padrão plural na escrita (compat com modal)
     setParamOrDelete(sp, "material_ids", materialId);
     setParamOrDelete(sp, "legal_guardian_ids", legalGuardianId);
     setParamOrDelete(sp, "location_ids", locationId);
@@ -186,7 +231,10 @@ const handleConfirmMove = useCallback(async () => {
     navigate({ pathname: location.pathname, search: sp.toString() });
 
     if (doScroll && hasNavigated && containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      containerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
     setHasNavigated(true);
   };
@@ -203,12 +251,40 @@ const handleConfirmMove = useCallback(async () => {
     const qUrl = sp.get("q") ?? "";
 
     setQ((prev) => (prev !== qUrl ? qUrl : prev));
-    setMaterialId((prev) => (prev !== first(sp.get("material_ids")) ? first(sp.get("material_ids")) : prev));
-    setLegalGuardianId((prev) => (prev !== first(sp.get("legal_guardian_ids")) ? first(sp.get("legal_guardian_ids")) : prev));
-    setLocationId((prev) => (prev !== first(sp.get("location_ids")) ? first(sp.get("location_ids")) : prev));
-    setUnitId((prev) => (prev !== first(sp.get("unit_ids")) ? first(sp.get("unit_ids")) : prev));
-    setAgencyId((prev) => (prev !== first(sp.get("agency_ids")) ? first(sp.get("agency_ids")) : prev));
-    setSectorId((prev) => (prev !== first(sp.get("sector_ids")) ? first(sp.get("sector_ids")) : prev));
+
+    setMaterialId((prev) => {
+      const next = firstFromPluralOrSingular(sp, "material_ids", "material_id");
+      return prev !== next ? next : prev;
+    });
+
+    setLegalGuardianId((prev) => {
+      const next = firstFromPluralOrSingular(
+        sp,
+        "legal_guardian_ids",
+        "legal_guardian_id"
+      );
+      return prev !== next ? next : prev;
+    });
+
+    setLocationId((prev) => {
+      const next = firstFromPluralOrSingular(sp, "location_ids", "location_id");
+      return prev !== next ? next : prev;
+    });
+
+    setUnitId((prev) => {
+      const next = firstFromPluralOrSingular(sp, "unit_ids", "unit_id");
+      return prev !== next ? next : prev;
+    });
+
+    setAgencyId((prev) => {
+      const next = firstFromPluralOrSingular(sp, "agency_ids", "agency_id");
+      return prev !== next ? next : prev;
+    });
+
+    setSectorId((prev) => {
+      const next = firstFromPluralOrSingular(sp, "sector_ids", "sector_id");
+      return prev !== next ? next : prev;
+    });
 
     const off = Number(sp.get("offset") ?? "0");
     const lim = Number(sp.get("limit") ?? String(limit));
@@ -232,7 +308,7 @@ const handleConfirmMove = useCallback(async () => {
         // busca textual
         if (q) url.searchParams.set("q", q);
 
-        // converte plural->singular
+        // converte plural->singular para API
         if (materialId) url.searchParams.set("material_id", materialId);
         if (legalGuardianId) url.searchParams.set("legal_guardian_id", legalGuardianId);
         if (locationId) url.searchParams.set("location_id", locationId);
@@ -240,10 +316,13 @@ const handleConfirmMove = useCallback(async () => {
         if (agencyId) url.searchParams.set("agency_id", agencyId);
         if (sectorId) url.searchParams.set("sector_id", sectorId);
 
-
-        if(props.user_id) url.searchParams.set("user_id", props.user_id)
-        if(props.type == 'user_id') url.searchParams.set("user_id", (props.value || ''))
-        if(props.type == 'location_id') url.searchParams.set("location_id", (props.value || ''))
+        if (props.user_id) url.searchParams.set("user_id", props.user_id);
+        if (props.type === "user_id")
+          url.searchParams.set("user_id", props.value || "");
+        if (props.type === "location_id")
+          url.searchParams.set("location_id", props.value || "");
+        if (props.type === "reviewer_id")
+          url.searchParams.set("reviewer_id", props.value || "");
 
         url.searchParams.set("offset", String(offset));
         url.searchParams.set("limit", String(limit));
@@ -258,13 +337,14 @@ const handleConfirmMove = useCallback(async () => {
 
         const data: CatalogResponse = await res.json();
         setItems(Array.isArray(data.catalog_entries) ? data.catalog_entries : []);
-       setLoading(false);
+        setLoading(false);
       } catch (e: any) {
         if (e.name !== "AbortError") {
           setError(e?.message || "Erro inesperado ao carregar itens.");
           setItems([]);
+          setLoading(false);
         }
-      } 
+      }
     };
 
     run();
@@ -283,7 +363,8 @@ const handleConfirmMove = useCallback(async () => {
     offset,
     limit,
     props.type,
-    props.value
+    props.value,
+    props.user_id,
   ]);
 
   // paginação
@@ -291,42 +372,46 @@ const handleConfirmMove = useCallback(async () => {
   const isLastPage = items.length < limit;
 
   const skeletons = useMemo(
-    () => Array.from({ length: 12 }, (_, index) => <Skeleton key={index} className="w-full rounded-md aspect-square" />),
+    () =>
+      Array.from({ length: 12 }, (_, index) => (
+        <Skeleton key={index} className="w-full rounded-md aspect-square" />
+      )),
     []
   );
 
   // Remover item da lista quando algum outro lugar mover o workflow
-useEffect(() => {
-  const handler = (e: any) => {
-    const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
-    if (!detail?.id) return;
-    // Se o item está na lista atual e o novo status é diferente do filtro do bloco, remove
-    setItems((prev) => {
-      const has = prev.some((it) => it.id === detail.id);
-      if (!has) return prev;
-      if (detail.newStatus && detail.newStatus !== props.workflow) {
-        return prev.filter((it) => it.id !== detail.id);
-      }
-      return prev;
-    });
-  };
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+      if (!detail?.id) return;
+      // Se o item está na lista atual e o novo status é diferente do filtro do bloco, remove
+      setItems((prev) => {
+        const has = prev.some((it) => it.id === detail.id);
+        if (!has) return prev;
+        if (detail.newStatus && detail.newStatus !== props.workflow) {
+          return prev.filter((it) => it.id !== detail.id);
+        }
+        return prev;
+      });
+    };
 
-  window.addEventListener("catalog:workflow-updated" as any, handler as any);
-  return () => window.removeEventListener("catalog:workflow-updated" as any, handler as any);
-}, [props.workflow]);
+    window.addEventListener("catalog:workflow-updated" as any, handler as any);
+    return () =>
+      window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+  }, [props.workflow]);
 
-// Remover item quando for excluído em outro lugar (ex.: modal de item)
-useEffect(() => {
-  const handler = (e: any) => {
-    const id = e?.detail?.id as string | undefined;
-    if (!id) return;
-    setItems((prev) => prev.filter((it) => it.id !== id));
-  };
+  // Remover item quando for excluído em outro lugar (ex.: modal de item)
+  useEffect(() => {
+    const handler = (e: any) => {
+      const id = e?.detail?.id as string | undefined;
+      if (!id) return;
+      setItems((prev) => prev.filter((it) => it.id !== id));
+    };
 
-  window.addEventListener("catalog:deleted" as any, handler as any);
-  return () => window.removeEventListener("catalog:deleted" as any, handler as any);
-}, []);
-
+    window.addEventListener("catalog:deleted" as any, handler as any);
+    return () =>
+      window.removeEventListener("catalog:deleted" as any, handler as any);
+  }, []);
 
   return (
     <div ref={containerRef}>
@@ -340,7 +425,7 @@ useEffect(() => {
         </div>
       )}
 
-      {(!loading && items.length > 0) && (
+      {!loading && items.length > 0 && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {items.map((item: CatalogEntry) => (
             <ItemPatrimonio
@@ -353,9 +438,16 @@ useEffect(() => {
         </div>
       )}
 
-      {(!loading && items.length == 0) && (
+      {!loading && items.length === 0 && (
         <div>
-          <p className="items-center justify-center w-full flex text-center pt-6">Nenhum item encontrado na busca</p>
+          <p className="items-center justify-center w-full flex text-center pt-6">
+            Nenhum item encontrado na busca
+          </p>
+          {error && (
+            <p className="items-center justify-center w-full flex text-center pt-2 text-sm text-red-500">
+              {error}
+            </p>
+          )}
         </div>
       )}
 
@@ -396,7 +488,10 @@ useEffect(() => {
             Anterior
           </Button>
 
-          <Button onClick={() => !isLastPage && setOffset((prev) => prev + limit)} disabled={isLastPage}>
+          <Button
+            onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+            disabled={isLastPage}
+          >
             Próximo
             <ChevronRight size={16} className="ml-2" />
           </Button>
@@ -419,7 +514,11 @@ useEffect(() => {
             <Button variant="ghost" onClick={closeDelete}>
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
               <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
             </Button>
           </DialogFooter>
@@ -469,7 +568,10 @@ useEffect(() => {
             <Button variant="ghost" onClick={closeMove}>
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button onClick={handleConfirmMove} disabled={!moveStatus || moving}>
+            <Button
+              onClick={handleConfirmMove}
+              disabled={!moveStatus || moving}
+            >
               <Repeat size={16} /> {moving ? "Salvando…" : "Confirmar"}
             </Button>
           </DialogFooter>

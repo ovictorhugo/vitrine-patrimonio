@@ -93,27 +93,12 @@ export function GraficoStatusCatalogo({
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
               <XAxis
-                dataKey="label"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                interval={0} // ← garante que todas as colunas mostrem o nome
-                tick={(props) => {
-                  const { x, y, payload } = props;
-                  return (
-                    <g transform={`translate(${x},${y})`}>
-                      <text
-                    
-                 
-                        textAnchor="middle"
-                        className=" truncate fill-muted-foreground fill-gray-500"
-                      >
-                        {truncateLabel(payload.value)}
-                      </text>
-                    </g>
-                  );
-                }}
-              />
+               dataKey="label"
+               tickLine={false}
+       
+               axisLine={false}
+           
+             />
 
               <CartesianGrid vertical={false} horizontal={false} />
 

@@ -1,5 +1,5 @@
 // src/components/administrativo/ChartTempoRevisaoComissao.tsx
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Alert } from "../../../ui/alert";
 import { CardHeader, CardTitle, CardDescription } from "../../../ui/card";
 import {
@@ -13,15 +13,14 @@ import {
 import {
   BarChart,
   Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
   ResponsiveContainer,
+  XAxis,
   LabelList,
 } from "recharts";
 import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";
+import { useLocation } from "react-router-dom";
 
 type UUID = string;
 
@@ -74,12 +73,35 @@ const chartConfig = {
 
 export function ChartTempoRevisaoComissao() {
   const { urlGeral } = useContext(UserContext);
+  const location = useLocation();
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ChartRow[]>([]);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+
+  // lê filtros da URL e devolve só os permitidos
+  const buildParamsFromUrl = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+
+    const allowedKeys = [
+      "q",
+      "material_id",
+      "legal_guardian_id",
+      "unit_id",
+      "agency_id",
+      "sector_id",
+      "location_id",
+    ];
+
+    const out = new URLSearchParams();
+    for (const k of allowedKeys) {
+      const v = params.get(k);
+      if (v) out.set(k, v);
+    }
+    return out;
+  }, [location.search]);
 
   /* --------- Fetch estatísticas agregadas --------- */
   useEffect(() => {
@@ -88,16 +110,19 @@ export function ChartTempoRevisaoComissao() {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `${urlGeral}statistics/catalog/stats/review-commission`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token ? `Bearer ${token}` : "",
-            },
-          }
-        );
+        const params = buildParamsFromUrl();
+        const query = params.toString();
+        const url = `${urlGeral}statistics/catalog/stats/review-commission${
+          query ? `?${query}` : ""
+        }`;
+
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
 
         if (!res.ok) {
           throw new Error("Falha ao carregar estatísticas da comissão");
@@ -134,7 +159,7 @@ export function ChartTempoRevisaoComissao() {
     };
 
     void fetchStats();
-  }, [urlGeral, token]);
+  }, [urlGeral, token, buildParamsFromUrl]);
 
   if (loading) {
     return <Skeleton className="h-[350px] w-full" />;
@@ -161,27 +186,19 @@ export function ChartTempoRevisaoComissao() {
               data={data}
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
-              <XAxis
-                dataKey="reviewerName"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                interval={0}
-                tick={(props) => {
-                  const { x, y, payload } = props;
-                  return (
-                    <g transform={`translate(${x},${y})`}>
-                      <text
-                        textAnchor="middle"
-                        className="truncate fill-muted-foreground fill-gray-500"
-                      >
-                        {truncateLabel(payload.value)}
-                      </text>
-                    </g>
-                  );
-                }}
-              />
-             
+           <XAxis
+  dataKey="reviewerName"
+  tickLine={false}
+
+  axisLine={false}
+ 
+
+
+
+
+
+/>
+
               <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
 
@@ -203,7 +220,6 @@ export function ChartTempoRevisaoComissao() {
                 fill="var(--color-mais1semana)"
                 radius={4}
               >
-                {/* 🔢 Label com o total em cima da barra empilhada */}
                 <LabelList
                   dataKey="total"
                   position="top"

@@ -30,6 +30,7 @@ import { UserPublicPage } from "../user-public-page/user-public-page";
 import { Finalizados } from "../dashboard/finalizados/finalizados-page";
 import { Audiovisual } from "../dashboard/audiovisual/audiovisual";
 import { AllSalas } from "../dashboard/salas/all-salas";
+import { AcervoHistorico } from "../dashboard/acervo-historico/acervo-historico";
 
 
 
@@ -80,6 +81,8 @@ const ModalContent = () => {
         return <Audiovisual/>
       case 'salas':
       return <AllSalas/>
+    case 'acervo-historico':
+      return <AcervoHistorico/>
     default:
       return null;
   }

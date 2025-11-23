@@ -23,6 +23,7 @@ import {
   Video,
   SquarePlay,
   DoorOpen,
+  Landmark,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -59,7 +60,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
     hasComissaoApoioLocal,
     hasFinalizados,
     hasAudiovisual,
-    hasSalas
+    hasSalas,
+    hasAcervoHistorico
   } = usePermissions();
 
   // true quando permission já foi preenchido (mesmo que vazio)
@@ -152,6 +154,16 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
                 name: 'Salas',
                 url: "/dashboard/salas",
                 icon: DoorOpen,
+              },
+            ]
+          : []),
+
+                ...(hasAcervoHistorico
+          ? [
+              {
+                name: 'Acervo Histórico',
+                url: "/dashboard/acervo-historico",
+                icon: Landmark,
               },
             ]
           : []),

@@ -1,5 +1,6 @@
-// src/components/administrativo/ChartTempoRevisaoComissao.tsx
+// src/components/administrativo/ChartTempoRevisaoComissaoPie.tsx
 import React, {
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,26 +11,29 @@ import { CardHeader, CardTitle, CardDescription } from "../../../ui/card";
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "../../../ui/chart";
-import { PieChart, Pie, Cell } from "recharts";
+import {
+  Label,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  Tooltip,
+} from "recharts";
 import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";
+import { useLocation } from "react-router-dom";
 
 type UUID = string;
 
-/* ========================= Tipos ========================= */
-
-// Resposta do endpoint /statistics/catalog/stats/review-commission
 type ReviewCommissionStat = {
   reviewer_id: UUID;
   reviewer: string;
   total: number;
-  d0: number; // Hoje
-  d3: number; // Até 3 dias
-  w1: number; // Acima de 3 dias
+  d0: number;
+  d3: number;
+  w1: number;
 };
 
 type ChartRow = {
@@ -41,60 +45,74 @@ type ChartRow = {
   total: number;
 };
 
-type PieDataItem = {
-  browser: "hoje" | "ate3dias" | "mais1semana";
-  visitors: number;
-};
-
-/* ========================= Config do gráfico ========================= */
-
 const chartConfig = {
-  hoje: {
-    label: "Hoje",
-    color: "#15803d",
-  },
-  ate3dias: {
-    label: "Até 3 dias",
-    color: "#f9a826",
-  },
-  mais1semana: {
-    label: "Acima de 3 dias",
-    color: "#e11d48",
-  },
+  hoje: { label: "Hoje", color: "#15803d" },
+  ate3dias: { label: "Até 3 dias", color: "#f9a826" },
+  mais1semana: { label: "Acima de 3 dias", color: "#e11d48" },
 } satisfies ChartConfig;
-
-/* ========================= Componente ========================= */
 
 export function ChartTempoRevisaoComissaoPie() {
   const { urlGeral } = useContext(UserContext);
+  const location = useLocation();
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ChartRow[]>([]);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+  // ✅ memoiza token pra não disparar refetch “do nada”
+  const token = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("jwt_token");
+  }, []);
 
-  /* --------- Fetch estatísticas agregadas --------- */
+  const authHeaders: HeadersInit = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
+
+  const buildParamsFromUrl = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    const allowedKeys = [
+      "q",
+      "material_id",
+      "legal_guardian_id",
+      "unit_id",
+      "agency_id",
+      "sector_id",
+      "location_id",
+    ];
+    const out = new URLSearchParams();
+    for (const k of allowedKeys) {
+      const v = params.get(k);
+      if (v) out.set(k, v);
+    }
+    return out;
+  }, [location.search]);
+
   useEffect(() => {
     if (!urlGeral) return;
+
+    const controller = new AbortController();
 
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `${urlGeral}statistics/catalog/stats/review-commission`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token ? `Bearer ${token}` : "",
-            },
-          }
-        );
+        const params = buildParamsFromUrl();
+        const query = params.toString();
 
-        if (!res.ok) {
-          throw new Error("Falha ao carregar estatísticas da comissão");
-        }
+        const url = `${urlGeral}statistics/catalog/stats/review-commission${
+          query ? `?${query}` : ""
+        }`;
+
+        const res = await fetch(url, {
+          method: "GET",
+          headers: authHeaders,
+          signal: controller.signal,
+        });
+
+        if (!res.ok) throw new Error();
 
         const json: ReviewCommissionStat[] = await res.json();
 
@@ -102,6 +120,7 @@ export function ChartTempoRevisaoComissaoPie() {
           const hoje = item.d0 ?? 0;
           const ate3dias = item.d3 ?? 0;
           const mais1semana = item.w1 ?? 0;
+
           const total =
             typeof item.total === "number"
               ? item.total
@@ -118,28 +137,28 @@ export function ChartTempoRevisaoComissaoPie() {
         });
 
         setData(rows);
-      } catch (err) {
+      } catch (err: any) {
+        // ✅ se foi abort, ignora sem limpar nada
+        if (err?.name === "AbortError") return;
+
         console.error(err);
-        toast.error("Falha ao carregar gráfico de tempo por revisor.");
+        toast.error("Falha ao carregar gráfico de tempo geral.");
+        // ✅ NÃO zera data aqui → evita “some depois”
       } finally {
         setLoading(false);
       }
     };
 
     void fetchStats();
-  }, [urlGeral, token]);
 
-  /* --------- Dados agregados para o gráfico de pizza --------- */
-  const chartData: PieDataItem[] = useMemo(() => {
-    if (!data.length) {
-      return [
-        { browser: "hoje",        visitors: 0 },
-        { browser: "ate3dias",    visitors: 0 },
-        { browser: "mais1semana", visitors: 0 },
-      ];
-    }
+    return () => controller.abort();
+  }, [urlGeral, authHeaders, buildParamsFromUrl]);
 
-    const totals = data.reduce(
+  // ===== agregação das faixas (para o gráfico)
+  const totalsByBucket = useMemo(() => {
+    if (!data.length) return { hoje: 0, ate3dias: 0, mais1semana: 0 };
+
+    return data.reduce(
       (acc, row) => {
         acc.hoje += row.hoje;
         acc.ate3dias += row.ate3dias;
@@ -148,20 +167,24 @@ export function ChartTempoRevisaoComissaoPie() {
       },
       { hoje: 0, ate3dias: 0, mais1semana: 0 }
     );
-
-    return [
-      { browser: "hoje",        visitors: totals.hoje },
-      { browser: "ate3dias",    visitors: totals.ate3dias },
-      { browser: "mais1semana", visitors: totals.mais1semana },
-    ];
   }, [data]);
 
+  // ✅ total geral agora vem do backend
   const totalGeral = useMemo(
-    () => chartData.reduce((sum, item) => sum + item.visitors, 0),
-    [chartData]
+    () => data.reduce((sum, row) => sum + (row.total ?? 0), 0),
+    [data]
   );
 
-  if (loading) {
+  const chartData = [
+    {
+      name: "tempo-comissao",
+      hoje: totalsByBucket.hoje,
+      ate3dias: totalsByBucket.ate3dias,
+      mais1semana: totalsByBucket.mais1semana,
+    },
+  ];
+
+  if (loading && data.length === 0) {
     return <Skeleton className="h-[350px] w-full" />;
   }
 
@@ -172,44 +195,77 @@ export function ChartTempoRevisaoComissaoPie() {
           <CardTitle className="text-sm font-medium">
             Tempo em avaliação geral
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="line-clamp-1">
             Distribuição dos itens por faixa de tempo desde a entrada em revisão
             pela comissão (LTD).
           </CardDescription>
         </div>
-       
       </CardHeader>
 
       <div className="p-6 pt-0">
-
-
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
+          className="w-full mx-auto aspect-square max-h-[320px]"
         >
-          <PieChart>
-            <ChartTooltip
+          <RadialBarChart data={chartData} innerRadius="60%" outerRadius="100%">
+            <Tooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent indicator="line" hideLabel />}
             />
-            <Pie
-              data={chartData}
-              dataKey="visitors"
-              nameKey="browser"
-              innerRadius={70}
-              outerRadius={100}
-              paddingAngle={2}
-            >
-              {chartData.map((slice) => (
-                <Cell
-                  key={slice.browser}
-                  fill={
-                    chartConfig[slice.browser].color
+
+            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+              <Label
+                content={({ viewBox }) => {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                        <tspan
+                          x={viewBox.cx}
+                          y={viewBox.cy || 0}
+                          className="dark:fill-white text-3xl font-bold"
+                        >
+                          {totalGeral.toLocaleString("pt-BR")}
+                        </tspan>
+                        <tspan
+                          x={viewBox.cx}
+                          y={(viewBox.cy || 0) + 20}
+                          className="dark:fill-white text-xs"
+                        >
+                          Total de itens
+                        </tspan>
+                      </text>
+                    );
                   }
-                />
-              ))}
-            </Pie>
-          </PieChart>
+                  return null;
+                }}
+              />
+            </PolarRadiusAxis>
+
+            <RadialBar
+              dataKey="hoje"
+              stackId="a"
+              cornerRadius={5}
+              fill={chartConfig.hoje.color}
+              className="stroke-transparent stroke-2"
+              name="hoje"
+            />
+            <RadialBar
+              dataKey="ate3dias"
+              stackId="a"
+              cornerRadius={5}
+              fill={chartConfig.ate3dias.color}
+              className="stroke-transparent stroke-2"
+              name="ate3dias"
+            />
+            <RadialBar
+              dataKey="mais1semana"
+              stackId="a"
+              cornerRadius={5}
+              fill={chartConfig.mais1semana.color}
+              className="stroke-transparent stroke-2"
+              name="mais1semana"
+            />
+          </RadialBarChart>
         </ChartContainer>
       </div>
     </Alert>
