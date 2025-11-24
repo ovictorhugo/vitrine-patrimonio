@@ -7,38 +7,43 @@ import React, {
   useRef,
   useContext,
 } from "react";
+
 import { Alert } from "../../ui/alert";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Separator } from "../../ui/separator";
 import { Label } from "../../ui/label";
 import { toast } from "sonner";
+
 import {
-  Archive,
-  MapPin,
-  Users,
-  ChevronRight,
-  LoaderCircle,
   CheckCircle,
   File as FileIcon,
   Image as ImageIcon,
-  FileText as PdfIcon,
   Download as DownloadIcon,
-  Eye as EyeIcon,
   ScanEye,
   Trash,
   Expand,
   X,
+  LoaderCircle,
 } from "lucide-react";
+
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogHeader,
-  DialogTitle,
 } from "../../ui/dialog";
+
 import { saveAs } from "file-saver";
 import { useDropzone } from "react-dropzone";
+
+// PdfThumbnail.tsx (mesmo arquivo)
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.entry";
+
+import { UserContext } from "../../../context/context";
+import { usePermissions } from "../../permissions";
+import { WorkflowHistoryItem } from "../../dashboard/itens-vitrine/card-item-dropdown";
 
 /* ===== Tipos mínimos para funcionar isolado ===== */
 type UUID = string;
@@ -74,7 +79,12 @@ type LocationDTO = {
   sector?: SectorDTO | null;
   legal_guardian?: LegalGuardianDTO | null;
 };
-type UserDTO = { id: UUID; username?: string; email?: string; photo_url?: string | null };
+type UserDTO = {
+  id: UUID;
+  username?: string;
+  email?: string;
+  photo_url?: string | null;
+};
 
 export type TransferRequestDTO = {
   id: UUID;
@@ -100,10 +110,21 @@ export type Files = {
 
 export type CatalogResponseDTO = {
   id: UUID;
+
   // Em alguns payloads vem como array; em outros, como objeto único.
   files: Files | Files[] | null | undefined;
+
   workflow_history?: WorkflowEvent[];
-  user:WorkflowHistoryItem["user"]
+
+  user: WorkflowHistoryItem["user"];
+
+  // ✅ NOVO: situação do catálogo
+  situation?:
+    | "BROKEN"
+    | "UNUSED"
+    | "UNECONOMICAL"
+    | "RECOVERABLE"
+    | string;
 };
 
 export interface TransferTabCatalogProps {
@@ -113,6 +134,8 @@ export interface TransferTabCatalogProps {
   onChange?: (next: Partial<CatalogResponseDTO>) => void;
 }
 
+/* ===================== HELPERS ===================== */
+
 function isImage(mime?: string) {
   return !!mime && mime.startsWith("image/");
 }
@@ -121,20 +144,35 @@ function isPdf(mime?: string) {
 }
 
 function buildFileUrl(base: string, path: string) {
-  // Garante barra única entre base e caminho
   if (!base) return path;
   const a = base.endsWith("/") ? base.slice(0, -1) : base;
   const b = path.startsWith("/") ? path : `/${path}`;
   return `${a}${b}`;
 }
 
+/**
+ * ✅ Nova lógica:
+ * - BROKEN ou UNECONOMICAL => desfazimento
+ * - UNUSED ou RECOVERABLE => vitrine
+ */
+function getReviewRequestedStatusBySituation(
+  situation?: CatalogResponseDTO["situation"]
+) {
+  const s = (situation ?? "").toUpperCase();
 
-// PdfThumbnail.tsx
-import * as pdfjsLib from "pdfjs-dist";
-import "pdfjs-dist/build/pdf.worker.entry";
-import { UserContext } from "../../../context/context";
-import { usePermissions } from "../../permissions";
-import { WorkflowHistoryItem } from "../../dashboard/itens-vitrine/card-item-dropdown";
+  if (s === "BROKEN" || s === "UNECONOMICAL") {
+    return "REVIEW_REQUESTED_DESFAZIMENTO";
+  }
+
+  if (s === "UNUSED" || s === "RECOVERABLE") {
+    return "REVIEW_REQUESTED_VITRINE";
+  }
+
+  // fallback seguro
+  return "REVIEW_REQUESTED_DESFAZIMENTO";
+}
+
+/* ===================== PDF THUMB ===================== */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   // @ts-ignore
@@ -161,16 +199,13 @@ export function PdfThumbnail({ url }: PdfThumbnailProps) {
         const page = await pdf.getPage(1);
         if (cancelled) return;
 
-        const viewport = page.getViewport({ scale: 1 });
-
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const context = canvas.getContext("2d");
         if (!context) return;
 
-        // ajusta tamanho do canvas (thumb pequena)
-        const scale = 0.3; // ajuste fino depois
+        const scale = 0.3;
         const scaledViewport = page.getViewport({ scale });
 
         canvas.height = scaledViewport.height;
@@ -192,7 +227,6 @@ export function PdfThumbnail({ url }: PdfThumbnailProps) {
   }, [url]);
 
   if (error) {
-    // fallback pro ícone antigo se der ruim
     return (
       <div className="flex flex-col items-center justify-center text-neutral-500">
         <span className="text-xs mt-1">PDF</span>
@@ -207,6 +241,7 @@ export function PdfThumbnail({ url }: PdfThumbnailProps) {
   );
 }
 
+/* ===================== MAIN TAB ===================== */
 
 export function DocumentsTabCatalog({
   catalog,
@@ -214,13 +249,13 @@ export function DocumentsTabCatalog({
   token: tokenProp,
   onChange,
 }: TransferTabCatalogProps) {
-  // Lista de arquivos do backend (para o grid)
+  /* ===================== FILE LIST ===================== */
+
   const [fileList, setFileList] = useState<Files[]>(() => {
     if (!catalog?.files) return [];
     return Array.isArray(catalog.files) ? catalog.files : [catalog.files];
   });
 
-  // Sincroniza se o catálogo mudar externamente
   useEffect(() => {
     if (!catalog?.files) {
       setFileList([]);
@@ -228,6 +263,8 @@ export function DocumentsTabCatalog({
     }
     setFileList(Array.isArray(catalog.files) ? catalog.files : [catalog.files]);
   }, [catalog]);
+
+  /* ===================== PDF DIALOG ===================== */
 
   const [pdfDialog, setPdfDialog] = useState<{
     open: boolean;
@@ -242,11 +279,13 @@ export function DocumentsTabCatalog({
     setPdfDialog({ open: false, file: null });
   }, []);
 
+  /* ===================== DOWNLOAD ===================== */
+
   const downloadFile = useCallback(
     async (file: Files) => {
       try {
         const url = buildFileUrl(urlGeral, file.file_path);
-        // Se não houver token, tenta baixar direto pelo link (útil para arquivos públicos/CDN)
+
         if (!tokenProp) {
           saveAs(url, file.file_name || "arquivo");
           return;
@@ -264,7 +303,7 @@ export function DocumentsTabCatalog({
         const ext = file.file_name?.split(".").pop();
         const safeName = file.file_name || `arquivo.${ext || "bin"}`;
         saveAs(blob, safeName);
-      } catch (e: any) {
+      } catch (e) {
         console.error(e);
         toast.error("Não foi possível baixar o arquivo.");
       }
@@ -272,16 +311,12 @@ export function DocumentsTabCatalog({
     [tokenProp, urlGeral]
   );
 
-  /* ===================== WORKFLOW ===================== */
+  /* ===================== WORKFLOW (para permissão) ===================== */
 
   const currentWorkflowStatus = useMemo(() => {
-    const history = catalog?.workflow_history;
+    const history = catalog?.workflow_history?.filter(Boolean);
     if (!history || history.length === 0) return undefined;
-    const sorted = [...history].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-    return sorted[0]?.workflow_status;
+    return history.at(-1)?.workflow_status; // último da lista
   }, [catalog?.workflow_history]);
 
   const allowedUploadStatuses = useMemo(
@@ -293,24 +328,21 @@ export function DocumentsTabCatalog({
     []
   );
 
-  const {user} = useContext(UserContext)
-  const {hasCatalogo} = usePermissions()
+  const { user } = useContext(UserContext);
+  const { hasCatalogo } = usePermissions();
 
   const canUpload =
     !!catalog?.id &&
     !!tokenProp &&
     !!currentWorkflowStatus &&
-    allowedUploadStatuses.includes(currentWorkflowStatus)
-    && (!hasCatalogo || user?.id != catalog?.user.id);
+    allowedUploadStatuses.includes(currentWorkflowStatus) &&
+    (!hasCatalogo || user?.id !== catalog?.user.id);
 
   /* ===================== DROPZONE / UPLOAD ===================== */
 
   const [uploading, setUploading] = useState(false);
-
-  // 🔹 Arquivos anexados localmente (AINDA NÃO enviados ao backend)
   const [docsLocal, setDocsLocal] = useState<File[]>([]);
 
-  // 👉 Agora o onDrop NÃO faz fetch, só preenche docsLocal
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (!canUpload) {
@@ -341,17 +373,15 @@ export function DocumentsTabCatalog({
       if (!file) return;
       const url = URL.createObjectURL(file);
       window.open(url, "_blank");
-      // se quiser, pode revogar depois com setTimeout
     },
     [docsLocal]
   );
 
   const removeDoc = useCallback((index: number) => {
     setDocsLocal((prev) => prev.filter((_, i) => i !== index));
-    // OBS: remove só da lista local (ainda não enviados).
   }, []);
 
-  // 🔸 ÚNICO ponto que faz upload pro backend: botão "Enviar documentos"
+  // 🔸 Upload + POST workflow baseado na situation
   const handleUploadDocs = useCallback(async () => {
     if (!canUpload) {
       toast.error("Não é possível enviar documentos neste status do fluxo.");
@@ -375,6 +405,7 @@ export function DocumentsTabCatalog({
 
       const createdFiles: Files[] = [];
 
+      // 1) Upload de documentos
       for (const f of docsLocal) {
         const fd = new FormData();
         fd.append("file", f, f.name);
@@ -383,7 +414,6 @@ export function DocumentsTabCatalog({
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokenProp}`,
-            // NÃO definir Content-Type aqui (FormData cuida disso)
           },
           body: fd,
         });
@@ -396,18 +426,52 @@ export function DocumentsTabCatalog({
         createdFiles.push(created);
       }
 
-      // Atualiza lista de arquivos do backend
+      // 2) Decide status pelo catalog.situation
+      const nextWorkflowStatus = getReviewRequestedStatusBySituation(
+        catalog?.situation
+      );
+
+      // 3) POST workflow
+      const wfRes = await fetch(
+        `${urlGeral}catalog/${catalog.id}/workflow`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokenProp}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            workflow_status: nextWorkflowStatus,
+            detail: {
+              documents_uploaded: createdFiles.map((f) => ({
+                id: f.id,
+                name: f.file_name,
+              })),
+              previous_status: currentWorkflowStatus,
+              catalog_situation: catalog?.situation,
+            },
+          }),
+        }
+      );
+
+      if (!wfRes.ok) {
+        throw new Error(`Falha ao atualizar workflow (${wfRes.status})`);
+      }
+
+      // 4) Atualiza lista backend
       setFileList((prev) => {
         const next = [...prev, ...createdFiles];
         onChange?.({ files: next });
         return next;
       });
 
-      // Limpa lista local após envio bem-sucedido
       setDocsLocal([]);
 
       toast.success("Documentos enviados com sucesso.", {
-        description: "Comprovantes vinculados ao catálogo.",
+        description:
+          nextWorkflowStatus === "REVIEW_REQUESTED_VITRINE"
+            ? "Comprovantes anexados e revisão solicitada para vitrine."
+            : "Comprovantes anexados e revisão solicitada para desfazimento.",
       });
     } catch (error) {
       console.error(error);
@@ -415,7 +479,16 @@ export function DocumentsTabCatalog({
     } finally {
       setUploading(false);
     }
-  }, [canUpload, catalog?.id, tokenProp, urlGeral, docsLocal, onChange]);
+  }, [
+    canUpload,
+    catalog?.id,
+    catalog?.situation, // ✅ agora entra aqui
+    tokenProp,
+    urlGeral,
+    docsLocal,
+    onChange,
+    currentWorkflowStatus,
+  ]);
 
   const handleDeleteFile = useCallback(
     async (file: Files) => {
@@ -439,7 +512,6 @@ export function DocumentsTabCatalog({
           throw new Error(`Erro ao excluir (${res.status})`);
         }
 
-        // Atualiza UI instantaneamente
         setFileList((prev) => {
           const next = prev.filter((f) => f.id !== file.id);
           onChange?.({ files: next });
@@ -455,20 +527,20 @@ export function DocumentsTabCatalog({
     [catalog?.id, tokenProp, urlGeral, onChange]
   );
 
-
-
   /* ===================== RENDER ===================== */
 
   if (!fileList.length && !canUpload) {
     return (
       <Alert className="flex items-center justify-between">
-          <div>
-            <p className="font-medium">  Nenhum arquivo disponível para esse item.</p>
-            <p className="text-sm text-muted-foreground">
-              Quando houver envios, eles aparecem aqui.
-            </p>
-          </div>
-        </Alert>
+        <div>
+          <p className="font-medium">
+            Nenhum arquivo disponível para esse item.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Quando houver envios, eles aparecem aqui.
+          </p>
+        </div>
+      </Alert>
     );
   }
 
@@ -490,9 +562,7 @@ export function DocumentsTabCatalog({
             {isDragActive ? (
               <p>Solte o arquivo aqui…</p>
             ) : (
-              <p>
-                Arraste e solte o arquivo aqui ou clique para selecionar
-              </p>
+              <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
             )}
           </div>
 
@@ -570,10 +640,7 @@ export function DocumentsTabCatalog({
             const showPdf = isPdf(mime);
 
             return (
-              <Alert
-                key={file.id}
-                className="group p-0"
-              >
+              <Alert key={file.id} className="group p-0">
                 <div className="aspect-video border-b dark:border-b-neutral-800 rounded-t-lg w-full flex items-center justify-center overflow-hidden relative">
                   {canUpload && (
                     <Button
@@ -615,6 +682,7 @@ export function DocumentsTabCatalog({
                   >
                     {file.file_name || "Arquivo"}
                   </div>
+
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
                       {mime || "desconhecido"}
@@ -668,19 +736,20 @@ export function DocumentsTabCatalog({
         onOpenChange={(open) => (open ? null : handleClosePdf())}
       >
         <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 overflow-hidden">
-          <DialogHeader className="px-4 pt-4 r">
-          <div className="flex justify-between items-cente">
+          <DialogHeader className="px-4 pt-4">
+            <div className="flex justify-between items-center">
               <p className="text-base flex items-center font-semibold h-auto">
-              {pdfDialog.file?.file_name || "Documento PDF"}
-            </p>
+                {pdfDialog.file?.file_name || "Documento PDF"}
+              </p>
 
-           <DialogClose>
-             <Button className="h-8 w-8" size={'icon'} variant={'outline'}>
-<X size={16}  />
-            </Button>
-           </DialogClose>
-          </div>
+              <DialogClose>
+                <Button className="h-8 w-8" size="icon" variant="outline">
+                  <X size={16} />
+                </Button>
+              </DialogClose>
+            </div>
           </DialogHeader>
+
           <div className="w-full h-full">
             {pdfDialog.file ? (
               <iframe

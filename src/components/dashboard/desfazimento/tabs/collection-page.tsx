@@ -871,7 +871,7 @@ export function CollectionPage() {
         throw new Error(text || "Falha ao deletar a coleção.");
       }
       toast.success("Coleção deletada com sucesso.");
-      navigate("/desfazimento");
+      navigate("/dashboard/desfazimento");
     } catch (e: any) {
       toast.error(e?.message || "Falha ao deletar a coleção.");
     } finally {

@@ -4,11 +4,8 @@ import { ResponsiveContainer, Treemap } from "recharts";
 import { Alert } from "../../ui/alert";
 import { CardDescription, CardHeader, CardTitle } from "../../ui/card";
 import { UserContext } from "../../../context/context";
-import {
-  ChartTooltip,
-  ChartTooltipContent,
-} from "../../ui/chart";
-import { STATUS_COLORS, WORKFLOWS } from "./GraficoStatusCatalogoPorAgencia";
+import { ChartTooltip } from "../../ui/chart";
+import { WORKFLOWS } from "./GraficoStatusCatalogoPorAgencia";
 
 // ====== Tipos do retorno da API ======
 type ApiItem = {
@@ -18,7 +15,7 @@ type ApiItem = {
   count: number;
 };
 
-type WorkflowKey = typeof WORKFLOWS[number]["key"];
+type WorkflowKey = (typeof WORKFLOWS)[number]["key"];
 
 // ====== Helpers URL ======
 const first = (v: string | null) =>
@@ -29,14 +26,49 @@ const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const pickParam = (sp: URLSearchParams, pluralKey: string, singularKey: string) =>
   first(sp.get(pluralKey) || sp.get(singularKey));
 
+// ====== Cores por SALA (name) + variações por STATUS ======
+
+// hash determinístico
+function hashString(str: string) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+// cor-base HSL por sala (com vírgulas!)
+function salaBaseHsl(name: string) {
+  const hue = hashString(name) % 360;
+  const sat = 62;
+  const lig = 46;
+  return { hue, sat, lig };
+}
+
+// variações suaves pros status (mesmo hue)
+function salaVariantColor(name: string, idx: number, total: number) {
+  const { hue, sat, lig } = salaBaseHsl(name);
+  if (total <= 1) return `hsl(${hue}, ${sat}%, ${lig}%)`;
+
+  const lightSpread = 30;
+  const step = lightSpread / (total - 1);
+  const light = Math.max(22, Math.min(76, lig - lightSpread / 2 + idx * step));
+
+  const satSpread = 10;
+  const satStep = satSpread / (total - 1);
+  const satVar = Math.max(45, Math.min(75, sat - satSpread / 2 + idx * satStep));
+
+  return `hsl(${hue}, ${satVar}%, ${light}%)`;
+}
+
 // ====== Tipos do Treemap ======
 type TreemapChild = {
-  name: string;     // nome amigável do status
-  size: number;     // SEMPRE number
+  name: string;
+  size: number;
   statusKey: WorkflowKey;
   fill: string;
 
-  // metadata p/ tooltip
   parentName: string;
   parentTotal: number;
   breakdown: {
@@ -45,15 +77,19 @@ type TreemapChild = {
     fill: string;
     statusKey: WorkflowKey;
   }[];
+
+  leafIndex: number;
+  leafCount: number;
 };
 
-type TreemapNode = {
-  name: string;           // sala
-  children: TreemapChild[]; // status agrupados dentro da sala
+type TreemapNodeType = {
+  name: string;
+  children: TreemapChild[];
   total: number;
+  baseFill: string;
 };
 
-// ====== Tooltip shadcn custom ======
+// ====== Tooltip custom ======
 function TreemapTooltipContent({ active, payload }: any) {
   if (!active || !payload?.length) return null;
 
@@ -61,7 +97,6 @@ function TreemapTooltipContent({ active, payload }: any) {
   if (!node) return null;
 
   const isLeaf = node.statusKey !== undefined;
-
   const sala = isLeaf ? node.parentName : node.name;
   const total = isLeaf ? node.parentTotal : node.total;
   const breakdown = isLeaf ? node.breakdown : node.children;
@@ -91,8 +126,8 @@ function TreemapTooltipContent({ active, payload }: any) {
   );
 }
 
-// ====== Conteúdo custom (defensivo) ======
-function TreemapContent(props: any) {
+// ====== Content custom (mais legível) ======
+function CustomizedContent(props: any) {
   const { depth, x, y, width, height, name, payload } = props;
 
   if (width <= 2 || height <= 2) return null;
@@ -100,13 +135,15 @@ function TreemapContent(props: any) {
   const isParent = depth === 1;
   const isLeaf = depth >= 2;
 
-  // ✅ payload pode ser undefined em alguns níveis
-  const leafFill =
-    payload?.fill ||
-    payload?.color ||
-    "var(--primary, #8884d8)";
+  const salaName = isParent ? String(name) : String(payload?.parentName ?? name);
 
-  const fill = isLeaf ? leafFill : "var(--muted, #11182722)";
+  // pai: calcula pela sala
+  const parentFill = salaVariantColor(salaName, 0, 1);
+
+  // folha: usa fill do payload (já calculado no fetch)
+  const leafFill = payload?.fill ?? parentFill;
+
+  const canShowLeafLabel = isLeaf && width > 95 && height > 42;
 
   return (
     <g>
@@ -117,33 +154,58 @@ function TreemapContent(props: any) {
         height={height}
         rx={6}
         ry={6}
-        style={{
-          fill,
-          stroke: "var(--border, #ffffff)",
-          strokeWidth: 1,
-        }}
+        fill={isLeaf ? leafFill : parentFill}
+        fillOpacity={isParent ? 0.22 : 1}
+        stroke="#fff"
+        strokeWidth={isLeaf ? 1.2 : 2.2}
       />
 
-      {/* Label só nos pais (salas) */}
-      {isParent && width > 80 && height > 36 && (
+      {/* label do pai (sala) */}
+      {isParent && width > 90 && height > 36 && (
         <>
           <text
             x={x + 8}
             y={y + 18}
-            fill="var(--foreground, #111827)"
+            fill="var(--foreground, #0b1020)"
             fontSize={12}
-            fontWeight={600}
+            fontWeight={700}
+            opacity={0.95}
           >
-            {String(name).length > 24 ? String(name).slice(0, 24) + "…" : name}
+            {String(name).length > 26 ? String(name).slice(0, 26) + "…" : name}
           </text>
-
           <text
             x={x + 8}
             y={y + 34}
-            fill="var(--muted-foreground, #6b7280)"
+            fill="var(--muted-foreground, #374151)"
             fontSize={11}
+            opacity={0.9}
           >
             Total: {payload?.total ?? 0}
+          </text>
+        </>
+      )}
+
+      {/* label do filho (status) */}
+      {canShowLeafLabel && (
+        <>
+          <text
+            x={x + 8}
+            y={y + 18}
+            fill="#fff"
+            fontSize={12}
+            fontWeight={600}
+            opacity={0.95}
+          >
+            {String(name).length > 22 ? String(name).slice(0, 22) + "…" : name}
+          </text>
+          <text
+            x={x + 8}
+            y={y + 34}
+            fill="#fff"
+            fontSize={11}
+            opacity={0.9}
+          >
+            {payload?.size ?? 0}
           </text>
         </>
       )}
@@ -167,11 +229,10 @@ export function GraficoStatusCatalogoPorLocationTreemap() {
     return h;
   }, [token]);
 
-  const [treeData, setTreeData] = useState<TreemapNode[]>([]);
+  const [treeData, setTreeData] = useState<TreemapNodeType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ filtros atuais da URL (singularizados)
   const filtersParams = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const params = new URLSearchParams();
@@ -213,14 +274,11 @@ export function GraficoStatusCatalogoPorLocationTreemap() {
         filtersParams.forEach((v, k) => url.searchParams.set(k, v));
 
         const res = await fetch(url.toString(), { headers: authHeaders });
-        if (!res.ok) {
-          throw new Error(`Erro ${res.status} ao buscar estatísticas`);
-        }
+        if (!res.ok) throw new Error(`Erro ${res.status} ao buscar estatísticas`);
 
         const data: ApiItem[] = await res.json();
         if (!isMounted) return;
 
-        // ====== AGRUPA STATUS POR NAME (sala) ======
         const bySala = new Map<string, Map<WorkflowKey, number>>();
 
         data.forEach((item) => {
@@ -232,31 +290,36 @@ export function GraficoStatusCatalogoPorLocationTreemap() {
           m.set(status, (m.get(status) ?? 0) + Number(item.count ?? 0));
         });
 
-        // ====== Monta hierarquia: 1 nó por sala, filhos por status ======
-        const nodes: TreemapNode[] = Array.from(bySala.entries())
+        const nodes: TreemapNodeType[] = Array.from(bySala.entries())
           .map(([sala, stMap]) => {
             const childrenBase = WORKFLOWS
               .map((w) => {
                 const size = Number(stMap.get(w.key) ?? 0);
-                return {
-                  name: w.name,
-                  size,
-                  statusKey: w.key,
-                  fill: STATUS_COLORS[w.key],
-                };
+                return { name: w.name, size, statusKey: w.key };
               })
               .filter((c) => c.size > 0);
 
             const total = childrenBase.reduce((s, c) => s + c.size, 0);
 
-            const children: TreemapChild[] = childrenBase.map((c) => ({
+            const children: TreemapChild[] = childrenBase.map((c, idx) => ({
               ...c,
+              fill: salaVariantColor(sala, idx, childrenBase.length),
               parentName: sala,
               parentTotal: total,
-              breakdown: childrenBase,
+              breakdown: childrenBase.map((b, j) => ({
+                ...b,
+                fill: salaVariantColor(sala, j, childrenBase.length),
+              })),
+              leafIndex: idx,
+              leafCount: childrenBase.length,
             }));
 
-            return { name: sala, children, total };
+            return {
+              name: sala,
+              children,
+              total,
+              baseFill: salaVariantColor(sala, 0, 1),
+            };
           })
           .filter((n) => n.total > 0);
 
@@ -315,11 +378,10 @@ export function GraficoStatusCatalogoPorLocationTreemap() {
                 dataKey="size"
                 aspectRatio={4 / 3}
                 stroke="#fff"
-                fill="#8884d8"
-                content={<TreemapContent />}
-                isAnimationActive={false}   // ✅ sem animação inicial
+                content={<CustomizedContent />}
+                isAnimationActive={false}
               >
-              
+                <ChartTooltip content={<TreemapTooltipContent />} />
               </Treemap>
             </ResponsiveContainer>
           </div>
