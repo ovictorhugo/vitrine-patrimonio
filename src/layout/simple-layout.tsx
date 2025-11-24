@@ -8,7 +8,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../compone
 import { cn } from "../lib"
 import { Link, useLocation} from "react-router-dom";
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { UserContext } from "../context/context";
 
 
@@ -80,12 +80,17 @@ export default function SimpleLayout({
   };
   
   const breadcrumbItems = createBreadcrumbItems(router.pathname);
-    const {onOpen} = useModal()
-    useEffect(() => {
-      if (!loggedIn) {
-        onOpen('sign-in'); // <- usa o modal existente
-      }
-    }, [loggedIn]);
+  const { onOpen } = useModal();
+  const didRunRef = useRef(false);
+
+  useEffect(() => {
+    if (didRunRef.current) return; // já passou pela "primeira entrada"
+    didRunRef.current = true;
+
+    if (!loggedIn) {
+      onOpen("sign-in"); // abre só na primeira entrada
+    }
+  }, [loggedIn, onOpen]);
 
 
   const formatRemaining = (totalMs: number) => {
