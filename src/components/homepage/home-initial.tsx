@@ -67,6 +67,7 @@ import { BlockItemsVitrine } from "./components/block-items-vitrine";
 import { useModal } from "../hooks/use-modal-store";
 import { useQuery } from "../authentication/signIn";
 import { StatusCount, WORKFLOWS } from "../dashboard/administrativo/admin";
+import { WorkflowAreaChart } from "../dashboard/graficos/workflow-area-chart";
 
 type Material = {
   material_code: string;
@@ -205,7 +206,7 @@ export function HomeInicial() {
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats, location.search]);
+  }, []);
 
   // ================== GRUPOS DE WORKFLOW PARA TABS ==================
   const FLOW_VITRINE_KEYS = [
@@ -231,7 +232,7 @@ export function HomeInicial() {
   const getCount = (key: string) => statsMap?.[key] ?? 0;
 
 
-  const [tab, setTab] = useState('vitrine');
+  const [tab, setTab] = useState('desfazimento');
   return (
     <div className="    ">
       <Helmet>
@@ -241,7 +242,15 @@ export function HomeInicial() {
       </Helmet>
 
       <div className="absolute top-0 left-0 flex min-h-screen w-full z-[0] " />
-
+<WorkflowAreaChart
+  tab={tab as "vitrine" | "desfazimento"}
+  statsMap={statsMap}
+  loading={loadingStats}
+  workflowMeta={workflowMeta}
+  flowVitrineKeys={FLOW_VITRINE_KEYS}
+  flowDesfazimentoKeys={FLOW_DESFAZIMENTO_KEYS}
+  className=""
+/>
       <div className="bg-cover bg-no-repeat bg-center w-full">
         <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
           <Link

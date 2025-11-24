@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BadgePercent,
   CheckCircle,
-  Eye,
   File,
   File as FileIcon,
   FileText,
@@ -14,14 +13,6 @@ import {
   WrenchIcon,
 } from "lucide-react";
 
-type ExistingFileDTO = {
-  id: string;
-  file_path: string;
-  file_name: string;
-  content_type: string;
-};
-
-
 import React, {
   useEffect,
   useMemo,
@@ -30,20 +21,40 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useContext,
+  useRef,
 } from "react";
 import { Textarea } from "../../../ui/textarea";
 import { Label } from "../../../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
-import { ArrowSquareUpRight, CheckSquareOffset } from "phosphor-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
+import { CheckSquareOffset } from "phosphor-react";
 import { Switch } from "../../../ui/switch";
 import { Alert } from "../../../ui/alert";
 import { Separator } from "../../../ui/separator";
 import { Button } from "../../../ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { StepBaseProps } from "../../novo-item/novo-item";
 import { UserContext } from "../../../../context/context";
+
+/* ===================== Tipos ===================== */
+type ExistingFileDTO = {
+  id: string;
+  file_path: string;
+  file_name: string;
+  content_type: string;
+};
 
 type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
 
@@ -52,22 +63,21 @@ type InfoAdicionaisLocal = {
   situacao?: string;
   tuMaiorIgual10?: boolean;
   obsolescenciaAlta?: boolean;
-  // NOVO: documentos probatórios (uplados no passo)
   docs?: File[];
+  serverFilesDraft?: ExistingFileDTO[];
 };
 
-// --- API para o pai disparar validação com toast só ao avançar ---
+/* --- API para o pai disparar validação com toast só ao avançar --- */
 export type InformacoesAdicionaisRef = {
   validateBeforeNext: () => boolean;
 };
-
 
 export const InformacoesAdicionaisStep = forwardRef<
   InformacoesAdicionaisRef,
   StepBaseProps<"informacoes-adicionais"> & {
     estadoAtual?: EstadoKind;
     existingFiles?: ExistingFileDTO[];
-    catalogId: string;        // 👈 novo: id do próprio catalog
+    catalogId: string;
   }
 >(function InformacoesAdicionaisStep(
   {
@@ -77,83 +87,126 @@ export const InformacoesAdicionaisStep = forwardRef<
     initialData,
     estadoAtual,
     existingFiles,
-
-    catalogId,              // 👈 pega daqui
+    catalogId,
   },
   ref
 ) {
-  const [observacao, setObservacao] = useState(initialData?.observacao ?? "");
-  const [situacao, setSituacao] = useState(initialData?.situacao ?? "");
+  const { urlGeral } = useContext(UserContext);
+  const token = localStorage.getItem("jwt_token") || "";
 
-// CO derivado (congelado): 0 = não funcional (quebrado/irrecuperável/antieconômico), 1 = funcional (ocioso/recuperável)
-const CO: 0 | 1 = useMemo(() => {
-  if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
-  // quebrado, irrecuperável (análoga) e antieconômico tratamos como não funcional para efeitos de CO
-  return 0;
-}, [estadoAtual]);
-
-
-  // Antieconômico comprovado (apenas para exibir o banner informativo; não influencia o gerador)
-
-  // Switches (reidratados)
-  const [tuLocal, setTuLocal] = useState<boolean>(initialData?.tuMaiorIgual10 ?? false);
-  const [otLocal, setOtLocal] = useState<boolean>(initialData?.obsolescenciaAlta ?? false);
-
-  // Upload de documentos (para idx 0 e 1)
-  const [docsLocal, setDocsLocal] = useState<File[]>([]);
-  const MAX_MB = 5;
-
-  // Exibir Select "Estado de conservação" para ocioso/recuperável
-  const shouldShowSituacao = estadoAtual === "ocioso" || estadoAtual === "recuperavel";
-  useEffect(() => {
-    if (!shouldShowSituacao && situacao) setSituacao("");
-  }, [shouldShowSituacao]); // eslint-disable-line
-
-  // Índice 0..7 conforme CO/TU/OT
-const getIdx = useCallback(() => {
-  const tu = tuLocal ? 1 : 0; // TU≥10 => 1
-  const ot = otLocal ? 1 : 0; // OT alta => 1
-
-  // Estado "anti-economico" deve navegar por 3, 4, 5 ou 7 conforme TU/OT:
-  // TU=1 & OT=1 -> 7
-  // TU=1 & OT=0 -> 3
-  // TU=0 & OT=0 -> 4
-  // TU=0 & OT=1 -> 5  (⬅ adicionamos este caso)
-
-
-  // Demais estados seguem a matriz CO/TU/OT
-  return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-}, [estadoAtual, CO, tuLocal, otLocal]);
-
-
-
-
-  const addSituacao = useCallback(
-    (txt: string) => {
-      if (shouldShowSituacao && situacao) return `${txt} Estado de conservação informado: ${situacao}.`;
-      return txt;
-    },
-    [shouldShowSituacao, situacao]
+  /** ========= 1) ESTADOS REIDRATADOS DO WIZARD =========
+   *  Regra:
+   *  - texto inicial vem DO wizard (initialData)
+   *  - só depois de TU/OT/estado mudarem é que sobrescreve com modelo
+   */
+  const [observacao, setObservacao] = useState(
+    initialData?.observacao ?? ""
+  );
+  const [situacao, setSituacao] = useState(
+    initialData?.situacao ?? ""
   );
 
-  // ====== GERADOR (modelo) ======
-  // Sem branch especial de antieconômico: SEMPRE por matriz 0..7
-  const gerarTexto = useCallback(() => {
-    const idx = getIdx();
-    if (idx === null) {
-      return "Descrição do bem indisponível: selecione o estado operacional (quebrado/ocioso/recuperável) para compor a justificativa.";
+  const [tuLocal, setTuLocal] = useState<boolean>(
+    initialData?.tuMaiorIgual10 ?? false
+  );
+  const [otLocal, setOtLocal] = useState<boolean>(
+    initialData?.obsolescenciaAlta ?? false
+  );
+
+  const [docsLocal, setDocsLocal] = useState<File[]>(
+    initialData?.docs ?? []
+  );
+
+  const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>(
+    initialData?.serverFilesDraft ??
+      existingFiles ??
+      []
+  );
+
+  /** ✅ sincroniza estados vindos do pai, mas só se mudou de verdade */
+  useEffect(() => {
+    if (!initialData) return;
+
+    if (initialData.observacao !== undefined) {
+      const next = initialData.observacao ?? "";
+      setObservacao((prev) => (prev === next ? prev : next));
     }
 
+    if (initialData.situacao !== undefined) {
+      const next = initialData.situacao ?? "";
+      setSituacao((prev) => (prev === next ? prev : next));
+    }
+
+    if (initialData.tuMaiorIgual10 !== undefined) {
+      const next = !!initialData.tuMaiorIgual10;
+      setTuLocal((prev) => (prev === next ? prev : next));
+    }
+
+    if (initialData.obsolescenciaAlta !== undefined) {
+      const next = !!initialData.obsolescenciaAlta;
+      setOtLocal((prev) => (prev === next ? prev : next));
+    }
+
+ if (initialData.docs) {
+  setDocsLocal(prev => (prev === initialData.docs ? prev : (initialData.docs ?? [])));
+}
+
+if (initialData.serverFilesDraft) {
+  setServerFiles(prev =>
+    prev === initialData.serverFilesDraft
+      ? prev
+      : (initialData.serverFilesDraft ?? [])
+  );
+}
+
+  }, [initialData]);
+
+  /** Se a prop existingFiles mudar (por GET), só usa se NÃO houver draft */
+  useEffect(() => {
+    if (initialData?.serverFilesDraft?.length) return;
+    setServerFiles(existingFiles ?? []);
+  }, [existingFiles, initialData?.serverFilesDraft]);
+
+  /** ========= 2) LÓGICA CO/TU/OT ========= */
+  const CO: 0 | 1 = useMemo(() => {
+    if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
+    return 0;
+  }, [estadoAtual]);
+
+  const MAX_MB = 5;
+
+  const shouldShowSituacao =
+    estadoAtual === "ocioso" || estadoAtual === "recuperavel";
+
+  useEffect(() => {
+    if (!shouldShowSituacao && situacao) setSituacao("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldShowSituacao]);
+
+  const getIdx = useCallback(() => {
+    const tu = tuLocal ? 1 : 0;
+    const ot = otLocal ? 1 : 0;
+    return ((CO << 2) | (tu << 1) | ot) as
+      | 0
+      | 1
+      | 2
+      | 3
+      | 4
+      | 5
+      | 6
+      | 7;
+  }, [CO, tuLocal, otLocal]);
+
+  const gerarTexto = useCallback(() => {
+    const idx = getIdx();
+
     const base: Record<number, string> = {
-      // CO=0 (quebrado) e TU<10 (idx 0/1) → haverá upload de documentos no UI
       0: [
         "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
-       
         "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
       ].join(" "),
       1: [
         "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
-      
         "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
       ].join(" "),
       2: [
@@ -166,7 +219,6 @@ const getIdx = useCallback(() => {
         "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
         "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
       ].join(" "),
-      // CO=1 (funcional: ocioso/recuperável)
       4: [
         "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
         "Encontra-se disponível, com condições de funcionamento preservadas.",
@@ -192,47 +244,177 @@ const getIdx = useCallback(() => {
     return base[idx];
   }, [getIdx]);
 
-  // Auto-substitui (nunca concatena)
+  /** ✅ NÃO SOBRESCREVE NO PRIMEIRO MOUNT */
+  const didMountRef = useRef(false);
   useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     const novo = gerarTexto();
     if (novo && novo !== observacao) setObservacao(novo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tuLocal, otLocal, estadoAtual]);
 
-  // ===== Dropzone (substitui input; obrigatório em idx 0/1) =====
-  const onDropDocs = useCallback((acceptedFiles: File[]) => {
-    if (!acceptedFiles?.length) return;
-    const validExt = [
-      ".pdf",
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".doc",
-      ".docx",
-      ".odt",
-      ".xls",
-      ".xlsx",
-    ];
-    const next: File[] = [];
-    for (const f of acceptedFiles) {
-      const okExt = validExt.some((e) => f.name.toLowerCase().endsWith(e));
-      const okSize = f.size <= MAX_MB * 1024 * 1024;
-      if (!okExt) {
-        toast("Arquivo inválido", {
-          description: "Formatos aceitos: PDF, imagens, DOC/DOCX/ODT, XLS/XLSX.",
-        });
-        continue;
+  /** idx7 mantém alerta e zera justificativa automaticamente */
+  const idx = getIdx();
+  const isIdx7 = idx === 7;
+  useEffect(() => {
+    if (isIdx7 && observacao) setObservacao("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIdx7]);
+
+  /** ========= 3) BACKEND: POST/DELETE/REFRESH ========= */
+  const [busy, setBusy] = useState(false);
+
+  const refreshFiles = useCallback(async () => {
+    const r = await fetch(`${urlGeral}catalog/${catalogId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) throw new Error(`Falha ao atualizar arquivos (${r.status})`);
+    const data = await r.json();
+    const nextFiles: ExistingFileDTO[] = (data?.files || []).map((f: any) => ({
+      id: f.id,
+      file_path: f.file_path,
+      file_name: f.file_name,
+      content_type: f.content_type,
+    }));
+    setServerFiles(nextFiles);
+    return nextFiles;
+  }, [urlGeral, catalogId, token]);
+
+  const uploadFileToServer = useCallback(
+    async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+
+      const resp = await fetch(`${urlGeral}catalog/${catalogId}/files`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(`Falha ao enviar (${resp.status}): ${txt}`);
       }
-      if (!okSize) {
-        toast("Arquivo muito grande", {
-          description: `Cada arquivo deve ter até ${MAX_MB} MB.`,
+    },
+    [urlGeral, catalogId, token]
+  );
+
+  const handleDeleteFile = useCallback(
+    async (file: ExistingFileDTO) => {
+      try {
+        setBusy(true);
+        const resp = await fetch(
+          `${urlGeral}catalog/${catalogId}/files/${file.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => "");
+          throw new Error(`Falha ao remover arquivo (${resp.status}): ${txt}`);
+        }
+
+        const nextFiles = await refreshFiles();
+        toast("Documento removido com sucesso!", {
+          description: file.file_name,
         });
-        continue;
+
+        // salva draft no wizard
+        onStateChange?.({ serverFilesDraft: nextFiles });
+      } catch (e: any) {
+        console.error(e);
+        toast("Erro ao remover documento", {
+          description: e?.message || "Tente novamente.",
+        });
+      } finally {
+        setBusy(false);
       }
-      next.push(f);
-    }
-    if (next.length) setDocsLocal((prev) => [...prev, ...next]);
-  }, []);
+    },
+    [urlGeral, token, catalogId, refreshFiles, onStateChange]
+  );
+
+  /** ========= 4) DROPZONE ========= */
+  const onDropDocs = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles?.length) return;
+
+      const validExt = [
+        ".pdf",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".doc",
+        ".docx",
+        ".odt",
+        ".xls",
+        ".xlsx",
+      ];
+
+      const toUpload: File[] = [];
+
+      for (const f of acceptedFiles) {
+        const okExt = validExt.some((e) =>
+          f.name.toLowerCase().endsWith(e)
+        );
+        const okSize = f.size <= MAX_MB * 1024 * 1024;
+
+        if (!okExt) {
+          toast("Arquivo inválido", {
+            description:
+              "Formatos aceitos: PDF, imagens, DOC/DOCX/ODT, XLS/XLSX.",
+          });
+          continue;
+        }
+        if (!okSize) {
+          toast("Arquivo muito grande", {
+            description: `Cada arquivo deve ter até ${MAX_MB} MB.`,
+          });
+          continue;
+        }
+
+        toUpload.push(f);
+      }
+
+      if (!toUpload.length) return;
+
+      // 1) guarda localmente
+      setDocsLocal((prev) => [...prev, ...toUpload]);
+
+      // 2) envia pro backend
+      try {
+        setBusy(true);
+        for (const f of toUpload) {
+          await uploadFileToServer(f);
+        }
+        const nextFiles = await refreshFiles();
+
+        toast("Comprovantes enviados!", {
+          description: `${toUpload.length} arquivo(s) anexado(s).`,
+        });
+
+        setDocsLocal((prev) =>
+          prev.filter((f) => !toUpload.includes(f))
+        );
+
+        onStateChange?.({ serverFilesDraft: nextFiles });
+      } catch (e: any) {
+        toast("Erro ao enviar comprovantes", {
+          description: e?.message || "Tente novamente.",
+        });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [MAX_MB, uploadFileToServer, refreshFiles, onStateChange]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: onDropDocs,
@@ -241,142 +423,151 @@ const getIdx = useCallback(() => {
       "application/pdf": [".pdf"],
       "image/*": [".jpg", ".jpeg", ".png"],
       "application/msword": [".doc"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+        ".docx",
+      ],
       "application/vnd.oasis.opendocument.text": [".odt"],
       "application/vnd.ms-excel": [".xls"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
     },
+    disabled: busy,
   });
 
-  const removeDoc = (i: number) => setDocsLocal((prev) => prev.filter((_, idx) => idx !== i));
+  const removeDoc = (i: number) =>
+    setDocsLocal((prev) => prev.filter((_, idx2) => idx2 !== i));
 
-  // ÍNDICE e obrigatoriedade dos comprovantes
-  const idx = getIdx();
-  const showUploadDocs = idx === 0 || idx === 1; // obrigatório
-  const docsOk = !showUploadDocs || docsLocal.length > 0;
+  const showUploadDocs = idx === 0 || idx === 1;
+  const docsOk =
+    !showUploadDocs || serverFiles.length > 0 || docsLocal.length > 0;
 
-  // Sobe pro pai
+  /** ========= 5) OPEN PREVIEW LOCAL ========= */
+  const openDoc = useCallback(
+    (i: number) => {
+      const f = docsLocal[i];
+      if (!f) return;
+
+      const url = URL.createObjectURL(f);
+
+      const isPreviewable =
+        f.type === "application/pdf" ||
+        f.type.startsWith("image/") ||
+        f.name.toLowerCase().endsWith(".pdf") ||
+        /\.(png|jpe?g)$/i.test(f.name);
+
+      if (isPreviewable) {
+        window.open(url, "_blank", "noopener,noreferrer");
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = f.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    },
+    [docsLocal]
+  );
+
+  /** ========= 6) VALIDAÇÃO ========= */
+  const modeloAtual = gerarTexto();
+  const justificativaEhModelo =
+    observacao.trim() === modeloAtual.trim();
+
+  const obsOk = isIdx7 ? true : !justificativaEhModelo;
+  const sitOk = shouldShowSituacao ? situacao !== "" : true;
+
   useEffect(() => {
+    onValidityChange(obsOk && sitOk && docsOk && !isIdx7);
+  }, [obsOk, sitOk, docsOk, onValidityChange, isIdx7]);
+
+  /** ========= 7) SUBIR ESTADO PRO PAI (persistência entre steps)
+   *  ✅ AGORA sobe só se o payload mudou de verdade
+   */
+  const lastSentRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!onStateChange) return;
+
     const payload: InfoAdicionaisLocal = {
       observacao,
       situacao,
       tuMaiorIgual10: tuLocal,
       obsolescenciaAlta: otLocal,
       docs: docsLocal,
+      serverFilesDraft: serverFiles,
     };
-    onStateChange?.(payload);
-  }, [observacao, situacao, tuLocal, otLocal, docsLocal, onStateChange]);
 
-  // ===== Validação da justificativa (inteligente) =====
-  const obrigatorios = ["uso", "funcionamento", "defeito", "manutenção", "tombamento"];
-  function hasSemanticaMinima(txt: string) {
-    const t = txt.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
-    const achados = obrigatorios.filter(
-      (k) => t.includes(k) || (k === "manutenção" && t.includes("manutencao"))
-    );
-    return achados.length >= 3; // exige ao menos 3 temas
-  }
+    const serialized = JSON.stringify({
+      observacao,
+      situacao,
+      tuLocal,
+      otLocal,
+      docsLen: docsLocal.length,
+      serverLen: serverFiles.length,
+      // ids pra detectar mudança real
+      serverIds: serverFiles.map((f) => f.id),
+    });
 
-function isJustificativaModelo(atual: string, modelo: string) {
-  const a = (atual ?? "").trim().replace(/\s+/g, " ");
-  const m = (modelo ?? "").trim().replace(/\s+/g, " ");
-  if (!m) return false;      // sem modelo, não há com o que igualar
-  return a === m;            // apenas igual, nada além
-}
+    if (serialized === lastSentRef.current) return; // ✅ não re-dispara
 
-// abaixo dos seus states/consts
-const openDoc = useCallback((i: number) => {
-  const f = docsLocal[i];
-  if (!f) return;
+    lastSentRef.current = serialized;
+    onStateChange(payload);
+  }, [
+    observacao,
+    situacao,
+    tuLocal,
+    otLocal,
+    docsLocal,
+    serverFiles,
+    onStateChange,
+  ]);
 
-  const url = URL.createObjectURL(f);
+  /** ========= 8) TOASTS SÓ AO AVANÇAR ========= */
+  useImperativeHandle(ref, () => ({
+    validateBeforeNext: () => {
+      if (!isIdx7 && justificativaEhModelo) {
+        toast("Personalize a justificativa", {
+          description: "O texto não pode ser idêntico ao modelo sugerido.",
+          action: { label: "Ok", onClick: () => {} },
+        });
+        return false;
+      }
+      if (
+        showUploadDocs &&
+        serverFiles.length === 0 &&
+        docsLocal.length === 0
+      ) {
+        toast("Comprovantes obrigatórios", {
+          description:
+            "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
+        });
+        return false;
+      }
+      if (shouldShowSituacao && !situacao) {
+        toast("Informe o estado de conservação", {
+          description: "Selecione uma opção na lista.",
+        });
+        return false;
+      }
+      return true;
+    },
+  }));
 
-  // abre PDF e imagens em nova aba; outros formatos baixam
-  const isPreviewable =
-    f.type === "application/pdf" ||
-    f.type.startsWith("image/") ||
-    f.name.toLowerCase().endsWith(".pdf") ||
-    /\.(png|jpe?g)$/i.test(f.name);
-
-  if (isPreviewable) {
-    window.open(url, "_blank", "noopener,noreferrer");
-    // libera o objeto depois de um tempo
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  } else {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = f.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-}, [docsLocal]);
-
-
-const modeloAtual = gerarTexto();
-const justificativaEhModelo = (observacao.trim() == modeloAtual.trim())
-  const isIdx7 = idx === 7;
-// Quando idx==7, não exigimos texto; caso contrário, precisa ser diferente do modelo
-const obsOk = isIdx7 ? true : !(observacao.trim() == modeloAtual.trim());
-const sitOk = shouldShowSituacao ? situacao !== "" : true;
-
-// Mantém o onValidityChange atualizado, sem toasts
-useEffect(() => {
-  onValidityChange(
-        obsOk 
-    && sitOk 
-    && docsOk
-    && !isIdx7);
-}, [obsOk, sitOk, docsOk, onValidityChange, idx, isIdx7]);
-
-useEffect(() => {
-  if (isIdx7 && observacao) setObservacao("");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isIdx7]);
- // Toasts apenas ao tentar avançar
-useImperativeHandle(ref, () => ({
-  validateBeforeNext: () => {
-    if (!isIdx7 && justificativaEhModelo) {
-      toast("Personalize a justificativa", {
-        description: "O texto não pode ser idêntico ao modelo sugerido.",
-        action: { label: "Ok", onClick: () => {} },
-      });
-      return false;
-    }
-    if (showUploadDocs && docsLocal.length === 0) {
-      toast("Comprovantes obrigatórios", {
-        description: "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
-      });
-      return false;
-    }
-    if (shouldShowSituacao && !situacao) {
-      toast("Informe o estado de conservação", {
-        description: "Selecione uma opção na lista.",
-      });
-      return false;
-    }
-    return true;
-  },
-}));
-
-  // ===== Escala 7 níveis (verde → vermelho) =====
-  // Mapeia idx (0..7) para nível 0..6
-// ===== Escala 7 níveis (0=melhor verde → 6=pior vermelho) =====
-// Ajustado para que TU<10 (tuLocal=false) seja melhor que TU≥10, como você pediu.
-const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-  // CO=1 (funcional: 4..7) — melhores níveis
-  4: 0, // funcional, TU<10, OT baixa  → Excelente
-  5: 1, // funcional, TU<10, OT alta   → Muito bom
-  6: 2, // funcional, TU≥10, OT baixa  → Bom
-  7: 3, // funcional, TU≥10, OT alta   → Uso moderado
-
-  // CO=0 (quebrado: 0..3) — piores níveis
-  0: 4, // quebrado, TU<10, OT baixa   → Necessita reparos
-  1: 5, // quebrado, TU<10, OT alta    → Inoperante
-  2: 6, // quebrado, TU≥10, OT baixa   → Antieconômico
-  3: 6, // quebrado, TU≥10, OT alta    → Antieconômico
-};
+  /** ========= 9) ESCALA 7 NÍVEIS ========= */
+  const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
+    4: 0,
+    5: 1,
+    6: 2,
+    7: 3,
+    0: 4,
+    1: 5,
+    2: 6,
+    3: 6,
+  };
 
   const escala7 = [
     { rotulo: "Excelente", bg: "bg-green-500" },
@@ -390,95 +581,8 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
 
   const nivelAtivo = (() => {
     const i = getIdx();
-    if (i === null) return 2; // neutro "Bom"
     return nivelPorIdx[i];
   })();
-
-  // ======== (mantidos) variáveis do seu exemplo de outro upload (não removidas) ========
-  const [fileInfo, setFileInfo] = useState({ name: "", size: 0 });
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFilePicked = (files: File[]) => {
-    const uploadedFile = files?.[0];
-    if (!uploadedFile) return;
-
-    // validações simples
-    const ext = uploadedFile.name.toLowerCase();
-    if (!ext.endsWith(".xls") && !ext.endsWith(".xlsx") && !ext.endsWith(".csv")) {
-      toast("Arquivo inválido", {
-        description: "",
-        action: { label: "Fechar", onClick: () => {} },
-      });
-      return;
-    }
-
-    setFile(uploadedFile);
-    setFileInfo({ name: uploadedFile.name, size: uploadedFile.size });
-  };
-
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    handleFilePicked(acceptedFiles);
-  }, []);
-
-  // (mantido) — não é usado visualmente pois substituímos pelo dropzone principal
-  // const { getRootProps: getRootPropsOld, getInputProps: getInputPropsOld, isDragActive: isDragActiveOld } = useDropzone({
-  //   onDrop,
-  //   maxFiles: 1,
-  //   multiple: false,
-  //   accept: {
-  //     "application/vnd.ms-excel": [".xls"],
-  //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-  //     "text/csv": [".csv"],
-  //   },
-  // });
-
-  const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>(existingFiles ?? []);
-
-// Se a prop mudar (ex: re-hidratação), sincroniza:
-useEffect(() => {
-  setServerFiles(existingFiles ?? []);
-}, [existingFiles]);
-
-const {urlGeral} = useContext(UserContext)
- const token = localStorage.getItem("jwt_token") || "";
-
-const handleDeleteFile = useCallback(
-  async (file: ExistingFileDTO) => {
-    try {
-      const resp = await fetch(
-        `${urlGeral}catalog/${catalogId}/files/${file.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!resp.ok) {
-        const txt = await resp.text().catch(() => "");
-        throw new Error(`Falha ao remover arquivo (${resp.status}): ${txt}`);
-      }
-
-      // Remove da lista local
-      setServerFiles((prev) => prev.filter((f) => f.id !== file.id));
-
-      toast("Documento removido com sucesso!", {
-        description: file.file_name,
-      });
-    } catch (e: any) {
-      console.error(e);
-      toast("Erro ao remover documento", {
-        description: e?.message || "Tente novamente.",
-      });
-    }
-  },
-  [urlGeral, token]
-);
-
-
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -498,90 +602,88 @@ const handleDeleteFile = useCallback(
           <div>
             <p className="font-medium">Dados de patrimônio</p>
             <p className="text-gray-500 text-sm">
-              Descreva o estado real do bem (ex.: uso, funcionamento, defeitos, histórico de manutenção, ano/critério de tombamento).
+              Descreva o estado real do bem (ex.: uso, funcionamento, defeitos,
+              histórico de manutenção, ano/critério de tombamento).
             </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-5 w-full">
-       
-
-          {/* Switches TU/OT — também visíveis em idx 3,4,7 mesmo que antieconômico */}
-         
-            <Alert className="mb-2">
-              <div className="flex w-full gap-4">
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <p className="font-medium">Tempo de Uso maior ou igual a 10 anos</p>
-                    <p className="text-xs text-muted-foreground">
-                      Vida útil igual ou superior a 10 anos (IN RFB nº 1.700/2017).
-                    </p>
-                  </div>
-                  <Switch checked={tuLocal} onCheckedChange={setTuLocal} />
+          {/* Switches TU/OT */}
+          <Alert className="mb-2">
+            <div className="flex w-full gap-4">
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <p className="font-medium">
+                    Tempo de Uso maior ou igual a 10 anos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vida útil igual ou superior a 10 anos (IN RFB nº 1.700/2017).
+                  </p>
                 </div>
-
-                <Separator orientation="vertical" className="h-10" />
-
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <p className="font-medium">Obsolescência Tecnológica</p>
-                    <p className="text-xs text-muted-foreground">
-                      Defasagem tecnológica/ausência de suporte (Lei nº 12.305/2010; Decreto nº 9.373/2018).
-                    </p>
-                  </div>
-                  <Switch checked={otLocal} onCheckedChange={setOtLocal} />
-                </div>
+                <Switch checked={tuLocal} onCheckedChange={setTuLocal} />
               </div>
-            </Alert>
-      
+
+              <Separator orientation="vertical" className="h-10" />
+
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <p className="font-medium">Obsolescência Tecnológica</p>
+                  <p className="text-xs text-muted-foreground">
+                    Defasagem tecnológica/ausência de suporte (Lei nº 12.305/2010;
+                    Decreto nº 9.373/2018).
+                  </p>
+                </div>
+                <Switch checked={otLocal} onCheckedChange={setOtLocal} />
+              </div>
+            </div>
+          </Alert>
 
           {/* Orientação + Upload (apenas idx 0 ou 1) */}
           {showUploadDocs && (
             <>
-              <Alert className="">
+              <Alert>
                 <Accordion type="single" defaultValue="item-1" collapsible>
                   <AccordionItem value="item-1">
-                    <div className="flex justify-between  items-center  gap-2">
-                      <div className="flex  gap-2 items-center">
-                        <div>
-                          <AlertCircleIcon size={16} />
-                        </div>
-
+                    <div className="flex justify-between items-center gap-2">
+                      <div className="flex gap-2 items-center">
+                        <AlertCircleIcon size={16} />
                         <p className="font-medium">
                           Bens com menos de 10 anos de uso, mas que demandam manutenção
                         </p>
                       </div>
-                      <AccordionTrigger className="p-0"></AccordionTrigger>
+                      <AccordionTrigger className="p-0" />
                     </div>
                     <AccordionContent className="p-0">
                       <div>
                         <p className="text-gray-500 text-sm text-justify mb-4">
-                          Quando um bem permanente com menos de 10 anos de uso encontra-se inoperante ou danificado, é necessário apresentar elementos probatórios que justifiquem sua classificação como irrecuperável ou antieconômico, conforme os critérios definidos no art. 4º do Decreto nº 9.373/2018. Para subsidiar essa classificação, o guardião do bem deverá comprovar que o custo de reparo é superior a 50% de seu valor atual, de acordo com a metodologia de depreciação prevista na Instrução Normativa RFB nº 1.700/2017 (Anexo III). Abaixo, seguem sugestões de possíveis encaminhamentos para apresentação da comprovação técnica:
+                          Quando um bem permanente com menos de 10 anos de uso encontra-se
+                          inoperante ou danificado, é necessário apresentar elementos
+                          probatórios que justifiquem sua classificação como irrecuperável
+                          ou antieconômico...
                         </p>
 
                         <Alert className="mb-4">
                           <div className="flex mb-2 gap-2 items-center">
-                            <div>
-                              <Wrench size={16} />
-                            </div>
-
-                            <p className="font-medium">1. Orçamento de reparo emitido por empresa ou técnico</p>
+                            <Wrench size={16} />
+                            <p className="font-medium">
+                              1. Orçamento de reparo emitido por empresa ou técnico
+                            </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
-                            Sempre que possível, o guardião deve obter um orçamento detalhado, contendo descrição dos serviços, peças e valores, que demonstre que o custo de reparo ultrapassa 50% do valor atual do bem.
+                            Sempre que possível, o guardião deve obter um orçamento detalhado...
                           </p>
                         </Alert>
 
-                        <Alert className="">
+                        <Alert>
                           <div className="flex mb-2 gap-2 items-center">
-                            <div>
-                              <FileText size={16} />
-                            </div>
-
-                            <p className="font-medium">2. Laudo Técnico Simplificado (autodeclaração fundamentada)</p>
+                            <FileText size={16} />
+                            <p className="font-medium">
+                              2. Laudo Técnico Simplificado (autodeclaração fundamentada)
+                            </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
-                            Caso não seja possível obter orçamento, o guardião poderá emitir um Laudo Técnico Simplificado, assinado e datado, descrevendo detalhadamente: O estado atual do bem e o tipo de dano identificado; As tentativas realizadas para obtenção de orçamento (ex.: contatos, e-mails, ligações); A inexistência de peças ou empresas de serviços de reparo, ou mesmo descontinuidade da tecnologia; As razões técnicas que tornam inviável sua recuperação ou reaproveitamento, inclusive em setores com menor demanda técnica. Esse documento deve ser redigido com clareza e objetividade, identificando o bem (marca, modelo, número de série e patrimônio) e fundamentando a avaliação com base em critérios técnicos e de obsolescência. Nos termos do art. 22 da Lei nº 9.784/1999, que regula o processo administrativo no âmbito da Administração Pública Federal, o servidor responsável pelo bem atua sob o princípio da fé pública, podendo emitir declaração técnica com validade probatória administrativa, desde que devidamente fundamentada e assinada.
+                            Caso não seja possível obter orçamento...
                           </p>
                         </Alert>
                       </div>
@@ -590,7 +692,6 @@ const handleDeleteFile = useCallback(
                 </Accordion>
               </Alert>
 
-              {/* Dropzone obrigatório (substitui input file) */}
               <div className="grid gap-2 w-full">
                 <Label htmlFor="observacoes">Comprovantes*</Label>
                 <div
@@ -599,96 +700,113 @@ const handleDeleteFile = useCallback(
                 >
                   <input {...getInputProps()} />
                   <div className="p-4 border rounded-md dark:border-neutral-800">
-                    <FileIcon size={24} className="whitespace-nowrap" />
+                    <FileIcon size={24} />
                   </div>
                   {isDragActive ? (
                     <p>Solte o arquivo aqui…</p>
                   ) : (
-                    <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+                    <p>
+                      Arraste e solte o arquivo aqui ou clique para selecionar
+                      (até {MAX_MB} MB)
+                    </p>
                   )}
-                 
                 </div>
 
+                {/* Arquivos locais */}
                 {docsLocal.length > 0 && (
-                  <div className="">
-                
-                    <ul className="text-xs space-y-2">
-                      {docsLocal.map((f, i) => (
-                        <Alert key={i} className=" flex group items-center justify-between">
-                         <div className="flex items-center min-h-8 gap-2 w-full">
+                  <ul className="text-xs space-y-2">
+                    {docsLocal.map((f, i) => (
+                      <Alert
+                        key={i}
+                        className="flex group items-center justify-between"
+                      >
+                        <div className="flex items-center min-h-8 gap-2 w-full">
                           <File size={16} />
-                           <span className="truncate max-w-[75%]">
+                          <span className="truncate max-w-[75%]">
                             {f.name} — {(f.size / 1024 / 1024).toFixed(2)} MB
                           </span>
-                         </div>
+                        </div>
                         <div className="flex gap-2">
-                            <Button
-  variant="ghost"
-  size="icon"
-  className="h-8 w-8 hidden group-hover:flex"
-  onClick={() => openDoc(i)}
-  title="Abrir em nova aba"
->
-  <ScanEye size={16} />
-</Button>
-                            <Button variant='destructive' size="icon" className="h-8 w-8 hidden group-hover:flex" onClick={() => removeDoc(i)}>
-                           <Trash size={16} />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hidden group-hover:flex"
+                            onClick={() => openDoc(i)}
+                          >
+                            <ScanEye size={16} />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8 hidden group-hover:flex"
+                            onClick={() => removeDoc(i)}
+                          >
+                            <Trash size={16} />
                           </Button>
                         </div>
+                      </Alert>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Arquivos do servidor */}
+                {serverFiles.length > 0 && (
+                  <div className="mb-4">
+                    <Label>Documentos já anexados a este bem</Label>
+                    <ul className="text-xs space-y-2 mt-2">
+                      {serverFiles.map((f) => (
+                        <Alert
+                          key={f.id}
+                          className="flex group items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 min-h-8 w-full">
+                            <FileText size={16} />
+                            <span className="truncate max-w-[75%]">
+                              {f.file_name} ({f.content_type || "arquivo"})
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hidden group-hover:flex"
+                              onClick={() =>
+                                window.open(f.file_path, "_blank", "noopener,noreferrer")
+                              }
+                              disabled={busy}
+                            >
+                              <ScanEye size={16} />
+                            </Button>
+
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8 hidden group-hover:flex"
+                              onClick={() => handleDeleteFile(f)}
+                              disabled={busy}
+                            >
+                              <Trash size={16} />
+                            </Button>
+                          </div>
                         </Alert>
                       ))}
                     </ul>
                   </div>
                 )}
-
-{serverFiles && serverFiles.length > 0 && (
-  <div className="mb-4">
-    <Label>Documentos já anexados a este bem</Label>
-    <ul className="text-xs space-y-2 mt-2">
-      {serverFiles.map((f) => (
-        <Alert key={f.id} className="flex group items-center justify-between">
-          <div className="flex items-center gap-2 min-h-8 w-full">
-            <FileText size={16} />
-            <span className="truncate max-w-[75%]">
-              {f.file_name} ({f.content_type || "arquivo"})
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-             className="h-8 w-8 hidden group-hover:flex" 
-              onClick={() =>
-                window.open(f.file_path, "_blank", "noopener,noreferrer")
-              }
-              title="Abrir em nova aba"
-            >
-              <ScanEye size={16} />
-            </Button>
-
-                            <Button variant='destructive' size="icon" className="h-8 w-8 hidden group-hover:flex"    onClick={() => handleDeleteFile(f)}>
-                           <Trash size={16} />
-                          </Button>
-
-          </div>
-        </Alert>
-      ))}
-    </ul>
-  </div>
-)}
-
-
               </div>
             </>
           )}
 
-          {/* Estado de conservação – apenas para ocioso/recuperável */}
+          {/* Estado de conservação */}
           {!isIdx7 && shouldShowSituacao && (
             <div className="grid gap-3 w-full">
               <Label>Estado de conservação</Label>
               <div className="flex items-center gap-3">
                 <Select value={situacao} onValueChange={setSituacao}>
-                  <SelectTrigger id="condicao" className="items-start [&_[data-description]]:hidden">
+                  <SelectTrigger
+                    id="condicao"
+                    className="items-start [&_[data-description]]:hidden"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -696,7 +814,9 @@ const handleDeleteFile = useCallback(
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckCircle className="size-5 text-green-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Excelente estado</p>
+                          <p className="font-medium whitespace-nowrap">
+                            Excelente estado
+                          </p>
                           <p className="text-xs text-muted-foreground" data-description>
                             Completo, funcional e com sinais mínimos de uso.
                           </p>
@@ -720,7 +840,9 @@ const handleDeleteFile = useCallback(
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <WrenchIcon className="size-5 text-orange-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Pequenos reparos</p>
+                          <p className="font-medium whitespace-nowrap">
+                            Pequenos reparos
+                          </p>
                           <p className="text-xs text-muted-foreground" data-description>
                             Funcional, com necessidade de manutenção leve.
                           </p>
@@ -735,45 +857,49 @@ const handleDeleteFile = useCallback(
 
           {/* Justificativa */}
           {isIdx7 ? (
-           <Alert>
-              <div className="flex gap-2 ">
-          <BadgePercent size={24} />
-          <div>
-            <p className="font-medium">Mude a situação atual</p>
-            <p className="text-gray-500 text-sm">
-             Por favor, <b>recadastre o bem como “Antieconômico” no passo anterior</b> para prosseguir corretamente com o fluxo.
-            </p>
-          </div>
-        </div>
-           </Alert>
-          ):(
-<div className="grid gap-2 w-full">
-            <Label htmlFor="observacoes">Justificativa (descrição do estado do item)*</Label>
-            {justificativaEhModelo && (
-              <p className="text-xs text-red-500 ">
-               Obrigatório: Personalize a justificativa com uso, funcionamento, defeitos, histórico de manutenção e ano/critério de tombamento para prosseguir.
-              </p>
-            )}
-            <Textarea
-              id="observacoes"
-              className="w-full"
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-            />
-            <div className="">
+            <Alert>
+              <div className="flex gap-2">
+                <BadgePercent size={24} />
+                <div>
+                  <p className="font-medium">Mude a situação atual</p>
+                  <p className="text-gray-500 text-sm">
+                    Por favor,{" "}
+                    <b>recadastre o bem como “Antieconômico” no passo anterior</b>{" "}
+                    para prosseguir corretamente com o fluxo.
+                  </p>
+                </div>
+              </div>
+            </Alert>
+          ) : (
+            <div className="grid gap-2 w-full">
+              <Label htmlFor="observacoes">
+                Justificativa (descrição do estado do item)*
+              </Label>
+
+              {justificativaEhModelo && (
+                <p className="text-xs text-red-500">
+                  Obrigatório: personalize a justificativa com uso,
+                  funcionamento, defeitos, histórico de manutenção e
+                  ano/critério de tombamento para prosseguir.
+                </p>
+              )}
+
+              <Textarea
+                id="observacoes"
+                className="w-full"
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+              />
+
               <p className="text-xs text-muted-foreground">
-  <>CO: {CO} • TU≥10: {tuLocal ? "1" : "0"} • OT alta: {otLocal ? "1" : "0"}</>
-</p>
-
-
+                CO: {CO} • TU≥10: {tuLocal ? "1" : "0"} • OT alta:{" "}
+                {otLocal ? "1" : "0"}
+              </p>
             </div>
-          
-          </div>
           )}
 
-          {/* Escala de 7 níveis (verde → vermelho) */}
+          {/* Escala de 7 níveis */}
           <div className="mt-4">
-         
             <div className="flex gap-2">
               {escala7.map((it, i) => {
                 const ativo = i === nivelAtivo;
@@ -781,12 +907,9 @@ const handleDeleteFile = useCallback(
                   <div
                     key={it.rotulo}
                     className={`rounded-md p-0 h-4 w-4 ${it.bg} ${
-                      ativo ? "opacity-100  " : "opacity-20"
+                      ativo ? "opacity-100" : "opacity-20"
                     }`}
-                   
-                  >
-
-                  </div>
+                  />
                 );
               })}
             </div>

@@ -4,7 +4,6 @@ import {
   Camera,
   Check,
   Image as ImageIcon,
-  ImageDown,
   PanelRightOpen,
   Plus,
   RefreshCcw,
@@ -21,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../ui/dialog";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Select,
@@ -32,6 +31,7 @@ import {
 } from "../../../ui/select";
 import { Separator } from "../../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
+import { useDropzone } from "react-dropzone";
 
 // contrato mínimo p/ encaixar no wizard existente
 type OnValidity = (v: boolean) => void;
@@ -61,6 +61,105 @@ const buildImgUrl = (urlGeral: string, p: string) => {
 
 type CamStatus = "idle" | "requesting" | "granted" | "denied";
 
+/** Snapshot real (DataURL), não depende do arquivo local depois */
+const fileToDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+/** =========================================================
+ * Slot individual com Dropzone (sem hooks dentro do map)
+ * ======================================================= */
+type ImageSlotEditProps = {
+  index: number;
+  src?: string;               // imagem do backend
+  tempSrc?: string;           // preview temporário
+  busy?: boolean;
+  onClickEmpty: () => void;
+  onRemove: (i: number) => void;
+  onDropFiles: (files: File[], index: number) => void;
+};
+
+function ImageSlotEdit({
+  index,
+  src,
+  tempSrc,
+  busy,
+  onClickEmpty,
+  onRemove,
+  onDropFiles,
+}: ImageSlotEditProps) {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (accepted) => onDropFiles(accepted, index),
+    accept: { "image/*": [] },
+    multiple: true,
+    noClick: true,
+    noKeyboard: true,
+    disabled: !!busy,
+  });
+
+  const finalSrc = tempSrc || src;
+
+  return (
+    <div
+      {...getRootProps()}
+      className={`relative group rounded-md ${
+        isDragActive ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+    >
+      <input {...getInputProps()} />
+
+      {finalSrc ? (
+        <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
+          <img
+            className="aspect-square w-full rounded-md object-cover"
+            src={finalSrc}
+            alt={`Imagem ${index + 1}`}
+          />
+
+          {/* Se for preview temporário, não mostra delete */}
+          {!tempSrc && (
+            <Button
+              onClick={() => onRemove(index)}
+              variant="destructive"
+              className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              size="icon"
+              aria-label="Remover imagem"
+              disabled={busy}
+              type="button"
+            >
+              <Trash size={16} />
+            </Button>
+          )}
+
+          {tempSrc && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-md">
+              <Loader className="animate-spin text-white" size={20} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={onClickEmpty}
+          className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
+          aria-label="Adicionar imagem"
+          disabled={busy}
+          type="button"
+        >
+          <Plus className="h-6 w-6 text-gray-400" />
+        </button>
+      )}
+
+      {isDragActive && (
+        <div className="absolute inset-0 bg-black/10 rounded-md pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
 export function ImagemStepEdit({
   step,
   catalogId,
@@ -74,6 +173,9 @@ export function ImagemStepEdit({
   const [images, setImages] = useState<ImageItem[]>(
     () => existingImages ?? []
   );
+
+  /** previews temporários por slot enquanto sobe */
+  const [tempSlots, setTempSlots] = useState<Record<number, string>>({});
 
   // sincroniza quando o pai muda (evita ping-pong)
   const lastPropRef = useRef<string>("");
@@ -108,9 +210,7 @@ export function ImagemStepEdit({
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   // câmera
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
-    []
-  );
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState("");
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
@@ -148,7 +248,6 @@ export function ImagemStepEdit({
         video: true,
         audio: false,
       });
-      // fecha o stream temporário imediatamente
       tmp.getTracks().forEach((t) => t.stop());
       setCamStatus("granted");
       setPermError("");
@@ -231,7 +330,7 @@ export function ImagemStepEdit({
     const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
     setCapturedPhoto(photoDataUrl);
     setShowPhotoPreview(true);
-    // para o stream, mas ainda não fecha o diálogo
+
     if (stream) {
       stream.getTracks().forEach((t) => t.stop());
       setStream(null);
@@ -248,7 +347,7 @@ export function ImagemStepEdit({
   /** Inicialização segura ao abrir o diálogo */
   const safeInitCamera = async () => {
     const ok = await ensureCameraPermission();
-    if (!ok) return; // fica em denied e exibe UI guiada
+    if (!ok) return;
     await getCameras();
     await startCamera();
   };
@@ -258,7 +357,6 @@ export function ImagemStepEdit({
     setShowCameraDialog(true);
     setShowPhotoPreview(false);
     setCapturedPhoto(null);
-    // não liga automaticamente: espera o usuário clicar "Ativar câmera"
     if (camStatus === "granted") {
       await getCameras();
       await startCamera();
@@ -266,23 +364,12 @@ export function ImagemStepEdit({
   };
 
   const teardownCamera = () => {
-    // para o stream
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      setStream(null);
-    }
-    if (videoRef.current) videoRef.current.srcObject = null;
-
-    // fecha e reseta estados de captura
+    stopCamera();
     setShowCameraDialog(false);
     setCapturedPhoto(null);
     setShowPhotoPreview(false);
-    // opcional: resetar permissão
-    // setCamStatus("idle");
-    // setPermError("");
   };
 
-  // garante stop ao desmontar o componente
   useEffect(() => {
     return () => {
       teardownCamera();
@@ -290,13 +377,9 @@ export function ImagemStepEdit({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // feche ao mudar o "open" do Dialog
   const closeCameraDialog = (open: boolean) => {
-    if (!open) {
-      teardownCamera();
-    } else {
-      setShowCameraDialog(true);
-    }
+    if (!open) teardownCamera();
+    else setShowCameraDialog(true);
   };
 
   /** ===== Backend: POST/DELETE/REFRESH ===== */
@@ -329,40 +412,108 @@ export function ImagemStepEdit({
     }
   };
 
+  const deleteById = async (id: string) => {
+    const resp = await fetch(`${urlGeral}catalog/${catalogId}/images/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) throw new Error(`Falha ao remover (${resp.status})`);
+  };
+
+  /** ### PIPELINE ÚNICO: vale p/ upload tradicional e drag’n’drop */
+  const handlePickedFiles = useCallback(
+    async (files: File[], targetIndex?: number) => {
+      try {
+        if (!files?.length) return;
+
+        // valida tamanho (2MB)
+        for (const f of files) {
+          if (f.size > 2 * 1024 * 1024) {
+            toast("Arquivo muito grande!", {
+              description: `${f.name} excede o limite de 2 MB.`,
+            });
+            return;
+          }
+        }
+
+        const willReplace =
+          typeof targetIndex === "number" && !!images[targetIndex];
+
+        const remaining = Math.max(4 - images.length, 0);
+
+        const chosenFiles = willReplace
+          ? files.slice(0, 1)
+          : files.slice(0, remaining);
+
+        // snapshots temporários (previews imediatos)
+        const snapshots = await Promise.all(
+          chosenFiles.map((f) => fileToDataUrl(f))
+        );
+
+        // aplica previews nos slots afetados
+        setTempSlots((prev) => {
+          const next = { ...prev };
+
+          if (typeof targetIndex === "number") {
+            // substitui/coloca a partir do slot alvo
+            let insertAt = targetIndex;
+            for (let i = 0; i < snapshots.length; i++) {
+              while (insertAt < 4 && images[insertAt]) {
+                // se substituindo, fica no próprio alvo
+                if (willReplace) break;
+                insertAt++;
+              }
+              if (insertAt >= 4) break;
+              next[insertAt] = snapshots[i];
+              insertAt++;
+            }
+          } else {
+            // caso geral: começa no próximo vazio
+            let insertAt = images.length;
+            for (let i = 0; i < snapshots.length; i++) {
+              if (insertAt >= 4) break;
+              next[insertAt] = snapshots[i];
+              insertAt++;
+            }
+          }
+          return next;
+        });
+
+        setBusy(true);
+
+        // se for substituir: primeiro deleta a imagem do slot
+        if (willReplace && typeof targetIndex === "number") {
+          const old = images[targetIndex];
+          if (old?.id) await deleteById(old.id);
+        }
+
+        // envia os blobs escolhidos
+        for (const f of chosenFiles) {
+          await uploadBlob(f, f.name);
+        }
+
+        await refreshImages();
+        setShowUploadDialog(false);
+        toast("Imagens enviadas!");
+      } catch (e: any) {
+        toast("Erro ao enviar imagem", {
+          description: e?.message || String(e),
+        });
+      } finally {
+        setBusy(false);
+        setTempSlots({});
+      }
+    },
+    [images, catalogId, token, urlGeral]
+  );
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    try {
-      const files = event.target.files;
-      if (!files || files.length === 0)
-        throw new Error("Nenhum arquivo selecionado.");
-
-      for (const f of Array.from(files)) {
-        if (f.size > 2 * 1024 * 1024) {
-          toast("Arquivo muito grande!", {
-            description: `${f.name} excede o limite de 2 MB.`,
-          });
-          if (fileInputRef.current) fileInputRef.current.value = "";
-          return;
-        }
-      }
-
-      setBusy(true);
-      for (const f of Array.from(files)) {
-        await uploadBlob(f, f.name);
-      }
-
-      await refreshImages();
-      setShowUploadDialog(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      toast("Imagens enviadas!");
-    } catch (e: any) {
-      toast("Erro ao carregar arquivo", {
-        description: e?.message || String(e),
-      });
-    } finally {
-      setBusy(false);
-    }
+    const files = event.target.files;
+    if (!files?.length) return;
+    await handlePickedFiles(Array.from(files));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const confirmPhoto = async () => {
@@ -370,7 +521,7 @@ export function ImagemStepEdit({
     teardownCamera();
     try {
       setBusy(true);
-      const b = await (await fetch(capturedPhoto)).blob(); // converte dataURL em blob
+      const b = await (await fetch(capturedPhoto)).blob();
       await uploadBlob(b, "camera.jpg");
       await refreshImages();
       setCapturedPhoto(null);
@@ -387,17 +538,9 @@ export function ImagemStepEdit({
   const handleRemoveByIndex = async (index: number) => {
     const img = images[index];
     if (!img) return;
-    const id = img.id;
     try {
       setBusy(true);
-      const resp = await fetch(
-        `${urlGeral}catalog/${catalogId}/images/${id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!resp.ok) throw new Error(`Falha ao remover (${resp.status})`);
+      await deleteById(img.id);
       await refreshImages();
       toast("Imagem removida.");
     } catch (e: any) {
@@ -463,9 +606,7 @@ export function ImagemStepEdit({
             <PanelRightOpen size={24} />
             <div>
               <p className="font-medium">Passo 3</p>
-              <p className="text-gray-500 text-sm">
-                Imagem lateral ou traseira
-              </p>
+              <p className="text-gray-500 text-sm">Imagem lateral ou traseira</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -477,44 +618,27 @@ export function ImagemStepEdit({
           </div>
         </div>
 
-        {/* Grade 4 slots (exibe até 4 primeiras do backend) */}
+        {/* Grade 4 slots com onDrop */}
         <div className="flex gap-2 w-full mb-8">
           <div className="w-full">
             <div className="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
               {Array.from({ length: 4 }).map((_, index) => {
                 const img = images[index];
-                const src = img ? buildImgUrl(urlGeral, img.file_path) : undefined;
+                const src = img
+                  ? buildImgUrl(urlGeral, img.file_path)
+                  : undefined;
+
                 return (
-                  <div key={index} className="relative group">
-                    {src ? (
-                      <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
-                        <img
-                          className="aspect-square w-full rounded-md object-cover"
-                          src={src}
-                          alt={`Imagem ${index + 1}`}
-                        />
-                        <Button
-                          onClick={() => handleRemoveByIndex(index)}
-                          variant="destructive"
-                          className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                          size="icon"
-                          aria-label="Remover imagem"
-                          disabled={busy}
-                        >
-                          <Trash size={16} />
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={openUploadDialog}
-                        className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
-                        aria-label="Adicionar imagem"
-                        disabled={busy}
-                      >
-                        <Plus className="h-6 w-6 text-gray-400" />
-                      </button>
-                    )}
-                  </div>
+                  <ImageSlotEdit
+                    key={index}
+                    index={index}
+                    src={src}
+                    tempSrc={tempSlots[index]}
+                    busy={busy}
+                    onClickEmpty={openUploadDialog}
+                    onRemove={handleRemoveByIndex}
+                    onDropFiles={(files, i) => handlePickedFiles(files, i)}
+                  />
                 );
               })}
             </div>
@@ -549,6 +673,7 @@ export function ImagemStepEdit({
                     onClick={openCameraDialog}
                     className="flex items-center justify-center space-x-2"
                     disabled={busy || !hasMediaDevices}
+                    type="button"
                   >
                     <Camera size={20} />
                     <span>Tirar Foto</span>
@@ -558,6 +683,7 @@ export function ImagemStepEdit({
                     variant="outline"
                     className="flex items-center justify-center space-x-2"
                     disabled={busy}
+                    type="button"
                   >
                     <ImageIcon size={20} />
                     <span>Escolher do Computador</span>
@@ -587,7 +713,6 @@ export function ImagemStepEdit({
 
                 <Separator className="my-4" />
 
-                {/* Estados de permissão: idle/requesting/denied mostram UI de ativação; granted mostra seleção + preview */}
                 {camStatus !== "granted" ? (
                   <div className="space-y-4">
                     <div className="rounded-md border p-3 text-sm">
@@ -620,6 +745,7 @@ export function ImagemStepEdit({
                         variant="outline"
                         className="w-full"
                         onClick={() => closeCameraDialog(false)}
+                        type="button"
                       >
                         <ArrowUUpLeft size={16} /> Cancelar
                       </Button>
@@ -627,6 +753,7 @@ export function ImagemStepEdit({
                         className="w-full"
                         onClick={safeInitCamera}
                         disabled={camStatus === "requesting" || !hasMediaDevices}
+                        type="button"
                       >
                         {camStatus === "requesting" ? (
                           <Loader className="animate-spin" size={16} />
@@ -641,7 +768,7 @@ export function ImagemStepEdit({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* seleção de câmera (shadcn Select) */}
+                    {/* seleção de câmera */}
                     <div>
                       <div className="flex justify-between items-center">
                         <label className="text-sm font-medium mb-2 block">
@@ -656,6 +783,7 @@ export function ImagemStepEdit({
                             variant="outline"
                             size="sm"
                             className="text-xs"
+                            type="button"
                           >
                             <RefreshCcw size={16} /> Atualizar Câmeras
                           </Button>
@@ -728,6 +856,7 @@ export function ImagemStepEdit({
                             className="w-full"
                             variant="outline"
                             disabled={busy}
+                            type="button"
                           >
                             Cancelar
                           </Button>
@@ -735,6 +864,7 @@ export function ImagemStepEdit({
                             onClick={capturePhoto}
                             disabled={!stream || busy}
                             className="w-full"
+                            type="button"
                           >
                             <Camera size={16} />
                             <span>Capturar Foto</span>
@@ -765,6 +895,7 @@ export function ImagemStepEdit({
                             variant="outline"
                             className="w-full"
                             disabled={busy}
+                            type="button"
                           >
                             Tirar Outra
                           </Button>
@@ -772,6 +903,7 @@ export function ImagemStepEdit({
                             onClick={confirmPhoto}
                             className="w-full"
                             disabled={busy}
+                            type="button"
                           >
                             <Check size={16} />
                             <span>Usar Esta Foto</span>

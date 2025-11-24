@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -15,6 +15,7 @@ import {
   Loader,
 } from "lucide-react";
 import { ArrowUUpLeft } from "phosphor-react";
+import { useDropzone } from "react-dropzone";
 
 import { StepBaseProps } from "../novo-item"; // mantém seu tipo original
 import { Button } from "../../../ui/button";
@@ -46,6 +47,86 @@ const sameArr = (a?: string[], b?: string[]) => {
 
 type CamStatus = "idle" | "requesting" | "granted" | "denied";
 
+/** Lê arquivo e devolve um DataURL (snapshot real, não depende do arquivo local depois) */
+const fileToDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+/** =========================================================
+ * Slot individual com Dropzone (sem hooks dentro do map)
+ * ======================================================= */
+type ImageSlotProps = {
+  index: number;
+  image?: string;
+  onClickEmpty: () => void;
+  onRemove: (i: number) => void;
+  onDropFiles: (files: File[], index: number) => void;
+};
+
+function ImageSlot({
+  index,
+  image,
+  onClickEmpty,
+  onRemove,
+  onDropFiles,
+}: ImageSlotProps) {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (accepted) => onDropFiles(accepted, index),
+    accept: { "image/*": [] },
+    multiple: true,     // pode soltar várias; pipeline limita a 4
+    noClick: true,      // clique continua com o seu botão
+    noKeyboard: true,
+  });
+
+  return (
+    <div
+      {...getRootProps()}
+      className={`relative group rounded-md ${
+        isDragActive ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+    >
+      <input {...getInputProps()} />
+
+      {image ? (
+        <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
+          <img
+            className="aspect-square w-full rounded-md object-cover"
+            src={image}
+            alt={`Upload ${index + 1}`}
+          />
+          <Button
+            onClick={() => onRemove(index)}
+            variant="destructive"
+            className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+            size="icon"
+            aria-label="Remover imagem"
+            type="button"
+          >
+            <Trash size={16} />
+          </Button>
+        </div>
+      ) : (
+        <button
+          onClick={onClickEmpty}
+          className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
+          aria-label="Adicionar imagem"
+          type="button"
+        >
+          <Plus className="h-6 w-6 text-gray-400" />
+        </button>
+      )}
+
+      {isDragActive && (
+        <div className="absolute inset-0 bg-black/10 rounded-md pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
 export function ImagemStep({
   onValidityChange,
   onStateChange,
@@ -55,6 +136,11 @@ export function ImagemStep({
   /** ===== estado local é a FONTE DE VERDADE ===== */
   const [images, setImages] = useState<string[]>(
     () => (Array.isArray(imagens) ? imagens : [])
+  );
+
+  /** Snapshot real para upload (cópia temporária congelada) */
+  const imageBlobsRef = useRef<(Blob | null)[]>(
+    Array.isArray(imagens) ? imagens.map(() => null) : []
   );
 
   /** evita “ping-pong” pai⇄filho */
@@ -71,6 +157,7 @@ export function ImagemStep({
       return;
     }
     setImages(imagens);
+    imageBlobsRef.current = imagens.map(() => null); // reseta snapshots quando pai sobrescreve
     lastPropRef.current = incoming;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagens]);
@@ -89,43 +176,87 @@ export function ImagemStep({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const files = event.target.files;
-      if (!files || files.length === 0) throw new Error("Nenhum arquivo selecionado.");
+  /** Pipeline único para upload OU drop (com snapshot real) */
+  const handlePickedFiles = useCallback(
+    async (files: File[], targetIndex?: number) => {
+      if (!files || files.length === 0) return;
 
-      // verifica tamanho antes de gerar preview
-      for (const f of Array.from(files)) {
+      // valida tamanho (2MB)
+      for (const f of files) {
         if (f.size > 2 * 1024 * 1024) {
           toast("Arquivo muito grande!", {
             description: `${f.name} excede o limite de 2 MB.`,
             action: { label: "Fechar", onClick: () => {} },
           });
-          if (fileInputRef.current) fileInputRef.current.value = "";
-          return; // bloqueia todo o lote se tiver um arquivo inválido
+          return;
         }
       }
 
-      // cria objectURLs e limita a 4 slots
-      const newUrls = Array.from(files).map((f) => URL.createObjectURL(f));
-      const availableSlots = Math.max(4 - images.length, 0);
-      const toAdd = newUrls.slice(0, availableSlots);
+      const willReplace =
+        typeof targetIndex === "number" && !!images[targetIndex];
 
-      setImages((prev) => [...prev, ...toAdd]);
-      setShowUploadDialog(false);
+      const remaining = Math.max(4 - images.length, 0);
 
-      // limpa o input para poder re-selecionar o mesmo arquivo depois
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (e: any) {
-      toast("Erro ao carregar arquivo", {
-        description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => {} },
+      const chosenFiles = willReplace
+        ? files.slice(0, 1)
+        : files.slice(0, remaining);
+
+      const snapshots = await Promise.all(
+        chosenFiles.map((f) => fileToDataUrl(f))
+      );
+
+      setImages((prev) => {
+        const next = [...prev];
+
+        if (typeof targetIndex === "number") {
+          if (next[targetIndex]) {
+            // substitui o slot alvo
+            next[targetIndex] = snapshots[0];
+            imageBlobsRef.current[targetIndex] = chosenFiles[0];
+            return next;
+          } else {
+            // coloca no alvo e continua nos próximos vazios
+            let insertAt = targetIndex;
+            for (let i = 0; i < snapshots.length; i++) {
+              while (next[insertAt]) insertAt++;
+              if (insertAt >= 4) break;
+              next[insertAt] = snapshots[i];
+              imageBlobsRef.current[insertAt] = chosenFiles[i];
+              insertAt++;
+            }
+            return next;
+          }
+        }
+
+        // caso geral: adiciona nos vazios
+        snapshots.forEach((snap, i) => {
+          const idx = next.length;
+          if (idx < 4) {
+            next.push(snap);
+            imageBlobsRef.current[idx] = chosenFiles[i];
+          }
+        });
+
+        return next;
       });
-    }
+
+      setShowUploadDialog(false);
+    },
+    [images]
+  );
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files?.length) return;
+
+    handlePickedFiles(Array.from(files));
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemoveImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    imageBlobsRef.current = imageBlobsRef.current.filter((_, i) => i !== index);
   };
 
   /** ===== Câmera ===== */
@@ -162,7 +293,10 @@ export function ImagemStep({
     }
     try {
       setCamStatus("requesting");
-      const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const tmp = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
       tmp.getTracks().forEach((t) => t.stop());
       setCamStatus("granted");
       setPermError("");
@@ -172,7 +306,8 @@ export function ImagemStep({
       let msg = "Não foi possível acessar a câmera.";
       if (e?.name === "NotAllowedError") msg = "Permissão negada no navegador.";
       if (e?.name === "NotFoundError") msg = "Nenhuma câmera encontrada.";
-      if (e?.name === "OverconstrainedError") msg = "As restrições de vídeo não puderam ser atendidas.";
+      if (e?.name === "OverconstrainedError")
+        msg = "As restrições de vídeo não puderam ser atendidas.";
       setPermError(msg);
       setCamStatus("denied");
       return false;
@@ -232,32 +367,40 @@ export function ImagemStep({
     if (videoRef.current) videoRef.current.srcObject = null;
   };
 
-const capturePhoto = () => {
-  if (!videoRef.current || !canvasRef.current) return;
-  const canvas = canvasRef.current;
-  const video = videoRef.current;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-  setCapturedPhoto(photoDataUrl);
-  setShowPhotoPreview(true);
-  // para o stream, mas ainda não fecha o diálogo
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    setStream(null);
-  }
-  if (videoRef.current) videoRef.current.srcObject = null;
-};
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setCapturedPhoto(photoDataUrl);
+    setShowPhotoPreview(true);
+    // para o stream, mas ainda não fecha o diálogo
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
 
   const confirmPhoto = () => {
     if (!capturedPhoto) return;
-    setImages((prev) => [...prev, capturedPhoto]);
+
+    // snapshot da câmera já é DataURL “congelada”
+    setImages((prev) => {
+      if (prev.length >= 4) return prev;
+      const next = [...prev, capturedPhoto];
+      imageBlobsRef.current[next.length - 1] = null; // não há File, mas ok
+      return next;
+    });
+
     setCapturedPhoto(null);
     setShowPhotoPreview(false);
     setShowCameraDialog(false);
-     teardownCamera(); // <— fecha e limpa tudo
+    teardownCamera();
   };
 
   const retakePhoto = () => {
@@ -288,40 +431,26 @@ const capturePhoto = () => {
     }
   };
 
-  // 1) helper único para encerrar câmera + fechar diálogo
-const teardownCamera = () => {
-  // para o stream
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    setStream(null);
-  }
-  if (videoRef.current) videoRef.current.srcObject = null;
-
-  // fecha e reseta estados de captura
-  setShowCameraDialog(false);
-  setCapturedPhoto(null);
-  setShowPhotoPreview(false);
-
-  // (opcional) reseta status de permissão, se você usa esse estado
-  // setCamStatus?.("idle");
-  // setPermError?.("");
-};
-
-// 2) useEffect para garantir stop ao desmontar o componente (rota/tela)
-useEffect(() => {
-  return () => {
-    teardownCamera();
+  // helper único para encerrar câmera + fechar diálogo
+  const teardownCamera = () => {
+    stopCamera();
+    setShowCameraDialog(false);
+    setCapturedPhoto(null);
+    setShowPhotoPreview(false);
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
 
-const closeCameraDialog = (open: boolean) => {
-  if (!open) {
-    teardownCamera();
-  } else {
-    setShowCameraDialog(true);
-  }
-};
+  // garante stop ao desmontar o componente (rota/tela)
+  useEffect(() => {
+    return () => {
+      teardownCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const closeCameraDialog = (open: boolean) => {
+    if (!open) teardownCamera();
+    else setShowCameraDialog(true);
+  };
 
   const openFileDialog = () => {
     setShowUploadDialog(false);
@@ -341,7 +470,8 @@ const closeCameraDialog = (open: boolean) => {
   useEffect(() => {
     const handler = () => getCameras();
     navigator.mediaDevices?.addEventListener?.("devicechange", handler);
-    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+    return () =>
+      navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -389,48 +519,27 @@ const closeCameraDialog = (open: boolean) => {
             <ScanEye size={24} />
             <div>
               <p className="font-medium">Passo 4</p>
-              <p className="text-gray-500 text-sm">Detalhe da condição (destacando alguma avaria)</p>
+              <p className="text-gray-500 text-sm">
+                Detalhe da condição (destacando alguma avaria)
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Grade 4 slots */}
+        {/* Grade 4 slots com drop */}
         <div className="flex gap-2 w-full mb-8">
           <div className="w-full">
             <div className="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
-              {Array.from({ length: 4 }).map((_, index) => {
-                const image = images[index];
-                return (
-                  <div key={index} className="relative group">
-                    {image ? (
-                      <div className="flex items-center justify-center object-cover border aspect-square w-full rounded-md dark:border-neutral-800">
-                        <img
-                          className="aspect-square w-full rounded-md object-cover"
-                          src={image}
-                          alt={`Upload ${index + 1}`}
-                        />
-                        <Button
-                          onClick={() => handleRemoveImage(index)}
-                          variant="destructive"
-                          className="absolute z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                          size="icon"
-                          aria-label="Remover imagem"
-                        >
-                          <Trash size={16} />
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={openUploadDialog}
-                        className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-neutral-800 hover:border-gray-400 transition-colors"
-                        aria-label="Adicionar imagem"
-                      >
-                        <Plus className="h-6 w-6 text-gray-400" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+              {Array.from({ length: 4 }).map((_, index) => (
+                <ImageSlot
+                  key={index}
+                  index={index}
+                  image={images[index]}
+                  onClickEmpty={openUploadDialog}
+                  onRemove={handleRemoveImage}
+                  onDropFiles={(files, i) => handlePickedFiles(files, i)}
+                />
+              ))}
             </div>
 
             {/* input hidden para upload */}
@@ -455,22 +564,30 @@ const closeCameraDialog = (open: boolean) => {
                   </DialogDescription>
                 </DialogHeader>
 
-                  <Separator className="my-4" />
+                <Separator className="my-4" />
 
                 <div className="flex flex-col space-y-3">
-                  <Button onClick={openCameraDialog} className="flex items-center justify-center space-x-2" disabled={!hasMediaDevices}>
+                  <Button
+                    onClick={openCameraDialog}
+                    className="flex items-center justify-center space-x-2"
+                    disabled={!hasMediaDevices}
+                    type="button"
+                  >
                     <Camera size={20} />
                     <span>Tirar Foto</span>
                   </Button>
+
                   <Button
                     onClick={openFileDialog}
                     variant="outline"
                     className="flex items-center justify-center space-x-2"
+                    type="button"
                   >
                     <ImageIcon size={20} />
                     <span>Escolher do Computador</span>
                   </Button>
                 </div>
+
                 {!hasMediaDevices && (
                   <p className="text-xs text-red-500 mt-3">
                     O acesso à câmera não é suportado neste navegador/dispositivo.
@@ -502,10 +619,13 @@ const closeCameraDialog = (open: boolean) => {
                           Clique em <strong>Ativar câmera</strong> para listar os dispositivos disponíveis.
                         </p>
                       )}
-                      {camStatus === "requesting" && <p>Solicitando acesso à câmera… confirme no navegador.</p>}
+                      {camStatus === "requesting" && (
+                        <p>Solicitando acesso à câmera… confirme no navegador.</p>
+                      )}
                       {camStatus === "denied" && (
                         <p className="text-red-600">
-                          {permError || "Acesso à câmera negado. Ajuste as permissões do navegador e tente novamente."}
+                          {permError ||
+                            "Acesso à câmera negado. Ajuste as permissões do navegador e tente novamente."}
                         </p>
                       )}
                       {!window.isSecureContext && (
@@ -514,12 +634,29 @@ const closeCameraDialog = (open: boolean) => {
                         </p>
                       )}
                     </div>
+
                     <div className="flex gap-3">
-                      <Button variant="outline" className="w-full" onClick={() => closeCameraDialog(false)}>
-                  <ArrowUUpLeft size={16}/>      Cancelar
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => closeCameraDialog(false)}
+                        type="button"
+                      >
+                        <ArrowUUpLeft size={16} /> Cancelar
                       </Button>
-                      <Button className="w-full" onClick={safeInitCamera} disabled={camStatus === "requesting" || !hasMediaDevices}>
-             {camStatus === "requesting" ? <Loader className="animate-spin" size={16} /> : <Camera size={16} /> }           {camStatus === "requesting" ? "Ativando…" : "Ativar câmera"}
+
+                      <Button
+                        className="w-full"
+                        onClick={safeInitCamera}
+                        disabled={camStatus === "requesting" || !hasMediaDevices}
+                        type="button"
+                      >
+                        {camStatus === "requesting" ? (
+                          <Loader className="animate-spin" size={16} />
+                        ) : (
+                          <Camera size={16} />
+                        )}
+                        {camStatus === "requesting" ? "Ativando…" : "Ativar câmera"}
                       </Button>
                     </div>
                   </div>
@@ -531,25 +668,47 @@ const closeCameraDialog = (open: boolean) => {
                         <div>
                           <div className="flex justify-between items-center">
                             <label className="text-sm font-medium mb-2 block">
-                              Câmeras Disponíveis <Badge variant="outline">{availableCameras.length}</Badge>
+                              Câmeras Disponíveis{" "}
+                              <Badge variant="outline">
+                                {availableCameras.length}
+                              </Badge>
                             </label>
                             <div className="flex justify-center space-x-2">
-                              <Button onClick={getCameras} variant="outline" size="sm" className="text-xs">
+                              <Button
+                                onClick={getCameras}
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                                type="button"
+                              >
                                 <RefreshCcw size={16} /> Atualizar Câmeras
                               </Button>
                             </div>
                           </div>
 
                           <div className="space-y-2 mt-4">
-                            <Select value={selectedCamera} onValueChange={(value) => setSelectedCamera(value)}>
+                            <Select
+                              value={selectedCamera}
+                              onValueChange={(value) => setSelectedCamera(value)}
+                            >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Selecione a câmera" />
                               </SelectTrigger>
-                              <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                              <SelectContent
+                                position="popper"
+                                className="z-[99999]"
+                                align="start"
+                                side="bottom"
+                                sideOffset={6}
+                              >
                                 {availableCameras.map((camera, index) => {
-                                  const cameraName = camera.label || `Câmera ${index + 1}`;
+                                  const cameraName =
+                                    camera.label || `Câmera ${index + 1}`;
                                   return (
-                                    <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                                    <SelectItem
+                                      key={camera.deviceId}
+                                      value={camera.deviceId}
+                                    >
                                       {cameraName}
                                     </SelectItem>
                                   );
@@ -560,8 +719,14 @@ const closeCameraDialog = (open: boolean) => {
                             {selectedCamera && (
                               <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                                 <strong>Câmera ativa:</strong>{" "}
-                                {availableCameras.find((c) => c.deviceId === selectedCamera)?.label ||
-                                  `Câmera ${availableCameras.findIndex((c) => c.deviceId === selectedCamera) + 1}`}
+                                {availableCameras.find(
+                                  (c) => c.deviceId === selectedCamera
+                                )?.label ||
+                                  `Câmera ${
+                                    availableCameras.findIndex(
+                                      (c) => c.deviceId === selectedCamera
+                                    ) + 1
+                                  }`}
                               </div>
                             )}
                           </div>
@@ -583,10 +748,20 @@ const closeCameraDialog = (open: boolean) => {
                         </div>
 
                         <div className="flex justify-center space-x-3">
-                          <Button onClick={() => closeCameraDialog(false)} className="w-full" variant="outline">
+                          <Button
+                            onClick={() => closeCameraDialog(false)}
+                            className="w-full"
+                            variant="outline"
+                            type="button"
+                          >
                             <ArrowUUpLeft size={16} /> Cancelar
                           </Button>
-                          <Button onClick={capturePhoto} disabled={!stream} className="w-full">
+                          <Button
+                            onClick={capturePhoto}
+                            disabled={!stream}
+                            className="w-full"
+                            type="button"
+                          >
                             <Camera size={16} />
                             <span>Capturar Foto</span>
                           </Button>
@@ -599,16 +774,28 @@ const closeCameraDialog = (open: boolean) => {
                             src={capturedPhoto ?? ""}
                             alt="Foto capturada"
                             className="w-full rounded-lg"
-                            style={{ maxHeight: "300px", objectFit: "cover" }}
+                            style={{
+                              maxHeight: "300px",
+                              objectFit: "cover",
+                            }}
                           />
                         </div>
 
                         <div className="flex justify-center space-x-3">
-                          <Button onClick={retakePhoto} variant="outline" className="w-full">
+                          <Button
+                            onClick={retakePhoto}
+                            variant="outline"
+                            className="w-full"
+                            type="button"
+                          >
                             <ArrowUUpLeft size={16} />
                             <span>Tirar Outra</span>
                           </Button>
-                          <Button onClick={confirmPhoto} className="w-full">
+                          <Button
+                            onClick={confirmPhoto}
+                            className="w-full"
+                            type="button"
+                          >
                             <Check size={16} />
                             <span>Usar Esta Foto</span>
                           </Button>

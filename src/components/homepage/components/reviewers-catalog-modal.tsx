@@ -129,7 +129,7 @@ export function ReviewersCatalogModal({ catalog, roleId }: Props) {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, []);
 
   /* ==================== PUT para mudar o reviewer ==================== */
 
@@ -225,9 +225,9 @@ export function ReviewersCatalogModal({ catalog, roleId }: Props) {
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="z-[99999] p-0 w-full" side="bottom">
+         <PopoverContent   className="z-[99999] p-0 w-full"  side="bottom" >
           <Command>
-            <CommandInput placeholder="Buscar revisor..." />
+            <CommandInput />
             <CommandList className="max-h-64">
               <CommandEmpty>Nenhum usuário encontrado</CommandEmpty>
 

@@ -59,6 +59,7 @@ import QRCode from "react-qr-code";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { ArrowUUpLeft } from "phosphor-react";
 import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
+import { ExistingFileDTO } from "../edit-item/edit-item";
 
 /* Código de Barras Code128B (SVG inline) */
 const CODE128_PATTERNS = [
@@ -467,6 +468,7 @@ export type StepPropsMap = {
     tuMaiorIgual10?: boolean;        // 👈 novo
     obsolescenciaAlta?: boolean;     // 👈 novo
      docs?: File[];
+       serverFilesDraft?: ExistingFileDTO[];
   };
     estadoAtual?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
   };

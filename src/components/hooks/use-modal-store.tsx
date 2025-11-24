@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { Files } from "../homepage/components/documents-tab-catalog";
+import { CatalogEntriesResponse } from "../homepage/components/item-patrimonio";
+import { CatalogDTO } from "../dashboard/collection/collection-page";
 
 /** Todos os tipos de modal usados no app */
 export type ModalType =
@@ -77,7 +79,7 @@ type MaterialDTO = {
 export interface ModalData {
   id?: string;
   name?: string;
-
+catalog?:CatalogDTO
   workflow_status?: string;
 files?:Files
   asset_code?: string;
