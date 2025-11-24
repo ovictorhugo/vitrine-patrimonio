@@ -94,76 +94,48 @@ export const InformacoesAdicionaisStep = forwardRef<
   const { urlGeral } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
-  /** ========= 1) ESTADOS REIDRATADOS DO WIZARD =========
-   *  Regra:
-   *  - texto inicial vem DO wizard (initialData)
-   *  - só depois de TU/OT/estado mudarem é que sobrescreve com modelo
+  /** ========= 0) HIDRATAÇÃO ÚNICA =========
+   *  - hidrata no mount
+   *  - re-hidrata só se catalogId mudar (novo item)
+   *  -> isso impede loop com initialData mudando por causa do próprio filho
    */
-  const [observacao, setObservacao] = useState(
-    initialData?.observacao ?? ""
-  );
-  const [situacao, setSituacao] = useState(
-    initialData?.situacao ?? ""
-  );
+  const didHydrateRef = useRef(false);
+  const lastCatalogRef = useRef<string>("");
 
-  const [tuLocal, setTuLocal] = useState<boolean>(
-    initialData?.tuMaiorIgual10 ?? false
-  );
-  const [otLocal, setOtLocal] = useState<boolean>(
-    initialData?.obsolescenciaAlta ?? false
-  );
+  /** ========= 1) ESTADOS LOCAIS ========= */
+  const [observacao, setObservacao] = useState("");
+  const [situacao, setSituacao] = useState("");
+  const [tuLocal, setTuLocal] = useState<boolean>(false);
+  const [otLocal, setOtLocal] = useState<boolean>(false);
+  const [docsLocal, setDocsLocal] = useState<File[]>([]);
+  const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>([]);
 
-  const [docsLocal, setDocsLocal] = useState<File[]>(
-    initialData?.docs ?? []
-  );
-
-  const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>(
-    initialData?.serverFilesDraft ??
-      existingFiles ??
-      []
-  );
-
-  /** ✅ sincroniza estados vindos do pai, mas só se mudou de verdade */
   useEffect(() => {
-    if (!initialData) return;
+    const isNewCatalog = lastCatalogRef.current !== catalogId;
+    if (!didHydrateRef.current || isNewCatalog) {
+      didHydrateRef.current = true;
+      lastCatalogRef.current = catalogId;
 
-    if (initialData.observacao !== undefined) {
-      const next = initialData.observacao ?? "";
-      setObservacao((prev) => (prev === next ? prev : next));
+      setObservacao(initialData?.observacao ?? "");
+      setSituacao(initialData?.situacao ?? "");
+      setTuLocal(!!initialData?.tuMaiorIgual10);
+      setOtLocal(!!initialData?.obsolescenciaAlta);
+      setDocsLocal(initialData?.docs ?? []);
+
+      // draft do wizard tem prioridade, depois existingFiles
+      setServerFiles(
+        initialData?.serverFilesDraft ??
+          existingFiles ??
+          []
+      );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogId]);
 
-    if (initialData.situacao !== undefined) {
-      const next = initialData.situacao ?? "";
-      setSituacao((prev) => (prev === next ? prev : next));
-    }
-
-    if (initialData.tuMaiorIgual10 !== undefined) {
-      const next = !!initialData.tuMaiorIgual10;
-      setTuLocal((prev) => (prev === next ? prev : next));
-    }
-
-    if (initialData.obsolescenciaAlta !== undefined) {
-      const next = !!initialData.obsolescenciaAlta;
-      setOtLocal((prev) => (prev === next ? prev : next));
-    }
-
- if (initialData.docs) {
-  setDocsLocal(prev => (prev === initialData.docs ? prev : (initialData.docs ?? [])));
-}
-
-if (initialData.serverFilesDraft) {
-  setServerFiles(prev =>
-    prev === initialData.serverFilesDraft
-      ? prev
-      : (initialData.serverFilesDraft ?? [])
-  );
-}
-
-  }, [initialData]);
-
-  /** Se a prop existingFiles mudar (por GET), só usa se NÃO houver draft */
+  /** Se existingFiles mudar (GET), só usa se NÃO houver draft local */
   useEffect(() => {
     if (initialData?.serverFilesDraft?.length) return;
+    if (!didHydrateRef.current) return;
     setServerFiles(existingFiles ?? []);
   }, [existingFiles, initialData?.serverFilesDraft]);
 
@@ -180,8 +152,7 @@ if (initialData.serverFilesDraft) {
 
   useEffect(() => {
     if (!shouldShowSituacao && situacao) setSituacao("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldShowSituacao]);
+  }, [shouldShowSituacao, situacao]);
 
   const getIdx = useCallback(() => {
     const tu = tuLocal ? 1 : 0;
@@ -244,12 +215,12 @@ if (initialData.serverFilesDraft) {
     return base[idx];
   }, [getIdx]);
 
-  /** ✅ NÃO SOBRESCREVE NO PRIMEIRO MOUNT */
+  /** ✅ NÃO SOBRESCREVE TEXTO NO PRIMEIRO MOUNT */
   const didMountRef = useRef(false);
   useEffect(() => {
     if (!didMountRef.current) {
       didMountRef.current = true;
-      return;
+      return; // mantém texto inicial do wizard
     }
     const novo = gerarTexto();
     if (novo && novo !== observacao) setObservacao(novo);
@@ -261,8 +232,7 @@ if (initialData.serverFilesDraft) {
   const isIdx7 = idx === 7;
   useEffect(() => {
     if (isIdx7 && observacao) setObservacao("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIdx7]);
+  }, [isIdx7, observacao]);
 
   /** ========= 3) BACKEND: POST/DELETE/REFRESH ========= */
   const [busy, setBusy] = useState(false);
@@ -280,8 +250,12 @@ if (initialData.serverFilesDraft) {
       content_type: f.content_type,
     }));
     setServerFiles(nextFiles);
+
+    // salva draft no wizard
+    onStateChange?.({ serverFilesDraft: nextFiles });
+
     return nextFiles;
-  }, [urlGeral, catalogId, token]);
+  }, [urlGeral, catalogId, token, onStateChange]);
 
   const uploadFileToServer = useCallback(
     async (file: File) => {
@@ -327,7 +301,6 @@ if (initialData.serverFilesDraft) {
           description: file.file_name,
         });
 
-        // salva draft no wizard
         onStateChange?.({ serverFilesDraft: nextFiles });
       } catch (e: any) {
         console.error(e);
@@ -484,9 +457,7 @@ if (initialData.serverFilesDraft) {
     onValidityChange(obsOk && sitOk && docsOk && !isIdx7);
   }, [obsOk, sitOk, docsOk, onValidityChange, isIdx7]);
 
-  /** ========= 7) SUBIR ESTADO PRO PAI (persistência entre steps)
-   *  ✅ AGORA sobe só se o payload mudou de verdade
-   */
+  /** ========= 7) SUBIR ESTADO PRO PAI (sem spam) ========= */
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -508,11 +479,10 @@ if (initialData.serverFilesDraft) {
       otLocal,
       docsLen: docsLocal.length,
       serverLen: serverFiles.length,
-      // ids pra detectar mudança real
       serverIds: serverFiles.map((f) => f.id),
     });
 
-    if (serialized === lastSentRef.current) return; // ✅ não re-dispara
+    if (serialized === lastSentRef.current) return;
 
     lastSentRef.current = serialized;
     onStateChange(payload);
@@ -559,14 +529,8 @@ if (initialData.serverFilesDraft) {
 
   /** ========= 9) ESCALA 7 NÍVEIS ========= */
   const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-    4: 0,
-    5: 1,
-    6: 2,
-    7: 3,
-    0: 4,
-    1: 5,
-    2: 6,
-    3: 6,
+    4: 0, 5: 1, 6: 2, 7: 3,
+    0: 4, 1: 5, 2: 6, 3: 6,
   };
 
   const escala7 = [
@@ -579,10 +543,7 @@ if (initialData.serverFilesDraft) {
     { rotulo: "Antieconômico", bg: "bg-red-700" },
   ] as const;
 
-  const nivelAtivo = (() => {
-    const i = getIdx();
-    return nivelPorIdx[i];
-  })();
+  const nivelAtivo = nivelPorIdx[getIdx()];
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
