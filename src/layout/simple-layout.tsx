@@ -19,6 +19,7 @@ import { Separator } from "../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
 import { useModal } from "../components/hooks/use-modal-store";
 import { Badge } from "../components/ui/badge";
+import { useSessionCountdown } from "../context/useSessionCountdown";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -110,6 +111,9 @@ export default function SimpleLayout({
   return parts.join(" ");
 };
 
+  const remainingMs = useSessionCountdown();
+
+
 
     return (
     <div>
@@ -159,9 +163,9 @@ export default function SimpleLayout({
 
 
 <div>
-    {(loggedIn && timeLoggedIn) && (
+    {(loggedIn) && (
        <Badge variant={'outline'} className="text-gray-500">
-       Sessão restante: {formatRemaining(Number(timeLoggedIn))}
+       Sessão restante: {formatRemaining(remainingMs)}
        </Badge>
     )}
  
