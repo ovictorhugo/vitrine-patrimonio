@@ -49,7 +49,7 @@ type ChartRow = {
   hoje: number;
   ate3dias: number;
   mais1semana: number;
-  total: number;
+  total: number; // total calculado sempre pela soma dos buckets
 };
 
 /* ========================= Config do gráfico ========================= */
@@ -109,11 +109,12 @@ export function ChartTempoRevisaoComissao() {
 
     const fetchStats = async () => {
       setLoading(true);
+
       try {
         const params = buildParamsFromUrl();
         const query = params.toString();
-        const url = `${urlGeral}statistics/catalog/stats/review-commission${
-          query ? `?${query}` : ""
+        const url = `${urlGeral}statistics/catalog/stats/review-commission?workflow_status=REVIEW_REQUESTED_COMISSION${
+          query ? `&${query}` : ""
         }`;
 
         const res = await fetch(url, {
@@ -131,13 +132,13 @@ export function ChartTempoRevisaoComissao() {
         const json: ReviewCommissionStat[] = await res.json();
 
         const rows: ChartRow[] = (json ?? []).map((item) => {
-          const hoje = item.d0 ?? 0;
-          const ate3dias = item.d3 ?? 0;
-          const mais1semana = item.w1 ?? 0;
-          const total =
-            typeof item.total === "number"
-              ? item.total
-              : hoje + ate3dias + mais1semana;
+          // garante número mesmo se vier string
+          const hoje = Number(item.d0 ?? 0);
+          const ate3dias = Number(item.d3 ?? 0);
+          const mais1semana = Number(item.w1 ?? 0);
+
+          // ✅ total sempre coerente com o gráfico
+          const total = hoje + ate3dias + mais1semana;
 
           return {
             reviewerId: item.reviewer_id,
@@ -186,18 +187,13 @@ export function ChartTempoRevisaoComissao() {
               data={data}
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
-           <XAxis
-  dataKey="reviewerName"
-  tickLine={false}
-
-  axisLine={false}
- 
-
-
-
-
-
-/>
+              <XAxis
+                dataKey="reviewerName"
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+                tickFormatter={(value: string) => truncateLabel(value)}
+              />
 
               <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
@@ -220,6 +216,7 @@ export function ChartTempoRevisaoComissao() {
                 fill="var(--color-mais1semana)"
                 radius={4}
               >
+                {/* total já é a soma correta */}
                 <LabelList
                   dataKey="total"
                   position="top"

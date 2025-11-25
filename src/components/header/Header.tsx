@@ -52,6 +52,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ModeToggle } from "../mode-toggle";
 import { SpeedActions } from "./speed-actions";
 import {  NotificationsHeader } from "./notifications";
+import { useSessionCountdown } from "../../context/useSessionCountdown";
 
 export function Header() {
   const {loggedIn, user, permission} = useContext(UserContext)
@@ -82,8 +83,8 @@ export function Header() {
     
   }, []);
 
-  
-  
+
+
 
     return(
       <div className={'top-0  absolut w-full '}>

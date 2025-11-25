@@ -102,8 +102,8 @@ export function ChartTempoRevisaoComissaoPie() {
         const params = buildParamsFromUrl();
         const query = params.toString();
 
-        const url = `${urlGeral}statistics/catalog/stats/review-commission${
-          query ? `?${query}` : ""
+        const url = `${urlGeral}statistics/catalog/stats/review-commission?workflow_status=REVIEW_REQUESTED_COMISSION${
+          query ? `&${query}` : ""
         }`;
 
         const res = await fetch(url, {

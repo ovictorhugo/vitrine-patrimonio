@@ -151,6 +151,7 @@ export const InformacoesAdicionaisStep = forwardRef<
   /** Se a prop existingFiles mudar (por GET), só usa se NÃO houver draft */
   useEffect(() => {
     if (initialData?.serverFilesDraft?.length) return;
+    if (!didHydrateRef.current) return;
     setServerFiles(existingFiles ?? []);
   }, [existingFiles, initialData?.serverFilesDraft]);
 
@@ -299,8 +300,7 @@ const getIdx = useCallback(
   const isIdx7 = idx === 7;
   useEffect(() => {
     if (isIdx7 && observacao) setObservacao("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIdx7]);
+  }, [isIdx7, observacao]);
 
   /** ========= 3) BACKEND: POST/DELETE/REFRESH ========= */
   const [busy, setBusy] = useState(false);
@@ -318,8 +318,12 @@ const getIdx = useCallback(
       content_type: f.content_type,
     }));
     setServerFiles(nextFiles);
+
+    // salva draft no wizard
+    onStateChange?.({ serverFilesDraft: nextFiles });
+
     return nextFiles;
-  }, [urlGeral, catalogId, token]);
+  }, [urlGeral, catalogId, token, onStateChange]);
 
   const uploadFileToServer = useCallback(
     async (file: File) => {
@@ -365,7 +369,6 @@ const getIdx = useCallback(
           description: file.file_name,
         });
 
-        // salva draft no wizard
         onStateChange?.({ serverFilesDraft: nextFiles });
       } catch (e: any) {
         console.error(e);
@@ -516,9 +519,7 @@ const getIdx = useCallback(
     onValidityChange(obsOk && sitOk && docsOk && !isIdx7);
   }, [obsOk, sitOk, docsOk, onValidityChange, isIdx7]);
 
-  /** ========= 7) SUBIR ESTADO PRO PAI (persistência entre steps)
-   *  ✅ AGORA sobe só se o payload mudou de verdade
-   */
+  /** ========= 7) SUBIR ESTADO PRO PAI (sem spam) ========= */
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -541,11 +542,10 @@ const getIdx = useCallback(
       otLocal,
       docsLen: docsLocal.length,
       serverLen: serverFiles.length,
-      // ids pra detectar mudança real
       serverIds: serverFiles.map((f) => f.id),
     });
 
-    if (serialized === lastSentRef.current) return; // ✅ não re-dispara
+    if (serialized === lastSentRef.current) return;
 
     lastSentRef.current = serialized;
     onStateChange(payload);
@@ -592,14 +592,8 @@ const getIdx = useCallback(
 
   /** ========= 9) ESCALA 7 NÍVEIS ========= */
   const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-    4: 0,
-    5: 1,
-    6: 2,
-    7: 3,
-    0: 4,
-    1: 5,
-    2: 6,
-    3: 6,
+    4: 0, 5: 1, 6: 2, 7: 3,
+    0: 4, 1: 5, 2: 6, 3: 6,
   };
 
   const escala7 = [
@@ -612,10 +606,7 @@ const getIdx = useCallback(
     { rotulo: "Antieconômico", bg: "bg-red-700" },
   ] as const;
 
-  const nivelAtivo = (() => {
-    const i = getIdx();
-    return nivelPorIdx[i];
-  })();
+  const nivelAtivo = nivelPorIdx[getIdx()];
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">

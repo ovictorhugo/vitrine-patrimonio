@@ -38,9 +38,8 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     setRole,
     urlGeral,
 
-    // TIMER (contexto)
-    timeLoggedIn,
-    setTimeLoggedIn,
+    // ✅ NOVO (contexto estável):
+    setSessionExpMs,
   } = useContext(UserContext);
 
   const { theme } = useTheme();
@@ -48,9 +47,6 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
   // ========= B) timer de expiração =========
   const logoutTimerRef = useRef<number | null>(null);
-
-  // TIMER (intervalo para atualizar restante)
-  const countdownIntervalRef = useRef<number | null>(null);
 
   // ========= evita loading a cada rota =========
   const hasCheckedRef = useRef(false);
@@ -68,29 +64,8 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     }
   };
 
-  const clearCountdownInterval = () => {
-    if (countdownIntervalRef.current) {
-      window.clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-  };
-
-  const formatRemaining = (totalMs: number) => {
-    const totalSec = Math.max(0, Math.floor(totalMs / 1000));
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-
-    const hh = String(h).padStart(2, "0");
-    const mm = String(m).padStart(2, "0");
-    const ss = String(s).padStart(2, "0");
-
-    return `${hh}:${mm}:${ss}`;
-  };
-
   const handleLogout = useCallback(async () => {
     clearLogoutTimer();
-    clearCountdownInterval();
 
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("permission");
@@ -104,8 +79,8 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     setToken(null);
     setLoading(false);
 
-    // zera timer no contexto
-    setTimeLoggedIn(0);
+    // ✅ zera expiração no contexto
+    setSessionExpMs(null);
 
     // se quiser forçar a tela de login:
     // navigate("/auth", { replace: true });
@@ -115,25 +90,23 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     setUser,
     setPermission,
     setRole,
-    setTimeLoggedIn,
+    setSessionExpMs,
   ]);
 
-  // ========= (2) fetch com retry/backoff para 5xx/rede =========
+  // ========= fetch com retry/backoff =========
   const fetchWithRetry = useCallback(
     async (url: string, options: RequestInit, retries = 3) => {
       for (let attempt = 0; attempt < retries; attempt++) {
         try {
           const res = await fetch(url, options);
 
-          // se erro de servidor (5xx), tenta de novo
           if (res.status >= 500 && attempt < retries - 1) {
-            await delay(500 * 2 ** attempt); // 0.5s, 1s, 2s...
+            await delay(500 * 2 ** attempt);
             continue;
           }
 
           return res;
         } catch (err) {
-          // erro de rede → tenta de novo
           if (attempt < retries - 1) {
             await delay(500 * 2 ** attempt);
             continue;
@@ -142,13 +115,12 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
         }
       }
 
-      // fallback (não deve chegar aqui)
       return fetch(url, options);
     },
     [delay]
   );
 
-  // ========= (1) logout só em 401/403 =========
+  // ========= busca usuário (logout só em 401/403) =========
   const fetchUser = useCallback(
     async (token: string) => {
       try {
@@ -159,20 +131,17 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
           },
         });
 
-        // ✅ logout SOMENTE se for autenticação inválida
         if (response.status === 401 || response.status === 403) {
           await handleLogout();
           return;
         }
 
-        // ✅ backend instável (5xx) → mantém logado, não derruba sessão
         if (response.status >= 500) {
           console.warn("Backend instável ao buscar usuário:", response.status);
-          setLoading(false); // libera render do app
+          setLoading(false);
           return;
         }
 
-        // outros erros não-auth: não derruba sessão
         if (!response.ok) {
           console.warn("Erro não-auth ao buscar usuário:", response.status);
           setLoading(false);
@@ -194,14 +163,12 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
           if (storedPermission) setPermission(JSON.parse(storedPermission));
           if (storedRole) setRole(JSON.parse(storedRole));
 
-          await delay(600); // UX mínima
+          await delay(600);
           setLoading(false);
         } else {
-          // veio vazio sem ser 5xx → aí sim algo estranho, desloga
           await handleLogout();
         }
       } catch (err) {
-        // ✅ erro de rede/timeout → NÃO desloga
         console.error("Erro de rede ao buscar dados do usuário:", err);
         setLoading(false);
       }
@@ -219,14 +186,14 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
   );
 
   useEffect(() => {
-    // ========= A) escutar mudanças no localStorage (outra aba) =========
+    // ========= escutar mudanças no localStorage (outra aba) =========
     const onStorage = (e: StorageEvent) => {
       if (e.key === "jwt_token") {
         setToken(e.newValue);
       }
     };
 
-    // ========= A) escutar evento custom na MESMA aba =========
+    // ========= evento custom na mesma aba =========
     const onTokenChange = () => {
       setToken(localStorage.getItem("jwt_token"));
     };
@@ -241,19 +208,14 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // detecta se token realmente mudou
     const isNewToken = token !== lastTokenRef.current;
     lastTokenRef.current = token;
 
-    // Só entra em loading se:
-    // 1) é a primeira checagem do app
-    // 2) token mudou (login/logout/refresh)
     if (!hasCheckedRef.current || isNewToken) {
       setLoading(true);
     }
 
     clearLogoutTimer();
-    clearCountdownInterval();
 
     if (!token) {
       handleLogout();
@@ -273,23 +235,14 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
       const nowMs = Date.now();
       const msToExpire = expMs - nowMs;
 
-      // ========= B) agenda logout automático =========
+      // ✅ salva expiração no contexto UMA vez por token
+      setSessionExpMs(expMs);
+
+      // ✅ agenda logout automático (sem interval global)
       logoutTimerRef.current = window.setTimeout(() => {
         handleLogout();
       }, msToExpire);
 
-      // ========= TIMER: atualiza restante a cada 1s =========
-      const updateCountdown = () => {
-        const remainingMs = expMs - Date.now();
-        setTimeLoggedIn(Math.max(0, remainingMs));
-
-        if (remainingMs <= 0) handleLogout();
-      };
-
-      updateCountdown(); // já atualiza instantâneo
-      countdownIntervalRef.current = window.setInterval(updateCountdown, 1000);
-
-      // token ok => busca usuário
       fetchUser(token).finally(() => {
         hasCheckedRef.current = true;
       });
@@ -300,9 +253,8 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
     return () => {
       clearLogoutTimer();
-      clearCountdownInterval();
     };
-  }, [token, fetchUser, handleLogout, setTimeLoggedIn]);
+  }, [token, fetchUser, handleLogout, setSessionExpMs]);
 
   return loading ? (
     <main className="h-screen w-full flex items-center justify-center">

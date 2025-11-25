@@ -77,7 +77,8 @@ interface UserContextType {
   patrimoniosSelecionados: PatrimoniosSelecionados[] , 
   setPatrimoniosSelecionados: React.Dispatch<React.SetStateAction<PatrimoniosSelecionados[]>>,
 
-       
+     sessionExpMs: number | null;
+  setSessionExpMs: React.Dispatch<React.SetStateAction<number | null>>;
   isCollapsed:boolean, 
   setIsCollapsed:React.Dispatch<React.SetStateAction<boolean>>;
       mode:string, 
@@ -101,6 +102,9 @@ export const UserContext = createContext<UserContextType>({
 
   timeLoggedIn: 0,
   setTimeLoggedIn: () => { },
+
+sessionExpMs: null,
+  setSessionExpMs: () => {},
   
   user: {} as User,
   setUser: () => {},

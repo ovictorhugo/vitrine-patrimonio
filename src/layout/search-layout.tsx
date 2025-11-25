@@ -1,7 +1,7 @@
 import { Toaster } from "sonner";
 import { Header } from "../components/header/Header";
 import { NavigationSidebar } from "../components/navigation/navigation-sidebar";
-import React, { useContext, useEffect, useState} from "react";
+import React, { useContext, useEffect, useRef, useState} from "react";
 import { useModalHomepage } from "../components/hooks/use-modal-homepage";
 import { TooltipProvider } from "../components/ui/tooltip"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../components/ui/resizable"
@@ -81,13 +81,17 @@ export default function SearchLayout({
   
   const breadcrumbItems = createBreadcrumbItems(router.pathname);
   
-  const {onOpen} = useModal()
+  const { onOpen } = useModal();
+  const didRunRef = useRef(false);
 
   useEffect(() => {
+    if (didRunRef.current) return; // já passou pela "primeira entrada"
+    didRunRef.current = true;
+
     if (!loggedIn) {
-      onOpen('sign-in'); // <- usa o modal existente
+      onOpen("sign-in"); // abre só na primeira entrada
     }
-  }, [loggedIn]);
+  }, [loggedIn, onOpen]);
 
     return (
     <div>

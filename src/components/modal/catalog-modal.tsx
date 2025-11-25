@@ -1448,7 +1448,7 @@ export function CatalogModal() {
                                     ) : (
                                       // ✅ NÃO muta: copia antes do reverse
                                       [...historySortedDesc]
-                                        .reverse()
+                                       
                                         .map((ev, idx) => {
                                           const meta =
                                             WORKFLOW_STATUS_META[ev.workflow_status] ?? {

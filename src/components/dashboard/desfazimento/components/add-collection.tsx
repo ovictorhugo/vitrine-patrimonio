@@ -42,6 +42,14 @@ import { ItemPatrimonioRows } from "./item-patrimonio-rows";
 import { ItemPatrimonioRowsSelect } from "./item-patrimonio-rows-select";
 import { useModal } from "../../../hooks/use-modal-store";
 import { CatalogEntry } from "../../itens-vitrine/itens-vitrine";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
+import exp from "constants";
 
 /* ================== Tipos compartilhados ================== */
 type UUID = string;
@@ -128,8 +136,6 @@ type WorkflowHistoryItem = {
   created_at: string;
 };
 
-
-
 export type CollectionItem = { id: UUID; status: boolean; comment: string; catalog: CatalogEntry };
 
 type CollectionsListResponse = {
@@ -165,90 +171,88 @@ function Combobox({
   const selected = items.find((i) => i.id === value) || null;
 
   // Scroll da barra de filtros (lista principal)
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(true);
-    const checkScrollability = () => {
-      if (!scrollAreaRef.current) return;
-      const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    };
-    const scrollLeft = () => scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
-    const scrollRight = () => scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
-    useEffect(() => {
-      checkScrollability();
-      const handleResize = () => checkScrollability();
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }, []);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const checkScrollability = () => {
+    if (!scrollAreaRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollAreaRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+  };
+  const scrollLeft = () => scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () => scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+  useEffect(() => {
+    checkScrollability();
+    const handleResize = () => checkScrollability();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-   <Popover open={open} onOpenChange={setOpen} modal={false}>
-  <PopoverTrigger asChild disabled={disabled}>
-    <Button
-      variant="outline"
-      role="combobox"
-      aria-expanded={open}
-      className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
-    >
-      {selected ? (
-        <span className="truncate text-left font-medium">{selected.label}</span>
-      ) : (
-        <span className="text-muted-foreground">{placeholder}</span>
-      )}
-      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-    </Button>
-  </PopoverTrigger>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <PopoverTrigger asChild disabled={disabled}>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
+        >
+          {selected ? (
+            <span className="truncate text-left font-medium">{selected.label}</span>
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
 
-  <PopoverContent
-    className="w-[320px] p-0 z-[9999] pointer-events-auto"
-    align="start"
-    sideOffset={6}
-    // evita que o Drawer “coma” o ponteiro/foco
-    onOpenAutoFocus={(e) => e.preventDefault()}
-    onCloseAutoFocus={(e) => e.preventDefault()}
-    onPointerDownOutside={(e) => e.preventDefault()}
-    onInteractOutside={(e) => e.preventDefault()}
-  >
-    <Command>
-      <CommandInput />
-      <CommandEmpty>{emptyText}</CommandEmpty>
+      <PopoverContent
+        className="w-[320px] p-0 z-[9999] pointer-events-auto"
+        align="start"
+        sideOffset={6}
+        // evita que o Drawer “coma” o ponteiro/foco
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <Command>
+          <CommandInput />
+          <CommandEmpty>{emptyText}</CommandEmpty>
 
-      <CommandList className="gap-2 flex flex-col">
-        <CommandGroup className="gap-2 flex flex-col">
-          <CommandItem
-            onSelect={() => {
-              onChange(null);
-              setOpen(false);
-            }}
-          >
-            <span className="text-muted-foreground font-medium flex gap-2 items-center">
-              <Trash size={16} /> Limpar filtro
-            </span>
-          </CommandItem>
+          <CommandList className="gap-2 flex flex-col">
+            <CommandGroup className="gap-2 flex flex-col">
+              <CommandItem
+                onSelect={() => {
+                  onChange(null);
+                  setOpen(false);
+                }}
+              >
+                <span className="text-muted-foreground font-medium flex gap-2 items-center">
+                  <Trash size={16} /> Limpar filtro
+                </span>
+              </CommandItem>
 
-          <CommandSeparator className="my-1" />
+              <CommandSeparator className="my-1" />
 
-          {items.map((item) => (
-            <CommandItem
-              key={String(item.id)}
-              // dica: garanta que os itens não estejam com pointer-events: none por CSS
-              value={`${item.label} ${item.code ?? ""}`}
-              onSelect={() => {
-                onChange(item.id);
-                setOpen(false);
-              }}
-            >
-              <span className="font-medium line-clamp-1 uppercase">{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  </PopoverContent>
-</Popover>
-
+              {items.map((item) => (
+                <CommandItem
+                  key={String(item.id)}
+                  value={`${item.label} ${item.code ?? ""}`}
+                  onSelect={() => {
+                    onChange(item.id);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="font-medium line-clamp-1 uppercase">{item.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -267,7 +271,7 @@ export function AddToCollectionDrawer({
   baseUrl: string;                // ex: urlGeral
   headers: HeadersInit;           // ex: authHeaders
   collectionId?: string | null;
-  type?: string
+  type?: string;
   onItemsAdded: (newItems: CollectionItem[]) => void;
 }) {
   /* ================== Estado de coleção ================== */
@@ -296,7 +300,7 @@ export function AddToCollectionDrawer({
         toast("Erro ao listar coleções", { description: e?.message || String(e) });
       }
     })();
-  }, [baseUrl, headers, needsCollectionSelect, open]);
+  }, [baseUrl, headers, needsCollectionSelect, open, type]);
 
   /* ================== Filtros Pop-up ================== */
   const [showFilters, setShowFilters] = useState(true);
@@ -307,7 +311,7 @@ export function AddToCollectionDrawer({
   const [guardianId, setGuardianId] = useState<UUID | null>(null);
 
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
-    const authHeaders: HeadersInit = useMemo(
+  const authHeaders: HeadersInit = useMemo(
     () => ({
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -323,98 +327,99 @@ export function AddToCollectionDrawer({
   const [agencyIdP, setAgencyIdP] = useState<UUID | null>(null);
   const [sectorIdP, setSectorIdP] = useState<UUID | null>(null);
   const [locationIdP, setLocationIdP] = useState<UUID | null>(null);
-// bases de materiais / responsáveis
-useEffect(() => {
-  if (!open) return;
-  (async () => {
-    try {
-      const [matRes, guardRes, unitsRes] = await Promise.all([
-        fetch(`${baseUrl}materials/`, { method: "GET", headers: authHeaders }), // ✅ token
-        fetch(`${baseUrl}legal-guardians/`, { method: "GET", headers: authHeaders }), // ✅ token
-        fetch(`${baseUrl}units/`, { method: "GET", headers: authHeaders }), // ✅ token
-      ]);
 
-      const matJson = await matRes.json().catch(() => ({}));
-      const guardJson = await guardRes.json().catch(() => ({}));
-      const unitsJson = await unitsRes.json().catch(() => ({}));
+  // bases de materiais / responsáveis
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      try {
+        const [matRes, guardRes, unitsRes] = await Promise.all([
+          fetch(`${baseUrl}materials/`, { method: "GET", headers: authHeaders }), // ✅ token
+          fetch(`${baseUrl}legal-guardians/`, { method: "GET", headers: authHeaders }), // ✅ token
+          fetch(`${baseUrl}units/`, { method: "GET", headers: authHeaders }), // ✅ token
+        ]);
 
-      const mats: Material[] = matJson?.materials ?? matJson ?? [];
-      const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
+        const matJson = await matRes.json().catch(() => ({}));
+        const guardJson = await guardRes.json().catch(() => ({}));
+        const unitsJson = await unitsRes.json().catch(() => ({}));
 
-      setMaterialItems(
-        mats.map((m) => ({
-          id: m.id,
-          code: m.material_code,
-          label: m.material_name || m.material_code,
-        }))
-      );
+        const mats: Material[] = matJson?.materials ?? matJson ?? [];
+        const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
 
-      setGuardianItems(
-        guards.map((g) => ({
-          id: g.id,
-          code: g.legal_guardians_code,
-          label: g.legal_guardians_name || g.legal_guardians_code,
-        }))
-      );
+        setMaterialItems(
+          mats.map((m) => ({
+            id: m.id,
+            code: m.material_code,
+            label: m.material_name || m.material_code,
+          }))
+        );
 
-      setUnits(unitsJson?.units ?? []);
-    } catch (e) {
-      console.error("Erro ao carregar bases principais:", e);
-    }
-  })();
-}, [open, baseUrl, authHeaders]);
+        setGuardianItems(
+          guards.map((g) => ({
+            id: g.id,
+            code: g.legal_guardians_code,
+            label: g.legal_guardians_name || g.legal_guardians_code,
+          }))
+        );
 
-// encadeamento hierarquia (popup)
-const fetchAgenciesP = useCallback(
-  async (uid: UUID) => {
-    if (!uid) return setAgenciesP([]);
-    try {
-      const res = await fetch(`${baseUrl}agencies/?unit_id=${encodeURIComponent(uid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ token
-      });
-      const json = await res.json();
-      setAgenciesP(json?.agencies ?? []);
-    } catch {
-      setAgenciesP([]);
-    }
-  },
-  [baseUrl, authHeaders]
-);
+        setUnits(unitsJson?.units ?? []);
+      } catch (e) {
+        console.error("Erro ao carregar bases principais:", e);
+      }
+    })();
+  }, [open, baseUrl, authHeaders]);
 
-const fetchSectorsP = useCallback(
-  async (aid: UUID) => {
-    if (!aid) return setSectorsP([]);
-    try {
-      const res = await fetch(`${baseUrl}sectors/?agency_id=${encodeURIComponent(aid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ token
-      });
-      const json = await res.json();
-      setSectorsP(json?.sectors ?? []);
-    } catch {
-      setSectorsP([]);
-    }
-  },
-  [baseUrl, authHeaders]
-);
+  // encadeamento hierarquia (popup)
+  const fetchAgenciesP = useCallback(
+    async (uid: UUID) => {
+      if (!uid) return setAgenciesP([]);
+      try {
+        const res = await fetch(`${baseUrl}agencies/?unit_id=${encodeURIComponent(uid)}`, {
+          method: "GET",
+          headers: authHeaders, // ✅ token
+        });
+        const json = await res.json();
+        setAgenciesP(json?.agencies ?? []);
+      } catch {
+        setAgenciesP([]);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
 
-const fetchLocationsP = useCallback(
-  async (sid: UUID) => {
-    if (!sid) return setLocationsP([]);
-    try {
-      const res = await fetch(`${baseUrl}locations/?sector_id=${encodeURIComponent(sid)}`, {
-        method: "GET",
-        headers: authHeaders, // ✅ token
-      });
-      const json = await res.json();
-      setLocationsP(json?.locations ?? []);
-    } catch {
-      setLocationsP([]);
-    }
-  },
-  [baseUrl, authHeaders]
-);
+  const fetchSectorsP = useCallback(
+    async (aid: UUID) => {
+      if (!aid) return setSectorsP([]);
+      try {
+        const res = await fetch(`${baseUrl}sectors/?agency_id=${encodeURIComponent(aid)}`, {
+          method: "GET",
+          headers: authHeaders, // ✅ token
+        });
+        const json = await res.json();
+        setSectorsP(json?.sectors ?? []);
+      } catch {
+        setSectorsP([]);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
+
+  const fetchLocationsP = useCallback(
+    async (sid: UUID) => {
+      if (!sid) return setLocationsP([]);
+      try {
+        const res = await fetch(`${baseUrl}locations/?sector_id=${encodeURIComponent(sid)}`, {
+          method: "GET",
+          headers: authHeaders, // ✅ token
+        });
+        const json = await res.json();
+        setLocationsP(json?.locations ?? []);
+      } catch {
+        setLocationsP([]);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
 
   useEffect(() => {
     setAgencyIdP(null); setSectorIdP(null); setLocationIdP(null);
@@ -451,6 +456,27 @@ const fetchLocationsP = useCallback(
   const [selectedIds, setSelectedIds] = useState<Set<UUID>>(new Set());
   const [addingItems, setAddingItems] = useState(false);
 
+  /* ================== Paginação ================== */
+  const [limit, setLimit] = useState<number>(24);
+  const [offset, setOffset] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+
+  const isFirstPage = offset === 0;
+
+  const isLastPage = useMemo(() => {
+    if (totalCount != null) return offset + limit >= totalCount;
+    return catalogList.length < limit;
+  }, [totalCount, offset, limit, catalogList.length]);
+
+  const handleNavigate = useCallback(
+    (newOffset: number, newLimit = limit) => {
+      setOffset(newOffset);
+      setLimit(newLimit);
+      setSelectedIds(new Set());
+    },
+    [limit]
+  );
+
   const toggleSelect = (id: UUID) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -461,20 +487,23 @@ const fetchLocationsP = useCallback(
   };
 
   const toggleSelectAll = () => {
-  if (selectedIds.size === catalogList.length) {
-    // Já todos selecionados → limpa tudo
-    setSelectedIds(new Set());
-  } else {
-    // Seleciona todos
-    setSelectedIds(new Set(catalogList.map((c) => c.id)));
-  }
-};
+    if (selectedIds.size === catalogList.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(catalogList.map((c) => c.id)));
+    }
+  };
 
   const fetchCatalogForPopup = useCallback(async () => {
     try {
       setLoadingAddList(true);
       const params = new URLSearchParams();
       params.set("only_uncollected", "true");
+
+      // ✅ paginação
+      params.set("offset", String(offset));
+      params.set("limit", String(limit));
+
       if (q) params.set("q", q);
       if (materialId) params.set("material_id", materialId);
       if (guardianId) params.set("legal_guardian_id", guardianId);
@@ -491,27 +520,55 @@ const fetchLocationsP = useCallback(
         const text = await res.text().catch(() => "");
         throw new Error(text || `Falha ao carregar catálogo (HTTP ${res.status}).`);
       }
-      const data: CatalogListResponse = await res.json();
+
+      const data: CatalogListResponse & any = await res.json();
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.catalog_entries)
-        ? (data as any).catalog_entries
-        : Array.isArray((data as any)?.results)
-        ? (data as any).results
-        : [];
+          ? (data as any).catalog_entries
+          : Array.isArray((data as any)?.results)
+            ? (data as any).results
+            : [];
+
+      // ✅ tenta pegar total, se existir na API
+      const guessedTotal =
+        data?.count ?? data?.total ?? data?.total_count ?? null;
+      setTotalCount(
+        typeof guessedTotal === "number" ? guessedTotal : null
+      );
+
       setCatalogList(list as CatalogEntry[]);
     } catch (e: any) {
       toast("Erro ao listar catálogo", { description: e?.message || String(e) });
       setCatalogList([]);
+      setTotalCount(null);
     } finally {
       setLoadingAddList(false);
     }
-  }, [baseUrl, headers, q, materialId, guardianId, unitIdP, agencyIdP, sectorIdP, locationIdP]);
+  }, [
+    baseUrl,
+    headers,
+    q,
+    materialId,
+    guardianId,
+    unitIdP,
+    agencyIdP,
+    sectorIdP,
+    locationIdP,
+    type,
+    offset,
+    limit,
+  ]);
 
-  // Carrega a lista ao abrir e quando filtros mudarem
+  // Carrega a lista ao abrir e quando filtros/página mudarem
   useEffect(() => {
     if (open) fetchCatalogForPopup();
   }, [open, fetchCatalogForPopup]);
+
+  // quando qualquer filtro mudar, volta para a 1ª página
+  useEffect(() => {
+    setOffset(0);
+  }, [q, materialId, guardianId, unitIdP, agencyIdP, sectorIdP, locationIdP, type]);
 
   /* ================== Adicionar selecionados ================== */
   const addSelectedToCollection = async () => {
@@ -531,7 +588,6 @@ const fetchLocationsP = useCallback(
       const selectedCatalogs = catalogList.filter((c) => selectedIds.has(c.id));
       const createdItems: CollectionItem[] = [];
 
-      // POST em paralelo (com captura de resposta quando houver)
       await Promise.all(
         selectedCatalogs.map(async (cat) => {
           const payload = { catalog_id: cat.id, status: false, comment: "" };
@@ -547,14 +603,11 @@ const fetchLocationsP = useCallback(
             throw new Error(t || `Falha ao adicionar item (HTTP ${r.status})`);
           }
 
-          // tenta ler o item criado
           let createdId: UUID | null = null;
           try {
             const j = await r.json();
             createdId = j?.id ?? j?.item?.id ?? null;
-          } catch {
-            // sem corpo -> segue com fallback
-          }
+          } catch {}
 
           const newItem: CollectionItem = {
             id: createdId ?? (globalThis.crypto?.randomUUID?.() ?? `${cat.id}::temp`),
@@ -568,10 +621,8 @@ const fetchLocationsP = useCallback(
 
       toast.success("Itens adicionados à coleção.");
 
-      // Entrega ao pai para inserir localmente (sem refetch)
       onItemsAdded(createdItems);
 
-      // Reset UI
       setSelectedIds(new Set());
       onOpenChange(false);
     } catch (e: any) {
@@ -587,7 +638,6 @@ const fetchLocationsP = useCallback(
       setSelectedIds(new Set());
     }
   }, [open]);
-
 
   // Scroll da barra de filtros (lista principal)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -608,186 +658,184 @@ const fetchLocationsP = useCallback(
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-    // ...
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // ...
-
-  const {onOpen} = useModal()
+  const { onOpen } = useModal();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={
           isFullscreen
-            ? // Quase full-screen, com overflow gerenciável
-              "w-[96vw] max-w-[96vw] h-[94vh]  overflow-hidden"
-            : // Layout normal
-              "max-w-5xl"
+            ? "w-[96vw] max-w-[96vw] h-[94vh]  overflow-hidden"
+            : "max-w-5xl"
         }
       >
         <DialogHeader>
           <div className=" flex justify-between">
-            <DialogTitle className="text-2xl  font-medium">Adicionar itens à coleção de desfazimento</DialogTitle>
-         
-         <div className="flex gap-2">
-           <Button
-    variant="outline"
-   
-    onClick={toggleSelectAll}
-    disabled={catalogList.length === 0}
-  >
-    {selectedIds.size === catalogList.length && catalogList.length > 0
-      ? "Desmarcar todos"
-      : "Selecionar todos"}
-  </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsFullscreen((s) => !s)}
-              title={isFullscreen ? "Reduzir" : "Expandir"}
-            >
-              {isFullscreen ? <Minimize size={16} /> : <Expand size={16} />}
-            </Button>
-         </div>
+          <div className="flex gap-2">
+   {needsCollectionSelect && (
+          <div>
+            <Combobox
+              items={collections}
+              value={selectedCollectionId}
+              onChange={(v) => setSelectedCollectionId(v)}
+              placeholder="Selecione a coleção"
+              emptyText="Nenhuma coleção encontrada"
+            />
           </div>
-          <DialogDescription className="text-zinc-500">
-            Selecione itens do catálogo para inserir na coleção.
-          </DialogDescription>
+        )}
+
+              <Button
+                variant="outline"
+                onClick={toggleSelectAll}
+                disabled={catalogList.length === 0}
+              >
+                {selectedIds.size === catalogList.length && catalogList.length > 0
+                  ? "Desmarcar todos"
+                  : "Selecionar todos"}
+              </Button>
+         </div>
+            <div className="flex gap-2">
+             
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsFullscreen((s) => !s)}
+                title={isFullscreen ? "Reduzir" : "Expandir"}
+              >
+                {isFullscreen ? <Minimize size={16} /> : <Expand size={16} />}
+              </Button>
+            </div>
+          </div>
+
+       
         </DialogHeader>
 
         {/* Se não veio collectionId, mostrar seletor de coleção */}
-        {needsCollectionSelect && (
-          <>
-         
-            <div className="">
-              <Combobox
-                items={collections}
-                value={selectedCollectionId}
-                onChange={(v) => setSelectedCollectionId(v)}
-                placeholder="Selecione a coleção"
-                emptyText="Nenhuma coleção encontrada"
-              />
-            </div>
-          </>
-        )}
-
-        <Separator className="my-4" />
-
-        {/* Filtros */}
-        <div className="space-y-4 mb-4">
       
 
+
+        {/* Filtros */}
+        <div className="space-y-4 ">
           {showFilters && (
             <div className="relative grid grid-cols-1">
               <div className="mx-0">
                 <div className="overflow-x-auto scrollbar-hide">
-                 
-        {/* Barra de filtros da lista principal */}
-        <div className="relative grid grid-cols-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
-            onClick={scrollLeft}
-            disabled={!canScrollLeft}
-          >
-            <ChevronLeft size={16} />
-          </Button>
+                  {/* Barra de filtros da lista principal */}
+                  <div className="relative grid grid-cols-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      onClick={scrollLeft}
+                      disabled={!canScrollLeft}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
 
-          <div className="mx-14">
-            <div ref={scrollAreaRef} className="overflow-x-auto scrollbar-hide h-auto" onScroll={checkScrollability}>
-                  <div className="flex gap-3 items-center">
-                    <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                      <div>
-                        <Search size={16} className="text-gray-500" />
-                      </div>
-                      <div className="relative w-full">
-                        <Input
-                          className="border-0 p-0 h-9 flex flex-1 w-full"
-                          value={q}
-                          onChange={(e) => setQ(e.target.value)}
-                          placeholder="Buscar por código, descrição, material, marca, modelo..."
-                        />
-                      </div>
-                    </Alert>
+                    <div className="mx-14">
+                      <div
+                        ref={scrollAreaRef}
+                        className="overflow-x-auto scrollbar-hide h-auto"
+                        onScroll={checkScrollability}
+                      >
+                        <div className="flex gap-3 items-center">
+                          <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                            <div>
+                              <Search size={16} className="text-gray-500" />
+                            </div>
+                            <div className="relative w-full">
+                              <Input
+                                className="border-0 p-0 h-9 flex flex-1 w-full"
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                placeholder="Buscar por código, descrição, material, marca, modelo..."
+                              />
+                            </div>
+                          </Alert>
 
-                    <Combobox items={materialItems} value={materialId} onChange={setMaterialId} placeholder="Material" />
+                          <Combobox
+                            items={materialItems}
+                            value={materialId}
+                            onChange={setMaterialId}
+                            placeholder="Material"
+                          />
 
-                    <Combobox
-                      items={guardianItems}
-                      value={guardianId}
-                      onChange={setGuardianId}
-                      placeholder="Responsável"
-                    />
+                          <Combobox
+                            items={guardianItems}
+                            value={guardianId}
+                            onChange={setGuardianId}
+                            placeholder="Responsável"
+                          />
 
-                    <Separator className="h-8" orientation="vertical" />
+                          <Separator className="h-8" orientation="vertical" />
 
-                    {/* Hierarquia */}
-                    <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
-                      value={unitIdP}
-                      onChange={(v) => setUnitIdP(v)}
-                      placeholder="Unidade"
-                    />
+                          {/* Hierarquia */}
+                          <Combobox
+                            items={(units ?? []).map((u) => ({
+                              id: u.id,
+                              code: u.unit_code,
+                              label: u.unit_name || u.unit_code,
+                            }))}
+                            value={unitIdP}
+                            onChange={(v) => setUnitIdP(v)}
+                            placeholder="Unidade"
+                          />
 
-                    <Combobox
-                      items={(agenciesP ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
-                      value={agencyIdP}
-                      onChange={(v) => setAgencyIdP(v)}
-                      placeholder={"Organização"}
-                      disabled={!unitIdP}
-                    />
+                          <Combobox
+                            items={(agenciesP ?? []).map((a) => ({
+                              id: a.id,
+                              code: a.agency_code,
+                              label: a.agency_name || a.agency_code,
+                            }))}
+                            value={agencyIdP}
+                            onChange={(v) => setAgencyIdP(v)}
+                            placeholder={"Organização"}
+                            disabled={!unitIdP}
+                          />
 
-                    <Combobox
-                      items={(sectorsP ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
-                      value={sectorIdP}
-                      onChange={(v) => setSectorIdP(v)}
-                      placeholder={"Setor"}
-                      disabled={!agencyIdP}
-                    />
+                          <Combobox
+                            items={(sectorsP ?? []).map((s) => ({
+                              id: s.id,
+                              code: s.sector_code,
+                              label: s.sector_name || s.sector_code,
+                            }))}
+                            value={sectorIdP}
+                            onChange={(v) => setSectorIdP(v)}
+                            placeholder={"Setor"}
+                            disabled={!agencyIdP}
+                          />
 
-                    <Combobox
-                      items={(locationsP ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
-                      value={locationIdP}
-                      onChange={(v) => setLocationIdP(v)}
-                      placeholder="Local de guarda"
-                      disabled={!sectorIdP}
-                    />
+                          <Combobox
+                            items={(locationsP ?? []).map((l) => ({
+                              id: l.id,
+                              code: l.location_code,
+                              label: l.location_name || l.location_code,
+                            }))}
+                            value={locationIdP}
+                            onChange={(v) => setLocationIdP(v)}
+                            placeholder="Local de guarda"
+                            disabled={!sectorIdP}
+                          />
 
                           <Button variant="outline" size="sm" onClick={clearPopupFilters}>
-                                      <Trash size={16} /> Limpar filtros
-                                    </Button>
-                  </div>
-                  </div>
+                            <Trash size={16} /> Limpar filtros
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
 
-        </div>
-        
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
-            onClick={scrollRight}
-            disabled={!canScrollRight}
-          >
-            <ChevronRight size={16} />
-          </Button>
-</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                      onClick={scrollRight}
+                      disabled={!canScrollRight}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -795,73 +843,124 @@ const fetchLocationsP = useCallback(
         </div>
 
         {/* Lista do catálogo com checkboxes */}
-        <ScrollArea className=" h-[40vh] ">
+        <ScrollArea className={`${isFullscreen ? "" : " h-[40vh]"} `}>
           <div>
-              {loadingAddList ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
+            {loadingAddList ? (
+              <div className="flex flex-col gap-2">
                 <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-32 w-full" />
-            </div>
-          ) : catalogList.length === 0 ? (
-            <div className="text-center text-muted-foreground py-6 text-sm">Nenhum item encontrado no catálogo.</div>
-          ) : (
-          <ul className="grid gap-4">
-    {catalogList.map((cat) => {
-      const checked = selectedIds.has(cat.id);
-      const id = `sel-${cat.id}`;
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : catalogList.length === 0 ? (
+              <div className="text-center text-muted-foreground py-6 text-sm">
+                Nenhum item encontrado no catálogo.
+              </div>
+            ) : (
+              <ul className="grid gap-4">
+                {catalogList.map((cat) => {
+                  const checked = selectedIds.has(cat.id);
+                  const id = `sel-${cat.id}`;
 
-      return (
-        <li key={cat.id} className="list-none">
-          <input
-            id={id}
-            type="checkbox"
-            className="peer sr-only"
-            checked={checked}
-            onChange={() => toggleSelect(cat.id)}
-          />
+                  return (
+                    <li key={cat.id} className="list-none">
+                      <input
+                        id={id}
+                        type="checkbox"
+                        className="peer sr-only"
+                        checked={checked}
+                        onChange={() => toggleSelect(cat.id)}
+                      />
 
-          <label
-            htmlFor={id}
-           
-          >
-            <ItemPatrimonioRowsSelect
-              {...(cat as any)}
-              selected={checked}
-              onClick={(e) => {
-                // clique simples = alterna seleção
-                e.preventDefault();
-                e.stopPropagation();
-                const el = document.getElementById(id) as HTMLInputElement | null;
-                if (el) el.click();
-              }}
-              onDoubleClick={() => {
-                // duplo clique = abre modal (sem mexer na seleção)
-                onOpen("catalog-modal", { ...cat });
-              }}
-            />
-          </label>
-        </li>
-      );
-    })}
-  </ul>
-          )}
+                      <label htmlFor={id}>
+                        <ItemPatrimonioRowsSelect
+                          {...(cat as any)}
+                          selected={checked}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const el = document.getElementById(id) as HTMLInputElement | null;
+                            if (el) el.click();
+                          }}
+                          onDoubleClick={() => {
+                            onOpen("catalog-modal", { ...cat });
+                          }}
+                        />
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
+
+           {/* Paginação */}
+        <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+          <span className="text-sm text-muted-foreground">Itens por página:</span>
+          <Select
+            value={limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              handleNavigate(0, newLimit);
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Itens" />
+            </SelectTrigger>
+            <SelectContent>
+              {[12, 24, 36, 48, 84, 162].map((val) => (
+                <SelectItem key={val} value={val.toString()}>
+                  {val}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full flex justify-center items-center gap-10 mt-8">
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={() => handleNavigate(Math.max(0, offset - limit))}
+              disabled={isFirstPage}
+            >
+              <ChevronLeft size={16} className="mr-2" />
+              Anterior
+            </Button>
+
+            <Button
+              onClick={() => !isLastPage && handleNavigate(offset + limit)}
+              disabled={isLastPage}
+            >
+              Próximo
+              <ChevronRight size={16} className="ml-2" />
+            </Button>
+          </div>
+        </div>
 
           <ScrollBar orientation="vertical" />
         </ScrollArea>
 
+       
+
         <DialogFooter className="flex items-center justify-between gap-2 mt-4">
-          <div className="text-sm text-muted-foreground">{selectedIds.size} selecionado(s)</div>
+          <div className="text-sm text-muted-foreground">
+            {selectedIds.size} selecionado(s)
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-           <ArrowUUpLeft size={16} />    Cancelar
+              <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button onClick={addSelectedToCollection} disabled={addingItems || selectedIds.size === 0}>
-              {addingItems ? <Loader2 size={16} className=" animate-spin" /> : <Plus size={16} />
-              }
+            <Button
+              onClick={addSelectedToCollection}
+              disabled={addingItems || selectedIds.size === 0}
+            >
+              {addingItems ? (
+                <Loader2 size={16} className=" animate-spin" />
+              ) : (
+                <Plus size={16} />
+              )}
               Adicionar selecionados
             </Button>
           </div>

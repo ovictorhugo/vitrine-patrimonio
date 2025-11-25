@@ -579,6 +579,15 @@ export function ItensVitrine() {
   const [materialId, setMaterialId] = useState<UUID | null>(null);
   const [guardianId, setGuardianId] = useState<UUID | null>(null);
   const [q, setQ] = useState("");
+const [debouncedQ, setDebouncedQ] = useState("");
+
+useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedQ(q);
+  }, 1000); // tempo do debounce (ms)
+
+  return () => clearTimeout(handler);
+}, [q]);
 
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
@@ -605,7 +614,7 @@ const fetchStatusCounts = useCallback(async () => {
     if (agencyId) params.set("agency_id", agencyId);
     if (sectorId) params.set("sector_id", sectorId);
     if (locationId) params.set("location_id", locationId);
- if (q) params.set("q", q);
+ if (debouncedQ) params.set("q", debouncedQ);
 
     const qs = params.toString();
     const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""}`;
@@ -642,7 +651,7 @@ const fetchStatusCounts = useCallback(async () => {
   agencyId,
   sectorId,
   locationId,
-  q
+  debouncedQ
 ]);
 
 useEffect(() => {
@@ -763,7 +772,7 @@ const resetExpandedPagination = () => {
         if (agencyId) params.set("agency_id", agencyId);
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
- if (q) params.set("q", q);
+ if (debouncedQ) params.set("q", debouncedQ);
 
         const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
           headers: {
@@ -825,7 +834,7 @@ const resetExpandedPagination = () => {
       sectorId,
       locationId,
       PAGE_SIZE,
-      q
+      debouncedQ
     ]
   );
 
@@ -874,21 +883,21 @@ const resetExpandedPagination = () => {
     else params.delete("sector_id");
     if (locationId) params.set("location_id", locationId);
     else params.delete("location_id");
-    if (q) params.set("q", q);
+    if (debouncedQ) params.set("q", debouncedQ);
     else params.delete("q");
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, q]);
+  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, debouncedQ]);
 
   // Filtro q (client) - aplicado sobre o board já carregado
 // Filtro q (client) - aplicado sobre o board já carregado
 const filteredBoard = useMemo(() => {
-  if (!q.trim()) return board;
+  if (!debouncedQ.trim()) return board;
 
-  const term = q.trim().toLowerCase();
+  const term = debouncedQ.trim().toLowerCase();
   const filtered: Record<string, CatalogEntry[]> = {};
 
   for (const [key, items] of Object.entries(board)) {

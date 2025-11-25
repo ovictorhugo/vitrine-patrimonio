@@ -8,7 +8,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../compone
 import { cn } from "../lib"
 import { Link, useLocation} from "react-router-dom";
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { UserContext } from "../context/context";
 
 
@@ -19,6 +19,7 @@ import { Separator } from "../components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "../components/ui/breadcrumb";
 import { useModal } from "../components/hooks/use-modal-store";
 import { Badge } from "../components/ui/badge";
+import { useSessionCountdown } from "../context/useSessionCountdown";
 interface MailProps {
  
   defaultLayout: number[] | undefined
@@ -80,12 +81,17 @@ export default function SimpleLayout({
   };
   
   const breadcrumbItems = createBreadcrumbItems(router.pathname);
-    const {onOpen} = useModal()
-    useEffect(() => {
-      if (!loggedIn) {
-        onOpen('sign-in'); // <- usa o modal existente
-      }
-    }, [loggedIn]);
+  const { onOpen } = useModal();
+  const didRunRef = useRef(false);
+
+  useEffect(() => {
+    if (didRunRef.current) return; // já passou pela "primeira entrada"
+    didRunRef.current = true;
+
+    if (!loggedIn) {
+      onOpen("sign-in"); // abre só na primeira entrada
+    }
+  }, [loggedIn, onOpen]);
 
 
   const formatRemaining = (totalMs: number) => {
@@ -104,6 +110,9 @@ export default function SimpleLayout({
 
   return parts.join(" ");
 };
+
+  const remainingMs = useSessionCountdown();
+
 
 
     return (
@@ -154,9 +163,9 @@ export default function SimpleLayout({
 
 
 <div>
-    {(loggedIn && timeLoggedIn) && (
+    {(loggedIn) && (
        <Badge variant={'outline'} className="text-gray-500">
-       Sessão restante: {formatRemaining(Number(timeLoggedIn))}
+       Sessão restante: {formatRemaining(remainingMs)}
        </Badge>
     )}
  
