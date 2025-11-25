@@ -65,6 +65,7 @@ type InfoAdicionaisLocal = {
   obsolescenciaAlta?: boolean;
   docs?: File[];
   serverFilesDraft?: ExistingFileDTO[];
+  orientacao?: string;
 };
 
 /* --- API para o pai disparar validação com toast só ao avançar --- */
@@ -99,12 +100,8 @@ export const InformacoesAdicionaisStep = forwardRef<
    *  - texto inicial vem DO wizard (initialData)
    *  - só depois de TU/OT/estado mudarem é que sobrescreve com modelo
    */
-  const [observacao, setObservacao] = useState(
-    initialData?.observacao ?? ""
-  );
-  const [situacao, setSituacao] = useState(
-    initialData?.situacao ?? ""
-  );
+  const [observacao, setObservacao] = useState(initialData?.observacao ?? "");
+  const [situacao, setSituacao] = useState(initialData?.situacao ?? "");
 
   const [tuLocal, setTuLocal] = useState<boolean>(
     initialData?.tuMaiorIgual10 ?? false
@@ -113,14 +110,13 @@ export const InformacoesAdicionaisStep = forwardRef<
     initialData?.obsolescenciaAlta ?? false
   );
 
-  const [docsLocal, setDocsLocal] = useState<File[]>(
-    initialData?.docs ?? []
-  );
+  const [docsLocal, setDocsLocal] = useState<File[]>(initialData?.docs ?? []);
 
   const [serverFiles, setServerFiles] = useState<ExistingFileDTO[]>(
-    initialData?.serverFilesDraft ??
-      existingFiles ??
-      []
+    initialData?.serverFilesDraft ?? existingFiles ?? []
+  );
+  const [orientacao, setOrientacao] = useState(
+    initialData?.orientacao ?? estadoAtual
   );
 
   /** ✅ sincroniza estados vindos do pai, mas só se mudou de verdade */
@@ -137,28 +133,19 @@ export const InformacoesAdicionaisStep = forwardRef<
       setSituacao((prev) => (prev === next ? prev : next));
     }
 
-    if (initialData.tuMaiorIgual10 !== undefined) {
-      const next = !!initialData.tuMaiorIgual10;
-      setTuLocal((prev) => (prev === next ? prev : next));
+    if (initialData.docs) {
+      setDocsLocal((prev) =>
+        prev === initialData.docs ? prev : initialData.docs ?? []
+      );
     }
 
-    if (initialData.obsolescenciaAlta !== undefined) {
-      const next = !!initialData.obsolescenciaAlta;
-      setOtLocal((prev) => (prev === next ? prev : next));
+    if (initialData.serverFilesDraft) {
+      setServerFiles((prev) =>
+        prev === initialData.serverFilesDraft
+          ? prev
+          : initialData.serverFilesDraft ?? []
+      );
     }
-
- if (initialData.docs) {
-  setDocsLocal(prev => (prev === initialData.docs ? prev : (initialData.docs ?? [])));
-}
-
-if (initialData.serverFilesDraft) {
-  setServerFiles(prev =>
-    prev === initialData.serverFilesDraft
-      ? prev
-      : (initialData.serverFilesDraft ?? [])
-  );
-}
-
   }, [initialData]);
 
   /** Se a prop existingFiles mudar (por GET), só usa se NÃO houver draft */
@@ -182,79 +169,130 @@ if (initialData.serverFilesDraft) {
     if (!shouldShowSituacao && situacao) setSituacao("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShowSituacao]);
+const getIdx = useCallback(
+  (tuOverride?: boolean, otOverride?: boolean) => {
+    const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
+    const otFlag = otOverride ?? otLocal;
 
-  const getIdx = useCallback(() => {
-    const tu = tuLocal ? 1 : 0;
-    const ot = otLocal ? 1 : 0;
-    return ((CO << 2) | (tu << 1) | ot) as
-      | 0
-      | 1
-      | 2
-      | 3
-      | 4
-      | 5
-      | 6
-      | 7;
-  }, [CO, tuLocal, otLocal]);
+    const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
+    const ot = otFlag ? 1 : 0; // OT alta => 1
 
-  const gerarTexto = useCallback(() => {
-    const idx = getIdx();
+    if (estadoAtual === "anti-economico") {
+      if (tu === 1 && ot === 1) return 7;
+      if (tu === 1 && ot === 0) return 3;
+      if (tu === 0 && ot === 1) return 5;
+      return 4;
+    }
 
-    const base: Record<number, string> = {
-      0: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
-        "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
-      ].join(" "),
-      1: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
-        "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
-      ].join(" "),
-      2: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação, conforme critérios da IN RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Não há necessidade de inclusão de orçamento de reparo, uma vez que qualquer valor será superior a 100% do valor atual do bem.",
-        "Referências: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico. Recomenda-se a baixa patrimonial e posterior destinação ambiental adequada (art. 5º).",
-      ].join(" "),
-      3: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação (IN RFB nº 1.700/2017, PRA/UFMG Nota nº 1/2025/PRA-GAB) e obsolescência tecnológica acentuada.",
-        "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
-        "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
-      ].join(" "),
-      4: [
-        "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
-        "Encontra-se disponível, com condições de funcionamento preservadas.",
-        "Referências: Decreto nº 9.373/2018, arts. 4º e 5º (conceitos e possibilidades de destinação).",
-      ].join(" "),
-      5: [
-        "Bem funcional e sem uso ativo (ocioso), com vida útil inferior a 10 anos e obsolescência tecnológica.",
-        "Apesar da defasagem tecnológica, mantém operação básica.",
-        "Referências: Decreto nº 9.373/2018 (arts. 4º e 5º) e Lei nº 12.305/2010 (PNRS).",
-      ].join(" "),
-      6: [
-        "Bem funcional (ocioso/recuperável), com vida útil igual ou superior a 10 anos e baixa obsolescência tecnológica.",
-        "Permanece apto ao uso, embora sem utilização corrente no setor.",
-        "Referências: IN RFB nº 1.700/2017 (vida útil) e Decreto nº 9.373/2018 (conceitos e destinações).",
-      ].join(" "),
-      7: [
-        "Este BEM deve ser classificado como ANTIECONÔMICO, pois apresenta vida útil esgotada, obsolescência tecnológica e grau máximo de depreciação, conforme critérios da Instrução Normativa RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Fundamentação legal: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico, uma vez que a continuidade do uso ou manutenção é desvantajosa à Administração.",
-        "CASO O ITEM NÃO LHE SEJA MAIS ÚTIL, recomenda-se a baixa patrimonial e posterior desfazimento ambiental adequado, em conformidade com o art. 5º do mesmo Decreto.",
-      ].join(" "),
-    };
+    const CO = estadoAtual === "quebrado" ? 0 : 1;
+    return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  },
+  [estadoAtual, tuLocal, otLocal]
+);
 
-    return base[idx];
-  }, [getIdx]);
+
+  const gerarTexto = useCallback(
+    (tuOverride?: boolean, otOverride?: boolean) => {
+      const idx = getIdx(tuOverride, otOverride);
+
+      const base: Record<number, string> = {
+        0: [
+          "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
+          "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
+        ].join(" "),
+        1: [
+          "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
+          "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
+        ].join(" "),
+        2: [
+          "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação, conforme critérios da IN RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
+          "Não há necessidade de inclusão de orçamento de reparo, uma vez que qualquer valor será superior a 100% do valor atual do bem.",
+          "Referências: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico. Recomenda-se a baixa patrimonial e posterior destinação ambiental adequada (art. 5º).",
+        ].join(" "),
+        3: [
+          "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação (IN RFB nº 1.700/2017, PRA/UFMG Nota nº 1/2025/PRA-GAB) e obsolescência tecnológica acentuada.",
+          "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
+          "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
+        ].join(" "),
+        4: [
+          "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
+          "Encontra-se disponível, com condições de funcionamento preservadas.",
+          "Referências: Decreto nº 9.373/2018, arts. 4º e 5º (conceitos e possibilidades de destinação).",
+        ].join(" "),
+        5: [
+          "Bem funcional e sem uso ativo (ocioso), com vida útil inferior a 10 anos e obsolescência tecnológica.",
+          "Apesar da defasagem tecnológica, mantém operação básica.",
+          "Referências: Decreto nº 9.373/2018 (arts. 4º e 5º) e Lei nº 12.305/2010 (PNRS).",
+        ].join(" "),
+        6: [
+          "Bem funcional (ocioso/recuperável), com vida útil igual ou superior a 10 anos e baixa obsolescência tecnológica.",
+          "Permanece apto ao uso, embora sem utilização corrente no setor.",
+          "Referências: IN RFB nº 1.700/2017 (vida útil) e Decreto nº 9.373/2018 (conceitos e destinações).",
+        ].join(" "),
+        7: [
+          "Este BEM deve ser classificado como ANTIECONÔMICO, pois apresenta vida útil esgotada, obsolescência tecnológica e grau máximo de depreciação, conforme critérios da Instrução Normativa RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
+          "Fundamentação legal: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico, uma vez que a continuidade do uso ou manutenção é desvantajosa à Administração.",
+          "CASO O ITEM NÃO LHE SEJA MAIS ÚTIL, recomenda-se a baixa patrimonial e posterior desfazimento ambiental adequado, em conformidade com o art. 5º do mesmo Decreto.",
+        ].join(" "),
+      };
+
+      return base[idx];
+    },
+    [getIdx]
+  );
+
+  function changeButtonTU() {
+    const nextTU = !tuLocal;
+    setTuLocal(nextTU);
+
+    const modeloAtual = gerarTexto(nextTU, otLocal);
+    setObservacao(modeloAtual);
+  }
+
+  function changeButtonOT() {
+    const nextOT = !otLocal;
+    setOtLocal(nextOT);
+
+    const modeloAtual = gerarTexto(tuLocal, nextOT);
+    setObservacao(modeloAtual);
+  }
 
   /** ✅ NÃO SOBRESCREVE NO PRIMEIRO MOUNT */
-  const didMountRef = useRef(false);
+  const firstRunRef = useRef(true);
   useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true;
+    const modeloAtual = gerarTexto();
+    const textoSalvo = (initialData?.observacao ?? "").trim();
+    const orientacaoInicial = initialData?.orientacao ?? estadoAtual;
+
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+
+      // Caso A: não havia observação salva
+      if (textoSalvo === "") {
+        setObservacao(modeloAtual);
+        setOrientacao(estadoAtual);
+        return;
+      }
+
+      // Caso B: havia observação salva, mas marcada como "modelo" de outra condição
+      if (orientacaoInicial !== estadoAtual) {
+        setObservacao(modeloAtual);
+        setOrientacao(estadoAtual);
+        return;
+      }
+    }
+    // Se a condição (idx) não mudou → não mexe na justificativa
+    if (orientacao === estadoAtual) {
       return;
     }
-    const novo = gerarTexto();
-    if (novo && novo !== observacao) setObservacao(novo);
+
+    // ★ 3) A condição mudou (idxAtual diferente de orientacao "modelo"):
+    // agora sim, podemos regenerar a justificativa e atualizar orientacao
+    setObservacao(modeloAtual);
+    setOrientacao(estadoAtual);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tuLocal, otLocal, estadoAtual]);
+  }, [initialData?.observacao, orientacao]);
 
   /** idx7 mantém alerta e zera justificativa automaticamente */
   const idx = getIdx();
@@ -361,9 +399,7 @@ if (initialData.serverFilesDraft) {
       const toUpload: File[] = [];
 
       for (const f of acceptedFiles) {
-        const okExt = validExt.some((e) =>
-          f.name.toLowerCase().endsWith(e)
-        );
+        const okExt = validExt.some((e) => f.name.toLowerCase().endsWith(e));
         const okSize = f.size <= MAX_MB * 1024 * 1024;
 
         if (!okExt) {
@@ -400,9 +436,7 @@ if (initialData.serverFilesDraft) {
           description: `${toUpload.length} arquivo(s) anexado(s).`,
         });
 
-        setDocsLocal((prev) =>
-          prev.filter((f) => !toUpload.includes(f))
-        );
+        setDocsLocal((prev) => prev.filter((f) => !toUpload.includes(f)));
 
         onStateChange?.({ serverFilesDraft: nextFiles });
       } catch (e: any) {
@@ -423,9 +457,8 @@ if (initialData.serverFilesDraft) {
       "application/pdf": [".pdf"],
       "image/*": [".jpg", ".jpeg", ".png"],
       "application/msword": [".doc"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-        ".docx",
-      ],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
       "application/vnd.oasis.opendocument.text": [".odt"],
       "application/vnd.ms-excel": [".xls"],
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
@@ -474,8 +507,7 @@ if (initialData.serverFilesDraft) {
 
   /** ========= 6) VALIDAÇÃO ========= */
   const modeloAtual = gerarTexto();
-  const justificativaEhModelo =
-    observacao.trim() === modeloAtual.trim();
+  const justificativaEhModelo = observacao.trim() === modeloAtual.trim();
 
   const obsOk = isIdx7 ? true : !justificativaEhModelo;
   const sitOk = shouldShowSituacao ? situacao !== "" : true;
@@ -499,6 +531,7 @@ if (initialData.serverFilesDraft) {
       obsolescenciaAlta: otLocal,
       docs: docsLocal,
       serverFilesDraft: serverFiles,
+      orientacao: orientacao,
     };
 
     const serialized = JSON.stringify({
@@ -524,6 +557,7 @@ if (initialData.serverFilesDraft) {
     docsLocal,
     serverFiles,
     onStateChange,
+    orientacao,
   ]);
 
   /** ========= 8) TOASTS SÓ AO AVANÇAR ========= */
@@ -542,8 +576,7 @@ if (initialData.serverFilesDraft) {
         docsLocal.length === 0
       ) {
         toast("Comprovantes obrigatórios", {
-          description:
-            "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
+          description: "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
         });
         return false;
       }
@@ -618,10 +651,11 @@ if (initialData.serverFilesDraft) {
                     Tempo de Uso maior ou igual a 10 anos
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Vida útil igual ou superior a 10 anos (IN RFB nº 1.700/2017).
+                    Vida útil igual ou superior a 10 anos (IN RFB nº
+                    1.700/2017).
                   </p>
                 </div>
-                <Switch checked={tuLocal} onCheckedChange={setTuLocal} />
+                <Switch checked={tuLocal} onCheckedChange={changeButtonTU} />
               </div>
 
               <Separator orientation="vertical" className="h-10" />
@@ -630,11 +664,11 @@ if (initialData.serverFilesDraft) {
                 <div>
                   <p className="font-medium">Obsolescência Tecnológica</p>
                   <p className="text-xs text-muted-foreground">
-                    Defasagem tecnológica/ausência de suporte (Lei nº 12.305/2010;
-                    Decreto nº 9.373/2018).
+                    Defasagem tecnológica/ausência de suporte (Lei nº
+                    12.305/2010; Decreto nº 9.373/2018).
                   </p>
                 </div>
-                <Switch checked={otLocal} onCheckedChange={setOtLocal} />
+                <Switch checked={otLocal} onCheckedChange={changeButtonOT} />
               </div>
             </div>
           </Alert>
@@ -649,7 +683,8 @@ if (initialData.serverFilesDraft) {
                       <div className="flex gap-2 items-center">
                         <AlertCircleIcon size={16} />
                         <p className="font-medium">
-                          Bens com menos de 10 anos de uso, mas que demandam manutenção
+                          Bens com menos de 10 anos de uso, mas que demandam
+                          manutenção
                         </p>
                       </div>
                       <AccordionTrigger className="p-0" />
@@ -657,21 +692,23 @@ if (initialData.serverFilesDraft) {
                     <AccordionContent className="p-0">
                       <div>
                         <p className="text-gray-500 text-sm text-justify mb-4">
-                          Quando um bem permanente com menos de 10 anos de uso encontra-se
-                          inoperante ou danificado, é necessário apresentar elementos
-                          probatórios que justifiquem sua classificação como irrecuperável
-                          ou antieconômico...
+                          Quando um bem permanente com menos de 10 anos de uso
+                          encontra-se inoperante ou danificado, é necessário
+                          apresentar elementos probatórios que justifiquem sua
+                          classificação como irrecuperável ou antieconômico...
                         </p>
 
                         <Alert className="mb-4">
                           <div className="flex mb-2 gap-2 items-center">
                             <Wrench size={16} />
                             <p className="font-medium">
-                              1. Orçamento de reparo emitido por empresa ou técnico
+                              1. Orçamento de reparo emitido por empresa ou
+                              técnico
                             </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
-                            Sempre que possível, o guardião deve obter um orçamento detalhado...
+                            Sempre que possível, o guardião deve obter um
+                            orçamento detalhado...
                           </p>
                         </Alert>
 
@@ -679,7 +716,8 @@ if (initialData.serverFilesDraft) {
                           <div className="flex mb-2 gap-2 items-center">
                             <FileText size={16} />
                             <p className="font-medium">
-                              2. Laudo Técnico Simplificado (autodeclaração fundamentada)
+                              2. Laudo Técnico Simplificado (autodeclaração
+                              fundamentada)
                             </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
@@ -771,7 +809,11 @@ if (initialData.serverFilesDraft) {
                               size="icon"
                               className="h-8 w-8 hidden group-hover:flex"
                               onClick={() =>
-                                window.open(f.file_path, "_blank", "noopener,noreferrer")
+                                window.open(
+                                  f.file_path,
+                                  "_blank",
+                                  "noopener,noreferrer"
+                                )
                               }
                               disabled={busy}
                             >
@@ -817,7 +859,10 @@ if (initialData.serverFilesDraft) {
                           <p className="font-medium whitespace-nowrap">
                             Excelente estado
                           </p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Completo, funcional e com sinais mínimos de uso.
                           </p>
                         </div>
@@ -828,8 +873,13 @@ if (initialData.serverFilesDraft) {
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckSquareOffset className="size-5 text-emerald-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Semi-novo</p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p className="font-medium whitespace-nowrap">
+                            Semi-novo
+                          </p>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Ótimo funcionamento, leves marcas de uso.
                           </p>
                         </div>
@@ -843,7 +893,10 @@ if (initialData.serverFilesDraft) {
                           <p className="font-medium whitespace-nowrap">
                             Pequenos reparos
                           </p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Funcional, com necessidade de manutenção leve.
                           </p>
                         </div>
@@ -864,7 +917,9 @@ if (initialData.serverFilesDraft) {
                   <p className="font-medium">Mude a situação atual</p>
                   <p className="text-gray-500 text-sm">
                     Por favor,{" "}
-                    <b>recadastre o bem como “Antieconômico” no passo anterior</b>{" "}
+                    <b>
+                      recadastre o bem como “Antieconômico” no passo anterior
+                    </b>{" "}
                     para prosseguir corretamente com o fluxo.
                   </p>
                 </div>

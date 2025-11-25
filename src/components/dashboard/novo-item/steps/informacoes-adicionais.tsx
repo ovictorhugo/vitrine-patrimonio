@@ -21,16 +21,29 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useRef, // ⬅ adicionar
 } from "react";
+
 import { Textarea } from "../../../ui/textarea";
 import { Label } from "../../../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
-import { ArrowSquareUpRight, CheckSquareOffset } from "phosphor-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
+import { CheckSquareOffset } from "phosphor-react";
 import { Switch } from "../../../ui/switch";
 import { Alert } from "../../../ui/alert";
 import { Separator } from "../../../ui/separator";
 import { Button } from "../../../ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 
@@ -39,6 +52,7 @@ type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
 type InfoAdicionaisLocal = {
   observacao?: string;
   situacao?: string;
+  orientacao?: string;
   tuMaiorIgual10?: boolean;
   obsolescenciaAlta?: boolean;
   // NOVO: documentos probatórios (uplados no passo)
@@ -59,57 +73,67 @@ export const InformacoesAdicionaisStep = forwardRef<
 ) {
   const [observacao, setObservacao] = useState(initialData?.observacao ?? "");
   const [situacao, setSituacao] = useState(initialData?.situacao ?? "");
+  const [orientacao, setOrientacao] = useState(
+    initialData?.orientacao ?? estadoAtual
+  );
 
-// CO derivado (congelado): 0 = não funcional (quebrado/irrecuperável/antieconômico), 1 = funcional (ocioso/recuperável)
-const CO: 0 | 1 = useMemo(() => {
-  if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
-  // quebrado, irrecuperável (análoga) e antieconômico tratamos como não funcional para efeitos de CO
-  return 0;
-}, [estadoAtual]);
-
+  // CO derivado (congelado): 0 = não funcional (quebrado/irrecuperável/antieconômico), 1 = funcional (ocioso/recuperável)
+  const CO: 0 | 1 = useMemo(() => {
+    if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
+    // quebrado, irrecuperável (análoga) e antieconômico tratamos como não funcional para efeitos de CO
+    return 0;
+  }, [estadoAtual]);
 
   // Antieconômico comprovado (apenas para exibir o banner informativo; não influencia o gerador)
 
   // Switches (reidratados)
-  const [tuLocal, setTuLocal] = useState<boolean>(initialData?.tuMaiorIgual10 ?? false);
-  const [otLocal, setOtLocal] = useState<boolean>(initialData?.obsolescenciaAlta ?? false);
+
+  const [tuLocal, setTuLocal] = useState<boolean>(
+    initialData?.tuMaiorIgual10 ?? false
+  );
+  const [otLocal, setOtLocal] = useState<boolean>(
+    initialData?.obsolescenciaAlta ?? false
+  );
+
+  const firstRunRef = useRef(true);
 
   // Upload de documentos (para idx 0 e 1)
   const [docsLocal, setDocsLocal] = useState<File[]>([]);
   const MAX_MB = 5;
 
   // Exibir Select "Estado de conservação" para ocioso/recuperável
-  const shouldShowSituacao = estadoAtual === "ocioso" || estadoAtual === "recuperavel";
+  const shouldShowSituacao =
+    estadoAtual === "ocioso" || estadoAtual === "recuperavel";
   useEffect(() => {
     if (!shouldShowSituacao && situacao) setSituacao("");
   }, [shouldShowSituacao]); // eslint-disable-line
 
   // Índice 0..7 conforme CO/TU/OT
-const getIdx = useCallback(() => {
-  const tu = tuLocal ? 1 : 0; // TU≥10 => 1
-  const ot = otLocal ? 1 : 0; // OT alta => 1
+  const getIdx = useCallback(() => {
+    const tu = tuLocal ? 1 : 0; // TU >= 10 => 1
+    const ot = otLocal ? 1 : 0; // OT alta => 1
 
-  // Estado "anti-economico" deve navegar por 3, 4, 5 ou 7 conforme TU/OT:
-  // TU=1 & OT=1 -> 7
-  // TU=1 & OT=0 -> 3
-  // TU=0 & OT=0 -> 4
-  // TU=0 & OT=1 -> 5  (⬅ adicionamos este caso)
+    // 1) Casos específicos para "anti-economico"
+    if (estadoAtual === "anti-economico") {
+      // TU=1 & OT=1 -> 7
+      if (tu === 1 && ot === 1) return 7;
 
+      // TU=1 & OT=0 -> 3
+      if (tu === 1 && ot === 0) return 3;
 
-  // Demais estados seguem a matriz CO/TU/OT
-  return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-}, [estadoAtual, CO, tuLocal, otLocal]);
+      // TU=0 & OT=1 -> 5
+      if (tu === 0 && ot === 1) return 5;
 
+      // TU=0 & OT=0 -> 4
+      return 4;
+    }
 
-
-
-  const addSituacao = useCallback(
-    (txt: string) => {
-      if (shouldShowSituacao && situacao) return `${txt} Estado de conservação informado: ${situacao}.`;
-      return txt;
-    },
-    [shouldShowSituacao, situacao]
-  );
+    // 2) Demais estados seguem a matriz CO/TU/OT
+    // CO=0 -> quebrado (inoperante)
+    // CO=1 -> funcional (ocioso / recuperável)
+    const CO = estadoAtual === "quebrado" ? 0 : 1;
+    return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  }, [estadoAtual, tuLocal, otLocal]);
 
   // ====== GERADOR (modelo) ======
   // Sem branch especial de antieconômico: SEMPRE por matriz 0..7
@@ -123,12 +147,12 @@ const getIdx = useCallback(() => {
       // CO=0 (quebrado) e TU<10 (idx 0/1) → haverá upload de documentos no UI
       0: [
         "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
-       
+
         "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
       ].join(" "),
       1: [
         "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
-      
+
         "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
       ].join(" "),
       2: [
@@ -167,12 +191,51 @@ const getIdx = useCallback(() => {
     return base[idx];
   }, [getIdx]);
 
-  // Auto-substitui (nunca concatena)
   useEffect(() => {
-    const novo = gerarTexto();
-    if (novo && novo !== observacao) setObservacao(novo);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tuLocal, otLocal, estadoAtual]);
+    const modeloAtual = gerarTexto();
+    const textoSalvo = (initialData?.observacao ?? "").trim();
+    const orientacaoInicial = initialData?.orientacao ?? estadoAtual;
+    console.log(estadoAtual, orientacao);
+
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+
+      // Caso A: não havia observação salva
+      if (textoSalvo === "") {
+        setObservacao(modeloAtual);
+        setOrientacao(estadoAtual);
+        return;
+      }
+
+      // Caso B: havia observação salva, mas marcada como "modelo" de outra condição
+      if (orientacaoInicial !== estadoAtual) {
+        setObservacao(modeloAtual);
+        setOrientacao(estadoAtual);
+        return;
+      }
+    }
+
+    // Se a condição (idx) não mudou → não mexe na justificativa
+    if (orientacao === estadoAtual) {
+      return;
+    }
+
+    // ★ 3) A condição mudou (idxAtual diferente de orientacao "modelo"):
+    // agora sim, podemos regenerar a justificativa e atualizar orientacao
+    setObservacao(modeloAtual);
+    setOrientacao(estadoAtual);
+  }, [initialData?.observacao, orientacao]);
+
+  async function changeButtonOT() {
+    setOtLocal(!otLocal);
+    const modeloAtual = gerarTexto();
+    setObservacao(modeloAtual);
+  }
+  async function changeButtonTU() {
+    setTuLocal(!tuLocal);
+    const modeloAtual = gerarTexto();
+    setObservacao(modeloAtual);
+  }
 
   // ===== Dropzone (substitui input; obrigatório em idx 0/1) =====
   const onDropDocs = useCallback((acceptedFiles: File[]) => {
@@ -194,7 +257,8 @@ const getIdx = useCallback(() => {
       const okSize = f.size <= MAX_MB * 1024 * 1024;
       if (!okExt) {
         toast("Arquivo inválido", {
-          description: "Formatos aceitos: PDF, imagens, DOC/DOCX/ODT, XLS/XLSX.",
+          description:
+            "Formatos aceitos: PDF, imagens, DOC/DOCX/ODT, XLS/XLSX.",
         });
         continue;
       }
@@ -216,14 +280,18 @@ const getIdx = useCallback(() => {
       "application/pdf": [".pdf"],
       "image/*": [".jpg", ".jpeg", ".png"],
       "application/msword": [".doc"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
       "application/vnd.oasis.opendocument.text": [".odt"],
       "application/vnd.ms-excel": [".xls"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
     },
   });
 
-  const removeDoc = (i: number) => setDocsLocal((prev) => prev.filter((_, idx) => idx !== i));
+  const removeDoc = (i: number) =>
+    setDocsLocal((prev) => prev.filter((_, idx) => idx !== i));
 
   // ÍNDICE e obrigatoriedade dos comprovantes
   const idx = getIdx();
@@ -238,120 +306,137 @@ const getIdx = useCallback(() => {
       tuMaiorIgual10: tuLocal,
       obsolescenciaAlta: otLocal,
       docs: docsLocal,
+      orientacao,
     };
     onStateChange?.(payload);
-  }, [observacao, situacao, tuLocal, otLocal, docsLocal, onStateChange]);
+  }, [
+    observacao,
+    situacao,
+    tuLocal,
+    otLocal,
+    docsLocal,
+    orientacao,
+    onStateChange,
+  ]);
 
   // ===== Validação da justificativa (inteligente) =====
-  const obrigatorios = ["uso", "funcionamento", "defeito", "manutenção", "tombamento"];
+  const obrigatorios = [
+    "uso",
+    "funcionamento",
+    "defeito",
+    "manutenção",
+    "tombamento",
+  ];
   function hasSemanticaMinima(txt: string) {
-    const t = txt.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    const t = txt
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
     const achados = obrigatorios.filter(
       (k) => t.includes(k) || (k === "manutenção" && t.includes("manutencao"))
     );
     return achados.length >= 3; // exige ao menos 3 temas
   }
 
-function isJustificativaModelo(atual: string, modelo: string) {
-  const a = (atual ?? "").trim().replace(/\s+/g, " ");
-  const m = (modelo ?? "").trim().replace(/\s+/g, " ");
-  if (!m) return false;      // sem modelo, não há com o que igualar
-  return a === m;            // apenas igual, nada além
-}
-
-// abaixo dos seus states/consts
-const openDoc = useCallback((i: number) => {
-  const f = docsLocal[i];
-  if (!f) return;
-
-  const url = URL.createObjectURL(f);
-
-  // abre PDF e imagens em nova aba; outros formatos baixam
-  const isPreviewable =
-    f.type === "application/pdf" ||
-    f.type.startsWith("image/") ||
-    f.name.toLowerCase().endsWith(".pdf") ||
-    /\.(png|jpe?g)$/i.test(f.name);
-
-  if (isPreviewable) {
-    window.open(url, "_blank", "noopener,noreferrer");
-    // libera o objeto depois de um tempo
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  } else {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = f.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  function isJustificativaModelo(atual: string, modelo: string) {
+    const a = (atual ?? "").trim().replace(/\s+/g, " ");
+    const m = (modelo ?? "").trim().replace(/\s+/g, " ");
+    if (!m) return false; // sem modelo, não há com o que igualar
+    return a === m; // apenas igual, nada além
   }
-}, [docsLocal]);
 
+  // abaixo dos seus states/consts
+  const openDoc = useCallback(
+    (i: number) => {
+      const f = docsLocal[i];
+      if (!f) return;
 
-const modeloAtual = gerarTexto();
-const justificativaEhModelo = (observacao.trim() == modeloAtual.trim())
+      const url = URL.createObjectURL(f);
+
+      // abre PDF e imagens em nova aba; outros formatos baixam
+      const isPreviewable =
+        f.type === "application/pdf" ||
+        f.type.startsWith("image/") ||
+        f.name.toLowerCase().endsWith(".pdf") ||
+        /\.(png|jpe?g)$/i.test(f.name);
+
+      if (isPreviewable) {
+        window.open(url, "_blank", "noopener,noreferrer");
+        // libera o objeto depois de um tempo
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = f.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    },
+    [docsLocal]
+  );
+
+  const modeloAtual = gerarTexto();
+  const justificativaEhModelo = observacao.trim() === modeloAtual.trim();
   const isIdx7 = idx === 7;
-// Quando idx==7, não exigimos texto; caso contrário, precisa ser diferente do modelo
-const obsOk = isIdx7 ? true : !(observacao.trim() == modeloAtual.trim());
-const sitOk = shouldShowSituacao ? situacao !== "" : true;
 
-// Mantém o onValidityChange atualizado, sem toasts
-useEffect(() => {
-  onValidityChange(
-        obsOk 
-    && sitOk 
-    && docsOk
-    && !isIdx7);
-}, [obsOk, sitOk, docsOk, onValidityChange, idx, isIdx7]);
+  // Quando idx==7, não exigimos texto; caso contrário, precisa ser diferente do modelo
+  const obsOk = isIdx7 ? true : !(observacao.trim() == modeloAtual.trim());
+  const sitOk = shouldShowSituacao ? situacao !== "" : true;
 
-useEffect(() => {
-  if (isIdx7 && observacao) setObservacao("");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isIdx7]);
- // Toasts apenas ao tentar avançar
-useImperativeHandle(ref, () => ({
-  validateBeforeNext: () => {
-    if (!isIdx7 && justificativaEhModelo) {
-      toast("Personalize a justificativa", {
-        description: "O texto não pode ser idêntico ao modelo sugerido.",
-        action: { label: "Ok", onClick: () => {} },
-      });
-      return false;
-    }
-    if (showUploadDocs && docsLocal.length === 0) {
-      toast("Comprovantes obrigatórios", {
-        description: "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
-      });
-      return false;
-    }
-    if (shouldShowSituacao && !situacao) {
-      toast("Informe o estado de conservação", {
-        description: "Selecione uma opção na lista.",
-      });
-      return false;
-    }
-    return true;
-  },
-}));
+  // Mantém o onValidityChange atualizado, sem toasts
+  useEffect(() => {
+    onValidityChange(obsOk && sitOk && docsOk && !isIdx7);
+  }, [obsOk, sitOk, docsOk, onValidityChange, idx, isIdx7]);
+
+  useEffect(() => {
+    if (isIdx7 && observacao) setObservacao("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIdx7]);
+  // Toasts apenas ao tentar avançar
+  useImperativeHandle(ref, () => ({
+    validateBeforeNext: () => {
+      if (!isIdx7 && justificativaEhModelo) {
+        toast("Personalize a justificativa", {
+          description: "O texto não pode ser idêntico ao modelo sugerido.",
+          action: { label: "Ok", onClick: () => {} },
+        });
+        return false;
+      }
+      if (showUploadDocs && docsLocal.length === 0) {
+        toast("Comprovantes obrigatórios", {
+          description: "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
+        });
+        return false;
+      }
+      if (shouldShowSituacao && !situacao) {
+        toast("Informe o estado de conservação", {
+          description: "Selecione uma opção na lista.",
+        });
+        return false;
+      }
+      return true;
+    },
+  }));
 
   // ===== Escala 7 níveis (verde → vermelho) =====
   // Mapeia idx (0..7) para nível 0..6
-// ===== Escala 7 níveis (0=melhor verde → 6=pior vermelho) =====
-// Ajustado para que TU<10 (tuLocal=false) seja melhor que TU≥10, como você pediu.
-const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-  // CO=1 (funcional: 4..7) — melhores níveis
-  4: 0, // funcional, TU<10, OT baixa  → Excelente
-  5: 1, // funcional, TU<10, OT alta   → Muito bom
-  6: 2, // funcional, TU≥10, OT baixa  → Bom
-  7: 3, // funcional, TU≥10, OT alta   → Uso moderado
+  // ===== Escala 7 níveis (0=melhor verde → 6=pior vermelho) =====
+  // Ajustado para que TU<10 (tuLocal=false) seja melhor que TU≥10, como você pediu.
+  const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
+    // CO=1 (funcional: 4..7) — melhores níveis
+    4: 0, // funcional, TU<10, OT baixa  → Excelente
+    5: 1, // funcional, TU<10, OT alta   → Muito bom
+    6: 2, // funcional, TU≥10, OT baixa  → Bom
+    7: 3, // funcional, TU≥10, OT alta   → Uso moderado
 
-  // CO=0 (quebrado: 0..3) — piores níveis
-  0: 4, // quebrado, TU<10, OT baixa   → Necessita reparos
-  1: 5, // quebrado, TU<10, OT alta    → Inoperante
-  2: 6, // quebrado, TU≥10, OT baixa   → Antieconômico
-  3: 6, // quebrado, TU≥10, OT alta    → Antieconômico
-};
+    // CO=0 (quebrado: 0..3) — piores níveis
+    0: 4, // quebrado, TU<10, OT baixa   → Necessita reparos
+    1: 5, // quebrado, TU<10, OT alta    → Inoperante
+    2: 6, // quebrado, TU≥10, OT baixa   → Antieconômico
+    3: 6, // quebrado, TU≥10, OT alta    → Antieconômico
+  };
 
   const escala7 = [
     { rotulo: "Excelente", bg: "bg-green-500" },
@@ -380,7 +465,11 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
 
     // validações simples
     const ext = uploadedFile.name.toLowerCase();
-    if (!ext.endsWith(".xls") && !ext.endsWith(".xlsx") && !ext.endsWith(".csv")) {
+    if (
+      !ext.endsWith(".xls") &&
+      !ext.endsWith(".xlsx") &&
+      !ext.endsWith(".csv")
+    ) {
       toast("Arquivo inválido", {
         description: "",
         action: { label: "Fechar", onClick: () => {} },
@@ -408,8 +497,6 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
   //   },
   // });
 
-
-
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -428,42 +515,44 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
           <div>
             <p className="font-medium">Dados de patrimônio</p>
             <p className="text-gray-500 text-sm">
-              Descreva o estado real do bem (ex.: uso, funcionamento, defeitos, histórico de manutenção, ano/critério de tombamento).
+              Descreva o estado real do bem (ex.: uso, funcionamento, defeitos,
+              histórico de manutenção, ano/critério de tombamento).
             </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-5 w-full">
-       
-
           {/* Switches TU/OT — também visíveis em idx 3,4,7 mesmo que antieconômico */}
-         
-            <Alert className="mb-2">
-              <div className="flex w-full gap-4">
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <p className="font-medium">Tempo de Uso maior ou igual a 10 anos</p>
-                    <p className="text-xs text-muted-foreground">
-                      Vida útil igual ou superior a 10 anos (IN RFB nº 1.700/2017).
-                    </p>
-                  </div>
-                  <Switch checked={tuLocal} onCheckedChange={setTuLocal} />
-                </div>
 
-                <Separator orientation="vertical" className="h-10" />
-
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <p className="font-medium">Obsolescência Tecnológica</p>
-                    <p className="text-xs text-muted-foreground">
-                      Defasagem tecnológica/ausência de suporte (Lei nº 12.305/2010; Decreto nº 9.373/2018).
-                    </p>
-                  </div>
-                  <Switch checked={otLocal} onCheckedChange={setOtLocal} />
+          <Alert className="mb-2">
+            <div className="flex w-full gap-4">
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <p className="font-medium">
+                    Tempo de Uso maior ou igual a 10 anos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vida útil igual ou superior a 10 anos (IN RFB nº
+                    1.700/2017).
+                  </p>
                 </div>
+                <Switch checked={tuLocal} onCheckedChange={changeButtonTU} />
               </div>
-            </Alert>
-      
+
+              <Separator orientation="vertical" className="h-10" />
+
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <p className="font-medium">Obsolescência Tecnológica</p>
+                  <p className="text-xs text-muted-foreground">
+                    Defasagem tecnológica/ausência de suporte (Lei nº
+                    12.305/2010; Decreto nº 9.373/2018).
+                  </p>
+                </div>
+                <Switch checked={otLocal} onCheckedChange={changeButtonOT} />
+              </div>
+            </div>
+          </Alert>
 
           {/* Orientação + Upload (apenas idx 0 ou 1) */}
           {showUploadDocs && (
@@ -478,7 +567,8 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                         </div>
 
                         <p className="font-medium">
-                          Bens com menos de 10 anos de uso, mas que demandam manutenção
+                          Bens com menos de 10 anos de uso, mas que demandam
+                          manutenção
                         </p>
                       </div>
                       <AccordionTrigger className="p-0"></AccordionTrigger>
@@ -486,7 +576,18 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                     <AccordionContent className="p-0">
                       <div>
                         <p className="text-gray-500 text-sm text-justify mb-4">
-                          Quando um bem permanente com menos de 10 anos de uso encontra-se inoperante ou danificado, é necessário apresentar elementos probatórios que justifiquem sua classificação como irrecuperável ou antieconômico, conforme os critérios definidos no art. 4º do Decreto nº 9.373/2018. Para subsidiar essa classificação, o guardião do bem deverá comprovar que o custo de reparo é superior a 50% de seu valor atual, de acordo com a metodologia de depreciação prevista na Instrução Normativa RFB nº 1.700/2017 (Anexo III). Abaixo, seguem sugestões de possíveis encaminhamentos para apresentação da comprovação técnica:
+                          Quando um bem permanente com menos de 10 anos de uso
+                          encontra-se inoperante ou danificado, é necessário
+                          apresentar elementos probatórios que justifiquem sua
+                          classificação como irrecuperável ou antieconômico,
+                          conforme os critérios definidos no art. 4º do Decreto
+                          nº 9.373/2018. Para subsidiar essa classificação, o
+                          guardião do bem deverá comprovar que o custo de reparo
+                          é superior a 50% de seu valor atual, de acordo com a
+                          metodologia de depreciação prevista na Instrução
+                          Normativa RFB nº 1.700/2017 (Anexo III). Abaixo,
+                          seguem sugestões de possíveis encaminhamentos para
+                          apresentação da comprovação técnica:
                         </p>
 
                         <Alert className="mb-4">
@@ -495,10 +596,16 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                               <Wrench size={16} />
                             </div>
 
-                            <p className="font-medium">1. Orçamento de reparo emitido por empresa ou técnico</p>
+                            <p className="font-medium">
+                              1. Orçamento de reparo emitido por empresa ou
+                              técnico
+                            </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
-                            Sempre que possível, o guardião deve obter um orçamento detalhado, contendo descrição dos serviços, peças e valores, que demonstre que o custo de reparo ultrapassa 50% do valor atual do bem.
+                            Sempre que possível, o guardião deve obter um
+                            orçamento detalhado, contendo descrição dos
+                            serviços, peças e valores, que demonstre que o custo
+                            de reparo ultrapassa 50% do valor atual do bem.
                           </p>
                         </Alert>
 
@@ -508,10 +615,33 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                               <FileText size={16} />
                             </div>
 
-                            <p className="font-medium">2. Laudo Técnico Simplificado (autodeclaração fundamentada)</p>
+                            <p className="font-medium">
+                              2. Laudo Técnico Simplificado (autodeclaração
+                              fundamentada)
+                            </p>
                           </div>
                           <p className="text-gray-500 text-sm text-justify">
-                            Caso não seja possível obter orçamento, o guardião poderá emitir um Laudo Técnico Simplificado, assinado e datado, descrevendo detalhadamente: O estado atual do bem e o tipo de dano identificado; As tentativas realizadas para obtenção de orçamento (ex.: contatos, e-mails, ligações); A inexistência de peças ou empresas de serviços de reparo, ou mesmo descontinuidade da tecnologia; As razões técnicas que tornam inviável sua recuperação ou reaproveitamento, inclusive em setores com menor demanda técnica. Esse documento deve ser redigido com clareza e objetividade, identificando o bem (marca, modelo, número de série e patrimônio) e fundamentando a avaliação com base em critérios técnicos e de obsolescência. Nos termos do art. 22 da Lei nº 9.784/1999, que regula o processo administrativo no âmbito da Administração Pública Federal, o servidor responsável pelo bem atua sob o princípio da fé pública, podendo emitir declaração técnica com validade probatória administrativa, desde que devidamente fundamentada e assinada.
+                            Caso não seja possível obter orçamento, o guardião
+                            poderá emitir um Laudo Técnico Simplificado,
+                            assinado e datado, descrevendo detalhadamente: O
+                            estado atual do bem e o tipo de dano identificado;
+                            As tentativas realizadas para obtenção de orçamento
+                            (ex.: contatos, e-mails, ligações); A inexistência
+                            de peças ou empresas de serviços de reparo, ou mesmo
+                            descontinuidade da tecnologia; As razões técnicas
+                            que tornam inviável sua recuperação ou
+                            reaproveitamento, inclusive em setores com menor
+                            demanda técnica. Esse documento deve ser redigido
+                            com clareza e objetividade, identificando o bem
+                            (marca, modelo, número de série e patrimônio) e
+                            fundamentando a avaliação com base em critérios
+                            técnicos e de obsolescência. Nos termos do art. 22
+                            da Lei nº 9.784/1999, que regula o processo
+                            administrativo no âmbito da Administração Pública
+                            Federal, o servidor responsável pelo bem atua sob o
+                            princípio da fé pública, podendo emitir declaração
+                            técnica com validade probatória administrativa,
+                            desde que devidamente fundamentada e assinada.
                           </p>
                         </Alert>
                       </div>
@@ -534,37 +664,45 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                   {isDragActive ? (
                     <p>Solte o arquivo aqui…</p>
                   ) : (
-                    <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+                    <p>
+                      Arraste e solte o arquivo aqui ou clique para selecionar
+                    </p>
                   )}
-                 
                 </div>
 
                 {docsLocal.length > 0 && (
                   <div className="">
-                
                     <ul className="text-xs space-y-2">
                       {docsLocal.map((f, i) => (
-                        <Alert key={i} className=" flex group items-center justify-between">
-                         <div className="flex items-center min-h-8 gap-2 w-full">
-                          <File size={16} />
-                           <span className="truncate max-w-[75%]">
-                            {f.name} — {(f.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                         </div>
-                        <div className="flex gap-2">
+                        <Alert
+                          key={i}
+                          className=" flex group items-center justify-between"
+                        >
+                          <div className="flex items-center min-h-8 gap-2 w-full">
+                            <File size={16} />
+                            <span className="truncate max-w-[75%]">
+                              {f.name} — {(f.size / 1024 / 1024).toFixed(2)} MB
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
                             <Button
-  variant="ghost"
-  size="icon"
-  className="h-8 w-8 hidden group-hover:flex"
-  onClick={() => openDoc(i)}
-  title="Abrir em nova aba"
->
-  <ScanEye size={16} />
-</Button>
-                            <Button variant='destructive' size="icon" className="h-8 w-8 hidden group-hover:flex" onClick={() => removeDoc(i)}>
-                           <Trash size={16} />
-                          </Button>
-                        </div>
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hidden group-hover:flex"
+                              onClick={() => openDoc(i)}
+                              title="Abrir em nova aba"
+                            >
+                              <ScanEye size={16} />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8 hidden group-hover:flex"
+                              onClick={() => removeDoc(i)}
+                            >
+                              <Trash size={16} />
+                            </Button>
+                          </div>
                         </Alert>
                       ))}
                     </ul>
@@ -580,7 +718,10 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
               <Label>Estado de conservação</Label>
               <div className="flex items-center gap-3">
                 <Select value={situacao} onValueChange={setSituacao}>
-                  <SelectTrigger id="condicao" className="items-start [&_[data-description]]:hidden">
+                  <SelectTrigger
+                    id="condicao"
+                    className="items-start [&_[data-description]]:hidden"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -588,8 +729,13 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckCircle className="size-5 text-green-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Excelente estado</p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p className="font-medium whitespace-nowrap">
+                            Excelente estado
+                          </p>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Completo, funcional e com sinais mínimos de uso.
                           </p>
                         </div>
@@ -600,8 +746,13 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckSquareOffset className="size-5 text-emerald-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Semi-novo</p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p className="font-medium whitespace-nowrap">
+                            Semi-novo
+                          </p>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Ótimo funcionamento, leves marcas de uso.
                           </p>
                         </div>
@@ -612,8 +763,13 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <WrenchIcon className="size-5 text-orange-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">Pequenos reparos</p>
-                          <p className="text-xs text-muted-foreground" data-description>
+                          <p className="font-medium whitespace-nowrap">
+                            Pequenos reparos
+                          </p>
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-description
+                          >
                             Funcional, com necessidade de manutenção leve.
                           </p>
                         </div>
@@ -627,45 +783,52 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
 
           {/* Justificativa */}
           {isIdx7 ? (
-           <Alert>
+            <Alert>
               <div className="flex gap-2 ">
-          <BadgePercent size={24} />
-          <div>
-            <p className="font-medium">Mude a situação atual</p>
-            <p className="text-gray-500 text-sm">
-             Por favor, <b>recadastre o bem como “Antieconômico” no passo anterior</b> para prosseguir corretamente com o fluxo.
-            </p>
-          </div>
-        </div>
-           </Alert>
-          ):(
-<div className="grid gap-2 w-full">
-            <Label htmlFor="observacoes">Justificativa (descrição do estado do item)*</Label>
-            {justificativaEhModelo && (
-              <p className="text-xs text-red-500 ">
-               Obrigatório: Personalize a justificativa com uso, funcionamento, defeitos, histórico de manutenção e ano/critério de tombamento para prosseguir.
-              </p>
-            )}
-            <Textarea
-              id="observacoes"
-              className="w-full"
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-            />
-            <div className="">
-              <p className="text-xs text-muted-foreground">
-  <>CO: {CO} • TU≥10: {tuLocal ? "1" : "0"} • OT alta: {otLocal ? "1" : "0"}</>
-</p>
-
-
+                <BadgePercent size={24} />
+                <div>
+                  <p className="font-medium">Mude a situação atual</p>
+                  <p className="text-gray-500 text-sm">
+                    Por favor,{" "}
+                    <b>
+                      recadastre o bem como “Antieconômico” no passo anterior
+                    </b>{" "}
+                    para prosseguir corretamente com o fluxo.
+                  </p>
+                </div>
+              </div>
+            </Alert>
+          ) : (
+            <div className="grid gap-2 w-full">
+              <Label htmlFor="observacoes">
+                Justificativa (descrição do estado do item)*
+              </Label>
+              {justificativaEhModelo && (
+                <p className="text-xs text-red-500 ">
+                  Obrigatório: Personalize a justificativa com uso,
+                  funcionamento, defeitos, histórico de manutenção e
+                  ano/critério de tombamento para prosseguir.
+                </p>
+              )}
+              <Textarea
+                id="observacoes"
+                className="w-full"
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+              />
+              <div className="">
+                <p className="text-xs text-muted-foreground">
+                  <>
+                    CO: {CO} • TU≥10: {tuLocal ? "1" : "0"} • OT alta:{" "}
+                    {otLocal ? "1" : "0"}
+                  </>
+                </p>
+              </div>
             </div>
-          
-          </div>
           )}
 
           {/* Escala de 7 níveis (verde → vermelho) */}
           <div className="mt-4">
-         
             <div className="flex gap-2">
               {escala7.map((it, i) => {
                 const ativo = i === nivelAtivo;
@@ -675,10 +838,7 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
                     className={`rounded-md p-0 h-4 w-4 ${it.bg} ${
                       ativo ? "opacity-100  " : "opacity-20"
                     }`}
-                   
-                  >
-
-                  </div>
+                  ></div>
                 );
               })}
             </div>

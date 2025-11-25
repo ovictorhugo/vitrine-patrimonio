@@ -18,23 +18,23 @@ import { ArrowUUpLeft } from "phosphor-react";
 import { useDropzone } from "react-dropzone";
 
 import { StepBaseProps } from "../novo-item"; // mantém seu tipo original
-import { Button } from "../../../ui/button";
-import { Badge } from "../../../ui/badge";
+import { Button } from "../../ui/button";
+import { Badge } from "../../ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../../ui/dialog";
+} from "../../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../ui/select";
-import { Separator } from "../../../ui/separator";
+} from "../../ui/select";
+import { Separator } from "../../ui/separator";
 
 /** deep equal simples p/ arrays de strings */
 const sameArr = (a?: string[], b?: string[]) => {
@@ -132,13 +132,12 @@ export function ImagemStep({
   onStateChange,
   step,
   imagens, // vem do pai (pode ser undefined no primeiro paint)
-  wizard,
 }: StepBaseProps<"imagens">) {
   /** ===== estado local é a FONTE DE VERDADE ===== */
   const [images, setImages] = useState<string[]>(
     () => (Array.isArray(imagens) ? imagens : [])
   );
-console.log(wizard)
+
   /** Snapshot real para upload (cópia temporária congelada) */
   const imageBlobsRef = useRef<(Blob | null)[]>(
     Array.isArray(imagens) ? imagens.map(() => null) : []
@@ -483,7 +482,7 @@ console.log(wizard)
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
           Insira as fotos do patrimônio — capriche no clique!
         </h1>
       </div>

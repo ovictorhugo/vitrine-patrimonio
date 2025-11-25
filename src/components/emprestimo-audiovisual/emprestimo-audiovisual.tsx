@@ -1,6 +1,6 @@
 // src/pages/novo-item/index.tsx
 import { Helmet } from "react-helmet";
-import { Button } from "../../ui/button";
+import { Button } from "../ui/button";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,8 +13,6 @@ import {
   LayoutDashboard,
   LoaderCircle,
   Plus,
-  Bookmark,
-  BookmarkPlus,
   Trash2,
 } from "lucide-react";
 import React, {
@@ -26,24 +24,15 @@ import React, {
   useState,
 } from "react";
 import ReactDOM from "react-dom/client";
-import { Tabs, TabsContent } from "../../ui/tabs";
-import { Progress } from "../../ui/progress";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { cn } from "../../../lib";
+import { Tabs, TabsContent } from "../ui/tabs";
+import { Progress } from "../ui/progress";
+import { useLocation, useNavigate } from "react-router-dom";
+import { cn } from "../../lib";
 
-import { InicioStep } from "./steps/inicio";
-import { InformacoesStep } from "./steps/informacoes";
-import { PesquisaStep } from "./steps/pesquisa";
-import { FormularioStep, Patrimonio } from "./steps/formulario";
-import { FormularioSpStep } from "./steps/formulario-sp";
-import { TrocarLocalStep } from "./steps/trocar-local";
-import { InformacoesAdicionaisStep } from "./steps/informacoes-adicionais";
-import { EstadoStep } from "./steps/estado";
-import { ImagemStep } from "./steps/imagem";
-import { FinalStep } from "./steps/final";
-import { UserContext } from "../../../context/context";
+import { InicioStep } from "./steps/inicio.tsx";
+import { UserContext } from "../../context/context";
 import { toast } from "sonner";
-import { Alert } from "../../ui/alert";
+import { Alert } from "../ui/alert";
 
 /* ➕ UI para Dialog/lista */
 import {
@@ -53,20 +42,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../ui/dialog";
-import { ScrollArea } from "../../ui/scroll-area";
-import { Badge } from "../../ui/badge";
-import { Separator } from "../../ui/separator";
+} from "../ui/dialog";
+import { ScrollArea } from "../ui/scroll-area";
+import { Badge } from "../ui/badge";
+import { Separator } from "../ui/separator";
 
 /* =======================================================================================
    ⬇⬇⬇  BLOCO DE UTILIDADES DE PLAQUETA (mesmo esquema do componente Etiqueta)  ⬇⬇⬇
    ======================================================================================= */
 
 import QRCode from "react-qr-code";
-import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { ArrowUUpLeft } from "phosphor-react";
-import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
+import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
 import { ExistingFileDTO } from "../edit-item/edit-item";
+import { PesquisaStep } from "./steps/pesquisa.tsx";
+import { FormularioStep } from "./steps/formulario.tsx";
+import { FormularioSpStep } from "./steps/formulario-sp.tsx";
+import { TrocarLocalStep } from "./steps/trocar-local.tsx";
+import { LocalStep } from "./steps/local.tsx";
+import { ImagemStep } from "./steps/imagem.tsx";
+import { ArquivosStep } from "./steps/arquivos.tsx";
+import { FinalStep } from "./steps/final.tsx";
 
 /* Código de Barras Code128B (SVG inline) */
 const CODE128_PATTERNS = [
@@ -567,14 +564,13 @@ interface Location {
 /* ---- Wizard ---- */
 export type StepKey =
   | "inicio"
-  | "informacoes"
   | "pesquisa"
-  | "formulario"
   | "formulario-sp"
-  | "informacoes-adicionais"
+  | "formulario"
   | "trocar-local"
-  | "estado"
+  | "local"
   | "imagens"
+  | "arquivos"
   | "final";
 export type StepDef = { key: StepKey; label: string };
 export type FlowMode = "vitrine" | "desfazimento";
@@ -583,22 +579,18 @@ const getSteps = (mode: FlowMode): StepDef[] =>
   mode === "desfazimento"
     ? [
         { key: "inicio", label: "Início" },
-        { key: "informacoes", label: "Informações" },
         { key: "formulario-sp", label: "Formulário" },
-        { key: "trocar-local", label: "Trocar local" },
-        { key: "estado", label: "Estado" },
-        { key: "informacoes-adicionais", label: "Informações adicionais" },
+        { key: "local", label: "Verificar local" },
+        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ]
     : [
         { key: "inicio", label: "Início" },
-        { key: "informacoes", label: "Informações" },
         { key: "pesquisa", label: "Pesquisa" },
         { key: "formulario", label: "Formulário" },
         { key: "trocar-local", label: "Trocar local" },
-        { key: "estado", label: "Estado" },
-        { key: "informacoes-adicionais", label: "Informações adicionais" },
+        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ];
@@ -617,19 +609,6 @@ export type StepPropsMap = {
     initialData?: { flowShort?: FlowMode };
   };
   informacoes: {};
-  "informacoes-adicionais": {
-    flowShort: FlowMode;
-    initialData?: {
-      observacao?: string;
-      situacao?: string;
-      tuMaiorIgual10?: boolean; // 👈 novo
-      obsolescenciaAlta?: boolean; // 👈 novo
-      docs?: File[];
-      serverFilesDraft?: ExistingFileDTO[];
-      orientacao?: string;
-    };
-    estadoAtual?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
-  };
   "trocar-local": {
     flowShort: FlowMode;
     initialData?: {
@@ -662,10 +641,8 @@ export type StepPropsMap = {
     type?: string;
     initialData?: Patrimonio;
   };
-  estado: {
-    estado_previo?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
-  };
   imagens: { imagens?: string[] };
+  arquivos: { arquivos?: string[] };
   final: {};
 };
 
@@ -676,35 +653,32 @@ type WizardState = {
     type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc";
   };
   informacoes?: Record<string, unknown>;
-  "informacoes-adicionais"?: {
+  arquivos?: {
     observacao?: string;
     situacao?: string;
     tuMaiorIgual10?: boolean; // 👈 novo
     obsolescenciaAlta?: boolean; // 👈 novo
     docs?: File[];
-    orientacao: string;
   };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   estado?: {
-    estado_previo: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
-  };
-  imagens?: { images_wizard: string[] };
-  "trocar-local"?: {
-    agency_id?: string;
-    unit_id?: string;
-    sector_id?: string;
-    location_id?: string;
-    agency?: Agency | null;
-    unit?: Unit | null;
-    sector?: Sector | null;
-    location?: Location | null;
-    isOpen?: boolean;
+    imagens?: { images_wizard: string[] };
+    "trocar-local"?: {
+      agency_id?: string;
+      unit_id?: string;
+      sector_id?: string;
+      location_id?: string;
+      agency?: Agency | null;
+      unit?: Unit | null;
+      sector?: Sector | null;
+      location?: Location | null;
+      isOpen?: boolean;
+    };
   };
 };
 
 /* ===== Utils ===== */
-const DEV_LOGS = false;
 
 const shallowEqual = (a: any, b: any) => {
   if (a === b) return true;
@@ -767,7 +741,7 @@ type SavedLabelItem = {
   sizeKey: "d" | "a" | "b"; // tamanho escolhido ao salvar
 };
 
-export function NovoItem() {
+export function EmprestimoAudiovisual() {
   const location = useLocation();
   const navigate = useNavigate();
   const { urlGeral } = useContext(UserContext);
@@ -802,34 +776,8 @@ export function NovoItem() {
   // 🔹 NOVO: Itens salvos (memória + localStorage)
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [openSavedDialog, setOpenSavedDialog] = useState(false);
-  const [showNewSavedDot, setShowNewSavedDot] = useState(false);
 
   // Se quiser um título curto para lista:
-  const getShortLabel = (p?: Patrimonio) => {
-    const code = getLabelCode(p);
-    return code || p?.material?.material_name || p?.asset_description || "Item";
-  };
-
-  // ⬇️ Salvar o item final da tela de sucesso (sem localStorage — só memória):
-  const addFinishedToSaved = useCallback(() => {
-    const dataForLabel: Patrimonio | undefined =
-      flow === "desfazimento" ? wizard["formulario-sp"] : wizard.formulario;
-
-    if (!dataForLabel) return false;
-    const hasCode = Boolean(dataForLabel.asset_code || dataForLabel.atm_number);
-    if (!hasCode) return false;
-
-    const item: SavedItem = {
-      id: `${Date.now()}`,
-      data: dataForLabel,
-      sizeKey: selectedSize,
-      assetId: createdAssetId,
-      catalogId: createdCatalogId,
-      createdAt: new Date().toISOString(),
-    };
-    setSavedItems((prev) => [item, ...prev]);
-    return true;
-  }, [flow, wizard, selectedSize, createdAssetId, createdCatalogId]);
 
   // Confetes (lazy import)
   const launchConfetti = useCallback(async () => {
@@ -900,7 +848,7 @@ export function NovoItem() {
       },
       estado: { estado_previo: wizard.estado?.estado_previo },
       imagens: { imagens: wizard.imagens?.images_wizard },
-      "informacoes-adicionais": {
+      arquivos: {
         flowShort: flow,
         initialData: wizard["informacoes-adicionais"],
         estadoAtual: wizard.estado?.estado_previo,
@@ -958,23 +906,13 @@ export function NovoItem() {
     [STEPS, valid]
   );
 
-  const canActivateIndex = useCallback(
-    (targetIndex: number) => {
-      if (targetIndex <= idx) return true;
-      return STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true);
-    },
-    [idx, STEPS, valid]
-  );
-
   const goPrev = useCallback(() => {
     if (idx > 0) setActive(STEPS[idx - 1].key);
   }, [idx, STEPS]);
   const goNext = useCallback(() => {
-    if (!isLast && canGoNext) {
-      console.log("🚀 Wizard NO MOMENTO de sair do step:", wizard);
-      setActive(STEPS[idx + 1].key);
-    }
-  }, [idx, STEPS, isLast, canGoNext, wizard]);
+    if (!isLast && canGoNext) setActive(STEPS[idx + 1].key);
+  }, [idx, STEPS, isLast, canGoNext]);
+
   /* ---- attachCommon com callbacks estáveis ---- */
   const onValidityChangeFactory = useCallback(
     (key: StepKey) => (v: boolean) => {
@@ -1021,23 +959,6 @@ export function NovoItem() {
   );
 
   ///////// FINALIZAR
-
-  type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
-
-  const mapSituation = (s?: EstadoKind): string => {
-    switch (s) {
-      case "quebrado":
-        return "BROKEN";
-      case "ocioso":
-        return "UNUSED";
-      case "anti-economico":
-        return "UNECONOMICAL";
-      case "recuperavel":
-        return "RECOVERABLE";
-      default:
-        return "UNUSED";
-    }
-  };
 
   const pickLocationId = (
     flow: FlowMode,
@@ -1165,7 +1086,6 @@ export function NovoItem() {
       const formVit = wizard.formulario;
       const troca = wizard["trocar-local"];
       const infoAdic = wizard["informacoes-adicionais"];
-      const estado = wizard.estado?.estado_previo as EstadoKind | undefined;
       const imgs = wizard.imagens?.images_wizard || [];
 
       // 2) se for DESFAZIMENTO: cria asset em /assets/
@@ -1387,59 +1307,6 @@ export function NovoItem() {
     setSavedItems([]);
   }, []);
 
-  const downloadCSV = useCallback(() => {
-    if (!savedItems.length) return;
-    const headers = [
-      "id",
-      "createdAt",
-      "asset_code",
-      "asset_check_digit",
-      "atm_number",
-      "serial_number",
-      "asset_status",
-      "asset_value",
-      "asset_description",
-      "material_name",
-      "location_name",
-      "sizeKey",
-    ];
-    const rows = savedItems.map((s) => {
-      const d: any = s.data || {};
-      const row = [
-        s.id,
-        s.createdAt,
-        d.asset_code ?? "",
-        d.asset_check_digit ?? "",
-        d.atm_number ?? "",
-        d.serial_number ?? "",
-        d.asset_status ?? "",
-        d.asset_value ?? "",
-        d.asset_description ?? "",
-        d.material?.material_name ?? "",
-        d.location?.location_name ?? "",
-        s.sizeKey,
-      ]
-        .map((v) => {
-          const str = `${v ?? ""}`;
-          return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-        })
-        .join(",");
-      return row;
-    });
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const aEl = document.createElement("a");
-    aEl.href = url;
-    aEl.download = `itens-cadastrados-${new Date()
-      .toISOString()
-      .slice(0, 19)}.csv`;
-    document.body.appendChild(aEl);
-    aEl.click();
-    document.body.removeChild(aEl);
-    URL.revokeObjectURL(url);
-  }, [savedItems]);
-
   // Baixa UMA plaqueta (do item salvo)
   const downloadSingleSavedLabel = useCallback(
     async (item: SavedLabelItem) => {
@@ -1540,7 +1407,7 @@ export function NovoItem() {
   );
 
   useEffect(() => {
-    let timeouts: NodeJS.Timeout[] = [];
+    const timeouts: NodeJS.Timeout[] = [];
     setLoadingMessage(
       " Estamos criando o registro, gerando o catálogo e enviando as imagens."
     );
@@ -1733,10 +1600,10 @@ export function NovoItem() {
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
       <Helmet>
-        <title>Anunciar item | Sistema Patrimônio</title>
+        <title>Solicitar empréstimo | Sistema Patrimônio</title>
         <meta
           name="description"
-          content={`Anunciar item | Sistema Patrimônio`}
+          content={`Solicitar empréstimo | Sistema Patrimônio`}
         />
         <meta name="robots" content="index, follow" />
       </Helmet>
@@ -1772,40 +1639,8 @@ export function NovoItem() {
               </Button>
 
               <h1 className="text-xl font-semibold tracking-tight">
-                Anunciar item
+                Disponibilizar item para empréstimo
               </h1>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <a
-                href="/apresentacao_sistema.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="sm">
-                  <File size={16} /> Baixar manual
-                </Button>
-              </a>
-
-              {/* 🔹 Botão Itens cadastrados também no header do fluxo normal */}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOpenSavedDialog(true);
-                  setShowNewSavedDot(false);
-                }}
-                className="relative"
-                title="Ver itens cadastrados"
-              >
-                <Bookmark size={16} />
-                Itens cadastrados
-                <Badge variant="outline" className="ml-2">
-                  {savedItems.length}
-                </Badge>
-                {showNewSavedDot && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-eng-blue rounded-full animate-pulse" />
-                )}
-              </Button>
             </div>
           </div>
 
@@ -1833,13 +1668,6 @@ export function NovoItem() {
                   {s.key === "inicio" && (
                     <InicioStep {...attachCommon("inicio")} step={idx + 1} />
                   )}
-                  {s.key === "informacoes" && (
-                    <InformacoesStep
-                      {...attachCommon("informacoes")}
-                      step={idx + 1}
-                    />
-                  )}
-
                   {s.key === "pesquisa" && (
                     <PesquisaStep
                       {...attachCommon("pesquisa")}
@@ -1848,7 +1676,6 @@ export function NovoItem() {
                       step={idx + 1}
                     />
                   )}
-
                   {s.key === "formulario" && (
                     <FormularioStep
                       {...attachCommon("formulario")}
@@ -1858,7 +1685,6 @@ export function NovoItem() {
                       step={idx + 1}
                     />
                   )}
-
                   {s.key === "formulario-sp" && (
                     <FormularioSpStep
                       {...attachCommon("formulario-sp")}
@@ -1868,25 +1694,15 @@ export function NovoItem() {
                       step={idx + 1}
                     />
                   )}
-
                   {s.key === "trocar-local" && (
                     <TrocarLocalStep
                       {...attachCommon("trocar-local")}
                       step={idx + 1}
                     />
                   )}
-
-                  {s.key === "informacoes-adicionais" && (
-                    <InformacoesAdicionaisStep
-                      {...attachCommon("informacoes-adicionais")}
-                      step={idx + 1}
-                    />
+                  {s.key === "local" && (
+                    <LocalStep {...attachCommon("local")} step={idx + 1} />
                   )}
-
-                  {s.key === "estado" && (
-                    <EstadoStep {...attachCommon("estado")} step={idx + 1} />
-                  )}
-
                   {s.key === "imagens" && (
                     <ImagemStep
                       {...attachCommon("imagens")}
@@ -1894,7 +1710,13 @@ export function NovoItem() {
                       step={idx + 1}
                     />
                   )}
-
+                  {s.key === "arquivos" && (
+                    <ArquivosStep
+                      {...attachCommon("arquivos")}
+                      arquivos={wizard?.arquivos}
+                      step={idx + 1}
+                    />
+                  )}
                   {s.key === "final" && (
                     <FinalStep
                       {...attachCommon("final")}

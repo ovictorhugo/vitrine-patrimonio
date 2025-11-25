@@ -94,7 +94,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           isActive: true,
           items: [
                ...(loggedIn
-              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audivisual", icon: Video }]
+              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audiovisual", icon: Video }]
               : []),
             ...(hasCriarEtiqueta
               ? [{ title: "Criar etiqueta", url: "/dashboard/criar-etiqueta", icon: Barcode }]

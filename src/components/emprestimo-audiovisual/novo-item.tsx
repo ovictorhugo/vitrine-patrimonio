@@ -31,7 +31,7 @@ import { Progress } from "../../ui/progress";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib";
 
-import { InicioStep } from "./steps/inicio";
+import { InicioStep } from "./steps/inicio.tsx";
 import { InformacoesStep } from "./steps/informacoes";
 import { PesquisaStep } from "./steps/pesquisa";
 import { FormularioStep, Patrimonio } from "./steps/formulario";
@@ -626,7 +626,6 @@ export type StepPropsMap = {
       obsolescenciaAlta?: boolean; // 👈 novo
       docs?: File[];
       serverFilesDraft?: ExistingFileDTO[];
-      orientacao?: string;
     };
     estadoAtual?: "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
   };
@@ -682,7 +681,6 @@ type WizardState = {
     tuMaiorIgual10?: boolean; // 👈 novo
     obsolescenciaAlta?: boolean; // 👈 novo
     docs?: File[];
-    orientacao: string;
   };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
@@ -970,11 +968,9 @@ export function NovoItem() {
     if (idx > 0) setActive(STEPS[idx - 1].key);
   }, [idx, STEPS]);
   const goNext = useCallback(() => {
-    if (!isLast && canGoNext) {
-      console.log("🚀 Wizard NO MOMENTO de sair do step:", wizard);
-      setActive(STEPS[idx + 1].key);
-    }
-  }, [idx, STEPS, isLast, canGoNext, wizard]);
+    if (!isLast && canGoNext) setActive(STEPS[idx + 1].key);
+  }, [idx, STEPS, isLast, canGoNext]);
+
   /* ---- attachCommon com callbacks estáveis ---- */
   const onValidityChangeFactory = useCallback(
     (key: StepKey) => (v: boolean) => {

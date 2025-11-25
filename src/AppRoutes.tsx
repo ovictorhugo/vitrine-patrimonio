@@ -101,7 +101,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       />
 
         <Route
-        path='/emprestimo-audivisual'
+        path='/emprestimo-audiovisual'
         element={
           <ProtectedRoute element={<Home />} hasPermission={loggedIn} />
         }

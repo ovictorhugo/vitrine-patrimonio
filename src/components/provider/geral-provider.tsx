@@ -8,7 +8,7 @@ import { useModalHomepage } from "../hooks/use-modal-homepage";
 
 import { ItemPage } from "../item-page/item-page";
 import { Informacoes } from "../info/informacoes";
-import { EmprestimoAudiovisual } from "../emprestimo-audiovisual.tsx/emprestimo-audiovisual";
+import { EmprestimoAudiovisual } from "../emprestimo-audiovisual/emprestimo-audiovisual";
 
 
 const ModalContent = () => {
@@ -23,7 +23,7 @@ const ModalContent = () => {
       return <ItemPage/>
     case 'informacoes':
       return <Informacoes/>
-    case 'emprestimo-audivisual':
+    case 'emprestimo-audiovisual':
       return <EmprestimoAudiovisual/>
     default:
       return null;
