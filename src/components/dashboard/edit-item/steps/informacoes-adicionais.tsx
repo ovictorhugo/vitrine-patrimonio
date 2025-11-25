@@ -148,12 +148,7 @@ export const InformacoesAdicionaisStep = forwardRef<
     }
   }, [initialData]);
 
-  /** Se a prop existingFiles mudar (por GET), só usa se NÃO houver draft */
-  useEffect(() => {
-    if (initialData?.serverFilesDraft?.length) return;
-    if (!didHydrateRef.current) return;
-    setServerFiles(existingFiles ?? []);
-  }, [existingFiles, initialData?.serverFilesDraft]);
+
 
   /** ========= 2) LÓGICA CO/TU/OT ========= */
   const CO: 0 | 1 = useMemo(() => {
