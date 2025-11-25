@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Trash } from "lucide-react";
 import { Button } from "../../../ui/button";
 import ChartTempoRevisaoComissaoPie from "../../commission/components/ChartTempoRevisaoComissao";
 import ChartTempoRevisaoComissao from "../../commission/components/grafico-comission-REVIEW_REQUESTED";
@@ -21,6 +21,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GraficoStatusCatalogoPorAgencia } from "../../graficos/GraficoStatusCatalogoPorAgencia";
 import { GraficoStatusCatalogoPorLocation } from "../../graficos/GraficoStatusCatalogoPorLocation";
 import { GraficoStatusCatalogoPorLocationTreemap } from "../../graficos/GraficoStatusCatalogoPorLocationTreeMap";
+import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
+import { CarrosselReviewerDesfazimento } from "../../commission/components/carrossel-reviewer-desfazimento";
 
 interface Props {
   statsMap: Record<string, number>;
@@ -371,6 +373,15 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const totalItens = useMemo(() => {
+  if (!statsMap) return 0;
+
+  return Object.values(statsMap).reduce((acc, value) => {
+    const n = typeof value === "number" ? value : Number(value) || 0;
+    return acc + n;
+  }, 0);
+}, [statsMap]);
+
   return (
     <div className="m-8">
       {/* FILTROS */}
@@ -488,6 +499,23 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         </div>
       </div>
 
+       <Alert className="p-0 mb-8">
+                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm truncate font-medium">
+                                Total de itens
+                              </CardTitle>
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">
+                                {totalItens}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                registrados em toda plataforma
+                              </p>
+                            </CardContent>
+                          </Alert>
+
       {/* GRÁFICOS */}
       <GraficoStatusCatalogo
         stats={statsMap}
@@ -505,9 +533,14 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         <GraficoStatusCatalogoPorLocationTreemap />
       </div>
 
+
       <div className="grid md:grid-cols-2 gap-8 mt-8">
         <ChartRadialDesfazimento counts={statsMap} />
         <ChartTempoRevisaoComissaoPie />
+      </div>
+
+      <div className="mt-8">
+<CarrosselReviewerDesfazimento/>
       </div>
 
       <div className="mt-8">
