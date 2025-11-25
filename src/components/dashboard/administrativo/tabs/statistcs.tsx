@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Package, Trash } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, LineChart, Package, Trash } from "lucide-react";
 import { Button } from "../../../ui/button";
 import ChartTempoRevisaoComissaoPie from "../../commission/components/ChartTempoRevisaoComissao";
 import ChartTempoRevisaoComissao from "../../commission/components/grafico-comission-REVIEW_REQUESTED";
@@ -23,6 +23,8 @@ import { GraficoStatusCatalogoPorLocation } from "../../graficos/GraficoStatusCa
 import { GraficoStatusCatalogoPorLocationTreemap } from "../../graficos/GraficoStatusCatalogoPorLocationTreeMap";
 import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 import { CarrosselReviewerDesfazimento } from "../../commission/components/carrossel-reviewer-desfazimento";
+import { HeaderResultTypeHome } from "../../../header-result-type-home";
+import { GraficoStatusCatalogoReviewersDesfazimento } from "../../commission/components/GraficoStatusCatalogoReviewersDesfazimento";
 
 interface Props {
   statsMap: Record<string, number>;
@@ -516,6 +518,11 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
                             </CardContent>
                           </Alert>
 
+                          <div className="my-8">
+   <HeaderResultTypeHome title={"Visão Geral"} icon={<LineChart size={24} className="text-gray-400" />} />
+
+</div>
+
       {/* GRÁFICOS */}
       <GraficoStatusCatalogo
         stats={statsMap}
@@ -523,28 +530,52 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         title="Todos os itens da plataforma"
       />
 
-        <div className="mt-8">
+       
+{!agencyId && (
+  <div className="mt-8">
         <GraficoStatusCatalogoPorAgencia />
       </div>
+)}
 
-
-
-       <div className="mt-8">
-        <GraficoStatusCatalogoPorLocationTreemap />
+{agencyId && (
+   <div className="mt-8">
+        <GraficoStatusCatalogoPorLocation />
       </div>
+)}
+      
 
 
       <div className="grid md:grid-cols-2 gap-8 mt-8">
         <ChartRadialDesfazimento counts={statsMap} />
-        <ChartTempoRevisaoComissaoPie />
+   
       </div>
 
+<div className="mt-8">
+   <HeaderResultTypeHome title={"LTD - Lista Temporária de Desfazimento"} icon={<Trash size={24} className="text-gray-400" />} />
+
+</div>
       <div className="mt-8">
-<CarrosselReviewerDesfazimento/>
+<CarrosselReviewerDesfazimento workflow={'REVIEW_REQUESTED_COMISSION'}/>
       </div>
 
       <div className="mt-8">
         <ChartTempoRevisaoComissao />
+      </div>
+
+   <div className="grid md:grid-cols-2 gap-8 mt-8">
+      
+        <ChartTempoRevisaoComissaoPie />
+      </div>
+<div className="mt-8">
+   <HeaderResultTypeHome title={"LFD - Lista Final de Desfazimento"} icon={<Trash size={24} className="text-gray-400" />} />
+
+</div>
+      <div className="mt-8">
+<CarrosselReviewerDesfazimento workflow={'DESFAZIMENTO'}/>
+      </div>
+
+       <div className="mt-8">
+        <GraficoStatusCatalogoReviewersDesfazimento />
       </div>
 
       

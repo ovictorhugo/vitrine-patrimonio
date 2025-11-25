@@ -63,7 +63,6 @@ export const InformacoesAdicionaisStep = forwardRef<
 // CO derivado (congelado): 0 = não funcional (quebrado/irrecuperável/antieconômico), 1 = funcional (ocioso/recuperável)
 const CO: 0 | 1 = useMemo(() => {
   if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
-  // quebrado, irrecuperável (análoga) e antieconômico tratamos como não funcional para efeitos de CO
   return 0;
 }, [estadoAtual]);
 
@@ -310,6 +309,7 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [isIdx7]);
  // Toasts apenas ao tentar avançar
+// Função de validação (avançar para o próximo step)
 useImperativeHandle(ref, () => ({
   validateBeforeNext: () => {
     if (!isIdx7 && justificativaEhModelo) {
@@ -334,7 +334,6 @@ useImperativeHandle(ref, () => ({
     return true;
   },
 }));
-
   // ===== Escala 7 níveis (verde → vermelho) =====
   // Mapeia idx (0..7) para nível 0..6
 // ===== Escala 7 níveis (0=melhor verde → 6=pior vermelho) =====
@@ -369,45 +368,35 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
     return nivelPorIdx[i];
   })();
 
-  // ======== (mantidos) variáveis do seu exemplo de outro upload (não removidas) ========
-  const [fileInfo, setFileInfo] = useState({ name: "", size: 0 });
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+const [isManualJustification, setIsManualJustification] = useState(false);
 
-  const handleFilePicked = (files: File[]) => {
-    const uploadedFile = files?.[0];
-    if (!uploadedFile) return;
-
-    // validações simples
-    const ext = uploadedFile.name.toLowerCase();
-    if (!ext.endsWith(".xls") && !ext.endsWith(".xlsx") && !ext.endsWith(".csv")) {
-      toast("Arquivo inválido", {
-        description: "",
-        action: { label: "Fechar", onClick: () => {} },
-      });
-      return;
+useEffect(() => {
+  if (!isManualJustification) {
+    const novo = gerarTexto();  // Gerar nova justificativa com base nas variáveis de controle
+    if (novo && novo !== observacao) {
+      setObservacao(novo);  // Sobrescrever a justificativa somente se o texto não foi alterado manualmente
     }
+  }
+}, [estadoAtual, tuLocal, otLocal, isManualJustification]);  // A justificativa será atualizada quando essas variáveis mudarem
 
-    setFile(uploadedFile);
-    setFileInfo({ name: uploadedFile.name, size: uploadedFile.size });
-  };
+useEffect(() => {
+  if (isManualJustification) {
+    const payload: InfoAdicionaisLocal = {
+      observacao,  // A justificativa manual do usuário
+      situacao,
+      tuMaiorIgual10: tuLocal,
+      obsolescenciaAlta: otLocal,
+      docs: docsLocal,
+    };
+    onStateChange?.(payload);  // Passa o estado atualizado para o pai
+  }
+}, [observacao, situacao, tuLocal, otLocal, docsLocal, isManualJustification, onStateChange]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    handleFilePicked(acceptedFiles);
-  }, []);
 
-  // (mantido) — não é usado visualmente pois substituímos pelo dropzone principal
-  // const { getRootProps: getRootPropsOld, getInputProps: getInputPropsOld, isDragActive: isDragActiveOld } = useDropzone({
-  //   onDrop,
-  //   maxFiles: 1,
-  //   multiple: false,
-  //   accept: {
-  //     "application/vnd.ms-excel": [".xls"],
-  //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-  //     "text/csv": [".csv"],
-  //   },
-  // });
-
+const handleJustificativaChange = (value: string) => {
+  setObservacao(value);  // Atualiza o estado da justificativa
+  setIsManualJustification(true);  // Marca que a justificativa foi alterada manualmente
+};
 
 
   return (
@@ -650,7 +639,7 @@ const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
               id="observacoes"
               className="w-full"
               value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
+              onChange={(e) => handleJustificativaChange(e.target.value)}
             />
             <div className="">
               <p className="text-xs text-muted-foreground">

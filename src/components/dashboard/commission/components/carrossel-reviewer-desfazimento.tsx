@@ -3,11 +3,17 @@ import { Alert } from "../../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../ui/carousel";
 import { UserContext } from "../../../../context/context";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
+import { User } from "lucide-react";
 
 // Filtro de status
 const workflowStatus = "DESFAZIMENTO";
 
-export function CarrosselReviewerDesfazimento() {
+interface Props {
+  workflow:string
+}
+
+export function CarrosselReviewerDesfazimento({workflow}:Props) {
   const [reviewerData, setReviewerData] = useState<any[]>([]); // Armazena os dados do GET
   const [loading, setLoading] = useState(true); // Controla o estado de carregamento
 
@@ -40,8 +46,9 @@ export function CarrosselReviewerDesfazimento() {
         if (sectorId) params.set("sector_id", sectorId);
         if (q) params.set("q", q);
 
+        // &workflow_status=${workflowStatus}
         // Monta a URL completa com parâmetros
-        const url = `${urlGeral}statistics/catalog/stats/review-commission?workflow_status=${workflowStatus}&${params.toString()}`;
+        const url = `${urlGeral}statistics/catalog/stats/review-commission?workflow_status=${workflow}&${params.toString()}`;
 
         const res = await fetch(url, {
           method: "GET",
@@ -67,7 +74,7 @@ export function CarrosselReviewerDesfazimento() {
   }, [urlGeral, token, materialId, guardianId, locationId, unitId, agencyId, sectorId, q]);
 
   return (
-    <div className="gap-8 p-8 pt-0">
+    <div className="gap-8 pt-0">
       <Carousel className="w-full flex gap-4 px-4 items-center">
         <div className="absolute left-0 z-[9]">
           <CarouselPrevious />
@@ -83,7 +90,12 @@ export function CarrosselReviewerDesfazimento() {
                   <Alert className="p-0">
                     <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm truncate font-medium">{reviewer}</CardTitle>
-                      {/* Ícone ou outro conteúdo */}
+                     <Avatar className="h-6 w-6 rounded-md">
+                          <AvatarImage src={`${urlGeral}user/upload/${reviewer_id}/icon`} />
+                          <AvatarFallback className="">
+                            <User size={12} />
+                          </AvatarFallback>
+                        </Avatar>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{total || 0}</div>
