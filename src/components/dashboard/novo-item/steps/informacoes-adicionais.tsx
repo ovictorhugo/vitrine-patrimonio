@@ -109,87 +109,77 @@ export const InformacoesAdicionaisStep = forwardRef<
   }, [shouldShowSituacao]); // eslint-disable-line
 
   // Índice 0..7 conforme CO/TU/OT
-  const getIdx = useCallback(() => {
-    const tu = tuLocal ? 1 : 0; // TU >= 10 => 1
-    const ot = otLocal ? 1 : 0; // OT alta => 1
+const getIdx = useCallback(
+  (tuOverride?: boolean, otOverride?: boolean) => {
+    const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
+    const otFlag = otOverride ?? otLocal;
 
-    // 1) Casos específicos para "anti-economico"
+    const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
+    const ot = otFlag ? 1 : 0; // OT alta => 1
+
     if (estadoAtual === "anti-economico") {
-      // TU=1 & OT=1 -> 7
       if (tu === 1 && ot === 1) return 7;
-
-      // TU=1 & OT=0 -> 3
       if (tu === 1 && ot === 0) return 3;
-
-      // TU=0 & OT=1 -> 5
       if (tu === 0 && ot === 1) return 5;
-
-      // TU=0 & OT=0 -> 4
       return 4;
     }
 
-    // 2) Demais estados seguem a matriz CO/TU/OT
-    // CO=0 -> quebrado (inoperante)
-    // CO=1 -> funcional (ocioso / recuperável)
     const CO = estadoAtual === "quebrado" ? 0 : 1;
     return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  }, [estadoAtual, tuLocal, otLocal]);
+  },
+  [estadoAtual, tuLocal, otLocal]
+);
 
-  // ====== GERADOR (modelo) ======
-  // Sem branch especial de antieconômico: SEMPRE por matriz 0..7
-  const gerarTexto = useCallback(() => {
-    const idx = getIdx();
-    if (idx === null) {
-      return "Descrição do bem indisponível: selecione o estado operacional (quebrado/ocioso/recuperável) para compor a justificativa.";
-    }
 
-    const base: Record<number, string> = {
-      // CO=0 (quebrado) e TU<10 (idx 0/1) → haverá upload de documentos no UI
-      0: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
+  const gerarTexto = useCallback(
+    (tuOverride?: boolean, otOverride?: boolean) => {
+      const idx = getIdx(tuOverride, otOverride);
 
-        "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
-      ].join(" "),
-      1: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
+      const base: Record<number, string> = {
+        0: [
+          "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
+          "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
+        ].join(" "),
+        1: [
+          "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
+          "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
+        ].join(" "),
+        2: [
+          "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação, conforme critérios da IN RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
+          "Não há necessidade de inclusão de orçamento de reparo, uma vez que qualquer valor será superior a 100% do valor atual do bem.",
+          "Referências: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico. Recomenda-se a baixa patrimonial e posterior destinação ambiental adequada (art. 5º).",
+        ].join(" "),
+        3: [
+          "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação (IN RFB nº 1.700/2017, PRA/UFMG Nota nº 1/2025/PRA-GAB) e obsolescência tecnológica acentuada.",
+          "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
+          "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
+        ].join(" "),
+        4: [
+          "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
+          "Encontra-se disponível, com condições de funcionamento preservadas.",
+          "Referências: Decreto nº 9.373/2018, arts. 4º e 5º (conceitos e possibilidades de destinação).",
+        ].join(" "),
+        5: [
+          "Bem funcional e sem uso ativo (ocioso), com vida útil inferior a 10 anos e obsolescência tecnológica.",
+          "Apesar da defasagem tecnológica, mantém operação básica.",
+          "Referências: Decreto nº 9.373/2018 (arts. 4º e 5º) e Lei nº 12.305/2010 (PNRS).",
+        ].join(" "),
+        6: [
+          "Bem funcional (ocioso/recuperável), com vida útil igual ou superior a 10 anos e baixa obsolescência tecnológica.",
+          "Permanece apto ao uso, embora sem utilização corrente no setor.",
+          "Referências: IN RFB nº 1.700/2017 (vida útil) e Decreto nº 9.373/2018 (conceitos e destinações).",
+        ].join(" "),
+        7: [
+          "Este BEM deve ser classificado como ANTIECONÔMICO, pois apresenta vida útil esgotada, obsolescência tecnológica e grau máximo de depreciação, conforme critérios da Instrução Normativa RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
+          "Fundamentação legal: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico, uma vez que a continuidade do uso ou manutenção é desvantajosa à Administração.",
+          "CASO O ITEM NÃO LHE SEJA MAIS ÚTIL, recomenda-se a baixa patrimonial e posterior desfazimento ambiental adequado, em conformidade com o art. 5º do mesmo Decreto.",
+        ].join(" "),
+      };
 
-        "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
-      ].join(" "),
-      2: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação, conforme critérios da IN RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Não há necessidade de inclusão de orçamento de reparo, uma vez que qualquer valor será superior a 100% do valor atual do bem.",
-        "Referências: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico. Recomenda-se a baixa patrimonial e posterior destinação ambiental adequada (art. 5º).",
-      ].join(" "),
-      3: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação (IN RFB nº 1.700/2017, PRA/UFMG Nota nº 1/2025/PRA-GAB) e obsolescência tecnológica acentuada.",
-        "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
-        "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
-      ].join(" "),
-      // CO=1 (funcional: ocioso/recuperável)
-      4: [
-        "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
-        "Encontra-se disponível, com condições de funcionamento preservadas.",
-        "Referências: Decreto nº 9.373/2018, arts. 4º e 5º (conceitos e possibilidades de destinação).",
-      ].join(" "),
-      5: [
-        "Bem funcional e sem uso ativo (ocioso), com vida útil inferior a 10 anos e obsolescência tecnológica.",
-        "Apesar da defasagem tecnológica, mantém operação básica.",
-        "Referências: Decreto nº 9.373/2018 (arts. 4º e 5º) e Lei nº 12.305/2010 (PNRS).",
-      ].join(" "),
-      6: [
-        "Bem funcional (ocioso/recuperável), com vida útil igual ou superior a 10 anos e baixa obsolescência tecnológica.",
-        "Permanece apto ao uso, embora sem utilização corrente no setor.",
-        "Referências: IN RFB nº 1.700/2017 (vida útil) e Decreto nº 9.373/2018 (conceitos e destinações).",
-      ].join(" "),
-      7: [
-        "Este BEM deve ser classificado como ANTIECONÔMICO, pois apresenta vida útil esgotada, obsolescência tecnológica e grau máximo de depreciação, conforme critérios da Instrução Normativa RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Fundamentação legal: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico, uma vez que a continuidade do uso ou manutenção é desvantajosa à Administração.",
-        "CASO O ITEM NÃO LHE SEJA MAIS ÚTIL, recomenda-se a baixa patrimonial e posterior desfazimento ambiental adequado, em conformidade com o art. 5º do mesmo Decreto.",
-      ].join(" "),
-    };
-
-    return base[idx];
-  }, [getIdx]);
+      return base[idx];
+    },
+    [getIdx]
+  );
 
   useEffect(() => {
     const modeloAtual = gerarTexto();
@@ -226,14 +216,19 @@ export const InformacoesAdicionaisStep = forwardRef<
     setOrientacao(estadoAtual);
   }, [initialData?.observacao, orientacao]);
 
-  async function changeButtonOT() {
-    setOtLocal(!otLocal);
-    const modeloAtual = gerarTexto();
+function changeButtonTU() {
+    const nextTU = !tuLocal;
+    setTuLocal(nextTU);
+
+    const modeloAtual = gerarTexto(nextTU, otLocal);
     setObservacao(modeloAtual);
   }
-  async function changeButtonTU() {
-    setTuLocal(!tuLocal);
-    const modeloAtual = gerarTexto();
+
+  function changeButtonOT() {
+    const nextOT = !otLocal;
+    setOtLocal(nextOT);
+
+    const modeloAtual = gerarTexto(tuLocal, nextOT);
     setObservacao(modeloAtual);
   }
 

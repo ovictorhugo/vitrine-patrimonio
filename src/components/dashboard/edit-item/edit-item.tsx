@@ -128,7 +128,6 @@ type WizardState = {
     sector?: SectorDTO | null;
     location?: LocationDTO | null;
     isOpen?: boolean;
-    orientacao?:string;
   };
   estado?: { estado_previo: EstadoKind };
   "informacoes-adicionais"?: {
@@ -137,7 +136,6 @@ type WizardState = {
     tuMaiorIgual10?: boolean;
     obsolescenciaAlta?: boolean;
     docs?: File[];
-    orientacao?:string;
 
     // ✅ NOVO: persistência dos arquivos que já estão no servidor
     serverFilesDraft?: CatalogFileDTO[];
