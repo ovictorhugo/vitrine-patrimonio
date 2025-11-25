@@ -132,13 +132,11 @@ export function ImagemStep({
   onStateChange,
   step,
   imagens, // vem do pai (pode ser undefined no primeiro paint)
-  wizard,
 }: StepBaseProps<"imagens">) {
   /** ===== estado local é a FONTE DE VERDADE ===== */
   const [images, setImages] = useState<string[]>(
     () => (Array.isArray(imagens) ? imagens : [])
   );
-console.log(wizard)
   /** Snapshot real para upload (cópia temporária congelada) */
   const imageBlobsRef = useRef<(Blob | null)[]>(
     Array.isArray(imagens) ? imagens.map(() => null) : []
