@@ -1082,6 +1082,8 @@ export function EmprestimoAudiovisual() {
       const infoAdic = wizard["informacoes-adicionais"];
       const imgs = wizard.imagens?.images_wizard || [];
 
+      wizard['trocar-local'] = wizard["local"]
+
       // 2) se for DESFAZIMENTO: cria asset em /assets/
       let assetId: string | undefined;
       if (flow === "desfazimento") {
@@ -1149,7 +1151,7 @@ export function EmprestimoAudiovisual() {
       const catalogPayload = {
         asset_id: assetId!,
         location_id: locationId,
-        situation: mapSituation(estado),
+        situation: "UNUSED",
         conservation_status: infoAdic?.situacao || "",
         description: infoAdic?.observacao || "",
       };
