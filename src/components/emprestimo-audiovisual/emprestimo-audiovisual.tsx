@@ -1,4 +1,3 @@
-// src/pages/novo-item/index.tsx
 import { Helmet } from "react-helmet";
 import { Button } from "../ui/button";
 import {
@@ -55,7 +54,6 @@ import QRCode from "react-qr-code";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { ArrowUUpLeft } from "phosphor-react";
 import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
-import { ExistingFileDTO } from "../edit-item/edit-item";
 import { PesquisaStep } from "./steps/pesquisa.tsx";
 import { FormularioStep } from "./steps/formulario.tsx";
 import { FormularioSpStep } from "./steps/formulario-sp.tsx";
@@ -642,7 +640,10 @@ export type StepPropsMap = {
     initialData?: Patrimonio;
   };
   imagens: { imagens?: string[] };
-  arquivos: { arquivos?: string[] };
+  arquivos: {
+    docs: File[];
+    initialData?: File[];
+  };
   final: {};
 };
 
@@ -653,13 +654,7 @@ type WizardState = {
     type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc";
   };
   informacoes?: Record<string, unknown>;
-  arquivos?: {
-    observacao?: string;
-    situacao?: string;
-    tuMaiorIgual10?: boolean; // 👈 novo
-    obsolescenciaAlta?: boolean; // 👈 novo
-    docs?: File[];
-  };
+  arquivos?: { docs: File[] };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   estado?: {
@@ -846,12 +841,10 @@ export function EmprestimoAudiovisual() {
         type: pesquisaType,
         initialData: wizard["formulario-sp"],
       },
-      estado: { estado_previo: wizard.estado?.estado_previo },
       imagens: { imagens: wizard.imagens?.images_wizard },
       arquivos: {
-        flowShort: flow,
-        initialData: wizard["informacoes-adicionais"],
-        estadoAtual: wizard.estado?.estado_previo,
+        docs: wizard.arquivos?.docs ?? [],
+        initialData: wizard.arquivos?.docs,
       },
       "trocar-local": {
         flowShort: flow,
@@ -897,6 +890,7 @@ export function EmprestimoAudiovisual() {
   const pct = ((idx + 1) / total) * 100;
 
   const canGoNext = useMemo(() => {
+    console.log(wizard);
     const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
     return upto && idx < total - 1;
   }, [idx, total, valid, STEPS]);
@@ -1084,7 +1078,7 @@ export function EmprestimoAudiovisual() {
     try {
       const formSP = wizard["formulario-sp"];
       const formVit = wizard.formulario;
-      const troca = wizard["trocar-local"];
+      const troca = wizard["trocar-local"] ?? wizard["local"];
       const infoAdic = wizard["informacoes-adicionais"];
       const imgs = wizard.imagens?.images_wizard || [];
 
@@ -1186,8 +1180,8 @@ export function EmprestimoAudiovisual() {
       if (!ok) return;
 
       // 6) upload dos documentos probatórios (se houver)  ⬅ INSERIR DEPOIS DE OBTER catalogId
-      const infoAdicDocs: File[] = (wizard["informacoes-adicionais"]?.docs ??
-        []) as File[];
+      const infoAdicDocs: File[] = (wizard["informacoes-adicionais"]?.arquivos
+        ?.docs ?? []) as File[];
       if (infoAdicDocs.length > 0) {
         for (const f of infoAdicDocs) {
           const fd = new FormData();
@@ -1713,7 +1707,6 @@ export function EmprestimoAudiovisual() {
                   {s.key === "arquivos" && (
                     <ArquivosStep
                       {...attachCommon("arquivos")}
-                      arquivos={wizard?.arquivos}
                       step={idx + 1}
                     />
                   )}

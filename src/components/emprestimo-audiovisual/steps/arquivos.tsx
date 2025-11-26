@@ -6,7 +6,6 @@ import {
   ScanEye,
   Trash,
 } from "lucide-react";
-import { StepBaseProps } from "../novo-item";
 import React, {
   useEffect,
   useMemo,
@@ -20,15 +19,9 @@ import { Alert } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
+import { StepBaseProps } from "../emprestimo-audiovisual";
 
-type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
-
-type InfoAdicionaisLocal = {
-  observacao?: string;
-  situacao?: string;
-  tuMaiorIgual10?: boolean;
-  obsolescenciaAlta?: boolean;
-  // NOVO: documentos probatórios (uplados no passo)
+type ArquivosLocal = {
   docs?: File[];
 };
 
@@ -39,128 +32,16 @@ export type InformacoesAdicionaisRef = {
 
 export const ArquivosStep = forwardRef<
   InformacoesAdicionaisRef,
-  StepBaseProps<"informacoes-adicionais"> & { estadoAtual?: EstadoKind }
->(function InformacoesAdicionaisStep(
-  { onValidityChange, step, onStateChange, initialData, estadoAtual },
+  StepBaseProps<"arquivos">
+>(function ArquivosStep(
+  { onValidityChange, step, onStateChange, docs, initialData },
   ref
 ) {
-  const [observacao, setObservacao] = useState(initialData?.observacao ?? "");
-  const [situacao, setSituacao] = useState(initialData?.situacao ?? "");
-
-  // CO derivado (congelado): 0 = não funcional (quebrado/irrecuperável/antieconômico), 1 = funcional (ocioso/recuperável)
-  const CO: 0 | 1 = useMemo(() => {
-    if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
-    // quebrado, irrecuperável (análoga) e antieconômico tratamos como não funcional para efeitos de CO
-    return 0;
-  }, [estadoAtual]);
-
-  // Antieconômico comprovado (apenas para exibir o banner informativo; não influencia o gerador)
-
-  // Switches (reidratados)
-  const [tuLocal, setTuLocal] = useState<boolean>(
-    initialData?.tuMaiorIgual10 ?? false
-  );
-  const [otLocal, setOtLocal] = useState<boolean>(
-    initialData?.obsolescenciaAlta ?? false
-  );
-
   // Upload de documentos (para idx 0 e 1)
-  const [docsLocal, setDocsLocal] = useState<File[]>([]);
-  const MAX_MB = 5;
-
-  // Exibir Select "Estado de conservação" para ocioso/recuperável
-  const shouldShowSituacao =
-    estadoAtual === "ocioso" || estadoAtual === "recuperavel";
-  useEffect(() => {
-    if (!shouldShowSituacao && situacao) setSituacao("");
-  }, [shouldShowSituacao]); // eslint-disable-line
-
-  // Índice 0..7 conforme CO/TU/OT
-  const getIdx = useCallback(() => {
-    const tu = tuLocal ? 1 : 0; // TU≥10 => 1
-    const ot = otLocal ? 1 : 0; // OT alta => 1
-
-    // Estado "anti-economico" deve navegar por 3, 4, 5 ou 7 conforme TU/OT:
-    // TU=1 & OT=1 -> 7
-    // TU=1 & OT=0 -> 3
-    // TU=0 & OT=0 -> 4
-    // TU=0 & OT=1 -> 5  (⬅ adicionamos este caso)
-
-    // Demais estados seguem a matriz CO/TU/OT
-    return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  }, [estadoAtual, CO, tuLocal, otLocal]);
-
-  const addSituacao = useCallback(
-    (txt: string) => {
-      if (shouldShowSituacao && situacao)
-        return `${txt} Estado de conservação informado: ${situacao}.`;
-      return txt;
-    },
-    [shouldShowSituacao, situacao]
+  const [docsLocal, setDocsLocal] = useState<File[]>(
+    () => docs ?? initialData ?? []
   );
-
-  // ====== GERADOR (modelo) ======
-  // Sem branch especial de antieconômico: SEMPRE por matriz 0..7
-  const gerarTexto = useCallback(() => {
-    const idx = getIdx();
-    if (idx === null) {
-      return "Descrição do bem indisponível: selecione o estado operacional (quebrado/ocioso/recuperável) para compor a justificativa.";
-    }
-
-    const base: Record<number, string> = {
-      // CO=0 (quebrado) e TU<10 (idx 0/1) → haverá upload de documentos no UI
-      0: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e sem indicativos relevantes de obsolescência tecnológica.",
-
-        "Referências: Decreto nº 9.373/2018, art. 4º (conceitos de irrecuperável/antieconômico) e IN RFB nº 1.700/2017 (vida útil/depreciação).",
-      ].join(" "),
-      1: [
-        "Bem inoperante (quebrado), com vida útil inferior a 10 anos e com obsolescência tecnológica elevada (defasagem/ausência de suporte).",
-
-        "Referências: Decreto nº 9.373/2018, art. 4º; Lei nº 12.305/2010 (PNRS), especialmente quanto ao manejo adequado de resíduos eletroeletrônicos.",
-      ].join(" "),
-      2: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação, conforme critérios da IN RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Não há necessidade de inclusão de orçamento de reparo, uma vez que qualquer valor será superior a 100% do valor atual do bem.",
-        "Referências: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico. Recomenda-se a baixa patrimonial e posterior destinação ambiental adequada (art. 5º).",
-      ].join(" "),
-      3: [
-        "Bem inoperante (quebrado), com vida útil esgotada (igual ou superior a 10 anos) e grau máximo de depreciação (IN RFB nº 1.700/2017, PRA/UFMG Nota nº 1/2025/PRA-GAB) e obsolescência tecnológica acentuada.",
-        "Há perda de funcionalidade e defasagem técnica. Não há necessidade de orçamento de reparo, pois qualquer valor excederá 100% do valor atual do bem.",
-        "Referências: Art. 4º, inciso II, do Decreto nº 9.373/2018 (antieconômico) e art. 5º (destinação).",
-      ].join(" "),
-      // CO=1 (funcional: ocioso/recuperável)
-      4: [
-        "Bem funcional, sem uso ativo na unidade (ocioso), com vida útil inferior a 10 anos e tecnologia atual.",
-        "Encontra-se disponível, com condições de funcionamento preservadas.",
-        "Referências: Decreto nº 9.373/2018, arts. 4º e 5º (conceitos e possibilidades de destinação).",
-      ].join(" "),
-      5: [
-        "Bem funcional e sem uso ativo (ocioso), com vida útil inferior a 10 anos e obsolescência tecnológica.",
-        "Apesar da defasagem tecnológica, mantém operação básica.",
-        "Referências: Decreto nº 9.373/2018 (arts. 4º e 5º) e Lei nº 12.305/2010 (PNRS).",
-      ].join(" "),
-      6: [
-        "Bem funcional (ocioso/recuperável), com vida útil igual ou superior a 10 anos e baixa obsolescência tecnológica.",
-        "Permanece apto ao uso, embora sem utilização corrente no setor.",
-        "Referências: IN RFB nº 1.700/2017 (vida útil) e Decreto nº 9.373/2018 (conceitos e destinações).",
-      ].join(" "),
-      7: [
-        "Este BEM deve ser classificado como ANTIECONÔMICO, pois apresenta vida útil esgotada, obsolescência tecnológica e grau máximo de depreciação, conforme critérios da Instrução Normativa RFB nº 1.700/2017, utilizada como referência de avaliação pela PRA/UFMG (Nota nº 1/2025/PRA-GAB).",
-        "Fundamentação legal: Enquadra-se no art. 4º, inciso II, do Decreto nº 9.373/2018, como bem antieconômico, uma vez que a continuidade do uso ou manutenção é desvantajosa à Administração.",
-        "CASO O ITEM NÃO LHE SEJA MAIS ÚTIL, recomenda-se a baixa patrimonial e posterior desfazimento ambiental adequado, em conformidade com o art. 5º do mesmo Decreto.",
-      ].join(" "),
-    };
-
-    return base[idx];
-  }, [getIdx]);
-
-  // Auto-substitui (nunca concatena)
-  useEffect(() => {
-    const novo = gerarTexto();
-    if (novo && novo !== observacao) setObservacao(novo);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tuLocal, otLocal, estadoAtual]);
+  const MAX_MB = 5;
 
   // ===== Dropzone (substitui input; obrigatório em idx 0/1) =====
   const onDropDocs = useCallback((acceptedFiles: File[]) => {
@@ -218,50 +99,14 @@ export const ArquivosStep = forwardRef<
   const removeDoc = (i: number) =>
     setDocsLocal((prev) => prev.filter((_, idx) => idx !== i));
 
-  // ÍNDICE e obrigatoriedade dos comprovantes
-  const idx = getIdx();
-  const showUploadDocs = idx === 0 || idx === 1; // obrigatório
-  const docsOk = !showUploadDocs || docsLocal.length > 0;
-
   // Sobe pro pai
   useEffect(() => {
-    const payload: InfoAdicionaisLocal = {
-      observacao,
-      situacao,
-      tuMaiorIgual10: tuLocal,
-      obsolescenciaAlta: otLocal,
+    const payload: ArquivosLocal = {
       docs: docsLocal,
     };
     onStateChange?.(payload);
-  }, [observacao, situacao, tuLocal, otLocal, docsLocal, onStateChange]);
+  }, [docsLocal, onStateChange]);
 
-  // ===== Validação da justificativa (inteligente) =====
-  const obrigatorios = [
-    "uso",
-    "funcionamento",
-    "defeito",
-    "manutenção",
-    "tombamento",
-  ];
-  function hasSemanticaMinima(txt: string) {
-    const t = txt
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "");
-    const achados = obrigatorios.filter(
-      (k) => t.includes(k) || (k === "manutenção" && t.includes("manutencao"))
-    );
-    return achados.length >= 3; // exige ao menos 3 temas
-  }
-
-  function isJustificativaModelo(atual: string, modelo: string) {
-    const a = (atual ?? "").trim().replace(/\s+/g, " ");
-    const m = (modelo ?? "").trim().replace(/\s+/g, " ");
-    if (!m) return false; // sem modelo, não há com o que igualar
-    return a === m; // apenas igual, nada além
-  }
-
-  // abaixo dos seus states/consts
   const openDoc = useCallback(
     (i: number) => {
       const f = docsLocal[i];
@@ -293,108 +138,9 @@ export const ArquivosStep = forwardRef<
     [docsLocal]
   );
 
-  const modeloAtual = gerarTexto();
-  const justificativaEhModelo = observacao.trim() == modeloAtual.trim();
-  const isIdx7 = idx === 7;
-  // Quando idx==7, não exigimos texto; caso contrário, precisa ser diferente do modelo
-  const obsOk = isIdx7 ? true : !(observacao.trim() == modeloAtual.trim());
-  const sitOk = shouldShowSituacao ? situacao !== "" : true;
-
-  // Mantém o onValidityChange atualizado, sem toasts
   useEffect(() => {
-    onValidityChange(obsOk && sitOk && docsOk && !isIdx7);
-  }, [obsOk, sitOk, docsOk, onValidityChange, idx, isIdx7]);
-
-  useEffect(() => {
-    if (isIdx7 && observacao) setObservacao("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIdx7]);
-  // Toasts apenas ao tentar avançar
-  useImperativeHandle(ref, () => ({
-    validateBeforeNext: () => {
-      if (!isIdx7 && justificativaEhModelo) {
-        toast("Personalize a justificativa", {
-          description: "O texto não pode ser idêntico ao modelo sugerido.",
-          action: { label: "Ok", onClick: () => {} },
-        });
-        return false;
-      }
-      if (showUploadDocs && docsLocal.length === 0) {
-        toast("Comprovantes obrigatórios", {
-          description: "Anexe pelo menos 1 arquivo (PDF/imagem/DOC/planilha).",
-        });
-        return false;
-      }
-      if (shouldShowSituacao && !situacao) {
-        toast("Informe o estado de conservação", {
-          description: "Selecione uma opção na lista.",
-        });
-        return false;
-      }
-      return true;
-    },
-  }));
-
-  // ===== Escala 7 níveis (verde → vermelho) =====
-  // Mapeia idx (0..7) para nível 0..6
-  // ===== Escala 7 níveis (0=melhor verde → 6=pior vermelho) =====
-  // Ajustado para que TU<10 (tuLocal=false) seja melhor que TU≥10, como você pediu.
-  const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-    // CO=1 (funcional: 4..7) — melhores níveis
-    4: 0, // funcional, TU<10, OT baixa  → Excelente
-    5: 1, // funcional, TU<10, OT alta   → Muito bom
-    6: 2, // funcional, TU≥10, OT baixa  → Bom
-    7: 3, // funcional, TU≥10, OT alta   → Uso moderado
-
-    // CO=0 (quebrado: 0..3) — piores níveis
-    0: 4, // quebrado, TU<10, OT baixa   → Necessita reparos
-    1: 5, // quebrado, TU<10, OT alta    → Inoperante
-    2: 6, // quebrado, TU≥10, OT baixa   → Antieconômico
-    3: 6, // quebrado, TU≥10, OT alta    → Antieconômico
-  };
-
-  const escala7 = [
-    { rotulo: "Excelente", bg: "bg-green-500" },
-    { rotulo: "Muito bom", bg: "bg-lime-500" },
-    { rotulo: "Bom", bg: "bg-yellow-400" },
-    { rotulo: "Uso moderado", bg: "bg-amber-500" },
-    { rotulo: "Necessita reparos", bg: "bg-orange-500" },
-    { rotulo: "Inoperante", bg: "bg-red-500" },
-    { rotulo: "Antieconômico", bg: "bg-red-700" },
-  ] as const;
-
-  const nivelAtivo = (() => {
-    const i = getIdx();
-    if (i === null) return 2; // neutro "Bom"
-    return nivelPorIdx[i];
-  })();
-
-  // ======== (mantidos) variáveis do seu exemplo de outro upload (não removidas) ========
-  const [fileInfo, setFileInfo] = useState({ name: "", size: 0 });
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFilePicked = (files: File[]) => {
-    const uploadedFile = files?.[0];
-    if (!uploadedFile) return;
-
-    // validações simples
-    const ext = uploadedFile.name.toLowerCase();
-    if (
-      !ext.endsWith(".xls") &&
-      !ext.endsWith(".xlsx") &&
-      !ext.endsWith(".csv")
-    ) {
-      toast("Arquivo inválido", {
-        description: "",
-        action: { label: "Fechar", onClick: () => {} },
-      });
-      return;
-    }
-
-    setFile(uploadedFile);
-    setFileInfo({ name: uploadedFile.name, size: uploadedFile.size });
-  };
+    onValidityChange(true);
+  }, [docsLocal, onValidityChange]);
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -404,7 +150,7 @@ export const ArquivosStep = forwardRef<
           <ArrowRight size={16} />
         </div>
         <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
-          Forneça informações adicionais
+          Enriqueça as informações do patrimônio
         </h1>
       </div>
 
@@ -414,8 +160,9 @@ export const ArquivosStep = forwardRef<
           <div>
             <p className="font-medium">Dados de patrimônio</p>
             <p className="text-gray-500 text-sm">
-              Descreva o estado real do bem (ex.: uso, funcionamento, defeitos,
-              histórico de manutenção, ano/critério de tombamento).
+              Adicione detalhes que ajudem a entender o estado real do bem —
+              como uso atual, funcionamento, defeitos, histórico de manutenção
+              ou motivos de tombamento.
             </p>
           </div>
         </div>
