@@ -36,6 +36,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       {/* Rotas públicas */}
       <Route path='/' element={<Home />} />
       <Route path='/buscar-patrimonio' element={<Home />} />
+      <Route path='/buscar-catalogo' element={<Home />} />
       <Route path='/item' element={<Home />} />
       <Route path='/informacoes' element={<Home />} />
 

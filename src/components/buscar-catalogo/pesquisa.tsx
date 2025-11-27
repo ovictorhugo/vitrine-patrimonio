@@ -1,14 +1,22 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowRight, Trash, X } from "lucide-react";
 import { MagnifyingGlass } from "phosphor-react";
-import { Alert } from "../../../ui/alert";
-import { Input } from "../../../ui/input";
-import { Button } from "../../../ui/button";
+import { Alert } from "../ui/alert";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { toast } from "sonner";
-import type { StepBaseProps } from "../novo-item";
-import { useQuery } from "../../../modal/search-modal-patrimonio";
-import { UserContext } from "../../../../context/context";
-import { Switch } from "../../../ui/switch";
+import { useQuery } from "../modal/search-modal-patrimonio";
+import { UserContext } from "../../context/context";
+export type StepBaseProps<K extends keyof StepPropsMap> = {
+  value: K;
+  step: number;
+  onValidityChange: (valid: boolean) => void;
+  onStateChange?: (state: unknown) => void;
+} & StepPropsMap[K];
+
+export type StepPropsMap = {
+  pesquisa: { value_item?: string; type?: string };
+};
 
 export interface PatrimoniosSelecionados {
   term: string;
@@ -19,13 +27,6 @@ export interface PatrimoniosSelecionados {
 type SearchItem =
   | { type: "cod"; bem_cod: string; bem_dgv: string }
   | { type: "atm"; bem_num_atm: string };
-
-type AdvancedItem = {
-  type: "advanced";
-  cod_label?: string; // asset_code-asset_check_digit
-  display: string; // rótulo mostrado no chip
-  id?: string; // para de-dup
-};
 
 const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> =>
   i.type === "cod";
@@ -52,33 +53,13 @@ export function PesquisaStep({
   const [input, setInput] = useState("");
 
   // ========= API base =========
-  const { urlGeral, loggedIn } = useContext(UserContext);
-  const API_SEARCH_BASE = `${String(urlGeral).replace(
-    /\/$/,
-    ""
-  )}/assets/search`;
-  const API_ADV_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/?q=`;
+  const { urlGeral } = useContext(UserContext);
 
   // ========= Controle de busca avançada =========
   const [advanced, setAdvanced] = useState(false);
 
   // ========= Helpers da API =========
-  async function fetchArrayByKey(
-    url: string,
-    key: "asset_identifier" | "atm_number"
-  ): Promise<string[]> {
-    try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
-      if (!res.ok) return [];
-      const json = await res.json();
-      const arr = json?.[key];
-      return Array.isArray(arr) ? arr.map(String) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  async function fetchAssetsOnCatalog(): Promise<string[]> {
+  async function fetchArray(): Promise<string[]> {
     try {
       const res = await fetch(`${urlGeral}catalog/search/asset-identifier`, {
         headers: {
@@ -102,86 +83,6 @@ export function PesquisaStep({
     }
   }
 
-  const searchAssetIdentifier = (q: string) =>
-    fetchArrayByKey(
-      `${API_SEARCH_BASE}/asset-identifier?q=${encodeURIComponent(
-        q.replace(/-/g, "")
-      )}`,
-      "asset_identifier"
-    );
-  const searchAtmNumber = (q: string) =>
-    fetchArrayByKey(
-      `${API_SEARCH_BASE}/atm-number?q=${encodeURIComponent(
-        q.replace(/-/g, "")
-      )}`,
-      "atm_number"
-    );
-
-  // ========= Busca avançada (GET /assets/q=) =========
-  const searchAdvanced = async (q: string): Promise<AdvancedItem[]> => {
-    if (!q.trim()) return [];
-    try {
-      const res = await fetch(`${API_ADV_BASE}${encodeURIComponent(q)}`, {
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) return [];
-      const json = await res.json();
-      const assets: any[] = Array.isArray(json?.assets) ? json.assets : [];
-
-      const items: AdvancedItem[] = assets.map((a) => {
-        const asset_code = a?.asset_code ? String(a.asset_code).trim() : "";
-        const asset_check_digit = a?.asset_check_digit
-          ? String(a.asset_check_digit).trim()
-          : "";
-        const atm_number = a?.atm_number ? String(a.atm_number).trim() : "";
-        const serial_number = a?.serial_number
-          ? String(a.serial_number).trim()
-          : "";
-        const asset_description = a?.asset_description
-          ? String(a.asset_description).trim()
-          : "";
-        const brand = a?.item_brand ? String(a.item_brand).trim() : "";
-        const model = a?.item_model ? String(a.item_model).trim() : "";
-
-        const cod_label =
-          asset_code && asset_check_digit
-            ? `${asset_code}-${asset_check_digit}`
-            : undefined;
-
-        // Monta um label amigável (ajuste conforme preferir)
-        const parts: string[] = [];
-        if (cod_label) parts.push(cod_label);
-        if (atm_number) parts.push(`ATM ${atm_number}`);
-        if (serial_number) parts.push(`S/N ${serial_number}`);
-        const bm = [brand, model].filter(Boolean).join(" ");
-        if (bm) parts.push(bm);
-        if (asset_description) parts.push(asset_description);
-
-        const display = parts.join(" • ") || "(sem dados)";
-
-        return {
-          type: "advanced",
-          cod_label,
-          display,
-          id: a?.id
-            ? String(a.id)
-            : cod_label ||
-              `${atm_number}|${serial_number}|${asset_description}`,
-        };
-      });
-
-      // De-dup por id
-      const uniq = new Map<string, AdvancedItem>();
-      for (const it of items) {
-        const k = it.id || it.display;
-        if (!uniq.has(k)) uniq.set(k, it);
-      }
-      return Array.from(uniq.values());
-    } catch {
-      return [];
-    }
-  };
-
   // ========= Normalização de input =========
   const normalizeInput = (value: string): string => {
     value = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -191,8 +92,6 @@ export function PesquisaStep({
 
   // Estados de resultados
   const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
-  const [assetsOnCatalog, setAssetsOnCatalog] = useState<string[]>([]);
-  const [advancedResults, setAdvancedResults] = useState<AdvancedItem[]>([]);
 
   // Rehidrata quando o Wizard já tem valor salvo
   useEffect(() => {
@@ -215,58 +114,41 @@ export function PesquisaStep({
   }, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
 
   // ========= Busca por input =========
-  const runSearch = async (
-    rawInput: string,
-    forceTreatAsCodFormatter = false
-  ) => {
+  const runSearch = async (rawInput: string) => {
     const input = normalizeInput(rawInput).trim();
-    if (input.replace(/-/g, "").length < 1) {
-      setFilteredItems([]);
-      setAdvancedResults([]);
-      return;
-    }
+    const inputClean = input.replace(/-/g, ""); // remove o hífen do que o usuário digitou
 
-    if (advanced) {
-      const adv = await searchAdvanced(input);
-      setAdvancedResults(adv);
+    if (inputClean.length < 1) {
       setFilteredItems([]);
       return;
     }
 
     // Busca simples
-    const [assetIdentifiers, atmNumbers] = await Promise.all([
-      searchAssetIdentifier(input),
-      searchAtmNumber(input),
-    ]);
+    const [assetIdentifiers] = await Promise.all([fetchArray()]);
 
-    const codItems: SearchItem[] = (assetIdentifiers || []).map((id) => {
+
+    // Filtra os asset_identifiers pelo que o usuário digitou
+    const filteredIds = (assetIdentifiers || []).filter((id) => {
+      const idStr = String(id); // ex: "1234567-8"
+      const [bem_cod, bem_dgv = ""] = idStr.split("-");
+      const idClean = `${bem_cod}${bem_dgv}`.replace(/-/g, ""); // "12345678"
+      return idClean.startsWith(inputClean); // ou .includes(inputClean) se quiser busca em qualquer posição
+    });
+
+    // Mapeia só os que passaram no filtro
+    const codItems: SearchItem[] = filteredIds.map((id) => {
       const [bem_cod, bem_dgv = ""] = String(id).split("-");
       return { type: "cod", bem_cod, bem_dgv };
     });
 
-    const atmItems: SearchItem[] = (atmNumbers || []).map((atm) => ({
-      type: "atm",
-      bem_num_atm: String(atm),
-    }));
-
     const uniq = new Map<string, SearchItem>();
-    for (const it of [...codItems, ...atmItems]) {
+    for (const it of codItems) {
       const key = isAtm(it) ? it.bem_num_atm : `${it.bem_cod}-${it.bem_dgv}`;
       if (!uniq.has(key)) uniq.set(key, it);
     }
 
-    const assets = await fetchAssetsOnCatalog();
-
-    setAssetsOnCatalog(assets);
-
     setFilteredItems(Array.from(uniq.values()));
-    setAdvancedResults([]);
   };
-
-  function hasInAssets(label: string) {
-    if (assetsOnCatalog.includes(label)) return true;
-    else return false;
-  }
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -276,7 +158,6 @@ export function PesquisaStep({
   };
 
   const handleChangeInputCod = (value: string) => {
-    // Somente números
     let cleanValue = value.replace(/[^0-9]/g, "");
 
     const originalValue = cleanValue;
@@ -290,8 +171,7 @@ export function PesquisaStep({
     if (cleanValue.length > 1) {
       formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
     }
-
-    runSearch(formattedValue, true);
+    runSearch(formattedValue);
     setInput(formattedValue);
   };
 
@@ -329,15 +209,6 @@ export function PesquisaStep({
     handlePesquisa(label, finalType);
   };
 
-  // 🔗 Seleção no modo avançado (sempre vai como COD)
-  const handleSelectItemAdvanced = (it: AdvancedItem) => {
-    if (!it.cod_label) {
-      toast.error("Este item não possui identificador (código-dígito).");
-      return;
-    }
-    handlePesquisa(it.cod_label, "cod");
-  };
-
   const handlePesquisa = (value: string, type: "cod" | "atm") => {
     setInput("");
 
@@ -364,8 +235,8 @@ export function PesquisaStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
-          Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
+        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+          Pesquise pelo identificador (código-dígito) do patrimônio:
         </h1>
       </div>
 
@@ -422,12 +293,6 @@ export function PesquisaStep({
           </div>
 
           <div className="w-fit flex gap-2 items-center">
-            {loggedIn && (
-              <>
-                <p className="text-xs font-medium">Busca avançada</p>
-                <Switch checked={advanced} onCheckedChange={setAdvanced} />
-              </>
-            )}
             {itemsSelecionadosPopUp.length > 0 && (
               <Button
                 size={"icon"}
@@ -439,43 +304,6 @@ export function PesquisaStep({
             )}
           </div>
         </Alert>
-
-        {filteredItems.length == 0 && (
-          <p className="mt-8 text-xs font-medium text-gray-500">
-            *Para códigos ATM que começam com "A", substituir por 19 ou 20
-          </p>
-        )}
-
-        {/* Resultados */}
-        {/* MODO AVANÇADO: uma única sessão */}
-        {advanced &&
-          input.trim().length >= 1 &&
-          advancedResults.length !== 0 && (
-            <div className="w-full mt-4">
-              <div className="flex flex-col gap-8">
-                <div>
-                  <p className="uppercase font-medium text-xs mb-3">
-                    Busca avançada
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    {advancedResults.slice(0, 30).map((it, index) => (
-                      <div
-                        key={it.id ?? index}
-                        title={it.display}
-                        onClick={() => handleSelectItemAdvanced(it)}
-                        className={`flex gap-2 h-8 cursor-pointer transition-all
-                                  bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800
-                                  items-center p-2 px-3 rounded-md text-xs
-                                  ${it.cod_label ? "" : "opacity-60"}`}
-                      >
-                        {it.display}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
         {/* MODO SIMPLES: duas sessões (cod/atm) */}
         {!advanced &&
@@ -494,17 +322,6 @@ export function PesquisaStep({
                         .slice(0, 15)
                         .map((props, index) => {
                           const label = `${props.bem_cod}-${props.bem_dgv}`;
-                          if (hasInAssets(label)) {
-                            return (
-                              <div
-                                key={index}
-                                onClick={() => handleSelectItemSimple(props)}
-                                className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
-                              >
-                                <span style={{ color: "white" }}>{label}</span>
-                              </div>
-                            );
-                          }
                           return (
                             <div
                               key={index}
@@ -515,28 +332,6 @@ export function PesquisaStep({
                             </div>
                           );
                         })}
-                    </div>
-                  </div>
-                )}
-
-                {filteredItems.some(isAtm) && (
-                  <div>
-                    <p className="uppercase font-medium text-xs mb-3">
-                      Código ATM
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      {filteredItems
-                        .filter(isAtm)
-                        .slice(0, 15)
-                        .map((props, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleSelectItemSimple(props)}
-                            className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-                          >
-                            {props.bem_num_atm}
-                          </div>
-                        ))}
                     </div>
                   </div>
                 )}

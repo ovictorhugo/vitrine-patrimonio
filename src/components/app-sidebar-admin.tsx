@@ -18,12 +18,14 @@ import {
   Home,
   Users,
   ClipboardCheck,
+  FileSearchIcon,
   Bug,
   User,
   Video,
   SquarePlay,
   DoorOpen,
   Landmark,
+  PackageCheck,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -94,7 +96,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           isActive: true,
           items: [
                ...(loggedIn
-              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audiovisual", icon: Video }]
+              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audiovisual", icon: PackageCheck }]
               : []),
             ...(hasCriarEtiqueta
               ? [{ title: "Criar etiqueta", url: "/dashboard/criar-etiqueta", icon: Barcode }]
@@ -103,6 +105,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
               ? [{ title: "Anunciar item", url: "/dashboard/novo-item", icon: Plus }]
               : []),
             { title: "Busca patrimônio", url: "/buscar-patrimonio", icon: SearchCheck },
+            
+            { title: "Busca catalogo", url: "/buscar-catalogo", icon: FileSearchIcon },
             ...(hasBuscaAvancada
               ? [{ title: "Busca avançada", url: "/dashboard/busca-avancada", icon: TextSearch }]
               : []),

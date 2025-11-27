@@ -55,7 +55,7 @@ import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { ArrowUUpLeft } from "phosphor-react";
 import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
 import { PesquisaStep } from "./steps/pesquisa.tsx";
-import { FormularioStep } from "./steps/formulario.tsx";
+import { FormularioStep, Patrimonio } from "./steps/formulario.tsx";
 import { FormularioSpStep } from "./steps/formulario-sp.tsx";
 import { TrocarLocalStep } from "./steps/trocar-local.tsx";
 import { LocalStep } from "./steps/local.tsx";
@@ -657,19 +657,17 @@ type WizardState = {
   arquivos?: { docs: File[] };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
-  estado?: {
-    imagens?: { images_wizard: string[] };
-    "trocar-local"?: {
-      agency_id?: string;
-      unit_id?: string;
-      sector_id?: string;
-      location_id?: string;
-      agency?: Agency | null;
-      unit?: Unit | null;
-      sector?: Sector | null;
-      location?: Location | null;
-      isOpen?: boolean;
-    };
+  imagens?: { images_wizard: string[] };
+  "trocar-local": {
+    agency_id?: string;
+    unit_id?: string;
+    sector_id?: string;
+    location_id?: string;
+    agency?: Agency | null;
+    unit?: Unit | null;
+    sector?: Sector | null;
+    location?: Location | null;
+    isOpen?: boolean;
   };
 };
 
@@ -886,14 +884,11 @@ export function EmprestimoAudiovisual() {
   const total = STEPS.length;
   const isLast = idx === total - 1;
 
-  /* ---- progresso e navegação ---- */
-  const pct = ((idx + 1) / total) * 100;
-
   const canGoNext = useMemo(() => {
     console.log(wizard);
     const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
     return upto && idx < total - 1;
-  }, [idx, total, valid, STEPS]);
+  }, [idx, total, valid, STEPS,wizard]);
 
   const canFinish = useMemo(
     () => STEPS.every((s) => valid[s.key] === true),
@@ -1082,7 +1077,7 @@ export function EmprestimoAudiovisual() {
       const infoAdic = wizard["informacoes-adicionais"];
       const imgs = wizard.imagens?.images_wizard || [];
 
-      wizard['trocar-local'] = wizard["local"]
+      wizard["trocar-local"] = wizard["local"];
 
       // 2) se for DESFAZIMENTO: cria asset em /assets/
       let assetId: string | undefined;
@@ -1847,7 +1842,6 @@ export function EmprestimoAudiovisual() {
 
             <div className="grid grid-cols-1 ">
               {savedItems.map((s) => {
-                const code = getLabelCode(s.data);
                 return (
                   <div key={s.id}>
                     {/* Renderização completa do Asset */}
