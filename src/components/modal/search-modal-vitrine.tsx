@@ -113,6 +113,7 @@ export function SearchModalVitrine() {
   }
 
   async function searchMaterials(q: string): Promise<SearchItem[]> {
+    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     const fullUrl = buildUrl(`${API_CATALOG}/materials`, { q, workflow_status, user_id });
     const data = await fetchJson<{ materials?: Array<{ id: string; material_code: string; material_name: string }> }>(fullUrl);
     const arr = Array.isArray(data?.materials) ? data!.materials : [];

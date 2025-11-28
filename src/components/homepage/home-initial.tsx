@@ -79,7 +79,7 @@ export function HomeInicial() {
   const { urlGeral } = useContext(UserContext);
 
   const urlPalavrasChaves = useMemo(() => {
-    return `${urlGeral}catalog/search/materials?workflow_status=VITRINE`;
+    return `${urlGeral}catalog/search/materials`;
   }, [urlGeral]);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export function HomeInicial() {
 
   function handlePesquisaChange(material: Material) {
     const params = new URLSearchParams(queryUrl.toString());
-    setParamOrDelete(params, "material_ids", material.material_name);
+    setParamOrDelete(params, "material_ids", material.id);
 
     navigate({
       pathname: location.pathname,
