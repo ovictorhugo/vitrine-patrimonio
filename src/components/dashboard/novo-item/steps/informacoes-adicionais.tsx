@@ -109,27 +109,26 @@ export const InformacoesAdicionaisStep = forwardRef<
   }, [shouldShowSituacao]); // eslint-disable-line
 
   // Índice 0..7 conforme CO/TU/OT
-const getIdx = useCallback(
-  (tuOverride?: boolean, otOverride?: boolean) => {
-    const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
-    const otFlag = otOverride ?? otLocal;
+  const getIdx = useCallback(
+    (tuOverride?: boolean, otOverride?: boolean) => {
+      const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
+      const otFlag = otOverride ?? otLocal;
 
-    const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
-    const ot = otFlag ? 1 : 0; // OT alta => 1
+      const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
+      const ot = otFlag ? 1 : 0; // OT alta => 1
 
-    if (estadoAtual === "anti-economico") {
-      if (tu === 1 && ot === 1) return 7;
-      if (tu === 1 && ot === 0) return 3;
-      if (tu === 0 && ot === 1) return 5;
-      return 4;
-    }
+      if (estadoAtual === "anti-economico") {
+        if (tu === 1 && ot === 1) return 7;
+        if (tu === 1 && ot === 0) return 3;
+        if (tu === 0 && ot === 1) return 5;
+        return 4;
+      }
 
-    const CO = estadoAtual === "quebrado" ? 0 : 1;
-    return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  },
-  [estadoAtual, tuLocal, otLocal]
-);
-
+      const CO = estadoAtual === "quebrado" ? 0 : 1;
+      return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    },
+    [estadoAtual, tuLocal, otLocal]
+  );
 
   const gerarTexto = useCallback(
     (tuOverride?: boolean, otOverride?: boolean) => {
@@ -216,7 +215,7 @@ const getIdx = useCallback(
     setOrientacao(estadoAtual);
   }, [initialData?.observacao, orientacao]);
 
-function changeButtonTU() {
+  function changeButtonTU() {
     const nextTU = !tuLocal;
     setTuLocal(nextTU);
 
@@ -499,7 +498,7 @@ function changeButtonTU() {
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
           Forneça algumas informações adicionais...
         </h1>
       </div>
@@ -794,16 +793,21 @@ function changeButtonTU() {
               </div>
             </Alert>
           ) : (
-            <div className="grid gap-2 w-full">
-              <Label htmlFor="observacoes">
-                Justificativa (descrição do estado do item)*
-              </Label>
+            <div className="grid gap-2 w-full ">
               {justificativaEhModelo && (
-                <p className="text-xs text-red-500 ">
-                  Obrigatório: Personalize a justificativa com uso,
-                  funcionamento, defeitos, histórico de manutenção e
-                  ano/critério de tombamento para prosseguir.
-                </p>
+                <div>
+                  <div className="flex gap-2 items-center mb-3">
+                    <AlertCircle size={24} />
+                    <p className="font-medium w-55">
+                      Justificativa personalizada, favor editar:
+                    </p>
+                  </div>
+                  <p className="text-s text-red-500">
+                    Dica: Personalize a justificativa com uso, funcionamento,
+                    defeitos, histórico de manutenção e ano/critério de
+                    tombamento para prosseguir.
+                  </p>
+                </div>
               )}
               <Textarea
                 id="observacoes"

@@ -26,7 +26,7 @@ export function InformacoesStep({
    <p className="text-lg">{step}</p>
    <ArrowRight size={16}/>
    </div>
-    <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+    <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
     Antes de continuar, <br/>leia as informações abaixo:
                 </h1>
 </div>

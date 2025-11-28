@@ -345,7 +345,7 @@ export function FormularioStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
           Agora, confira se as informações estão corretas:
         </h1>
       </div>

@@ -1618,7 +1618,7 @@ export function NovoItem() {
               </p>
               <ArrowRight size={16} />
             </div>
-            <h1 className="text-4xl font-semibold max-w-[700px]">
+            <h1 className="text-4xl font-semibold max-w-[1000px]">
               Parabéns, cadastro concluído!
             </h1>
           </div>
