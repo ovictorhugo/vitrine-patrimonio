@@ -26,7 +26,7 @@ module.exports = {
       "2xl": "1920px",
     },
     fontFamily: {
-      sans: "Lexend, sans-serif",
+      sans: ["Lexend", "system-ui", "sans-serif"],
     },
     extend: {
       keyframes: {
