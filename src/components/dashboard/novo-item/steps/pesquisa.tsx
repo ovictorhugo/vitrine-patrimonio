@@ -543,6 +543,14 @@ export function PesquisaStep({
               </div>
             </div>
           )}
+        <div className="flex gap-4 mt-8">
+          <div className="flex gap-1 items-center">
+            <div className="h-3 w-3 rounded-sm bg-eng-blue"></div>
+            <p className="text-sm font-medium text-gray-500">
+              Item já cadastrado no Sistema Patrimônio
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

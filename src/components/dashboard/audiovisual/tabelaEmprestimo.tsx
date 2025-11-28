@@ -4,23 +4,26 @@ import {
   ChevronLeft,
   Maximize2,
   Plus,
+  Store,
   Trash,
   SlidersHorizontal,
   Download,
   ChevronRight,
   LucideIcon,
+  Hourglass,
+  Wrench,
+  Clock,
+  Archive,
+  XCircle,
+  Recycle,
   HelpCircle,
   Check,
   X,
   Loader,
+  ListTodo,
   Eye,
   Calendar,
   SquareKanban,
-  BookMarked,
-  HeartCrack,
-  LucideAlarmClockOff,
-  CalendarCheck,
-  Wrench,
 } from "lucide-react";
 import {
   Select,
@@ -230,17 +233,18 @@ export const WORKFLOWS = {
   calendario: [
     {
       key: "REVIEW_REQUESTED_VITRINE",
-      name: "Nenhum",
+      name: "Avaliação S. Patrimônio - Vitrine",
     },
   ],
   emprestimo: [
     {
-      key: "AUDIOVISUAL_ANUNCIADO",
-      name: "Disponíveis",
+      key: "REVIEW_REQUESTED_VITRINE",
+      name: "Avaliação S. Patrimônio - Vitrine",
     },
-    { key: "AUDIOVISUAL_EMPRESTIMO", name: "Em empréstimo" },
-    { key: "AUDIOVISUAL_ATRASADO", name: "Atrasado" },
-    { key: "AUDIOVISUAL_QUEBRADO", name: "Quebrado" },
+    { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine" },
+    { key: "VITRINE", name: "Anunciados" },
+    { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando Transferência" },
+    { key: "TRANSFERIDOS", name: "Transferidos" },
   ],
 } as const;
 
@@ -250,13 +254,20 @@ export const WORKFLOW_STATUS_META: Record<
   string,
   { Icon: LucideIcon; colorClass: string }
 > = {
-  AUDIOVISUAL_ANUNCIADO: { Icon: BookMarked, colorClass: "text-amber-500" },
-  AUDIOVISUAL_EMPRESTIMO: { Icon: CalendarCheck, colorClass: "text-blue-500" },
-  AUDIOVISUAL_ATRASADO: {
-    Icon: LucideAlarmClockOff,
-    colorClass: "text-green-600",
+  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
+  ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
+  VITRINE: { Icon: Store, colorClass: "text-green-600" },
+  AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
+  TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
+  REVIEW_REQUESTED_DESFAZIMENTO: {
+    Icon: Hourglass,
+    colorClass: "text-amber-500",
   },
-  AUDIOVISUAL_QUEBRADO: { Icon: Wrench, colorClass: "text-indigo-500" },
+  ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
+  REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
+  REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
+  DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+  DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
 /* ========================= Regras por coluna ========================= */
@@ -386,7 +397,7 @@ export function Combobox({
 }
 
 /* ========================= Componente Principal ========================= */
-export function Audiovisual() {
+export function TabelaEmprestimo({ showFilters }) {
   const { urlGeral } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -565,7 +576,6 @@ export function Audiovisual() {
   }, [sectorId, fetchLocations, locationQd]);
 
   const [tab, setTab] = useState<BoardKind>("emprestimo");
-  const [showFilters, setShowFilters] = useState(true);
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
@@ -898,6 +908,43 @@ export function Audiovisual() {
     debouncedQ,
   ]);
 
+  // Filtro q (client) - aplicado sobre o board já carregado
+  // Filtro q (client) - aplicado sobre o board já carregado
+  const filteredBoard = useMemo(() => {
+    if (!debouncedQ.trim()) return board;
+
+    const term = debouncedQ.trim().toLowerCase();
+    const filtered: Record<string, CatalogEntry[]> = {};
+
+    for (const [key, items] of Object.entries(board)) {
+      // Remove duplicados antes de filtrar
+      const uniqueItems = items.filter(
+        (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+      );
+
+      filtered[key] = uniqueItems.filter((e) => {
+        const code = codeFrom(e);
+        const haystack = [
+          code,
+          e?.asset?.atm_number,
+          e?.asset?.asset_description,
+          e?.asset?.material?.material_name,
+          e?.asset?.item_brand,
+          e?.asset?.item_model,
+          e?.asset?.serial_number,
+          e?.description,
+          e?.asset?.legal_guardian?.legal_guardians_name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    return filtered;
+  }, [board, q]);
+
   const postWorkflowChange = async (
     entry: CatalogEntry | undefined,
     toKey: string | undefined,
@@ -921,7 +968,7 @@ export function Audiovisual() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
-      toast.success("Mudança realizada com sucesso.");
+      toast.success("Audiovisual realizada com sucesso.");
       return true;
     } catch {
       toast.error("Não foi possível mover o item.");
@@ -1411,92 +1458,14 @@ export function Audiovisual() {
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
-        <title>Empréstimo Audiovisual | Sistema Patrimônio</title>
+        <title>Audiovisual | Sistema Patrimônio</title>
         <meta
           name="description"
-          content="Empréstimo Audiovisual temporário | Sistema Patrimônio"
+          content="Audiovisual temporário | Sistema Patrimônio"
         />
       </Helmet>
 
       <main className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex gap-2 items-center">
-            <Button
-              onClick={() => {
-                const path = location.pathname;
-                const hasQuery = location.search.length > 0;
-                if (hasQuery) navigate(path);
-                else {
-                  const seg = path.split("/").filter(Boolean);
-                  if (seg.length > 1) {
-                    seg.pop();
-                    navigate("/" + seg.join("/"));
-                  } else navigate("/");
-                }
-              }}
-              variant="outline"
-              size="icon"
-              className="h-7 w-7"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Voltar</span>
-            </Button>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Empréstimo Audiovisual
-            </h1>
-          </div>
-
-          <div className="hidden gap-2 items-center xl:flex">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowFilters((s) => !s)}
-            >
-              <SlidersHorizontal size={16} />
-              {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-            </Button>
-
-            <div className="flex">
-              <Button
-                size="sm"
-                onClick={() => {
-                  setTab("emprestimo");
-                  setExpandedColumn(null);
-                }}
-                variant={tab === "emprestimo" ? "default" : "outline"}
-                className="rounded-r-none"
-              >
-                <SquareKanban size={16} className="" />
-                Empréstimo
-              </Button>
-              <Button
-                onClick={() => {
-                  setTab("calendario");
-                  setExpandedColumn(null);
-                }}
-                size="sm"
-                className="rounded-l-none"
-                variant={tab === "calendario" ? "default" : "outline"}
-              >
-                <Calendar size={16} className="" />
-                Calendário
-              </Button>
-            </div>
-
-            <Separator orientation="vertical" className="h-8 mx-2" />
-
-            {hasAnunciarItem && (
-              <Link to={"/emprestimo-audiovisual"}>
-                <Button size="sm">
-                  <Plus size={16} className="" />
-                  Anunciar item
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-
         {/* Filtros */}
         {showFilters && (
           <div className="flex gap-4 items-center">
@@ -1671,6 +1640,7 @@ export function Audiovisual() {
                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
                     const items = board[col.key] ?? [];
+                    const slice = items.slice(0, expandedVisible);
                     const meta = WORKFLOW_STATUS_META[col.key] ?? {
                       Icon: HelpCircle,
                       colorClass: "text-zinc-500",

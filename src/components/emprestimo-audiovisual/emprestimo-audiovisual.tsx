@@ -885,10 +885,10 @@ export function EmprestimoAudiovisual() {
   const isLast = idx === total - 1;
 
   const canGoNext = useMemo(() => {
-    console.log(wizard);
+    //console.log(wizard);
     const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
     return upto && idx < total - 1;
-  }, [idx, total, valid, STEPS,wizard]);
+  }, [idx, total, valid, STEPS, wizard]);
 
   const canFinish = useMemo(
     () => STEPS.every((s) => valid[s.key] === true),
@@ -1210,7 +1210,26 @@ export function EmprestimoAudiovisual() {
           }
         }
       }
+      const upAudioVis = await fetch(
+        `${urlGeral}catalog/${catalogId}/workflow`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ workflow_status: "AUDIOVISUAL_ANUNCIADO",detail: {}}),
+        }
+      );
 
+      if (upAudioVis.status !== 201) {
+        const txt = await upAudioVis.text();
+        throw new Error(
+          `Falha ao criar catálogo (${upAudioVis.status}): ${txt}`
+        );
+      }
+
+      console.log(catalogId, assetId,createCatalog,upAudioVis);
       // sucesso 🎉
       setCreatedAssetId(assetId || null);
       setCreatedCatalogId(catalogId || null);

@@ -306,6 +306,11 @@ export function ItemPage() {
       });
       if (!r.ok) throw new Error(`Erro ${r.status}`);
       const data: CatalogResponseDTO = await r.json();
+
+      
+      console.log(`${urlGeral}catalog/${catalogId}`)
+      console.log(data)
+
       setCatalog(data);
     } catch (e: any) {
       toast("Erro ao carregar", { description: e?.message || "Não foi possível obter o item." });
