@@ -1,4 +1,4 @@
-import { CatalogEntry } from "./itens-vitrine";
+import { CatalogEntry } from "./audiovisual";
 
 const safeTxt = (v?: string | null) => (v ?? "").toString().trim();
 

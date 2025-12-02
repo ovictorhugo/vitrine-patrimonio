@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Label } from "../../ui/label";
-import { StepBaseProps } from "../novo-item";
+import { StepBaseProps } from "../emprestimo-audiovisual";
 import { AlertCircle, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
 import { Input } from "../../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";

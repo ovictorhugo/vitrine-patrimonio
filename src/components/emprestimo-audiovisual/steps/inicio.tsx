@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StepBaseProps, FlowMode } from "../novo-item";
+import { StepBaseProps, FlowMode } from "../emprestimo-audiovisual";
 import { ArrowRight, Barcode, Plus } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { Alert } from "../../ui/alert";

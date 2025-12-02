@@ -1,6 +1,5 @@
 // src/pages/vitrine/card-item-dropdown.tsx
 import { Draggable } from "@hello-pangea/dnd";
-import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { useContext } from "react";
 import { UserContext } from "../../../context/context";
 import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";

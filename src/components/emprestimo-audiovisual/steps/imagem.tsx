@@ -17,7 +17,7 @@ import {
 import { ArrowUUpLeft } from "phosphor-react";
 import { useDropzone } from "react-dropzone";
 
-import { StepBaseProps } from "../novo-item"; // mantém seu tipo original
+import { StepBaseProps } from "../emprestimo-audiovisual"; // mantém seu tipo original
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import {

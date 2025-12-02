@@ -1,12 +1,5 @@
 // src/pages/novo-item/steps/trocar-local/index.tsx
-import {
-  AlertCircle,
-  ArrowRight,
-  Pencil,
-  Check,
-  ChevronsUpDown,
-  X,
-} from "lucide-react";
+import { AlertCircle, ArrowRight } from "lucide-react";
 import React, {
   useCallback,
   useContext,
@@ -18,19 +11,7 @@ import React, {
 } from "react";
 import { Label } from "../../ui/label";
 import { UserContext } from "../../../context/context";
-import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import { Separator } from "../../ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../../ui/command";
-import { cn } from "../../../lib";
 
 /* ===== Tipos ===== */
 type FlowMode = "vitrine" | "desfazimento";

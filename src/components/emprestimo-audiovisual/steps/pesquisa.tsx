@@ -5,7 +5,7 @@ import { Alert } from "../../ui/alert";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { toast } from "sonner";
-import type { StepBaseProps } from "../novo-item";
+import type { StepBaseProps } from "../emprestimo-audiovisual";
 import { useQuery } from "../../modal/search-modal-patrimonio";
 import { UserContext } from "../../../context/context";
 import { Switch } from "../../ui/switch";

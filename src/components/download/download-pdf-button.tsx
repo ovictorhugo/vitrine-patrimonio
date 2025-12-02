@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState, useContext } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useContext,
+} from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -54,9 +60,15 @@ export function DownloadPdfButton({
   pageWidthPx = 1100, // largura ampliada padrão
 }: DownloadPdfButtonProps) {
   const { urlGeral } = useContext(UserContext);
-  const baseUrl = useMemo(() => ensureTrailingSlash(urlGeral || ""), [urlGeral]);
+  const baseUrl = useMemo(
+    () => ensureTrailingSlash(urlGeral || ""),
+    [urlGeral]
+  );
   const token = useMemo(
-    () => (typeof window !== "undefined" ? localStorage.getItem("jwt_token") || "" : ""),
+    () =>
+      typeof window !== "undefined"
+        ? localStorage.getItem("jwt_token") || ""
+        : "",
     []
   );
 
@@ -70,18 +82,19 @@ export function DownloadPdfButton({
   const fetchData = useCallback(async () => {
     if (!baseUrl || !workflowStatus) return;
     try {
-      const url = `${baseUrl}catalog/?workflow_status=${encodeURIComponent(workflowStatus)}`;
+      const baseUrl = "http://localhost:5055/";
+      const url = `${baseUrl}catalog/pdf/?workflow_status=VITRINE`;
       const res = await fetch(url, {
         headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+          Accept: "application/pdf",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json: CatalogResponse = await res.json();
-      setItems(json?.catalog_entries ?? []);
-      if ((json?.catalog_entries ?? []).length === 0) {
+      const blob = await res.blob();
+      const pdf = URL.createObjectURL(blob);
+      window.open(pdf, "_blank");
+      if ((pdf ?? []).length === 0) {
         toast.error("Nada encontrado para gerar o PDF.");
       }
     } catch (err) {
@@ -110,7 +123,9 @@ export function DownloadPdfButton({
       const usableWidthPt = A4_WIDTH_PT - marginX * 2;
       const bottomMargin = 36;
 
-      const wrappers = Array.from(container.querySelectorAll<HTMLElement>("[data-pdf-item='true']"));
+      const wrappers = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-pdf-item='true']")
+      );
       if (!wrappers.length) {
         toast.error("Nada para renderizar no PDF.");
         return;
@@ -141,7 +156,14 @@ export function DownloadPdfButton({
         }
 
         const imgData = canvas.toDataURL("image/png");
-        doc.addImage(imgData, "PNG", marginX, cursorY, renderWidthPt, renderHeightPt);
+        doc.addImage(
+          imgData,
+          "PNG",
+          marginX,
+          cursorY,
+          renderWidthPt,
+          renderHeightPt
+        );
         cursorY += renderHeightPt + 12;
       }
 
@@ -158,7 +180,11 @@ export function DownloadPdfButton({
   return (
     <>
       <Button onClick={handleDownload} disabled={loading} variant="outline">
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download size={16} className="mr-2" />}
+        {loading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Download size={16} className="mr-2" />
+        )}
         {label}
       </Button>
 
@@ -185,7 +211,7 @@ export function DownloadPdfButton({
               boxSizing: "border-box",
             }}
           >
-          {/*<ItemPatrimonioDownload {...it} /> */}  
+            {/*<ItemPatrimonioDownload {...it} /> */}
           </div>
         ))}
       </div>

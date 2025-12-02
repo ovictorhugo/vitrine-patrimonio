@@ -658,7 +658,7 @@ type WizardState = {
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   imagens?: { images_wizard: string[] };
-  "trocar-local": {
+  "trocar-local"?: {
     agency_id?: string;
     unit_id?: string;
     sector_id?: string;
@@ -1218,7 +1218,10 @@ export function EmprestimoAudiovisual() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ workflow_status: "AUDIOVISUAL_ANUNCIADO",detail: {}}),
+          body: JSON.stringify({
+            workflow_status: "AUDIOVISUAL_ANUNCIADO",
+            detail: {},
+          }),
         }
       );
 
@@ -1229,7 +1232,7 @@ export function EmprestimoAudiovisual() {
         );
       }
 
-      console.log(catalogId, assetId,createCatalog,upAudioVis);
+      console.log(catalogId, assetId, createCatalog, upAudioVis);
       // sucesso 🎉
       setCreatedAssetId(assetId || null);
       setCreatedCatalogId(catalogId || null);
