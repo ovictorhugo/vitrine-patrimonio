@@ -68,7 +68,12 @@ import { Badge } from "../../../ui/badge";
 import { Separator } from "../../../ui/separator";
 import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
-import { DragDropContext, DragUpdate, Droppable, DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  DragUpdate,
+  Droppable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import { Alert } from "../../../ui/alert";
 import { ArrowUUpLeft, EyeClosed, MagnifyingGlass } from "phosphor-react";
 import { ScrollArea, ScrollBar } from "../../../ui/scroll-area";
@@ -79,6 +84,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 import { usePermissions } from "../../../permissions";
+import { DownloadPdfButton } from "../../../download/download-pdf-button";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -89,7 +95,12 @@ type LegalGuardian = {
   id: UUID;
 };
 
-type UnitDTO = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
+type UnitDTO = {
+  id: UUID;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+};
 type AgencyDTO = { id: UUID; agency_name: string; agency_code: string };
 type SectorDTO = { id: UUID; sector_name: string; sector_code: string };
 type LocationDTO = { id: UUID; location_name: string; location_code: string };
@@ -227,7 +238,10 @@ type RoleUsersResponse = {
 const COL_SEM_REVISOR = "SEM_REVISOR";
 const WF_FILTER = "REVIEW_REQUESTED_COMISSION";
 
-const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
+const WORKFLOW_STATUS_META: Record<
+  string,
+  { Icon: LucideIcon; colorClass: string }
+> = {
   [COL_SEM_REVISOR]: { Icon: HelpCircle, colorClass: "text-zinc-500" },
 };
 
@@ -285,10 +299,14 @@ function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
+          className={
+            triggerClassName ?? "w-[280px] min-w-[280px] justify-between"
+          }
         >
           {selected ? (
-            <span className="truncate text-left font-medium">{selected.label}</span>
+            <span className="truncate text-left font-medium">
+              {selected.label}
+            </span>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
@@ -324,7 +342,9 @@ function Combobox({
                     setOpen(false);
                   }}
                 >
-                  <span className="font-medium line-clamp-1 uppercase">{item.label}</span>
+                  <span className="font-medium line-clamp-1 uppercase">
+                    {item.label}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -342,7 +362,8 @@ export function AdmComission() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
   // Helper de debounce
   function useDebounced<T>(value: T, delay = 300) {
@@ -529,7 +550,9 @@ export function AdmComission() {
 
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
-  const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>({});
+  const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
+    {}
+  );
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   // Colunas
@@ -561,10 +584,13 @@ export function AdmComission() {
   const [posting, setPosting] = useState(false);
 
   // Snapshots
-  const [snapshotBoard, setSnapshotBoard] = useState<Record<string, CatalogEntry[]> | null>(
+  const [snapshotBoard, setSnapshotBoard] = useState<Record<
+    string,
+    CatalogEntry[]
+  > | null>(null);
+  const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(
     null
   );
-  const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(null);
 
   // Paginação - offset por coluna
   const PAGE_SIZE = 24;
@@ -572,7 +598,8 @@ export function AdmComission() {
   const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
-  const rulesFor = (colKey?: string): ColumnRule => (!colKey ? {} : COLUMN_RULES[colKey] || {});
+  const rulesFor = (colKey?: string): ColumnRule =>
+    !colKey ? {} : COLUMN_RULES[colKey] || {};
 
   useEffect(() => {
     const initial: Record<string, number> = {};
@@ -691,8 +718,9 @@ export function AdmComission() {
         if (agencyId) params.set("agency_id", agencyId);
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
- if (q) params.set("q", q);
+        if (q) params.set("q", q);
 
+        console.log(params.toString());
         const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -763,7 +791,7 @@ export function AdmComission() {
       sectorId,
       locationId,
       PAGE_SIZE,
-      q
+      q,
     ]
   );
 
@@ -791,8 +819,8 @@ export function AdmComission() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-        if (q) params.set("q", q);
-params.set("workflow_status", 'REVIEW_REQUESTED_COMISSION');
+      if (q) params.set("q", q);
+      params.set("workflow_status", "REVIEW_REQUESTED_COMISSION");
       const query = params.toString();
       const url = query
         ? `${urlGeral}statistics/catalog/stats/review-commission?${query}`
@@ -823,7 +851,7 @@ params.set("workflow_status", 'REVIEW_REQUESTED_COMISSION');
     agencyId,
     sectorId,
     locationId,
-    q
+    q,
   ]);
 
   // total geral esperando avaliação
@@ -918,9 +946,12 @@ params.set("workflow_status", 'REVIEW_REQUESTED_COMISSION');
     else params.delete("sector_id");
     if (locationId) params.set("location_id", locationId);
     else params.delete("location_id");
-if (q) params.set("q", q);
+    if (q) params.set("q", q);
     else params.delete("q");
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, q]);
 
@@ -956,7 +987,10 @@ if (q) params.set("q", q);
   }, [board, q]);
 
   // Drag & Drop -> PUT reviewers
-  const putReviewers = async (entry: CatalogEntry | undefined, reviewers: string[]) => {
+  const putReviewers = async (
+    entry: CatalogEntry | undefined,
+    reviewers: string[]
+  ) => {
     if (!entry) return false;
     try {
       const res = await fetch(`${urlGeral}catalog/${entry.id}/reviewers`, {
@@ -993,37 +1027,37 @@ if (q) params.set("q", q);
   const MAX_STEP = 40;
   const BASE_STEP = 12;
 
-const autoScrollTick = useCallback(() => {
-  if (!draggingRef.current) return stopAutoScrollLoop();
-  const el = boardScrollRef.current;
-  if (!el) return stopAutoScrollLoop();
+  const autoScrollTick = useCallback(() => {
+    if (!draggingRef.current) return stopAutoScrollLoop();
+    const el = boardScrollRef.current;
+    if (!el) return stopAutoScrollLoop();
 
-  const rect = el.getBoundingClientRect();
-  const style = getComputedStyle(el);
-  const padL = parseFloat(style.paddingLeft || "0");
-  const padR = parseFloat(style.paddingRight || "0");
-  const rectLeft = rect.left + padL;
-  const rectRight = rect.right - padR;
-  const x = pointerXRef.current;
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    const padL = parseFloat(style.paddingLeft || "0");
+    const padR = parseFloat(style.paddingRight || "0");
+    const rectLeft = rect.left + padL;
+    const rectRight = rect.right - padR;
+    const x = pointerXRef.current;
 
-  let dx = 0;
-  if (x - rectLeft < EDGE_PX) {
-    const dist = Math.max(1, EDGE_PX - (x - rectLeft));
-    dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-  } else if (rectRight - x < EDGE_PX) {
-    const dist = Math.max(1, EDGE_PX - (rectRight - x));
-    dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
-  }
+    let dx = 0;
+    if (x - rectLeft < EDGE_PX) {
+      const dist = Math.max(1, EDGE_PX - (x - rectLeft));
+      dx = -Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+    } else if (rectRight - x < EDGE_PX) {
+      const dist = Math.max(1, EDGE_PX - (rectRight - x));
+      dx = Math.min(MAX_STEP, BASE_STEP + Math.floor(dist / 4));
+    }
 
-  if (dx !== 0) {
-    el.scrollBy({ left: dx, behavior: "auto" });
-  }
+    if (dx !== 0) {
+      el.scrollBy({ left: dx, behavior: "auto" });
+    }
 
-  // REMOVIDO: código que centralizava automaticamente a coluna de destino
-  // Isso causava conflito com o scroll nas bordas
+    // REMOVIDO: código que centralizava automaticamente a coluna de destino
+    // Isso causava conflito com o scroll nas bordas
 
-  rafIdRef.current = requestAnimationFrame(autoScrollTick);
-}, []);
+    rafIdRef.current = requestAnimationFrame(autoScrollTick);
+  }, []);
 
   const handlePointerMoveWhileDrag = useCallback(
     (ev: PointerEvent) => {
@@ -1050,58 +1084,60 @@ const autoScrollTick = useCallback(() => {
     currentDestinationRef.current = destId || null;
   }, []);
 
- const handleDragEndDrop = useCallback(
-  async (result: DropResult) => {
-    const { source, destination, draggableId } = result;
-    if (!destination) return;
+  const handleDragEndDrop = useCallback(
+    async (result: DropResult) => {
+      const { source, destination, draggableId } = result;
+      if (!destination) return;
 
-    const fromKey = (source.droppableId ?? "").trim();
-    const toKey = (destination.droppableId ?? "").trim();
-    if (fromKey === toKey) return;
+      const fromKey = (source.droppableId ?? "").trim();
+      const toKey = (destination.droppableId ?? "").trim();
+      if (fromKey === toKey) return;
 
-    const validTo =
-      toKey === COL_SEM_REVISOR ||
-      commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
+      const validTo =
+        toKey === COL_SEM_REVISOR ||
+        commissionUsers.some((u) => (u.id ?? "").trim() === toKey);
 
-    if (!validTo) {
-      toast.error("Destino inválido para reatribuição.");
-      return;
-    }
+      if (!validTo) {
+        toast.error("Destino inválido para reatribuição.");
+        return;
+      }
 
-    // CORREÇÃO: Usar filteredBoard e encontrar pelo draggableId
-    // ao invés de usar board[fromKey][source.index]
-    const fromList = board[fromKey] ?? [];
-    const entry = fromList.find((e) => e.id === draggableId);
-    if (!entry) return;
+      // CORREÇÃO: Usar filteredBoard e encontrar pelo draggableId
+      // ao invés de usar board[fromKey][source.index]
+      const fromList = board[fromKey] ?? [];
+      const entry = fromList.find((e) => e.id === draggableId);
+      if (!entry) return;
 
-    const prevBoard = board;
-    const prevEntries = entries;
+      const prevBoard = board;
+      const prevEntries = entries;
 
-    let reviewersNew: string[] = [];
-    if (toKey !== COL_SEM_REVISOR) {
-      reviewersNew = [toKey];
-    }
+      let reviewersNew: string[] = [];
+      if (toKey !== COL_SEM_REVISOR) {
+        reviewersNew = [toKey];
+      }
 
-    // Atualizar o board original (não o filtrado)
-    const newFromBoard = (board[fromKey] ?? []).filter((x) => x.id !== entry.id);
-    const newToBoard = [entry, ...(board[toKey] ?? [])];
+      // Atualizar o board original (não o filtrado)
+      const newFromBoard = (board[fromKey] ?? []).filter(
+        (x) => x.id !== entry.id
+      );
+      const newToBoard = [entry, ...(board[toKey] ?? [])];
 
-    setBoard((old) => ({
-      ...old,
-      [fromKey]: newFromBoard,
-      [toKey]: newToBoard,
-    }));
+      setBoard((old) => ({
+        ...old,
+        [fromKey]: newFromBoard,
+        [toKey]: newToBoard,
+      }));
 
-    setEntries((old) => [...old]);
+      setEntries((old) => [...old]);
 
-    const ok = await putReviewers(entry, reviewersNew);
-    if (!ok) {
-      setBoard(prevBoard);
-      setEntries(prevEntries);
-    }
-  },
-  [board, board, entries, commissionUsers, putReviewers]
-);
+      const ok = await putReviewers(entry, reviewersNew);
+      if (!ok) {
+        setBoard(prevBoard);
+        setEntries(prevEntries);
+      }
+    },
+    [board, board, entries, commissionUsers, putReviewers]
+  );
 
   const handleDragEnd = useCallback(
     (result: DropResult) => {
@@ -1199,7 +1235,8 @@ const autoScrollTick = useCallback(() => {
     if (colKey) {
       const all = board[colKey] ?? [];
       const isExpanded = expandedColumn === colKey;
-      itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+      itemsToExport =
+        onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
     } else {
       itemsToExport = entries;
     }
@@ -1215,7 +1252,10 @@ const autoScrollTick = useCallback(() => {
       urlBase: urlGeral,
       sheetName: "Itens",
       filename:
-        `itens_${(colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos"}${onlyVisible ? "_visiveis" : ""}`
+        `itens_${
+          (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
+          "todos"
+        }${onlyVisible ? "_visiveis" : ""}`
           .replace(/\s+/g, "_")
           .toLowerCase() + ".xlsx",
     });
@@ -1289,7 +1329,9 @@ const autoScrollTick = useCallback(() => {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1398,11 +1440,12 @@ const autoScrollTick = useCallback(() => {
                   </div>
                 </div>
               </div>
-
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1427,6 +1470,19 @@ const autoScrollTick = useCallback(() => {
                 {isImage ? <EyeClosed size={16} /> : <Eye size={16} />}
               </Button>
             )}
+            <DownloadPdfButton
+              filters={{
+                material_id: materialId || undefined,
+                agency_id: agencyId || undefined,
+                unit_id: unitId || undefined,
+                legal_guardian_id: guardianId || undefined,
+                sector_id: locationId || undefined,
+                location_id: sectorId || undefined,
+                workflow_status: "REVIEW_REQUESTED_COMISSION",
+              }}
+              label="Baixar Todos"
+              method="catalog"
+            />
           </div>
         )}
 
@@ -1456,7 +1512,10 @@ const autoScrollTick = useCallback(() => {
                 ))}
               </div>
             ) : (
-              <div ref={boardScrollRef} className="h-full overflow-x-auto overflow-y-hidden pb-2">
+              <div
+                ref={boardScrollRef}
+                className="h-full overflow-x-auto overflow-y-hidden pb-2"
+              >
                 <DragDropContext
                   onDragStart={handleDragStart}
                   onDragUpdate={handleDragUpdate}
@@ -1490,7 +1549,10 @@ const autoScrollTick = useCallback(() => {
                                     <User className="h-4 w-4" />
                                   </AvatarFallback>
                                 </Avatar>
-                                <span title={col.name} className="font-semibold truncate">
+                                <span
+                                  title={col.name}
+                                  className="font-semibold truncate"
+                                >
                                   {col.name}
                                 </span>
                               </div>
@@ -1514,24 +1576,24 @@ const autoScrollTick = useCallback(() => {
                           <Droppable droppableId={col.key}>
                             {(provided, snapshot) => (
                               <div className="flex-1 min-h-0">
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                    className="flex flex-col min-h-0 w-full max-w-full"
-                                  >
-                                <ScrollArea
-                                  className={`relative gap-4 flex-col  flex h-[calc(100vh-348px)] ${
-                                    snapshot.isDraggingOver
-                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                      : ""
-                                  } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className="flex flex-col min-h-0 w-full max-w-full"
                                 >
-                                 
-                                    {(loading || loadingColumns[col.key]) && !items.length ? (
+                                  <ScrollArea
+                                    className={`relative gap-4 flex-col  flex h-[calc(100vh-348px)] ${
+                                      snapshot.isDraggingOver
+                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                        : ""
+                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                  >
+                                    {(loading || loadingColumns[col.key]) &&
+                                    !items.length ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square w-full mt-2 rounded-md" />
-                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
                                       </>
                                     ) : null}
 
@@ -1543,7 +1605,7 @@ const autoScrollTick = useCallback(() => {
                                         <CardItemDropdown
                                           entry={entry}
                                           index={idx}
-                                          draggableId={entry.id}  // ADICIONAR esta prop
+                                          draggableId={entry.id} // ADICIONAR esta prop
                                           isImage={isImage}
                                         />
                                       </div>
@@ -1553,14 +1615,16 @@ const autoScrollTick = useCallback(() => {
 
                                     {(() => {
                                       const total = totalByCol[col.key];
-                                      const hasMore = hasMoreByCol[col.key] ?? false;
+                                      const hasMore =
+                                        hasMoreByCol[col.key] ?? false;
                                       const loaded = items.length;
 
                                       // mostra "Mostrar mais" se ainda tem mais no backend
                                       // ou se ainda não carregamos tudo do total conhecido
                                       const shouldShowMore =
                                         hasMore ||
-                                        (typeof total === "number" && loaded < total);
+                                        (typeof total === "number" &&
+                                          loaded < total);
 
                                       return shouldShowMore ? (
                                         <div className="">
@@ -1572,7 +1636,10 @@ const autoScrollTick = useCallback(() => {
                                           >
                                             {loadingColumns[col.key] ? (
                                               <>
-                                                <Loader size={16} className="animate-spin" />
+                                                <Loader
+                                                  size={16}
+                                                  className="animate-spin"
+                                                />
                                                 Carregando...
                                               </>
                                             ) : (
@@ -1585,9 +1652,9 @@ const autoScrollTick = useCallback(() => {
                                         </div>
                                       ) : null;
                                     })()}
-                                
-                                  <ScrollBar orientation="vertical" />
-                                </ScrollArea>
+
+                                    <ScrollBar orientation="vertical" />
+                                  </ScrollArea>
                                 </div>
                               </div>
                             )}
@@ -1625,7 +1692,9 @@ const autoScrollTick = useCallback(() => {
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Avatar className="h-8 w-8 rounded-md">
-                          <AvatarImage src={`${urlGeral}user/upload/${col.key}/icon`} />
+                          <AvatarImage
+                            src={`${urlGeral}user/upload/${col.key}/icon`}
+                          />
                           <AvatarFallback className="">
                             <User className="h-4 w-4" />
                           </AvatarFallback>
@@ -1652,7 +1721,10 @@ const autoScrollTick = useCallback(() => {
                       >
                         <Download size={16} /> Baixar resultado
                       </Button>
-                      <Button size={"sm"} onClick={() => setExpandedColumn(null)}>
+                      <Button
+                        size={"sm"}
+                        onClick={() => setExpandedColumn(null)}
+                      >
                         <ChevronLeft size={16} />
                         Voltar ao quadro
                       </Button>
@@ -1661,7 +1733,11 @@ const autoScrollTick = useCallback(() => {
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {slice.map((item) => (
-                      <ItemPatrimonio key={item.id} {...item} onPromptDelete={() => {}} />
+                      <ItemPatrimonio
+                        key={item.id}
+                        {...item}
+                        onPromptDelete={() => {}}
+                      />
                     ))}
                   </div>
 
@@ -1701,17 +1777,21 @@ const autoScrollTick = useCallback(() => {
             <DialogDescription className="text-zinc-500">
               Você está reatribuindo o item{" "}
               <strong>
-                {moveTarget.entry?.asset?.material.material_name ?? moveTarget.entry?.id} (
+                {moveTarget.entry?.asset?.material.material_name ??
+                  moveTarget.entry?.id}{" "}
+                (
                 {`${moveTarget.entry?.asset?.asset_code}-${moveTarget.entry?.asset?.asset_check_digit}`}
                 )
               </strong>{" "}
               de:{" "}
               <strong>
-                {columns.find((c) => c.key === moveTarget.fromKey)?.name ?? moveTarget.fromKey}
+                {columns.find((c) => c.key === moveTarget.fromKey)?.name ??
+                  moveTarget.fromKey}
               </strong>{" "}
               para:{" "}
               <strong>
-                {columns.find((c) => c.key === moveTarget.toKey)?.name ?? moveTarget.toKey}
+                {columns.find((c) => c.key === moveTarget.toKey)?.name ??
+                  moveTarget.toKey}
               </strong>
             </DialogDescription>
           </DialogHeader>
@@ -1737,7 +1817,10 @@ const autoScrollTick = useCallback(() => {
                     id={f.name}
                     value={extraValues[f.name] ?? ""}
                     onChange={(e) =>
-                      setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))
+                      setExtraValues((s) => ({
+                        ...s,
+                        [f.name]: e.target.value,
+                      }))
                     }
                   />
                 ) : (
@@ -1746,7 +1829,10 @@ const autoScrollTick = useCallback(() => {
                     placeholder={f.placeholder}
                     value={extraValues[f.name] ?? ""}
                     onChange={(e) =>
-                      setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))
+                      setExtraValues((s) => ({
+                        ...s,
+                        [f.name]: e.target.value,
+                      }))
                     }
                   />
                 )}

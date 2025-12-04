@@ -288,7 +288,6 @@ export function BuscaCatalogo() {
   // ======================= SALVOS EM MEMÓRIA =======================
   const [saved, setSaved] = useState<SavedItem[]>([]);
   const [openSavedDialog, setOpenSavedDialog] = useState(false);
-  const [showNewSavedDot, setShowNewSavedDot] = useState(false);
 
   const canSaveCurrent = Boolean(
     wizard.pesquisa?.value_item && wizard.pesquisa?.type && valid.pesquisa
@@ -414,7 +413,6 @@ export function BuscaCatalogo() {
       createdAt: new Date().toISOString(),
     };
     setSaved((prev) => [item, ...prev]);
-    setShowNewSavedDot(true);
   }, [
     canSaveCurrent,
     wizard.pesquisa,
@@ -588,27 +586,7 @@ export function BuscaCatalogo() {
               </h1>
             </div>
 
-            <div>
-              {/* topo -> lado direito */}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOpenSavedDialog(true);
-                  setShowNewSavedDot(false); // apaga a bolinha ao abrir a lista
-                }}
-                className="relative"
-                title="Ver resultados salvos"
-              >
-                <Bookmark size={16} className="" />
-                Resultados salvos
-                <Badge variant="outline" className="ml-2">
-                  {saved.length}
-                </Badge>
-                {showNewSavedDot && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-eng-blue rounded-full animate-pulse" />
-                )}
-              </Button>
-            </div>
+          
           </div>
 
           <div className="flex flex-col h-full w-full gap-8">

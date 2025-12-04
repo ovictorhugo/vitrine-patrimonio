@@ -52,7 +52,10 @@ const ensureTrailingSlash = (u: string) => (u.endsWith("/") ? u : `${u}/`);
 
 export function ListaFinalDesfazimento() {
   const { urlGeral, user } = useContext(UserContext);
-  const baseUrl = useMemo(() => ensureTrailingSlash(urlGeral || ""), [urlGeral]);
+  const baseUrl = useMemo(
+    () => ensureTrailingSlash(urlGeral || ""),
+    [urlGeral]
+  );
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -169,10 +172,9 @@ export function ListaFinalDesfazimento() {
         setLoadingMaterials(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}materials/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}materials/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setMaterials(json?.materials ?? json ?? []);
@@ -238,10 +240,9 @@ export function ListaFinalDesfazimento() {
         const params = new URLSearchParams();
         params.set("unit_id", unitId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}agencies/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}agencies/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setAgencies(json?.agencies ?? json ?? []);
@@ -262,10 +263,9 @@ export function ListaFinalDesfazimento() {
         const params = new URLSearchParams();
         params.set("agency_id", agencyId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}sectors/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}sectors/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setSectors(json?.sectors ?? json ?? []);
@@ -286,10 +286,9 @@ export function ListaFinalDesfazimento() {
         const params = new URLSearchParams();
         params.set("sector_id", sectorId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}locations/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}locations/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setLocations(json?.locations ?? json ?? []);
@@ -459,43 +458,50 @@ export function ListaFinalDesfazimento() {
   // estado -> URL (sincroniza filtros)
   // =========================
   useEffect(() => {
-  if (!didInitFromUrl.current) return;
+    if (!didInitFromUrl.current) return;
 
-  const t = setTimeout(() => {
-    // começa com o que já existe na URL
-    const sp = new URLSearchParams(location.search);
+    const t = setTimeout(() => {
+      // começa com o que já existe na URL
+      const sp = new URLSearchParams(location.search);
 
-    // atualiza os filtros controlados
-    if (tab) sp.set("tab", tab); else sp.delete("tab");
-    if (q) sp.set("q", q); else sp.delete("q");
-    if (materialId) sp.set("material_id", materialId); else sp.delete("material_id");
-    if (guardianId) sp.set("legal_guardian_id", guardianId); else sp.delete("legal_guardian_id");
-    if (unitId) sp.set("unit_id", unitId); else sp.delete("unit_id");
-    if (agencyId) sp.set("agency_id", agencyId); else sp.delete("agency_id");
-    if (sectorId) sp.set("sector_id", sectorId); else sp.delete("sector_id");
-    if (locationId) sp.set("location_id", locationId); else sp.delete("location_id");
+      // atualiza os filtros controlados
+      if (tab) sp.set("tab", tab);
+      else sp.delete("tab");
+      if (q) sp.set("q", q);
+      else sp.delete("q");
+      if (materialId) sp.set("material_id", materialId);
+      else sp.delete("material_id");
+      if (guardianId) sp.set("legal_guardian_id", guardianId);
+      else sp.delete("legal_guardian_id");
+      if (unitId) sp.set("unit_id", unitId);
+      else sp.delete("unit_id");
+      if (agencyId) sp.set("agency_id", agencyId);
+      else sp.delete("agency_id");
+      if (sectorId) sp.set("sector_id", sectorId);
+      else sp.delete("sector_id");
+      if (locationId) sp.set("location_id", locationId);
+      else sp.delete("location_id");
 
-    // pronto: offset/limit permanecem intactos
-    const nextSearch = `?${sp.toString()}`;
-    if (nextSearch !== location.search) {
-      navigate({ search: nextSearch }, { replace: true });
-    }
-  }, 300);
+      // pronto: offset/limit permanecem intactos
+      const nextSearch = `?${sp.toString()}`;
+      if (nextSearch !== location.search) {
+        navigate({ search: nextSearch }, { replace: true });
+      }
+    }, 300);
 
-  return () => clearTimeout(t);
-}, [
-  tab,
-  q,
-  materialId,
-  guardianId,
-  unitId,
-  agencyId,
-  sectorId,
-  locationId,
-  navigate,
-  location.search,
-]);
-
+    return () => clearTimeout(t);
+  }, [
+    tab,
+    q,
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    navigate,
+    location.search,
+  ]);
 
   // =========================
   // Fetch LFD (catalog) com filtros
@@ -589,15 +595,14 @@ export function ListaFinalDesfazimento() {
     });
   };
 
-  
   return (
     <div className="flex flex-col gap-8 p-8 ">
       {/* topo */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <DownloadPdfButton
-            workflowStatus="DESFAZIMENTO"
-            filename="lista_final_desfazimento.pdf"
+            filters={{ workflow_status: "DESFAZIMENTO" }}
+            method="catalog"
             label="Baixar PDF"
           />
 

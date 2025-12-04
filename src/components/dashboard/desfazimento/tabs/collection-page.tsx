@@ -82,6 +82,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../ui/select";
+import { DownloadPdfButton } from "../../../download/download-pdf-button";
 
 // ================== Types ==================
 type UUID = string;
@@ -772,8 +773,7 @@ export function CollectionPage() {
     );
     timeouts.push(
       setTimeout(
-        () =>
-          setLoadingMessage("Estamos quase lá, continue aguardando..."),
+        () => setLoadingMessage("Estamos quase lá, continue aguardando..."),
         5000
       )
     );
@@ -1098,7 +1098,11 @@ export function CollectionPage() {
                 Descartar coletados{" "}
                 <Badge variant={"outline"}>{countDesfazimento}</Badge>
               </Button>
-
+              <DownloadPdfButton
+                filters={{ collection_id: collection_id || undefined }}
+                label="Baixar PDF"
+                method="collections"
+              />
               <Button onClick={() => setOpenAdd(true)}>
                 <Plus size={16} /> Adicionar item
               </Button>
@@ -1125,9 +1129,7 @@ export function CollectionPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {fmt(countDesfazimento)}
-              </div>
+              <div className="text-2xl font-bold">{fmt(countDesfazimento)}</div>
               <p className="text-xs text-muted-foreground">
                 registrados (estatística da coleção)
               </p>
@@ -1399,10 +1401,7 @@ export function CollectionPage() {
                               const hasNewStatus =
                                 typeof patch.status === "boolean";
 
-                              if (
-                                hasNewStatus &&
-                                patch.status !== prevStatus
-                              ) {
+                              if (hasNewStatus && patch.status !== prevStatus) {
                                 if (patch.status === true) {
                                   // pendente -> coletado
                                   setCountDesfazimento((prev) => prev + 1);
@@ -1516,18 +1515,14 @@ export function CollectionPage() {
             <div className="flex gap-4">
               <Button
                 variant="outline"
-                onClick={() =>
-                  setOffset((prev) => Math.max(0, prev - limit))
-                }
+                onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
                 disabled={isFirstPage}
               >
                 <ChevronLeft size={16} className="mr-2" />
                 Anterior
               </Button>
               <Button
-                onClick={() =>
-                  !isLastPage && setOffset((prev) => prev + limit)
-                }
+                onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
                 disabled={isLastPage}
               >
                 Próximo

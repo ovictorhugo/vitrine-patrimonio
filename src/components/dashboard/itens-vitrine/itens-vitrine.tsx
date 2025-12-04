@@ -85,6 +85,7 @@ import { usePermissions } from "../../permissions";
 import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
 import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
+import { DownloadPdfButton } from "../../download/download-pdf-button";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -233,7 +234,10 @@ type CatalogResponse = {
 /* ========================= Board ========================= */
 export const WORKFLOWS = {
   vitrine: [
-    { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine" },
+    {
+      key: "REVIEW_REQUESTED_VITRINE",
+      name: "Avaliação S. Patrimônio - Vitrine",
+    },
     { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine" },
     { key: "VITRINE", name: "Anunciados" },
     { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando Transferência" },
@@ -245,7 +249,10 @@ export const WORKFLOWS = {
       name: "Avaliação S. Patrimônio - Desfazimento",
     },
     { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento" },
-    { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento" },
+    {
+      key: "REVIEW_REQUESTED_COMISSION",
+      name: "LTD - Lista Temporária de Desfazimento",
+    },
     { key: "REJEITADOS_COMISSAO", name: "Recusados" },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
   ],
@@ -262,7 +269,10 @@ export const WORKFLOW_STATUS_META: Record<
   VITRINE: { Icon: Store, colorClass: "text-green-600" },
   AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
   TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
-  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+  REVIEW_REQUESTED_DESFAZIMENTO: {
+    Icon: Hourglass,
+    colorClass: "text-amber-500",
+  },
   ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
@@ -339,10 +349,14 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
+          className={
+            triggerClassName ?? "w-[280px] min-w-[280px] justify-between"
+          }
         >
           {selected ? (
-            <span className="truncate text-left font-medium">{selected.label}</span>
+            <span className="truncate text-left font-medium">
+              {selected.label}
+            </span>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
@@ -579,19 +593,21 @@ export function ItensVitrine() {
   const [materialId, setMaterialId] = useState<UUID | null>(null);
   const [guardianId, setGuardianId] = useState<UUID | null>(null);
   const [q, setQ] = useState("");
-const [debouncedQ, setDebouncedQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
 
-useEffect(() => {
-  const handler = setTimeout(() => {
-    setDebouncedQ(q);
-  }, 1000); // tempo do debounce (ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQ(q);
+    }, 1000); // tempo do debounce (ms)
 
-  return () => clearTimeout(handler);
-}, [q]);
+    return () => clearTimeout(handler);
+  }, [q]);
 
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
-  const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>({});
+  const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
+    {}
+  );
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   const columns = useMemo(
@@ -601,62 +617,64 @@ useEffect(() => {
 
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
-const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-const fetchStatusCounts = useCallback(async () => {
-  try {
-    const params = new URLSearchParams();
+  const fetchStatusCounts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
 
-    // mesmos filtros do GET /catalog (exceto workflow_status, porque queremos todos)
-    if (materialId) params.set("material_id", materialId);
-    if (guardianId) params.set("legal_guardian_id", guardianId);
-    if (unitId) params.set("unit_id", unitId);
-    if (agencyId) params.set("agency_id", agencyId);
-    if (sectorId) params.set("sector_id", sectorId);
-    if (locationId) params.set("location_id", locationId);
- if (debouncedQ) params.set("q", debouncedQ);
+      // mesmos filtros do GET /catalog (exceto workflow_status, porque queremos todos)
+      if (materialId) params.set("material_id", materialId);
+      if (guardianId) params.set("legal_guardian_id", guardianId);
+      if (unitId) params.set("unit_id", unitId);
+      if (agencyId) params.set("agency_id", agencyId);
+      if (sectorId) params.set("sector_id", sectorId);
+      if (locationId) params.set("location_id", locationId);
+      if (debouncedQ) params.set("q", debouncedQ);
 
-    const qs = params.toString();
-    const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""}`;
+      const qs = params.toString();
+      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${
+        qs ? `?${qs}` : ""
+      }`;
 
-    const res = await fetch(url, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-        "Content-Type": "application/json",
-      },
-    });
+      const res = await fetch(url, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error();
 
-    const data: { status: string; count: number }[] = await res.json();
+      const data: { status: string; count: number }[] = await res.json();
 
-    const map: Record<string, number> = {};
-    for (const item of data ?? []) {
-      if (!item?.status) continue;
-      map[item.status.trim()] = item.count ?? 0;
+      const map: Record<string, number> = {};
+      for (const item of data ?? []) {
+        if (!item?.status) continue;
+        map[item.status.trim()] = item.count ?? 0;
+      }
+
+      // usamos tanto para o badge quanto para saber se tem "Mostrar mais"
+      setStatusCounts(map);
+      setTotalByCol(map);
+    } catch (err) {
+      console.error("Erro ao carregar estatísticas:", err);
     }
+  }, [
+    urlGeral,
+    token,
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    debouncedQ,
+  ]);
 
-    // usamos tanto para o badge quanto para saber se tem "Mostrar mais"
-    setStatusCounts(map);
-    setTotalByCol(map);
-  } catch (err) {
-    console.error("Erro ao carregar estatísticas:", err);
-  }
-}, [
-  urlGeral,
-  token,
-  materialId,
-  guardianId,
-  unitId,
-  agencyId,
-  sectorId,
-  locationId,
-  debouncedQ
-]);
-
-useEffect(() => {
-  fetchStatusCounts();
-}, [fetchStatusCounts, tab]);
+  useEffect(() => {
+    fetchStatusCounts();
+  }, [fetchStatusCounts, tab]);
 
   // Modal de mudança de coluna
   const [moveModalOpen, setMoveModalOpen] = useState(false);
@@ -679,30 +697,27 @@ useEffect(() => {
   );
 
   // Paginação - agora com offset por coluna
-// Paginação
-const PAGE_SIZE = 24;
-const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
-const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
+  // Paginação
+  const PAGE_SIZE = 24;
+  const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
+  const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
-const rulesFor = (colKey?: string): ColumnRule =>
-  !colKey ? {} : COLUMN_RULES[colKey] || {};
+  const rulesFor = (colKey?: string): ColumnRule =>
+    !colKey ? {} : COLUMN_RULES[colKey] || {};
 
+  const showMoreCol = (key: string) => {
+    const k = (key ?? "").trim();
+    const currentItems = board[k]?.length ?? 0;
+    const newOffset = currentItems;
 
-
-
-const showMoreCol = (key: string) => {
-  const k = (key ?? "").trim();
-  const currentItems = board[k]?.length ?? 0;
-  const newOffset = currentItems;
-
-  // Busca mais itens para esta coluna
-  fetchColumnData(k, newOffset, true);
-};
-const resetExpandedPagination = () => {
-  // Só controla quantos aparecem na visão expandida,
-  // não mexe mais em board nem refaz fetch.
-  setExpandedVisible(PAGE_SIZE);
-};
+    // Busca mais itens para esta coluna
+    fetchColumnData(k, newOffset, true);
+  };
+  const resetExpandedPagination = () => {
+    // Só controla quantos aparecem na visão expandida,
+    // não mexe mais em board nem refaz fetch.
+    setExpandedVisible(PAGE_SIZE);
+  };
 
   const showMoreExpanded = () => {
     if (!expandedColumn) return;
@@ -772,8 +787,7 @@ const resetExpandedPagination = () => {
         if (agencyId) params.set("agency_id", agencyId);
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
- if (debouncedQ) params.set("q", debouncedQ);
-
+        if (debouncedQ) params.set("q", debouncedQ);
         const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -787,36 +801,41 @@ const resetExpandedPagination = () => {
         const newEntries = json?.catalog_entries ?? [];
 
         // Atualiza total
-      if (typeof json.total === "number") {
-  setTotalByCol(prev => ({ ...prev, [workflowStatus as string]: json.total } as Record<string, number>));
-}
+        if (typeof json.total === "number") {
+          setTotalByCol(
+            (prev) =>
+              ({ ...prev, [workflowStatus as string]: json.total } as Record<
+                string,
+                number
+              >)
+          );
+        }
 
         // Atualiza entries globais e board
-  if (append) {
-  // Adiciona aos existentes
-  setBoard((prev) => ({
-    ...prev,
-    [workflowStatus]: [...(prev[workflowStatus] ?? []), ...newEntries],
-  }));
-  setEntries((prev) => {
-    const existingIds = new Set(prev.map((e) => e.id));
-    const filtered = newEntries.filter((e) => !existingIds.has(e.id));
-    return [...prev, ...filtered];
-  });
-} else {
-  // Substitui
-  setBoard((prev) => ({
-    ...prev,
-    [workflowStatus]: newEntries,
-  }));
-  setEntries((prev) => {
-    const otherCols = prev.filter(
-      (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
-    );
-    return [...otherCols, ...newEntries];
-  });
-}
-
+        if (append) {
+          // Adiciona aos existentes
+          setBoard((prev) => ({
+            ...prev,
+            [workflowStatus]: [...(prev[workflowStatus] ?? []), ...newEntries],
+          }));
+          setEntries((prev) => {
+            const existingIds = new Set(prev.map((e) => e.id));
+            const filtered = newEntries.filter((e) => !existingIds.has(e.id));
+            return [...prev, ...filtered];
+          });
+        } else {
+          // Substitui
+          setBoard((prev) => ({
+            ...prev,
+            [workflowStatus]: newEntries,
+          }));
+          setEntries((prev) => {
+            const otherCols = prev.filter(
+              (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
+            );
+            return [...otherCols, ...newEntries];
+          });
+        }
       } catch (err) {
         console.error("Erro ao buscar coluna:", err);
         toast.error(`Falha ao carregar ${workflowStatus}`);
@@ -834,34 +853,33 @@ const resetExpandedPagination = () => {
       sectorId,
       locationId,
       PAGE_SIZE,
-      debouncedQ
+      debouncedQ,
     ]
   );
 
   // Fetch inicial: busca todas as colunas
- const fetchAllColumns = useCallback(async () => {
-  setLoading(true);
-  setBoard({});
-  setEntries([]);
+  const fetchAllColumns = useCallback(async () => {
+    setLoading(true);
+    setBoard({});
+    setEntries([]);
 
-  try {
-    // 👉 Agora faz uma coluna de cada vez
-    for (const col of columns) {
-      const key = (col.key ?? "").trim();
-      if (!key) continue;
+    try {
+      // 👉 Agora faz uma coluna de cada vez
+      for (const col of columns) {
+        const key = (col.key ?? "").trim();
+        if (!key) continue;
 
-      // espera terminar antes de ir pra próxima
-      await fetchColumnData(key, 0, false);
+        // espera terminar antes de ir pra próxima
+        await fetchColumnData(key, 0, false);
+      }
+
+      // opcional: depois que todas as colunas carregarem,
+      // atualiza as estatísticas já com o board pronto
+      await fetchStatusCounts();
+    } finally {
+      setLoading(false);
     }
-
-    // opcional: depois que todas as colunas carregarem,
-    // atualiza as estatísticas já com o board pronto
-    await fetchStatusCounts();
-  } finally {
-    setLoading(false);
-  }
-}, [columns, fetchColumnData, fetchStatusCounts]);
-
+  }, [columns, fetchColumnData, fetchStatusCounts]);
 
   useEffect(() => {
     setExpandedColumn(null);
@@ -890,44 +908,52 @@ const resetExpandedPagination = () => {
       { replace: true }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, debouncedQ]);
+  }, [
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    debouncedQ,
+  ]);
 
   // Filtro q (client) - aplicado sobre o board já carregado
-// Filtro q (client) - aplicado sobre o board já carregado
-const filteredBoard = useMemo(() => {
-  if (!debouncedQ.trim()) return board;
+  // Filtro q (client) - aplicado sobre o board já carregado
+  const filteredBoard = useMemo(() => {
+    if (!debouncedQ.trim()) return board;
 
-  const term = debouncedQ.trim().toLowerCase();
-  const filtered: Record<string, CatalogEntry[]> = {};
+    const term = debouncedQ.trim().toLowerCase();
+    const filtered: Record<string, CatalogEntry[]> = {};
 
-  for (const [key, items] of Object.entries(board)) {
-    // Remove duplicados antes de filtrar
-    const uniqueItems = items.filter((item, index, self) => 
-      index === self.findIndex((t) => t.id === item.id)
-    );
-    
-    filtered[key] = uniqueItems.filter((e) => {
-      const code = codeFrom(e);
-      const haystack = [
-        code,
-        e?.asset?.atm_number,
-        e?.asset?.asset_description,
-        e?.asset?.material?.material_name,
-        e?.asset?.item_brand,
-        e?.asset?.item_model,
-        e?.asset?.serial_number,
-        e?.description,
-        e?.asset?.legal_guardian?.legal_guardians_name,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(term);
-    });
-  }
+    for (const [key, items] of Object.entries(board)) {
+      // Remove duplicados antes de filtrar
+      const uniqueItems = items.filter(
+        (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+      );
 
-  return filtered;
-}, [board, q]);
+      filtered[key] = uniqueItems.filter((e) => {
+        const code = codeFrom(e);
+        const haystack = [
+          code,
+          e?.asset?.atm_number,
+          e?.asset?.asset_description,
+          e?.asset?.material?.material_name,
+          e?.asset?.item_brand,
+          e?.asset?.item_model,
+          e?.asset?.serial_number,
+          e?.description,
+          e?.asset?.legal_guardian?.legal_guardians_name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    return filtered;
+  }, [board, q]);
 
   const postWorkflowChange = async (
     entry: CatalogEntry | undefined,
@@ -1009,7 +1035,7 @@ const filteredBoard = useMemo(() => {
     }
   }, []);
 
-const handleDragStart = useCallback(() => {
+  const handleDragStart = useCallback(() => {
     draggingRef.current = true;
     document.addEventListener("pointermove", handlePointerMoveWhileDrag);
     stopAutoScrollLoop();
@@ -1023,23 +1049,24 @@ const handleDragStart = useCallback(() => {
     if (!destId) return;
     const el = colRefs.current[destId];
     if (!el) return;
-    
+
     // Calcular a posição da coluna relativa ao container de scroll
     const container = boardScrollRef.current;
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
     const colRect = el.getBoundingClientRect();
-    
+
     // Se a coluna está fora da viewport, fazer scroll
     const isLeftOutside = colRect.left < containerRect.left;
     const isRightOutside = colRect.right > containerRect.right;
-    
+
     if (isLeftOutside || isRightOutside) {
       const scrollLeft = container.scrollLeft;
       const colOffsetLeft = el.offsetLeft;
-      const targetScroll = colOffsetLeft - containerRect.width / 2 + colRect.width / 2;
-      
+      const targetScroll =
+        colOffsetLeft - containerRect.width / 2 + colRect.width / 2;
+
       container.scrollTo({
         left: targetScroll,
         behavior: "smooth",
@@ -1047,81 +1074,83 @@ const handleDragStart = useCallback(() => {
     }
   }, []);
 
-const handleDragEndDrop = async (result: DropResult) => {
-  const { source, destination, draggableId } = result;
-  if (!destination) return;
+  const handleDragEndDrop = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
 
-  const fromKey = (source.droppableId ?? "").trim();
-  const toKey = (destination.droppableId ?? "").trim();
-  if (fromKey === toKey) return;
+    const fromKey = (source.droppableId ?? "").trim();
+    const toKey = (destination.droppableId ?? "").trim();
+    if (fromKey === toKey) return;
 
-  // ✅ Sempre ache o item pelo draggableId NA LISTA RENDERIZADA
-  const fromVisibleList = board[fromKey] ?? [];
-  const entry = fromVisibleList.find((e) => e.id === draggableId);
+    // ✅ Sempre ache o item pelo draggableId NA LISTA RENDERIZADA
+    const fromVisibleList = board[fromKey] ?? [];
+    const entry = fromVisibleList.find((e) => e.id === draggableId);
 
-  if (!entry) return;
+    if (!entry) return;
 
-  const needs = rulesFor(toKey);
+    const needs = rulesFor(toKey);
 
-  // snapshots para rollback
-  const prevBoard = JSON.parse(JSON.stringify(board));
-  const prevEntries = [...entries];
+    // snapshots para rollback
+    const prevBoard = JSON.parse(JSON.stringify(board));
+    const prevEntries = [...entries];
 
-  const optimisticHistory: WorkflowHistoryItem = {
-    id: crypto.randomUUID(),
-    catalog_id: entry.id,
-    user: entry.user,
-    workflow_status: toKey,
-    detail: {},
-    created_at: new Date().toISOString(),
-  };
+    const optimisticHistory: WorkflowHistoryItem = {
+      id: crypto.randomUUID(),
+      catalog_id: entry.id,
+      user: entry.user,
+      workflow_status: toKey,
+      detail: {},
+      created_at: new Date().toISOString(),
+    };
 
-  const optimisticEntry: CatalogEntry = {
-    ...entry,
-    workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
-  };
+    const optimisticEntry: CatalogEntry = {
+      ...entry,
+      workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
+    };
 
-  // ✅ atualização otimista SEM depender de índice
-  const newFromBoard = (board[fromKey] ?? []).filter((x) => x.id !== entry.id);
-  const newToBoard = [
-    optimisticEntry,
-    ...(board[toKey] ?? []).filter((x) => x.id !== entry.id),
-  ];
+    // ✅ atualização otimista SEM depender de índice
+    const newFromBoard = (board[fromKey] ?? []).filter(
+      (x) => x.id !== entry.id
+    );
+    const newToBoard = [
+      optimisticEntry,
+      ...(board[toKey] ?? []).filter((x) => x.id !== entry.id),
+    ];
 
-  setBoard((old) => ({
-    ...old,
-    [fromKey]: newFromBoard,
-    [toKey]: newToBoard,
-  }));
+    setBoard((old) => ({
+      ...old,
+      [fromKey]: newFromBoard,
+      [toKey]: newToBoard,
+    }));
 
-  setEntries((old) => {
-    const filtered = old.filter((it) => it.id !== entry.id);
-    return [...filtered, optimisticEntry];
-  });
+    setEntries((old) => {
+      const filtered = old.filter((it) => it.id !== entry.id);
+      return [...filtered, optimisticEntry];
+    });
 
-  // modal de justificativa?
-  if (needs.requireJustification || needs.extraFields?.length) {
-    setSnapshotBoard(prevBoard);
-    setSnapshotEntries(prevEntries);
-    setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
-    setMoveModalOpen(true);
-    return;
-  }
-
-  // contadores otimistas
-  adjustCountsOnMove(fromKey, toKey);
-
-  // POST assíncrono
-  postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
-    if (!ok) {
-      setBoard(prevBoard);
-      setEntries(prevEntries);
-      adjustCountsOnMove(toKey, fromKey); // rollback contadores
+    // modal de justificativa?
+    if (needs.requireJustification || needs.extraFields?.length) {
+      setSnapshotBoard(prevBoard);
+      setSnapshotEntries(prevEntries);
+      setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
+      setMoveModalOpen(true);
+      return;
     }
-  });
-};
 
-const handleDragEnd = (result: DropResult) => {
+    // contadores otimistas
+    adjustCountsOnMove(fromKey, toKey);
+
+    // POST assíncrono
+    postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
+      if (!ok) {
+        setBoard(prevBoard);
+        setEntries(prevEntries);
+        adjustCountsOnMove(toKey, fromKey); // rollback contadores
+      }
+    });
+  };
+
+  const handleDragEnd = (result: DropResult) => {
     draggingRef.current = false;
     document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
     stopAutoScrollLoop();
@@ -1135,13 +1164,18 @@ const handleDragEnd = (result: DropResult) => {
 
     const needs = rulesFor(moveTarget.toKey);
     const extra: Record<string, any> = {};
-    for (const f of needs.extraFields ?? []) extra[f.name] = extraValues[f.name] ?? "";
+    for (const f of needs.extraFields ?? [])
+      extra[f.name] = extraValues[f.name] ?? "";
 
     const prevBoard = snapshotBoard ?? board;
     const prevEntries = snapshotEntries ?? entries;
 
     setPosting(true);
-    const ok = await postWorkflowChange(moveTarget.entry, moveTarget.toKey, extra);
+    const ok = await postWorkflowChange(
+      moveTarget.entry,
+      moveTarget.toKey,
+      extra
+    );
     setPosting(false);
 
     if (!ok) {
@@ -1153,7 +1187,7 @@ const handleDragEnd = (result: DropResult) => {
     }
 
     // ✅ deu certo: atualiza estatísticas
-adjustCountsOnMove(moveTarget.fromKey, moveTarget.toKey);
+    adjustCountsOnMove(moveTarget.fromKey, moveTarget.toKey);
 
     closingActionRef.current = "confirm";
     setSnapshotBoard(null);
@@ -1190,7 +1224,7 @@ adjustCountsOnMove(moveTarget.fromKey, moveTarget.toKey);
   const handleCancelMove = () => {
     closingActionRef.current = "cancel";
     setMoveModalOpen(false);
-     handleModalOpenChange(false);
+    handleModalOpenChange(false);
   };
 
   const clearFilters = () => {
@@ -1230,12 +1264,11 @@ adjustCountsOnMove(moveTarget.fromKey, moveTarget.toKey);
     label: g.legal_guardians_name || g.legal_guardians_code,
   }));
 
-useEffect(() => {
-  if (expandedColumn !== null) resetExpandedPagination();
-}, [expandedColumn]);
+  useEffect(() => {
+    if (expandedColumn !== null) resetExpandedPagination();
+  }, [expandedColumn]);
 
-const adjustCountsOnMove = useCallback(
-  (fromKey?: string, toKey?: string) => {
+  const adjustCountsOnMove = useCallback((fromKey?: string, toKey?: string) => {
     if (!fromKey && !toKey) return;
 
     // Atualiza statusCounts (badge)
@@ -1265,10 +1298,7 @@ const adjustCountsOnMove = useCallback(
       }
       return next;
     });
-  },
-  []
-);
-
+  }, []);
 
   const { hasAnunciarItem, hasCargosFuncoes } = usePermissions();
 
@@ -1317,12 +1347,15 @@ const adjustCountsOnMove = useCallback(
       setEntries((prev) => prev.filter((it) => it.id !== id));
     };
     window.addEventListener("catalog:deleted" as any, handler as any);
-    return () => window.removeEventListener("catalog:deleted" as any, handler as any);
+    return () =>
+      window.removeEventListener("catalog:deleted" as any, handler as any);
   }, []);
 
   useEffect(() => {
     const handler = (e: any) => {
-      const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+      const detail = e?.detail as
+        | { id?: string; newStatus?: string }
+        | undefined;
       const id = detail?.id;
       const newStatus = detail?.newStatus?.trim();
       if (!id || !newStatus) return;
@@ -1357,7 +1390,10 @@ const adjustCountsOnMove = useCallback(
     };
     window.addEventListener("catalog:workflow-updated" as any, handler as any);
     return () =>
-      window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+      window.removeEventListener(
+        "catalog:workflow-updated" as any,
+        handler as any
+      );
   }, []);
 
   const ROLE_COMISSAO_ID = import.meta.env.VITE_ID_COMISSAO_PERMANENTE;
@@ -1392,7 +1428,8 @@ const adjustCountsOnMove = useCallback(
     if (colKey) {
       const all = board[colKey] ?? [];
       const isExpanded = expandedColumn === colKey;
-      itemsToExport = onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
+      itemsToExport =
+        onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
     } else {
       itemsToExport = entries;
     }
@@ -1408,7 +1445,10 @@ const adjustCountsOnMove = useCallback(
       urlBase: urlGeral,
       sheetName: "Itens",
       filename:
-        `itens_${(colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) || "todos"}${onlyVisible ? "_visiveis" : ""}`
+        `itens_${
+          (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
+          "todos"
+        }${onlyVisible ? "_visiveis" : ""}`
           .replace(/\s+/g, "_")
           .toLowerCase() + ".xlsx",
     });
@@ -1425,7 +1465,6 @@ const adjustCountsOnMove = useCallback(
 
   const [isImage, setIsImage] = useState(false);
 
-  
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
@@ -1460,7 +1499,9 @@ const adjustCountsOnMove = useCallback(
               <ChevronLeft className="h-4 w-4" />
               <span className="sr-only">Voltar</span>
             </Button>
-            <h1 className="text-xl font-semibold tracking-tight">Movimentação</h1>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Movimentação
+            </h1>
           </div>
 
           <div className="hidden gap-2 items-center xl:flex">
@@ -1501,7 +1542,18 @@ const adjustCountsOnMove = useCallback(
             </div>
 
             <Separator orientation="vertical" className="h-8 mx-2" />
-
+            <DownloadPdfButton
+              filters={{
+                material_id: materialId || undefined,
+                agency_id: agencyId || undefined,
+                unit_id: unitId || undefined,
+                legal_guardian_id: guardianId || undefined,
+                sector_id: locationId || undefined,
+                location_id: sectorId || undefined,
+              }}
+              label="Baixar Tudo"
+              method="catalog"
+            />
             {hasAnunciarItem && (
               <Link to={"/dashboard/novo-item"}>
                 <Button size="sm">
@@ -1520,7 +1572,9 @@ const adjustCountsOnMove = useCallback(
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1634,7 +1688,9 @@ const adjustCountsOnMove = useCallback(
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1649,16 +1705,16 @@ const adjustCountsOnMove = useCallback(
               />
             )}
 
-           {expandedColumn === null && (
-  <Button
-    onClick={() => setIsImage(!isImage)}
-    variant={"outline"}
-    size={"icon"}
-    className="h-8 min-w-8 "
-  >
-    {isImage ? <EyeClosed size={16} /> : <Eye size={16} />}
-  </Button>
-)}
+            {expandedColumn === null && (
+              <Button
+                onClick={() => setIsImage(!isImage)}
+                variant={"outline"}
+                size={"icon"}
+                className="h-8 min-w-8 "
+              >
+                {isImage ? <EyeClosed size={16} /> : <Eye size={16} />}
+              </Button>
+            )}
           </div>
         )}
 
@@ -1682,16 +1738,16 @@ const adjustCountsOnMove = useCallback(
               >
                 <div className="flex gap-4 min-w-[980px] h-full">
                   {columns.map((col) => {
-             const items = board[col.key] ?? [];
-const slice = items.slice(0, expandedVisible);
-const meta = WORKFLOW_STATUS_META[col.key] ?? {
-  Icon: HelpCircle,
-  colorClass: "text-zinc-500",
-};
-const { Icon } = meta;
+                    const items = board[col.key] ?? [];
+                    const slice = items.slice(0, expandedVisible);
+                    const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                      Icon: HelpCircle,
+                      colorClass: "text-zinc-500",
+                    };
+                    const { Icon } = meta;
 
-// 👇 NOVO
-const totalForCol = statusCounts[col.key] ?? items.length;
+                    // 👇 NOVO
+                    const totalForCol = statusCounts[col.key] ?? items.length;
 
                     return (
                       <Alert
@@ -1711,7 +1767,7 @@ const totalForCol = statusCounts[col.key] ?? items.length;
                               </span>
                             </div>
                             <Badge variant="outline" className="shrink-0">
-                             {totalForCol}
+                              {totalForCol}
                             </Badge>
                           </div>
                           <Button
@@ -1727,23 +1783,22 @@ const totalForCol = statusCounts[col.key] ?? items.length;
 
                         <Separator className="mb-2" />
 
-                     <Droppable droppableId={col.key}>
-  {(provided, snapshot) => (
-    <div className="flex-1 min-h-0">
-      {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
-      <div
-        ref={provided.innerRef}
-        {...provided.droppableProps}
-      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
-      >
-        <ScrollArea
-                                className={`h-full relative flex ${
-                                  snapshot.isDraggingOver
-                                    ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                    : ""
-                                } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                        <Droppable droppableId={col.key}>
+                          {(provided, snapshot) => (
+                            <div className="flex-1 min-h-0">
+                              {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className="flex flex-col min-h-0 w-full max-w-full relative h-full"
                               >
-                             
+                                <ScrollArea
+                                  className={`h-full relative flex ${
+                                    snapshot.isDraggingOver
+                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                      : ""
+                                  } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                >
                                   {(loading || loadingColumns[col.key]) &&
                                   !items.length ? (
                                     <>
@@ -1761,81 +1816,89 @@ const totalForCol = statusCounts[col.key] ?? items.length;
                                       <CardItemDropdown
                                         entry={entry}
                                         index={idx}
-                                        draggableId={entry.id}  // ADICIONAR esta prop
+                                        draggableId={entry.id} // ADICIONAR esta prop
                                         isImage={isImage}
-                                        onPromptDelete={() => openDelete(entry.id)}
+                                        onPromptDelete={() =>
+                                          openDelete(entry.id)
+                                        }
                                       />
                                     </div>
                                   ))}
 
-                              {(() => {
-  const totalFromTotals = totalByCol[col.key];
-  const totalFromStats = statusCounts[col.key];
+                                  {(() => {
+                                    const totalFromTotals = totalByCol[col.key];
+                                    const totalFromStats =
+                                      statusCounts[col.key];
 
-  // 1) escolhe total confiável
-  let effectiveTotal: number | undefined;
+                                    // 1) escolhe total confiável
+                                    let effectiveTotal: number | undefined;
 
-  if (typeof totalFromTotals === "number" && totalFromTotals >= items.length) {
-    effectiveTotal = totalFromTotals;
-  } else if (
-    typeof totalFromStats === "number" &&
-    totalFromStats >= items.length
-  ) {
-    effectiveTotal = totalFromStats;
-  }
+                                    if (
+                                      typeof totalFromTotals === "number" &&
+                                      totalFromTotals >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromTotals;
+                                    } else if (
+                                      typeof totalFromStats === "number" &&
+                                      totalFromStats >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromStats;
+                                    }
 
-  const loaded = items.length;
+                                    const loaded = items.length;
 
-  // 2) loading inicial (apenas skeleton)
-  const isInitialLoading =
-    (loading || loadingColumns[col.key]) && loaded === 0;
+                                    // 2) loading inicial (apenas skeleton)
+                                    const isInitialLoading =
+                                      (loading || loadingColumns[col.key]) &&
+                                      loaded === 0;
 
-  if (isInitialLoading) return null;
+                                    if (isInitialLoading) return null;
 
-  // 3) decide hasMore mantendo sua regra original
-  let hasMore = false;
+                                    // 3) decide hasMore mantendo sua regra original
+                                    let hasMore = false;
 
-  if (effectiveTotal != null) {
-    hasMore = loaded < effectiveTotal;
-  } else if (!q.trim()) {
-    hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
-  }
+                                    if (effectiveTotal != null) {
+                                      hasMore = loaded < effectiveTotal;
+                                    } else if (!q.trim()) {
+                                      hasMore =
+                                        loaded > 0 && loaded % PAGE_SIZE === 0;
+                                    }
 
-  if (!hasMore) return null;
+                                    if (!hasMore) return null;
 
-  return (
-    <div className="pt-2">
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={() => showMoreCol(col.key)}
-        disabled={loadingColumns[col.key]}
-      >
-        {loadingColumns[col.key] ? (
-          <>
-            <Loader size={16} className="animate-spin" />
-            Carregando...
-          </>
-        ) : (
-          <>
-            <Plus size={16} />
-            Mostrar mais
-          </>
-        )}
-      </Button>
-    </div>
-  );
-})()}
+                                    return (
+                                      <div className="pt-2">
+                                        <Button
+                                          variant="outline"
+                                          className="w-full"
+                                          onClick={() => showMoreCol(col.key)}
+                                          disabled={loadingColumns[col.key]}
+                                        >
+                                          {loadingColumns[col.key] ? (
+                                            <>
+                                              <Loader
+                                                size={16}
+                                                className="animate-spin"
+                                              />
+                                              Carregando...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Plus size={16} />
+                                              Mostrar mais
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    );
+                                  })()}
 
-
-
-                              
-                                <ScrollBar orientation="vertical" />
-        </ScrollArea>
-      </div>
-    </div>
-  )}
-</Droppable>
+                                  <ScrollBar orientation="vertical" />
+                                </ScrollArea>
+                              </div>
+                            </div>
+                          )}
+                        </Droppable>
                       </Alert>
                     );
                   })}
@@ -1848,16 +1911,16 @@ const totalForCol = statusCounts[col.key] ?? items.length;
             {columns.map((col) => {
               if (expandedColumn !== col.key) return null;
 
-          const items = board[col.key] ?? [];
-const slice = items.slice(0, expandedVisible);
-const meta = WORKFLOW_STATUS_META[col.key] ?? {
-  Icon: HelpCircle,
-  colorClass: "text-zinc-500",
-};
-const { Icon } = meta;
+              const items = board[col.key] ?? [];
+              const slice = items.slice(0, expandedVisible);
+              const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                Icon: HelpCircle,
+                colorClass: "text-zinc-500",
+              };
+              const { Icon } = meta;
 
-// 👇 NOVO
-const totalForCol = statusCounts[col.key] ?? items.length;
+              // 👇 NOVO
+              const totalForCol = statusCounts[col.key] ?? items.length;
 
               return (
                 <div key={col.key}>
@@ -1871,86 +1934,102 @@ const totalForCol = statusCounts[col.key] ?? items.length;
                     </div>
 
                     <div className="flex gap-3">
+                      <DownloadPdfButton
+                        filters={{
+                          material_id: materialId || undefined,
+                          agency_id: agencyId || undefined,
+                          unit_id: unitId || undefined,
+                          legal_guardian_id: guardianId || undefined,
+                          sector_id: locationId || undefined,
+                          location_id: sectorId || undefined,
+                          workflow_status: expandedColumn,
+                        }}
+                        label="Baixar PDF"
+                        method="catalog"
+                      />
                       <Button
                         size={"sm"}
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >
                         <Download size={16} />
-                        Baixar resultado
+                        Baixar csv
                       </Button>
-                      <Button size={"sm"} onClick={() => setExpandedColumn(null)}>
+                      <Button
+                        size={"sm"}
+                        onClick={() => setExpandedColumn(null)}
+                      >
                         <ChevronLeft size={16} />
                         Voltar ao quadro
                       </Button>
                     </div>
                   </div>
 
-                  {(loading || loadingColumns[col.key]) &&
-                                  !items.length ? (
-                                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                     
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-<Skeleton className="aspect-square w-full rounded-md" />
-<Skeleton className="aspect-square w-full rounded-md" />
-                                     <Skeleton className="aspect-square w-full rounded-md" />
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                    </div>
-                                  ) : null}
+                  {(loading || loadingColumns[col.key]) && !items.length ? (
+                    <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      <Skeleton className="aspect-square w-full rounded-md" />
+
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                      <Skeleton className="aspect-square w-full rounded-md" />
+                    </div>
+                  ) : null}
 
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {slice.map((item) => (
                       <ItemPatrimonio
                         key={item.id}
                         {...item}
-                       
                         onPromptDelete={() => openDelete(item.id)}
                       />
                     ))}
                   </div>
 
                   {(() => {
-                 const totalFromTotals = totalByCol[col.key];
-  const totalFromStats = statusCounts[col.key];
+                    const totalFromTotals = totalByCol[col.key];
+                    const totalFromStats = statusCounts[col.key];
 
-  // Tenta usar algum total "confiável"
-  let effectiveTotal: number | undefined;
-  if (typeof totalFromTotals === "number" && totalFromTotals >= items.length) {
-    effectiveTotal = totalFromTotals;
-  } else if (
-    typeof totalFromStats === "number" &&
-    totalFromStats >= items.length
-  ) {
-    effectiveTotal = totalFromStats;
-  }
+                    // Tenta usar algum total "confiável"
+                    let effectiveTotal: number | undefined;
+                    if (
+                      typeof totalFromTotals === "number" &&
+                      totalFromTotals >= items.length
+                    ) {
+                      effectiveTotal = totalFromTotals;
+                    } else if (
+                      typeof totalFromStats === "number" &&
+                      totalFromStats >= items.length
+                    ) {
+                      effectiveTotal = totalFromStats;
+                    }
 
-  const loaded = items.length;
-  const visible = slice.length;
+                    const loaded = items.length;
+                    const visible = slice.length;
 
-  let hasMore = false;
+                    let hasMore = false;
 
-  // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
-  if (loaded > visible) {
-    hasMore = true;
-  }
-  // 2) Temos um total confiável vindo da API: compara direto
-  else if (effectiveTotal != null) {
-    hasMore = loaded < effectiveTotal;
-  }
-  // 3) Fallback: não sabemos o total, mas
-  //    - não tem filtro de texto
-  //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
-  else if (!q.trim()) {
-    hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
-  }
+                    // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
+                    if (loaded > visible) {
+                      hasMore = true;
+                    }
+                    // 2) Temos um total confiável vindo da API: compara direto
+                    else if (effectiveTotal != null) {
+                      hasMore = loaded < effectiveTotal;
+                    }
+                    // 3) Fallback: não sabemos o total, mas
+                    //    - não tem filtro de texto
+                    //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
+                    else if (!q.trim()) {
+                      hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
+                    }
 
-  if (!hasMore) return null;
-
+                    if (!hasMore) return null;
 
                     return hasMore ? (
                       <div className="flex justify-center mt-8">
@@ -2080,7 +2159,10 @@ const totalForCol = statusCounts[col.key] ?? items.length;
                     id={f.name}
                     value={extraValues[f.name] ?? ""}
                     onChange={(e) =>
-                      setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))
+                      setExtraValues((s) => ({
+                        ...s,
+                        [f.name]: e.target.value,
+                      }))
                     }
                   />
                 ) : (
@@ -2089,7 +2171,10 @@ const totalForCol = statusCounts[col.key] ?? items.length;
                     placeholder={f.placeholder}
                     value={extraValues[f.name] ?? ""}
                     onChange={(e) =>
-                      setExtraValues((s) => ({ ...s, [f.name]: e.target.value }))
+                      setExtraValues((s) => ({
+                        ...s,
+                        [f.name]: e.target.value,
+                      }))
                     }
                   />
                 )}
@@ -2127,8 +2212,8 @@ const totalForCol = statusCounts[col.key] ?? items.length;
               Deletar item do catálogo
             </DialogTitle>
             <DialogDescription className="text-zinc-500 ">
-              Esta ação é irreversível. Ao deletar, todas as informações deste item
-              no catálogo serão perdidas.
+              Esta ação é irreversível. Ao deletar, todas as informações deste
+              item no catálogo serão perdidas.
             </DialogDescription>
           </DialogHeader>
 

@@ -158,7 +158,7 @@ export function PesquisaStep({
   };
 
   const handleChangeInputCod = (value: string) => {
-    let cleanValue = value.replace(/[^0-9]/g, "");
+    let cleanValue = value.replace(/[^a-zA-Z0-9]/g, "");
 
     const originalValue = cleanValue;
     cleanValue = cleanValue.replace(/^0+/, "");

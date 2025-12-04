@@ -72,6 +72,7 @@ import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 import { GraficoStatusCatalogo } from "./chart-workflows";
 import { Combobox, ComboboxItem } from "../../itens-vitrine/itens-vitrine";
 import { Separator } from "../../../ui/separator";
+import { DownloadPdfButton } from "../../../download/download-pdf-button";
 
 /* =========================
    Tipos mínimos do backend
@@ -120,7 +121,12 @@ type CatalogAsset = {
         agency_code: string;
         unit_id: UUID;
         id: UUID;
-        unit: { unit_name: string; unit_code: string; unit_siaf: string; id: UUID };
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: UUID;
+        };
       };
     };
     legal_guardian: LegalGuardian;
@@ -191,14 +197,22 @@ const WORKFLOWS = {
       name: "Avaliação S. Patrimônio - Desfazimento",
       Icon: Hourglass,
     },
-    { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
+    {
+      key: "ADJUSTMENT_DESFAZIMENTO",
+      name: "Ajustes - Desfazimento",
+      Icon: Wrench,
+    },
     {
       key: "REVIEW_REQUESTED_COMISSION",
       name: "LTD - Lista Temporária de Desfazimento",
       Icon: ListTodo,
     },
     { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
-    { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento", Icon: Trash },
+    {
+      key: "DESFAZIMENTO",
+      name: "LFD - Lista Final de Desfazimento",
+      Icon: Trash,
+    },
     { key: "DESCARTADOS", name: "Processo Finalizado", Icon: Recycle },
   ],
 } as const;
@@ -214,7 +228,10 @@ const WORKFLOW_STATUS_META: Record<
   AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
   TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
 
-  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+  REVIEW_REQUESTED_DESFAZIMENTO: {
+    Icon: Hourglass,
+    colorClass: "text-amber-500",
+  },
   ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
   REVIEW_REQUESTED_COMISSION: { Icon: Users, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: HelpCircle, colorClass: "text-red-500" },
@@ -312,8 +329,7 @@ function StatusAccordion({
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
-  const effectiveTotal =
-    typeof total === "number" ? total : (items?.length ?? 0);
+  const effectiveTotal = typeof total === "number" ? total : items?.length ?? 0;
 
   useEffect(() => {
     if (!expanded) setVisible(PAGE_SIZE);
@@ -404,9 +420,7 @@ function StatusAccordion({
                 title={title}
                 icon={<IconComp size={24} className="text-gray-400" />}
               />
-              <Badge variant="outline">
-                {loading ? "…" : effectiveTotal}
-              </Badge>
+              <Badge variant="outline">{loading ? "…" : effectiveTotal}</Badge>
             </div>
 
             <div className="flex items-center gap-2">
@@ -465,7 +479,7 @@ function StatusAccordion({
         />
       </div>
 
-          <AccordionContent className="p-0">
+      <AccordionContent className="p-0">
         <div ref={contentWrapRef}>
           {!expanded ? (
             // ======= MODO COMPACTO: carrossel horizontal =======
@@ -524,41 +538,29 @@ function StatusAccordion({
                         {hasMore && (
                           <div className="">
                             <Alert
-                          className="w-64 min-w-64 flex-col gap-2 dark:hover:bg-neutral-800 h-full flex items-center justify-center hover:bg-neutral-100 transition-all cursor-pointer"
+                              className="w-64 min-w-64 flex-col gap-2 dark:hover:bg-neutral-800 h-full flex items-center justify-center hover:bg-neutral-100 transition-all cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (!loadingMore && onLoadMore) {
                                   onLoadMore(statusKey);
                                 }
                               }}
-                             
                             >
-                             <div >
-                               {loadingMore ? (
-                            
+                              <div>
+                                {loadingMore ? (
                                   <Loader size={32} className="animate-spin" />
-                               
-                              ) : (
-                            
+                                ) : (
                                   <Plus size={32} className="" />
-                            
-                             
-                              )}
-                             </div>
+                                )}
+                              </div>
 
                               <div>
-                               {loadingMore ? (
-                                <>
-                               
-                                  Carregando…
-                                </>
-                              ) : (
-                                <>
-                                
-                                  Carregar mais
-                                </>
-                              )}
-                             </div>
+                                {loadingMore ? (
+                                  <>Carregando…</>
+                                ) : (
+                                  <>Carregar mais</>
+                                )}
+                              </div>
                             </Alert>
                           </div>
                         )}
@@ -600,8 +602,6 @@ function StatusAccordion({
                 ))}
               </div>
 
-           
-
               <div className="flex justify-center mt-8">
                 {loadingMore ? (
                   <Button disabled>
@@ -622,7 +622,6 @@ function StatusAccordion({
           )}
         </div>
       </AccordionContent>
-
     </AccordionItem>
   );
 }
@@ -655,214 +654,227 @@ export function Anunciados(props: {
     return h;
   }, [token]);
 
-
   // ===== debounce helper =====
-function useDebounced<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
+  function useDebounced<T>(value: T, delay = 300) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+      const id = setTimeout(() => setDebounced(value), delay);
+      return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+  }
+
+  // buscas (texto)
+  const [q, setQ] = useState("");
+
+  // queries dos combobox
+  const [materialQ, setMaterialQ] = useState("");
+  const [guardianQ, setGuardianQ] = useState("");
+  const [unitQ, setUnitQ] = useState("");
+  const [agencyQ, setAgencyQ] = useState("");
+  const [sectorQ, setSectorQ] = useState("");
+  const [locationQ, setLocationQ] = useState("");
+
+  const materialQd = useDebounced(materialQ);
+  const guardianQd = useDebounced(guardianQ);
+  const unitQd = useDebounced(unitQ);
+  const agencyQd = useDebounced(agencyQ);
+  const sectorQd = useDebounced(sectorQ);
+  const locationQd = useDebounced(locationQ);
+
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [materialId, setMaterialId] = useState<UUID | null>(null);
+
   useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
-}
+    (async () => {
+      try {
+        setLoadingMaterials(true);
+        const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+        const res = await fetch(`${baseUrl}/materials/${qs}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setMaterials(json?.materials ?? []);
+      } catch {
+        setMaterials([]);
+        toast.error("Falha ao carregar materiais");
+      } finally {
+        setLoadingMaterials(false);
+      }
+    })();
+  }, [baseUrl, authHeaders, materialQd]);
 
-// buscas (texto)
-const [q, setQ] = useState("");
+  const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
+  const [loadingGuardians, setLoadingGuardians] = useState(false);
+  const [guardianId, setGuardianId] = useState<UUID | null>(null);
 
-// queries dos combobox
-const [materialQ, setMaterialQ] = useState("");
-const [guardianQ, setGuardianQ] = useState("");
-const [unitQ, setUnitQ] = useState("");
-const [agencyQ, setAgencyQ] = useState("");
-const [sectorQ, setSectorQ] = useState("");
-const [locationQ, setLocationQ] = useState("");
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingGuardians(true);
+        const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+        const res = await fetch(`${baseUrl}/legal-guardians/${qs}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setGuardians(json?.legal_guardians ?? []);
+      } catch {
+        setGuardians([]);
+        toast.error("Falha ao carregar responsáveis");
+      } finally {
+        setLoadingGuardians(false);
+      }
+    })();
+  }, [baseUrl, authHeaders, guardianQd]);
 
-const materialQd = useDebounced(materialQ);
-const guardianQd = useDebounced(guardianQ);
-const unitQd = useDebounced(unitQ);
-const agencyQd = useDebounced(agencyQ);
-const sectorQd = useDebounced(sectorQ);
-const locationQd = useDebounced(locationQ);
+  type UnitDTO = {
+    id: UUID;
+    unit_name: string;
+    unit_code: string;
+    unit_siaf: string;
+  };
+  type AgencyDTO = { id: UUID; agency_name: string; agency_code: string };
+  type SectorDTO = { id: UUID; sector_name: string; sector_code: string };
+  type LocationDTO = { id: UUID; location_name: string; location_code: string };
 
-const [materials, setMaterials] = useState<Material[]>([]);
-const [loadingMaterials, setLoadingMaterials] = useState(false);
-const [materialId, setMaterialId] = useState<UUID | null>(null);
+  const [units, setUnits] = useState<UnitDTO[]>([]);
+  const [agencies, setAgencies] = useState<AgencyDTO[]>([]);
+  const [sectors, setSectors] = useState<SectorDTO[]>([]);
+  const [locations, setLocations] = useState<LocationDTO[]>([]);
 
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingMaterials(true);
-      const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
-      const res = await fetch(`${baseUrl}/materials/${qs}`, {
-        headers: authHeaders,
-      });
-      const json = await res.json();
-      setMaterials(json?.materials ?? []);
-    } catch {
-      setMaterials([]);
-      toast.error("Falha ao carregar materiais");
-    } finally {
-      setLoadingMaterials(false);
-    }
-  })();
-}, [baseUrl, authHeaders, materialQd]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingAgencies, setLoadingAgencies] = useState(false);
+  const [loadingSectors, setLoadingSectors] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
-const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
-const [loadingGuardians, setLoadingGuardians] = useState(false);
-const [guardianId, setGuardianId] = useState<UUID | null>(null);
+  const [unitId, setUnitId] = useState<UUID | null>(null);
+  const [agencyId, setAgencyId] = useState<UUID | null>(null);
+  const [sectorId, setSectorId] = useState<UUID | null>(null);
+  const [locationId, setLocationId] = useState<UUID | null>(null);
 
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingGuardians(true);
-      const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
-      const res = await fetch(`${baseUrl}/legal-guardians/${qs}`, {
-        headers: authHeaders,
-      });
-      const json = await res.json();
-      setGuardians(json?.legal_guardians ?? []);
-    } catch {
-      setGuardians([]);
-      toast.error("Falha ao carregar responsáveis");
-    } finally {
-      setLoadingGuardians(false);
-    }
-  })();
-}, [baseUrl, authHeaders, guardianQd]);
+  // 🔹 itens do Combobox de materiais
+  const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
+    id: m.id,
+    code: m.material_code,
+    label: m.material_name || m.material_code,
+  }));
 
-type UnitDTO = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
-type AgencyDTO = { id: UUID; agency_name: string; agency_code: string };
-type SectorDTO = { id: UUID; sector_name: string; sector_code: string };
-type LocationDTO = { id: UUID; location_name: string; location_code: string };
+  // 🔹 itens do Combobox de responsáveis legais
+  const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({
+    id: g.id,
+    code: g.legal_guardians_code,
+    label: g.legal_guardians_name || g.legal_guardians_code,
+  }));
+  // Units
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingUnits(true);
+        const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
+        const res = await fetch(`${baseUrl}/units/${qs}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setUnits(json?.units ?? []);
+      } catch {
+        setUnits([]);
+      } finally {
+        setLoadingUnits(false);
+      }
+    })();
+  }, [baseUrl, authHeaders, unitQd]);
 
-const [units, setUnits] = useState<UnitDTO[]>([]);
-const [agencies, setAgencies] = useState<AgencyDTO[]>([]);
-const [sectors, setSectors] = useState<SectorDTO[]>([]);
-const [locations, setLocations] = useState<LocationDTO[]>([]);
+  // Agencies
+  const fetchAgencies = useCallback(
+    async (uid: UUID, q?: string) => {
+      if (!uid) return setAgencies([]);
+      try {
+        setLoadingAgencies(true);
+        const params = new URLSearchParams({ unit_id: uid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setAgencies(json?.agencies ?? []);
+      } catch {
+        setAgencies([]);
+      } finally {
+        setLoadingAgencies(false);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
 
-const [loadingUnits, setLoadingUnits] = useState(false);
-const [loadingAgencies, setLoadingAgencies] = useState(false);
-const [loadingSectors, setLoadingSectors] = useState(false);
-const [loadingLocations, setLoadingLocations] = useState(false);
+  // Sectors
+  const fetchSectors = useCallback(
+    async (aid: UUID, q?: string) => {
+      if (!aid) return setSectors([]);
+      try {
+        setLoadingSectors(true);
+        const params = new URLSearchParams({ agency_id: aid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setSectors(json?.sectors ?? []);
+      } catch {
+        setSectors([]);
+      } finally {
+        setLoadingSectors(false);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
 
-const [unitId, setUnitId] = useState<UUID | null>(null);
-const [agencyId, setAgencyId] = useState<UUID | null>(null);
-const [sectorId, setSectorId] = useState<UUID | null>(null);
-const [locationId, setLocationId] = useState<UUID | null>(null);
+  // Locations
+  const fetchLocations = useCallback(
+    async (sid: UUID, q?: string) => {
+      if (!sid) return setLocations([]);
+      try {
+        setLoadingLocations(true);
+        const params = new URLSearchParams({ sector_id: sid });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
+          headers: authHeaders,
+        });
+        const json = await res.json();
+        setLocations(json?.locations ?? []);
+      } catch {
+        setLocations([]);
+      } finally {
+        setLoadingLocations(false);
+      }
+    },
+    [baseUrl, authHeaders]
+  );
 
-
-// 🔹 itens do Combobox de materiais
-const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
-  id: m.id,
-  code: m.material_code,
-  label: m.material_name || m.material_code,
-}));
-
-// 🔹 itens do Combobox de responsáveis legais
-const guardianItems: ComboboxItem[] = (guardians ?? []).map((g) => ({
-  id: g.id,
-  code: g.legal_guardians_code,
-  label: g.legal_guardians_name || g.legal_guardians_code,
-}));
-// Units
-useEffect(() => {
-  (async () => {
-    try {
-      setLoadingUnits(true);
-      const qs = unitQd ? `?q=${encodeURIComponent(unitQd)}` : "";
-      const res = await fetch(`${baseUrl}/units/${qs}`, { headers: authHeaders });
-      const json = await res.json();
-      setUnits(json?.units ?? []);
-    } catch {
-      setUnits([]);
-    } finally {
-      setLoadingUnits(false);
-    }
-  })();
-}, [baseUrl, authHeaders, unitQd]);
-
-// Agencies
-const fetchAgencies = useCallback(async (uid: UUID, q?: string) => {
-  if (!uid) return setAgencies([]);
-  try {
-    setLoadingAgencies(true);
-    const params = new URLSearchParams({ unit_id: uid });
-    if (q) params.set("q", q);
-    const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
-      headers: authHeaders,
-    });
-    const json = await res.json();
-    setAgencies(json?.agencies ?? []);
-  } catch {
+  // Cascata
+  useEffect(() => {
+    setAgencyId(null);
+    setSectorId(null);
+    setLocationId(null);
     setAgencies([]);
-  } finally {
-    setLoadingAgencies(false);
-  }
-}, [baseUrl, authHeaders]);
-
-// Sectors
-const fetchSectors = useCallback(async (aid: UUID, q?: string) => {
-  if (!aid) return setSectors([]);
-  try {
-    setLoadingSectors(true);
-    const params = new URLSearchParams({ agency_id: aid });
-    if (q) params.set("q", q);
-    const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
-      headers: authHeaders,
-    });
-    const json = await res.json();
-    setSectors(json?.sectors ?? []);
-  } catch {
     setSectors([]);
-  } finally {
-    setLoadingSectors(false);
-  }
-}, [baseUrl, authHeaders]);
-
-// Locations
-const fetchLocations = useCallback(async (sid: UUID, q?: string) => {
-  if (!sid) return setLocations([]);
-  try {
-    setLoadingLocations(true);
-    const params = new URLSearchParams({ sector_id: sid });
-    if (q) params.set("q", q);
-    const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
-      headers: authHeaders,
-    });
-    const json = await res.json();
-    setLocations(json?.locations ?? []);
-  } catch {
     setLocations([]);
-  } finally {
-    setLoadingLocations(false);
-  }
-}, [baseUrl, authHeaders]);
+    if (unitId) fetchAgencies(unitId, agencyQd);
+  }, [unitId, agencyQd, fetchAgencies]);
 
-// Cascata
-useEffect(() => {
-  setAgencyId(null);
-  setSectorId(null);
-  setLocationId(null);
-  setAgencies([]);
-  setSectors([]);
-  setLocations([]);
-  if (unitId) fetchAgencies(unitId, agencyQd);
-}, [unitId, agencyQd, fetchAgencies]);
+  useEffect(() => {
+    setSectorId(null);
+    setLocationId(null);
+    setSectors([]);
+    setLocations([]);
+    if (agencyId) fetchSectors(agencyId, sectorQd);
+  }, [agencyId, sectorQd, fetchSectors]);
 
-useEffect(() => {
-  setSectorId(null);
-  setLocationId(null);
-  setSectors([]);
-  setLocations([]);
-  if (agencyId) fetchSectors(agencyId, sectorQd);
-}, [agencyId, sectorQd, fetchSectors]);
-
-useEffect(() => {
-  setLocationId(null);
-  setLocations([]);
-  if (sectorId) fetchLocations(sectorId, locationQd);
-}, [sectorId, locationQd, fetchLocations]);
-
+  useEffect(() => {
+    setLocationId(null);
+    setLocations([]);
+    if (sectorId) fetchLocations(sectorId, locationQd);
+  }, [sectorId, locationQd, fetchLocations]);
 
   type BoardState = BoardKind;
   const [tab, setTab] = useState<BoardState>("desfazimento");
@@ -871,10 +883,6 @@ useEffect(() => {
   const qs = new URLSearchParams(location.search);
   const urlType = qs.get("type") ?? undefined;
   const urlValue = qs.get("value") ?? undefined;
-
-  const filter: CatalogFilter | undefined =
-    props.filter ??
-    (urlType && urlValue ? { type: urlType, value: urlValue } : undefined);
 
   // ===== Roles (comissão) filtráveis =====
   const normalize = (text: string) =>
@@ -890,8 +898,7 @@ useEffect(() => {
 
   // role_id derivado da URL / props / primeira comissão disponível
   const selectedRoleId = useMemo(() => {
-    const urlRoleId =
-      urlType === "role_id" && urlValue ? urlValue : undefined;
+    const urlRoleId = urlType === "role_id" && urlValue ? urlValue : undefined;
 
     const propRoleId =
       props.filter?.type === "role_id" && props.filter.value
@@ -918,42 +925,47 @@ useEffect(() => {
     });
   };
 
+  const filter: CatalogFilter | undefined =
+    props.filter ??
+    (urlType && urlValue ? { type: urlType, value: urlValue } : undefined);
+
+  const filterType = filter?.type;
+  const filterValue = filter?.value;
+
   // Assinatura estável dos filtros
-const filtersSignature = useMemo(() => {
-  const effectiveType = props.filter?.type ?? urlType;
-  const effectiveValue = props.filter?.value ?? urlValue;
+  const filtersSignature = useMemo(() => {
+    const effectiveType = props.filter?.type ?? urlType;
+    const effectiveValue = props.filter?.value ?? urlValue;
 
-  const roleIdToUse =
-    effectiveType === "role_id"
-      ? selectedRoleId || effectiveValue || ""
-      : "";
+    const roleIdToUse =
+      effectiveType === "role_id" ? selectedRoleId || effectiveValue || "" : "";
 
-  return JSON.stringify({
-    type: effectiveType ?? null,
-    value: effectiveValue ?? null,
-    roleId: roleIdToUse || null,
+    return JSON.stringify({
+      type: effectiveType ?? null,
+      value: effectiveValue ?? null,
+      roleId: roleIdToUse || null,
 
-    materialId: materialId || null,
-    guardianId: guardianId || null,
-    unitId: unitId || null,
-    agencyId: agencyId || null,
-    sectorId: sectorId || null,
-    locationId: locationId || null,
-    q: q?.trim() || null,
-  });
-}, [
-  props.filter,
-  urlType,
-  urlValue,
-  selectedRoleId,
-  materialId,
-  guardianId,
-  unitId,
-  agencyId,
-  sectorId,
-  locationId,
-  q,
-]);
+      materialId: materialId || null,
+      guardianId: guardianId || null,
+      unitId: unitId || null,
+      agencyId: agencyId || null,
+      sectorId: sectorId || null,
+      locationId: locationId || null,
+      q: q?.trim() || null,
+    });
+  }, [
+    props.filter,
+    urlType,
+    urlValue,
+    selectedRoleId,
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    q,
+  ]);
 
   // ---------- estado por workflow (board) ----------
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -980,8 +992,7 @@ const filtersSignature = useMemo(() => {
   const allDesfazKeys = WORKFLOWS.desfazimento.map((w) => w.key);
   const [openKeysVitrine, setOpenKeysVitrine] =
     useState<string[]>(allVitrineKeys);
-  const [openKeysDesfaz, setOpenKeysDesfaz] =
-    useState<string[]>(allDesfazKeys);
+  const [openKeysDesfaz, setOpenKeysDesfaz] = useState<string[]>(allDesfazKeys);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
 
   // ===== DELETE =====
@@ -1064,53 +1075,51 @@ const filtersSignature = useMemo(() => {
   };
 
   /* ====== Helpers de filtros comuns ====== */
- const buildCommonParams = useCallback(() => {
-  const params = new URLSearchParams();
+  const buildCommonParams = useCallback(() => {
+    const params = new URLSearchParams();
 
-  // filtros vindos de props/URL continuam valendo
-  const effectiveType = props.filter?.type ?? urlType;
-  const effectiveValue = props.filter?.value ?? urlValue;
+    // filtros vindos de props/URL continuam valendo
+    const effectiveType = props.filter?.type ?? urlType;
+    const effectiveValue = props.filter?.value ?? urlValue;
 
-  if (effectiveType === "user_id" && effectiveValue) {
-    params.set("user_id", effectiveValue);
-  }
+    if (effectiveType === "user_id" && effectiveValue) {
+      params.set("user_id", effectiveValue);
+    }
 
-  if (effectiveType === "location_id" && effectiveValue) {
-    params.set("location_id", effectiveValue);
-  }
+    if (effectiveType === "location_id" && effectiveValue) {
+      params.set("location_id", effectiveValue);
+    }
 
-  const roleIdToUse =
-    effectiveType === "role_id"
-      ? selectedRoleId || effectiveValue || ""
-      : "";
+    const roleIdToUse =
+      effectiveType === "role_id" ? selectedRoleId || effectiveValue || "" : "";
 
-  if (roleIdToUse) {
-    params.set("role_id", roleIdToUse);
-  }
+    if (roleIdToUse) {
+      params.set("role_id", roleIdToUse);
+    }
 
-  // ✅ NOVOS filtros (iguais ao ItensVitrine)
-  if (materialId) params.set("material_id", materialId);
-  if (guardianId) params.set("legal_guardian_id", guardianId);
-  if (unitId) params.set("unit_id", unitId);
-  if (agencyId) params.set("agency_id", agencyId);
-  if (sectorId) params.set("sector_id", sectorId);
-  if (locationId) params.set("location_id", locationId);
-  if (q?.trim()) params.set("q", q.trim());
+    // ✅ NOVOS filtros (iguais ao ItensVitrine)
+    if (materialId) params.set("material_id", materialId);
+    if (guardianId) params.set("legal_guardian_id", guardianId);
+    if (unitId) params.set("unit_id", unitId);
+    if (agencyId) params.set("agency_id", agencyId);
+    if (sectorId) params.set("sector_id", sectorId);
+    if (locationId) params.set("location_id", locationId);
+    if (q?.trim()) params.set("q", q.trim());
 
-  return params;
-}, [
-  props.filter,
-  selectedRoleId,
-  urlType,
-  urlValue,
-  materialId,
-  guardianId,
-  unitId,
-  agencyId,
-  sectorId,
-  locationId,
-  q,
-]);
+    return params;
+  }, [
+    props.filter,
+    selectedRoleId,
+    urlType,
+    urlValue,
+    materialId,
+    guardianId,
+    unitId,
+    agencyId,
+    sectorId,
+    locationId,
+    q,
+  ]);
 
   const buildParamsForStatus = useCallback(
     (statusKey: string, offset = 0, limit = PAGE_SIZE) => {
@@ -1204,38 +1213,35 @@ const filtersSignature = useMemo(() => {
   }, [baseUrl, authHeaders, buildCommonParams]);
 
   /* ====== Ajustar contadores localmente em movimentações ====== */
-  const adjustCountsOnMove = useCallback(
-    (fromKey?: string, toKey?: string) => {
-      if (!fromKey && !toKey) return;
+  const adjustCountsOnMove = useCallback((fromKey?: string, toKey?: string) => {
+    if (!fromKey && !toKey) return;
 
-      setStatsCounts((prev) => {
-        const next = { ...prev };
-        if (fromKey) {
-          const current = next[fromKey] ?? 0;
-          next[fromKey] = Math.max(current - 1, 0);
-        }
-        if (toKey) {
-          const current = next[toKey] ?? 0;
-          next[toKey] = current + 1;
-        }
-        return next;
-      });
+    setStatsCounts((prev) => {
+      const next = { ...prev };
+      if (fromKey) {
+        const current = next[fromKey] ?? 0;
+        next[fromKey] = Math.max(current - 1, 0);
+      }
+      if (toKey) {
+        const current = next[toKey] ?? 0;
+        next[toKey] = current + 1;
+      }
+      return next;
+    });
 
-      setTotalByStatus((prev) => {
-        const next = { ...prev };
-        if (fromKey) {
-          const current = next[fromKey] ?? 0;
-          next[fromKey] = Math.max(current - 1, 0);
-        }
-        if (toKey) {
-          const current = next[toKey] ?? 0;
-          next[toKey] = current + 1;
-        }
-        return next;
-      });
-    },
-    []
-  );
+    setTotalByStatus((prev) => {
+      const next = { ...prev };
+      if (fromKey) {
+        const current = next[fromKey] ?? 0;
+        next[fromKey] = Math.max(current - 1, 0);
+      }
+      if (toKey) {
+        const current = next[toKey] ?? 0;
+        next[toKey] = current + 1;
+      }
+      return next;
+    });
+  }, []);
 
   const handleConfirmMove = useCallback(async () => {
     if (!moveTargetId || !moveStatus || !baseUrl) return;
@@ -1283,7 +1289,10 @@ const filtersSignature = useMemo(() => {
           };
           const updated = {
             ...movedItem,
-            workflow_history: [newHistory, ...(movedItem.workflow_history ?? [])],
+            workflow_history: [
+              newHistory,
+              ...(movedItem.workflow_history ?? []),
+            ],
           };
           cleaned[moveStatus] = [updated, ...(cleaned[moveStatus] ?? [])];
         }
@@ -1305,11 +1314,20 @@ const filtersSignature = useMemo(() => {
       toast("Movimentação registrada!");
       closeMove();
     } catch (e: any) {
-      toast("Erro ao movimentar", { description: e?.message || "Tente novamente." });
+      toast("Erro ao movimentar", {
+        description: e?.message || "Tente novamente.",
+      });
     } finally {
       setMoving(false);
     }
-  }, [moveTargetId, moveStatus, moveObs, baseUrl, authHeaders, adjustCountsOnMove]);
+  }, [
+    moveTargetId,
+    moveStatus,
+    moveObs,
+    baseUrl,
+    authHeaders,
+    adjustCountsOnMove,
+  ]);
 
   /* ====== Efeito principal: carregar quando tab/filtros mudam ====== */
   useEffect(() => {
@@ -1397,9 +1415,7 @@ const filtersSignature = useMemo(() => {
       items: itemsToExport,
       urlBase: urlBaseWithSlash,
       sheetName: "Itens",
-      filename: `itens_${statusName
-        .replace(/\s+/g, "_")
-        .toLowerCase()}.xlsx`,
+      filename: `itens_${statusName.replace(/\s+/g, "_").toLowerCase()}.xlsx`,
     });
   };
 
@@ -1429,7 +1445,9 @@ const filtersSignature = useMemo(() => {
   // Eventos globais para sincronizar remoções/movimentações oriundas de outros componentes
   useEffect(() => {
     const handler = (e: any) => {
-      const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+      const detail = e?.detail as
+        | { id?: string; newStatus?: string }
+        | undefined;
       const id = detail?.id;
       const newStatus = (detail?.newStatus || "").trim();
       if (!id) return;
@@ -1463,7 +1481,10 @@ const filtersSignature = useMemo(() => {
           };
           const updated = {
             ...moved,
-            workflow_history: [newHistoryItem, ...(moved.workflow_history ?? [])],
+            workflow_history: [
+              newHistoryItem,
+              ...(moved.workflow_history ?? []),
+            ],
           };
           next[newStatus] = [updated, ...(next[newStatus] ?? [])];
         }
@@ -1475,10 +1496,7 @@ const filtersSignature = useMemo(() => {
       }
     };
 
-    window.addEventListener(
-      "catalog:workflow-updated" as any,
-      handler as any
-    );
+    window.addEventListener("catalog:workflow-updated" as any, handler as any);
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
@@ -1523,15 +1541,9 @@ const filtersSignature = useMemo(() => {
     const loaded = board[statusKey]?.length ?? 0;
 
     let effectiveTotal: number | undefined;
-    if (
-      typeof totalFromBackend === "number" &&
-      totalFromBackend >= loaded
-    ) {
+    if (typeof totalFromBackend === "number" && totalFromBackend >= loaded) {
       effectiveTotal = totalFromBackend;
-    } else if (
-      typeof totalFromStats === "number" &&
-      totalFromStats >= loaded
-    ) {
+    } else if (typeof totalFromStats === "number" && totalFromStats >= loaded) {
       effectiveTotal = totalFromStats;
     }
 
@@ -1544,14 +1556,13 @@ const filtersSignature = useMemo(() => {
     return loaded > 0 && loaded % PAGE_SIZE === 0;
   };
 
-const onLoadMoreStatus = (statusKey: string) => {
-  const currentOffset = offsetByStatus[statusKey] ?? 0;
-  fetchStatus(statusKey, currentOffset, true);
-};
+  const onLoadMoreStatus = (statusKey: string) => {
+    const currentOffset = offsetByStatus[statusKey] ?? 0;
+    fetchStatus(statusKey, currentOffset, true);
+  };
 
-
-/////////scrool
- const scrollAreaRef = useRef<HTMLDivElement>(null);
+  /////////scrool
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -1589,6 +1600,7 @@ const onLoadMoreStatus = (statusKey: string) => {
   return (
     <div className="flex flex-col gap-8 p-8 pt-0">
       {/* Header com toggle de abas */}
+
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           {isRoleFilterActive && (
@@ -1612,10 +1624,20 @@ const onLoadMoreStatus = (statusKey: string) => {
             </Select>
           )}
 
-          <Button variant={"outline"} onClick={() => downloadAllXlsx()}>
-            <Download size={16} />
-            Baixar todos
-          </Button>
+          <DownloadPdfButton
+            filters={{
+              material_id: materialId || undefined,
+              agency_id: agencyId || undefined,
+              unit_id: unitId || undefined,
+              legal_guardian_id: guardianId || undefined,
+              sector_id: locationId || undefined,
+              location_id: sectorId || undefined,
+              [filterType || "user_id"]: filterValue,
+              workflow_status: tab.toUpperCase(),
+            }}
+            label="Baixar Todos"
+            method="catalog"
+          />
         </div>
         <div>
           <div className="flex">
@@ -1641,137 +1663,137 @@ const onLoadMoreStatus = (statusKey: string) => {
         </div>
       </div>
 
-       <div className="flex gap-4 items-center">
-                  <div className="relative grid grid-cols-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
-                      onClick={scrollLeft}
-                      disabled={!canScrollLeft}
-                    >
-                      <ChevronLeft size={16} />
-                    </Button>
-      
-                    <div className="mx-14">
-                      <div
-                        ref={scrollAreaRef}
-                        className="overflow-x-auto scrollbar-hide"
-                        onScroll={checkScrollability}
-                      >
-                        <div className="flex gap-3 items-center">
-                          <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                            <div>
-                              <MagnifyingGlass size={16} className="text-gray-500" />
-                            </div>
-                            <div className="relative w-full">
-                              <Input
-                                className="border-0 p-0 h-9 flex flex-1 w-full"
-                                value={q}
-                                onChange={(e) => setQ(e.target.value)}
-                                placeholder="Buscar por código, descrição, material, marca, modelo..."
-                              />
-                            </div>
-                          </Alert>
-      
-                          <Combobox
-                            items={materialItems}
-                            value={materialId}
-                            onChange={(v) => setMaterialId(v)}
-                            onSearch={setMaterialQ}
-                            isLoading={loadingMaterials}
-                            placeholder="Material"
-                          />
-      
-                          <Combobox
-                            items={guardianItems}
-                            value={guardianId}
-                            onChange={(v) => setGuardianId(v)}
-                            onSearch={setGuardianQ}
-                            isLoading={loadingGuardians}
-                            placeholder="Responsável"
-                          />
-      
-                          <Separator className="h-8" orientation="vertical" />
-      
-                          <Combobox
-                            items={(units ?? []).map((u) => ({
-                              id: u.id,
-                              code: u.unit_code,
-                              label: u.unit_name || u.unit_code,
-                            }))}
-                            value={unitId}
-                            onChange={(v) => setUnitId(v)}
-                            onSearch={setUnitQ}
-                            isLoading={loadingUnits}
-                            placeholder="Unidade"
-                          />
-      
-                          <Combobox
-                            items={(agencies ?? []).map((a) => ({
-                              id: a.id,
-                              code: a.agency_code,
-                              label: a.agency_name || a.agency_code,
-                            }))}
-                            value={agencyId}
-                            onChange={(v) => setAgencyId(v)}
-                            onSearch={setAgencyQ}
-                            isLoading={loadingAgencies}
-                            placeholder={"Organização"}
-                            disabled={!unitId}
-                          />
-      
-                          <Combobox
-                            items={(sectors ?? []).map((s) => ({
-                              id: s.id,
-                              code: s.sector_code,
-                              label: s.sector_name || s.sector_code,
-                            }))}
-                            value={sectorId}
-                            onChange={(v) => setSectorId(v)}
-                            onSearch={setSectorQ}
-                            isLoading={loadingSectors}
-                            placeholder={"Setor"}
-                            disabled={!agencyId}
-                          />
-      
-                          <Combobox
-                            items={(locations ?? []).map((l) => ({
-                              id: l.id,
-                              code: l.location_code,
-                              label: l.location_name || l.location_code,
-                            }))}
-                            value={locationId}
-                            onChange={(v) => setLocationId(v)}
-                            onSearch={setLocationQ}
-                            isLoading={loadingLocations}
-                            placeholder="Local de guarda"
-                            disabled={!sectorId}
-                          />
-      
-                          <Button variant="outline" size="sm" onClick={clearFilters}>
-                            <Trash size={16} />
-                            Limpar filtros
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-      
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
-                      onClick={scrollRight}
-                      disabled={!canScrollRight}
-                    >
-                      <ChevronRight size={16} />
-                    </Button>
+      <div className="flex gap-4 items-center">
+        <div className="relative grid grid-cols-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollLeft}
+            disabled={!canScrollLeft}
+          >
+            <ChevronLeft size={16} />
+          </Button>
+
+          <div className="mx-14">
+            <div
+              ref={scrollAreaRef}
+              className="overflow-x-auto scrollbar-hide"
+              onScroll={checkScrollability}
+            >
+              <div className="flex gap-3 items-center">
+                <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                  <div>
+                    <MagnifyingGlass size={16} className="text-gray-500" />
                   </div>
-      
-                 
-      
-                
-                </div>
+                  <div className="relative w-full">
+                    <Input
+                      className="border-0 p-0 h-9 flex flex-1 w-full"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="Buscar por código, descrição, material, marca, modelo..."
+                    />
+                  </div>
+                </Alert>
+
+                <Combobox
+                  items={materialItems}
+                  value={materialId}
+                  onChange={(v) => setMaterialId(v)}
+                  onSearch={setMaterialQ}
+                  isLoading={loadingMaterials}
+                  placeholder="Material"
+                />
+
+                <Combobox
+                  items={guardianItems}
+                  value={guardianId}
+                  onChange={(v) => setGuardianId(v)}
+                  onSearch={setGuardianQ}
+                  isLoading={loadingGuardians}
+                  placeholder="Responsável"
+                />
+
+                <Separator className="h-8" orientation="vertical" />
+
+                <Combobox
+                  items={(units ?? []).map((u) => ({
+                    id: u.id,
+                    code: u.unit_code,
+                    label: u.unit_name || u.unit_code,
+                  }))}
+                  value={unitId}
+                  onChange={(v) => setUnitId(v)}
+                  onSearch={setUnitQ}
+                  isLoading={loadingUnits}
+                  placeholder="Unidade"
+                />
+
+                <Combobox
+                  items={(agencies ?? []).map((a) => ({
+                    id: a.id,
+                    code: a.agency_code,
+                    label: a.agency_name || a.agency_code,
+                  }))}
+                  value={agencyId}
+                  onChange={(v) => setAgencyId(v)}
+                  onSearch={setAgencyQ}
+                  isLoading={loadingAgencies}
+                  placeholder={"Organização"}
+                  disabled={!unitId}
+                />
+
+                <Combobox
+                  items={(sectors ?? []).map((s) => ({
+                    id: s.id,
+                    code: s.sector_code,
+                    label: s.sector_name || s.sector_code,
+                  }))}
+                  value={sectorId}
+                  onChange={(v) => setSectorId(v)}
+                  onSearch={setSectorQ}
+                  isLoading={loadingSectors}
+                  placeholder={"Setor"}
+                  disabled={!agencyId}
+                />
+
+                <Combobox
+                  items={(locations ?? []).map((l) => ({
+                    id: l.id,
+                    code: l.location_code,
+                    label: l.location_name || l.location_code,
+                  }))}
+                  value={locationId}
+                  onChange={(v) => setLocationId(v)}
+                  onSearch={setLocationQ}
+                  isLoading={loadingLocations}
+                  placeholder="Local de guarda"
+                  disabled={!sectorId}
+                />
+
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <Trash size={16} />
+                  Limpar filtros
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+              !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollRight}
+            disabled={!canScrollRight}
+          >
+            <ChevronRight size={16} />
+          </Button>
+        </div>
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
         {/* === Cards de resumo === */}
@@ -1852,7 +1874,7 @@ const onLoadMoreStatus = (statusKey: string) => {
                 title={name}
                 icon={Icon}
                 items={board[key] ?? []}
-                loading={!!loadingByStatus[key] && !(board[key]?.length)}
+                loading={!!loadingByStatus[key] && !board[key]?.length}
                 onDownloadXlsx={() => downloadXlsxFor(key, name)}
                 isOpen={openKeys.includes(key)}
                 onExpand={handleExpand}
@@ -1945,7 +1967,7 @@ const onLoadMoreStatus = (statusKey: string) => {
                 title={name}
                 icon={Icon}
                 items={board[key] ?? []}
-                loading={!!loadingByStatus[key] && !(board[key]?.length)}
+                loading={!!loadingByStatus[key] && !board[key]?.length}
                 onDownloadXlsx={() => downloadXlsxFor(key, name)}
                 isOpen={openKeys.includes(key)}
                 onExpand={handleExpand}
@@ -2034,7 +2056,10 @@ const onLoadMoreStatus = (statusKey: string) => {
             <Button variant="ghost" onClick={closeMove}>
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button onClick={handleConfirmMove} disabled={!moveStatus || moving}>
+            <Button
+              onClick={handleConfirmMove}
+              disabled={!moveStatus || moving}
+            >
               <Repeat size={16} /> {moving ? "Salvando…" : "Confirmar"}
             </Button>
           </DialogFooter>

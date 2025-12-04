@@ -26,6 +26,7 @@ import {
   DoorOpen,
   Landmark,
   PackageCheck,
+  PackageSearch,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -106,7 +107,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
               : []),
             { title: "Busca patrimônio", url: "/buscar-patrimonio", icon: SearchCheck },
             
-            { title: "Busca catalogo", url: "/buscar-catalogo", icon: FileSearchIcon },
+            { title: "Busca catalogo", url: "/buscar-catalogo", icon: PackageSearch },
             ...(hasBuscaAvancada
               ? [{ title: "Busca avançada", url: "/dashboard/busca-avancada", icon: TextSearch }]
               : []),

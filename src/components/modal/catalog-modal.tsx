@@ -1,5 +1,12 @@
 // src/components/modals/catalog-modal.tsx
-import { useContext, useMemo, useState, useCallback, useEffect, useRef } from "react";
+import {
+  useContext,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Button } from "../ui/button";
@@ -51,10 +58,19 @@ import {
   BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ArrowSquareOut, ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
+import {
+  ArrowSquareOut,
+  ArrowUUpLeft,
+  CheckSquareOffset,
+} from "phosphor-react";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../ui/accordion";
 import { HeaderResultTypeHome } from "../header-result-type-home";
 
 import { useModal } from "../hooks/use-modal-store";
@@ -65,14 +81,23 @@ import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
 import { ScrollArea } from "../ui/scroll-area";
 import { LikeButton } from "../item-page/like-button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
 import { usePermissions } from "../permissions";
 import MovimentacaoModalCatalog from "../homepage/components/movimentacao-modal-catalog";
 import TransferTabCatalog from "../homepage/components/transfer-tab-catalog";
 import { ButtonTransference } from "../item-page/button-transference";
-import { DocumentsTabCatalog, Files } from "../homepage/components/documents-tab-catalog";
+import {
+  DocumentsTabCatalog,
+  Files,
+} from "../homepage/components/documents-tab-catalog";
 import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
+import { DownloadPdfButton } from "../download/download-pdf-button";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -281,7 +306,10 @@ const situationToText: Record<ApiSituation, string> = {
   RECOVERABLE: "Recuperável",
 };
 
-export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass: string }> = {
+export const WORKFLOW_STATUS_META: Record<
+  string,
+  { Icon: LucideIcon; colorClass: string }
+> = {
   // Vitrine
   REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
   ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
@@ -290,7 +318,10 @@ export const WORKFLOW_STATUS_META: Record<string, { Icon: LucideIcon; colorClass
   TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
 
   // Desfazimento
-  REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+  REVIEW_REQUESTED_DESFAZIMENTO: {
+    Icon: Hourglass,
+    colorClass: "text-amber-500",
+  },
   ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
@@ -372,7 +403,8 @@ const DESCRICOES: Record<
 > = {
   UNUSED: {
     titulo: "Bom Estado",
-    exemplo: "Computadores novos e semi-novos. Mesas e cadeiras em bom estado mas sem uso.",
+    exemplo:
+      "Computadores novos e semi-novos. Mesas e cadeiras em bom estado mas sem uso.",
     texto:
       "Bem permanente em condições de uso, porém sem aproveitamento funcional no setor em que se encontra, carecendo de realocação ou destinação.",
     Icon: PackageOpen,
@@ -381,7 +413,8 @@ const DESCRICOES: Record<
     titulo: "Recuperável",
     exemplo:
       "Projetor com lâmpada queimada (troca barata em relação ao preço do projetor). Cadeira com estofado rasgado, mas estrutura em bom estado.",
-    texto: "É um bem que não pode ser usado no momento, mas que pode ser consertado com um custo viável.",
+    texto:
+      "É um bem que não pode ser usado no momento, mas que pode ser consertado com um custo viável.",
     Icon: Recycle,
   },
   UNECONOMICAL: {
@@ -402,7 +435,10 @@ const DESCRICOES: Record<
   },
 };
 
-type ConservationStatus = "Excelente estado" | "Semi-novo" | "Necessita de pequenos reparos";
+type ConservationStatus =
+  | "Excelente estado"
+  | "Semi-novo"
+  | "Necessita de pequenos reparos";
 
 const CONSERVATION_MAP: Record<
   ConservationStatus,
@@ -411,7 +447,8 @@ const CONSERVATION_MAP: Record<
   "Excelente estado": {
     icon: <CheckCircle className="size-5 " />,
     title: "Excelente estado",
-    description: "Bem em perfeitas condições, completo, com todos os acessórios essenciais.",
+    description:
+      "Bem em perfeitas condições, completo, com todos os acessórios essenciais.",
   },
   "Semi-novo": {
     icon: <CheckSquareOffset className="size-5 " />,
@@ -477,7 +514,10 @@ export function CatalogModal() {
   );
 
   const cards = useMemo(
-    () => images.map((card, index) => <Card key={card.src} card={card} index={index} layout={true} />),
+    () =>
+      images.map((card, index) => (
+        <Card key={card.src} card={card} index={index} layout={true} />
+      )),
     [images]
   );
 
@@ -542,7 +582,11 @@ export function CatalogModal() {
 
         if (!res.ok) {
           const text = await res.text().catch(() => "");
-          throw new Error(`Falha ao aceitar transferência (${res.status}): ${text || "Erro desconhecido"}`);
+          throw new Error(
+            `Falha ao aceitar transferência (${res.status}): ${
+              text || "Erro desconhecido"
+            }`
+          );
         }
 
         // Atualiza UI: todas como DECLINED e a escolhida como ACCEPTABLE
@@ -554,10 +598,13 @@ export function CatalogModal() {
         );
 
         toast("Transferência aceita", {
-          description: "Esta solicitação foi marcada como ACCEPTABLE. As demais foram marcadas como DECLINED.",
+          description:
+            "Esta solicitação foi marcada como ACCEPTABLE. As demais foram marcadas como DECLINED.",
         });
       } catch (e: any) {
-        toast("Erro ao aceitar transferência", { description: e?.message || "Tente novamente." });
+        toast("Erro ao aceitar transferência", {
+          description: e?.message || "Tente novamente.",
+        });
       } finally {
         setAcceptingId(null);
       }
@@ -594,7 +641,9 @@ export function CatalogModal() {
       } catch {}
       onClose();
     } catch (e: any) {
-      toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
+      toast("Erro ao excluir", {
+        description: e?.message || "Tente novamente.",
+      });
     } finally {
       setDeleting(false);
       setIsDeleteOpen(false);
@@ -602,16 +651,23 @@ export function CatalogModal() {
   }, [catalog, onClose, token, urlGeral]);
 
   const asset = catalog?.asset;
-  const titulo = asset?.material?.material_name || asset?.item_model || asset?.item_brand || "Item sem nome";
+  const titulo =
+    asset?.material?.material_name ||
+    asset?.item_model ||
+    asset?.item_brand ||
+    "Item sem nome";
   const valorFormatado = money(asset?.asset_value);
 
   const locCatalogoParts = chain(catalog?.location) ?? [];
-  const visibleCatalogParts = !loggedIn ? locCatalogoParts.slice(0, 2) : locCatalogoParts;
+  const visibleCatalogParts = !loggedIn
+    ? locCatalogoParts.slice(0, 2)
+    : locCatalogoParts;
 
   const locAssetParts = chain(asset?.location) ?? [];
   const visibleParts = !loggedIn ? locAssetParts.slice(0, 2) : locAssetParts;
 
-  const isSameLocation = locCatalogoParts.join(" > ") === locAssetParts.join(" > ");
+  const isSameLocation =
+    locCatalogoParts.join(" > ") === locAssetParts.join(" > ");
 
   const qualisColor: Record<string, string> = {
     BM: "bg-green-500",
@@ -631,7 +687,7 @@ export function CatalogModal() {
 
   const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
-    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> as any },
+    NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
     TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
     MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
@@ -646,10 +702,17 @@ export function CatalogModal() {
   const info = DESCRICOES[situation];
   const Icon = info.Icon;
 
-  const getStatusLabel = (status: WorkflowStatus) => WORKFLOW_STATUS_LABELS[status] ?? status;
+  const colorClassStr =
+    qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300";
+  const borderColorClass = colorClassStr.replace("bg-", "border-");
+
+  const getStatusLabel = (status: WorkflowStatus) =>
+    WORKFLOW_STATUS_LABELS[status] ?? status;
 
   const fullCodeFrom = (d: CatalogResponseDTO) =>
-    [d?.asset?.asset_code, d?.asset?.asset_check_digit].filter(Boolean).join("-");
+    [d?.asset?.asset_code, d?.asset?.asset_check_digit]
+      .filter(Boolean)
+      .join("-");
 
   const qrUrlFrom = (d: CatalogResponseDTO) => {
     const code = fullCodeFrom(d);
@@ -677,7 +740,9 @@ export function CatalogModal() {
     return { months, days, bgColor };
   };
 
-  const diff = catalog?.created_at ? calculateDifference(catalog.created_at) : null;
+  const diff = catalog?.created_at
+    ? calculateDifference(catalog.created_at)
+    : null;
 
   // Agora você pode acessar com segurança
   const [workflowReview, setWorkflowReview] = useState(false);
@@ -706,9 +771,14 @@ export function CatalogModal() {
     { id: "documentos", label: "Documentos", icon: File },
     {
       id: "transferencia",
-      label: `Pedidos de transferência${transfers?.length ? ` (${transfers.length})` : ""}`,
+      label: `Pedidos de transferência${
+        transfers?.length ? ` (${transfers.length})` : ""
+      }`,
       icon: Archive,
-      condition: !((hasCatalogo || user?.id == catalog?.user?.id) && workflowAnunciados),
+      condition: !(
+        (hasCatalogo || user?.id == catalog?.user?.id) &&
+        workflowAnunciados
+      ),
     },
     {
       id: "solicitar-transferencia",
@@ -716,7 +786,12 @@ export function CatalogModal() {
       icon: ArrowRightLeft,
       condition: !(!(user?.id == catalog?.user?.id) && workflowAnunciados),
     },
-    { id: "movimentacao", label: "Movimentação", icon: ArrowRightLeft, condition: !hasCatalogo },
+    {
+      id: "movimentacao",
+      label: "Movimentação",
+      icon: ArrowRightLeft,
+      condition: !hasCatalogo,
+    },
     {
       id: "pareceristas",
       label: "Pareceristas",
@@ -793,12 +868,19 @@ export function CatalogModal() {
     "ADJUSTMENT_DESFAZIMENTO",
   ]);
 
-  function findFirstWorkflowByStatuses(list: any, statuses: string[]): WorkflowEvent | undefined {
+  function findFirstWorkflowByStatuses(
+    list: any,
+    statuses: string[]
+  ): WorkflowEvent | undefined {
     if (!list?.length) return undefined;
-    return list.find((ev: WorkflowEvent) => statuses.includes(ev.workflow_status));
+    return list.find((ev: WorkflowEvent) =>
+      statuses.includes(ev.workflow_status)
+    );
   }
 
-  function getDetail(ev?: WorkflowEvent | null): Record<string, any> | undefined {
+  function getDetail(
+    ev?: WorkflowEvent | null
+  ): Record<string, any> | undefined {
     if (!ev) return undefined;
     return (ev as any).detail ?? undefined;
   }
@@ -809,7 +891,9 @@ export function CatalogModal() {
     return typeof j === "string" && j.trim() ? j : undefined;
   }
 
-  function pickUserFromEvent(ev?: WorkflowEvent | null): { id?: string; username?: string } | undefined {
+  function pickUserFromEvent(
+    ev?: WorkflowEvent | null
+  ): { id?: string; username?: string } | undefined {
     const u = (ev as any)?.user;
     if (u && (u.id || u.username)) {
       return { id: u.id, username: u.username };
@@ -819,7 +903,8 @@ export function CatalogModal() {
 
   const currentStatus = lastWorkflow?.workflow_status ?? "";
   const shouldShowReviewer = REVIEWER_VISIBLE_STATUSES.has(currentStatus);
-  const shouldShowJustification = JUSTIFICATION_VISIBLE_STATUSES.has(currentStatus);
+  const shouldShowJustification =
+    JUSTIFICATION_VISIBLE_STATUSES.has(currentStatus);
 
   const reviewerFromCommission = useMemo(() => {
     if (!shouldShowReviewer) return undefined;
@@ -831,7 +916,10 @@ export function CatalogModal() {
     const commissionDetail = getDetail(firstCommission);
     const reviewerFromDetail = commissionDetail?.reviewers?.[0];
 
-    if (reviewerFromDetail && (reviewerFromDetail.id || reviewerFromDetail.username)) {
+    if (
+      reviewerFromDetail &&
+      (reviewerFromDetail.id || reviewerFromDetail.username)
+    ) {
       return reviewerFromDetail as { id?: string; username?: string };
     }
 
@@ -847,8 +935,12 @@ export function CatalogModal() {
       ].includes(currentStatus)
     ) {
       const firstAdjustment =
-        findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
-        findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+        findFirstWorkflowByStatuses(catalog?.workflow_history, [
+          "ADJUSTMENT_VITRINE",
+        ]) ??
+        findFirstWorkflowByStatuses(catalog?.workflow_history, [
+          "ADJUSTMENT_DESFAZIMENTO",
+        ]);
       const reviewerFromAdjustmentUser = pickUserFromEvent(firstAdjustment);
       if (reviewerFromAdjustmentUser) return reviewerFromAdjustmentUser;
     }
@@ -862,11 +954,20 @@ export function CatalogModal() {
     let wf: WorkflowEvent | undefined;
 
     if (currentStatus === "REJEITADOS_COMISSAO") {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REJEITADOS_COMISSAO"]);
-    } else if (currentStatus === "DESFAZIMENTO" || currentStatus === "DESCARTADOS") {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["DESFAZIMENTO"]);
+      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
+        "REJEITADOS_COMISSAO",
+      ]);
+    } else if (
+      currentStatus === "DESFAZIMENTO" ||
+      currentStatus === "DESCARTADOS"
+    ) {
+      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
+        "DESFAZIMENTO",
+      ]);
     } else if (currentStatus === "REVIEW_REQUESTED_COMISSION") {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, ["REVIEW_REQUESTED_COMISSION"]);
+      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
+        "REVIEW_REQUESTED_COMISSION",
+      ]);
     } else if (
       [
         "REVIEW_REQUESTED_VITRINE",
@@ -876,8 +977,12 @@ export function CatalogModal() {
       ].includes(currentStatus)
     ) {
       wf =
-        findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_VITRINE"]) ??
-        findFirstWorkflowByStatuses(catalog?.workflow_history, ["ADJUSTMENT_DESFAZIMENTO"]);
+        findFirstWorkflowByStatuses(catalog?.workflow_history, [
+          "ADJUSTMENT_VITRINE",
+        ]) ??
+        findFirstWorkflowByStatuses(catalog?.workflow_history, [
+          "ADJUSTMENT_DESFAZIMENTO",
+        ]);
     } else {
       return undefined;
     }
@@ -894,6 +999,7 @@ export function CatalogModal() {
   );
 
   useEffect(() => {
+    console.log();
     setIsAcervoHistoricoLocal(
       (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
     );
@@ -925,7 +1031,9 @@ export function CatalogModal() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          `Falha ao alterar workflow (${res.status}): ${text || "Erro desconhecido"}`
+          `Falha ao alterar workflow (${res.status}): ${
+            text || "Erro desconhecido"
+          }`
         );
       }
 
@@ -980,7 +1088,9 @@ export function CatalogModal() {
     if (!catalog) {
       return (
         <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-8">
-          <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">(⊙_⊙)</p>
+          <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
+            (⊙_⊙)
+          </p>
           <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1]">
             Não foi possível acessar as <br /> informações deste item.
           </h1>
@@ -1001,7 +1111,12 @@ export function CatalogModal() {
     const header = (
       <>
         <div className="flex items-center gap-4 p-8 pb-0">
-          <Button onClick={handleBack} variant="outline" size="icon" className="h-7 w-7">
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
+          >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
@@ -1014,7 +1129,6 @@ export function CatalogModal() {
             {asset?.atm_number && asset?.atm_number !== "None" && (
               <Badge variant="outline">ATM: {asset.atm_number}</Badge>
             )}
-
             {lastWorkflow && (
               <Badge
                 variant="outline"
@@ -1022,7 +1136,8 @@ export function CatalogModal() {
                 title={formatDateTimeBR(lastWorkflow.created_at)}
               >
                 {(() => {
-                  const Meta = WORKFLOW_STATUS_META[lastWorkflow.workflow_status];
+                  const Meta =
+                    WORKFLOW_STATUS_META[lastWorkflow.workflow_status];
                   const IconCmp = Meta?.Icon ?? HelpCircle;
                   return <IconCmp size={14} />;
                 })()}
@@ -1032,6 +1147,12 @@ export function CatalogModal() {
           </h1>
 
           <div className="hidden md:flex items-center gap-2">
+            <DownloadPdfButton
+              filters={{}}
+              id={catalog.id}
+              label="Baixar Item"
+              method={"item"}
+            />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1044,29 +1165,40 @@ export function CatalogModal() {
                 <TooltipContent className="z-[99]">Ir a página</TooltipContent>
               </Tooltip>
 
-              {(((catalog.user?.id === user?.id) || hasCatalogo) && workflowReview) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to={`/dashboard/editar-item?id=${catalog.id}`}>
-                      <Button variant="outline" onClick={() => onClose()} size="icon">
-                        <Pencil size={16} />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent className="z-[99]">Editar</TooltipContent>
-                </Tooltip>
-              )}
+              {(catalog.user?.id === user?.id || hasCatalogo) &&
+                workflowReview && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to={`/dashboard/editar-item?id=${catalog.id}`}>
+                        <Button
+                          variant="outline"
+                          onClick={() => onClose()}
+                          size="icon"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent className="z-[99]">Editar</TooltipContent>
+                  </Tooltip>
+                )}
 
-              {(((catalog.user?.id === user?.id) || hasCatalogo) && workflowReview) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={openDelete} variant="destructive" size="icon" disabled={deleting}>
-                      <Trash size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="z-[99]">Deletar</TooltipContent>
-                </Tooltip>
-              )}
+              {(catalog.user?.id === user?.id || hasCatalogo) &&
+                workflowReview && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={openDelete}
+                        variant="destructive"
+                        size="icon"
+                        disabled={deleting}
+                      >
+                        <Trash size={16} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="z-[99]">Deletar</TooltipContent>
+                  </Tooltip>
+                )}
 
               {hasAcervoHistorico && (
                 <Tooltip>
@@ -1095,15 +1227,14 @@ export function CatalogModal() {
                     {addingAcervo
                       ? "Atualizando..."
                       : isAcervoHistoricoLocal
-                        ? "Enviar para Avaliação de Desfazimento"
-                        : "Adicionar ao Acervo Histórico"}
+                      ? "Enviar para Avaliação de Desfazimento"
+                      : "Adicionar ao Acervo Histórico"}
                   </TooltipContent>
                 </Tooltip>
               )}
             </TooltipProvider>
-
             {/* Favoritar (opcional) */}
-            {(loggedIn && workflowAnunciados) && (
+            {loggedIn && workflowAnunciados && (
               <div onClick={(e) => e.stopPropagation()}>
                 <LikeButton id={catalog?.id} />
               </div>
@@ -1114,9 +1245,11 @@ export function CatalogModal() {
     );
 
     return (
-      <main className="flex flex-1 flex-col gap-4 md:gap-8">
+      <main
+        className={`flex flex-1 flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg ${borderColorClass}`}
+      >
         {header}
-        <ScrollArea className="max-h-[70vh]">
+        <ScrollArea className="max-h-[70vh] border-solid">
           <div className="px-8">
             <div className="grid grid-cols-1">
               <Carousel items={cards} />
@@ -1125,25 +1258,35 @@ export function CatalogModal() {
                 <div className="flex w-full flex-col">
                   <div className="flex justify-between items-start">
                     <div className="flex justify-between w-full">
-                      <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">{titulo}</h2>
+                      <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">
+                        {titulo}
+                      </h2>
 
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
                         <Calendar size={16} />
                         {formatDateTimeBR(catalog.created_at)}
                         {diff && (
-                          <Badge className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}>
+                          <Badge
+                            className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}
+                          >
                             {diff.months > 0
-                              ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"} e ${diff.days} ${
-                                diff.days === 1 ? "dia" : "dias"
-                              }`
-                              : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
+                              ? `${diff.months} ${
+                                  diff.months === 1 ? "mês" : "meses"
+                                } e ${diff.days} ${
+                                  diff.days === 1 ? "dia" : "dias"
+                                }`
+                              : `${diff.days} ${
+                                  diff.days === 1 ? "dia" : "dias"
+                                }`}
                           </Badge>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <p className="mb-8 text-gray-500">{asset?.asset_description || "Sem descrição."}</p>
+                  <p className="mb-8 text-gray-500">
+                    {asset?.asset_description || "Sem descrição."}
+                  </p>
 
                   <Tabs defaultValue="visao_geral" value={value} className="">
                     <div className="mb-8 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
@@ -1151,7 +1294,11 @@ export function CatalogModal() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                          className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${
+                            !canScrollLeft
+                              ? "opacity-30 cursor-not-allowed"
+                              : ""
+                          }`}
                           onClick={scrollLeft}
                           disabled={!canScrollLeft}
                         >
@@ -1165,21 +1312,31 @@ export function CatalogModal() {
                             onScroll={checkScrollability}
                           >
                             <div className="flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                              {tabs.map(({ id, label, icon: Icon, condition }) => !condition && (
-                                <div
-                                  key={id}
-                                  className={`pb-2 border-b-2 transition-all text-black dark:text-white ${value === id ? "border-b-[#719CB8]" : "border-b-transparent"}`}
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    setValue(id);
-                                  }}
-                                >
-                                  <Button variant="ghost" className="m-0 flex items-center gap-2">
-                                    <Icon size={16} />
-                                    {label}
-                                  </Button>
-                                </div>
-                              ))}
+                              {tabs.map(
+                                ({ id, label, icon: Icon, condition }) =>
+                                  !condition && (
+                                    <div
+                                      key={id}
+                                      className={`pb-2 border-b-2 transition-all text-black dark:text-white ${
+                                        value === id
+                                          ? "border-b-[#719CB8]"
+                                          : "border-b-transparent"
+                                      }`}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setValue(id);
+                                      }}
+                                    >
+                                      <Button
+                                        variant="ghost"
+                                        className="m-0 flex items-center gap-2"
+                                      >
+                                        <Icon size={16} />
+                                        {label}
+                                      </Button>
+                                    </div>
+                                  )
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1187,7 +1344,11 @@ export function CatalogModal() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`absolute right-0 z-10 h-8 w-8 p-0 top-1 ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                          className={`absolute right-0 z-10 h-8 w-8 p-0 top-1 ${
+                            !canScrollRight
+                              ? "opacity-30 cursor-not-allowed"
+                              : ""
+                          }`}
                           onClick={scrollRight}
                           disabled={!canScrollRight}
                         >
@@ -1203,32 +1364,43 @@ export function CatalogModal() {
                           <div className="flex group ">
                             <div
                               className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-                                qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
+                                qualisColor[
+                                  csvCodTrimmed as keyof typeof qualisColor
+                                ] || "bg-zinc-300"
                               } min-h-full`}
                             />
                             <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
                               <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
                                 <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
-                                  {asset?.asset_code?.trim()} - {asset?.asset_check_digit}
-                                  {!!asset?.atm_number && asset.atm_number !== "None" && (
-                                    <Badge variant="outline">ATM: {asset.atm_number}</Badge>
-                                  )}
+                                  {asset?.asset_code?.trim()} -{" "}
+                                  {asset?.asset_check_digit}
+                                  {!!asset?.atm_number &&
+                                    asset.atm_number !== "None" && (
+                                      <Badge variant="outline">
+                                        ATM: {asset.atm_number}
+                                      </Badge>
+                                    )}
                                 </p>
                               </div>
 
                               <div className="flex flex-col p-4 pt-0 justify-between">
                                 <div>
                                   <div className="flex flex-wrap gap-3">
-                                    {!!asset?.csv_code && asset?.csv_code !== "None" && (
-                                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                        <div
-                                          className={`w-4 h-4 rounded-md ${
-                                            qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
-                                          }`}
-                                        />
-                                        {csvCodToText[csvCodTrimmed as keyof typeof csvCodToText] || "—"}
-                                      </div>
-                                    )}
+                                    {!!asset?.csv_code &&
+                                      asset?.csv_code !== "None" && (
+                                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                                          <div
+                                            className={`w-4 h-4 rounded-md ${
+                                              qualisColor[
+                                                csvCodTrimmed as keyof typeof qualisColor
+                                              ] || "bg-zinc-300"
+                                            }`}
+                                          />
+                                          {csvCodToText[
+                                            csvCodTrimmed as keyof typeof csvCodToText
+                                          ] || "—"}
+                                        </div>
+                                      )}
 
                                     {status && (
                                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
@@ -1240,7 +1412,9 @@ export function CatalogModal() {
                                     {loggedIn && (
                                       <>
                                         {!!asset?.legal_guardian &&
-                                          asset.legal_guardian.legal_guardians_name !== "None" && (
+                                          asset.legal_guardian
+                                            .legal_guardians_name !==
+                                            "None" && (
                                             <div className="flex gap-1 items-center">
                                               <Avatar className="rounded-md h-5 w-5">
                                                 <AvatarImage
@@ -1252,7 +1426,10 @@ export function CatalogModal() {
                                                 </AvatarFallback>
                                               </Avatar>
                                               <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                {asset.legal_guardian.legal_guardians_name}
+                                                {
+                                                  asset.legal_guardian
+                                                    .legal_guardians_name
+                                                }
                                               </p>
                                             </div>
                                           )}
@@ -1268,7 +1445,9 @@ export function CatalogModal() {
                         </>
 
                         <div className="flex mb-8">
-                          <div className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue relative`} />
+                          <div
+                            className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue relative`}
+                          />
                           <Alert className="flex flex-col rounded-l-none">
                             <div className="flex gap-4 flex-col ">
                               <div className="flex gap-2 w-full">
@@ -1278,28 +1457,50 @@ export function CatalogModal() {
                                     <p className="font-medium">{info.titulo}</p>
                                     <Badge variant="outline">Situação</Badge>
                                   </div>
-                                  <p className="text-gray-500 text-sm">{info.texto}</p>
+                                  <p className="text-gray-500 text-sm">
+                                    {info.texto}
+                                  </p>
                                 </div>
                               </div>
                             </div>
 
-                            {catalog.conservation_status && <Separator className="my-4" />}
+                            {catalog.conservation_status && (
+                              <Separator className="my-4" />
+                            )}
 
                             {catalog.conservation_status &&
-                              (catalog.conservation_status as any) in CONSERVATION_MAP && (
+                              (catalog.conservation_status as any) in
+                                CONSERVATION_MAP && (
                                 <div className="grid gap-3 w-full">
                                   <div className="flex w-full items-start gap-3 text-muted-foreground">
-                                    {CONSERVATION_MAP[catalog.conservation_status as ConservationStatus].icon}
+                                    {
+                                      CONSERVATION_MAP[
+                                        catalog.conservation_status as ConservationStatus
+                                      ].icon
+                                    }
                                     <div className="grid gap-0.5 w-full">
                                       <div className="flex justify-between">
                                         <p className="font-medium">
-                                          {CONSERVATION_MAP[catalog.conservation_status as ConservationStatus].title}
+                                          {
+                                            CONSERVATION_MAP[
+                                              catalog.conservation_status as ConservationStatus
+                                            ].title
+                                          }
                                         </p>
 
-                                        <Badge variant="outline">Estado de conservação</Badge>
+                                        <Badge variant="outline">
+                                          Estado de conservação
+                                        </Badge>
                                       </div>
-                                      <p className="text-gray-500 text-sm" data-description>
-                                        {CONSERVATION_MAP[catalog.conservation_status as ConservationStatus].description}
+                                      <p
+                                        className="text-gray-500 text-sm"
+                                        data-description
+                                      >
+                                        {
+                                          CONSERVATION_MAP[
+                                            catalog.conservation_status as ConservationStatus
+                                          ].description
+                                        }
                                       </p>
                                     </div>
                                   </div>
@@ -1309,12 +1510,18 @@ export function CatalogModal() {
                         </div>
 
                         <div className="flex">
-                          <div className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue relative`} />
+                          <div
+                            className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue relative`}
+                          />
                           <Alert className="flex flex-col rounded-l-none">
                             {catalog.description && (
                               <>
-                                <p className="text-xl font-medium">Justificativa</p>
-                                <div className="text-sm text-gray-500 dark:text-gray-300">{catalog.description}</div>
+                                <p className="text-xl font-medium">
+                                  Justificativa
+                                </p>
+                                <div className="text-sm text-gray-500 dark:text-gray-300">
+                                  {catalog.description}
+                                </div>
                               </>
                             )}
 
@@ -1323,7 +1530,9 @@ export function CatalogModal() {
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <MapPin size={16} />
-                                <p className="text-sm uppercase font-bold">Local de tombamento:</p>
+                                <p className="text-sm uppercase font-bold">
+                                  Local de tombamento:
+                                </p>
 
                                 {visibleParts.length ? (
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -1332,19 +1541,24 @@ export function CatalogModal() {
                                         key={i}
                                         className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
                                       >
-                                        {i > 0 && <ChevronRight size={14} />} {p}
+                                        {i > 0 && <ChevronRight size={14} />}{" "}
+                                        {p}
                                       </div>
                                     ))}
                                   </div>
                                 ) : (
-                                  <span className="text-sm text-gray-500">Não definido.</span>
+                                  <span className="text-sm text-gray-500">
+                                    Não definido.
+                                  </span>
                                 )}
                               </div>
 
                               {!isSameLocation && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <MapPin size={16} />
-                                  <p className="text-sm uppercase font-bold">Local atual:</p>
+                                  <p className="text-sm uppercase font-bold">
+                                    Local atual:
+                                  </p>
 
                                   {visibleCatalogParts.length ? (
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -1353,12 +1567,15 @@ export function CatalogModal() {
                                           key={i}
                                           className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
                                         >
-                                          {i > 0 && <ChevronRight size={14} />} {p}
+                                          {i > 0 && <ChevronRight size={14} />}{" "}
+                                          {p}
                                         </div>
                                       ))}
                                     </div>
                                   ) : (
-                                    <span className="text-sm text-gray-500">Não definido.</span>
+                                    <span className="text-sm text-gray-500">
+                                      Não definido.
+                                    </span>
                                   )}
                                 </div>
                               )}
@@ -1367,7 +1584,10 @@ export function CatalogModal() {
                         </div>
 
                         {loggedIn && (
-                          <Link to={`/user?id=${catalog.user?.id}`} target="_blank">
+                          <Link
+                            to={`/user?id=${catalog.user?.id}`}
+                            target="_blank"
+                          >
                             <Alert className="mt-8">
                               <div className="flex gap-3 items-center">
                                 <Avatar className="rounded-md h-12 w-12">
@@ -1380,7 +1600,9 @@ export function CatalogModal() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="text-sm w-fit text-gray-500">Anunciante</p>
+                                  <p className="text-sm w-fit text-gray-500">
+                                    Anunciante
+                                  </p>
                                   <p className="text-black dark:text-white font-medium text-lg truncate">
                                     {catalog.user?.username}
                                   </p>
@@ -1390,34 +1612,44 @@ export function CatalogModal() {
                           </Link>
                         )}
 
-                        {((shouldShowReviewer && reviewerFromCommission) || (shouldShowJustification && justificationText)) && (
+                        {((shouldShowReviewer && reviewerFromCommission) ||
+                          (shouldShowJustification && justificationText)) && (
                           <Alert className="mt-8">
-                            {shouldShowReviewer && reviewerFromCommission && loggedIn && (
-                              <div className="flex gap-3 items-center">
-                                <Avatar className="rounded-md h-12 w-12">
-                                  <AvatarImage
-                                    src={
-                                      reviewerFromCommission.id
-                                        ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
-                                        : undefined
-                                    }
-                                  />
-                                  <AvatarFallback className="flex items-center justify-center">
-                                    <User size={16} />
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm w-fit text-gray-500">Parecerista</p>
-                                  <p className="text-black dark:text-white font-medium text-lg truncate">
-                                    {reviewerFromCommission.username ?? "Não informado"}
-                                  </p>
+                            {shouldShowReviewer &&
+                              reviewerFromCommission &&
+                              loggedIn && (
+                                <div className="flex gap-3 items-center">
+                                  <Avatar className="rounded-md h-12 w-12">
+                                    <AvatarImage
+                                      src={
+                                        reviewerFromCommission.id
+                                          ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
+                                          : undefined
+                                      }
+                                    />
+                                    <AvatarFallback className="flex items-center justify-center">
+                                      <User size={16} />
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm w-fit text-gray-500">
+                                      Parecerista
+                                    </p>
+                                    <p className="text-black dark:text-white font-medium text-lg truncate">
+                                      {reviewerFromCommission.username ??
+                                        "Não informado"}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
                             {shouldShowJustification && justificationText && (
-                              <div className={reviewerFromCommission ? "mt-4" : ""}>
-                                <p className=" w-fit text-gray-500 mb-2">Justificativa</p>
+                              <div
+                                className={reviewerFromCommission ? "mt-4" : ""}
+                              >
+                                <p className=" w-fit text-gray-500 mb-2">
+                                  Justificativa
+                                </p>
                                 <p className="text-gray-500 text-sm text-justify">
                                   {justificationText}
                                 </p>
@@ -1435,7 +1667,12 @@ export function CatalogModal() {
                                 <div className="flex ">
                                   <HeaderResultTypeHome
                                     title="Histórico na plataforma"
-                                    icon={<Workflow size={24} className="text-gray-400" />}
+                                    icon={
+                                      <Workflow
+                                        size={24}
+                                        className="text-gray-400"
+                                      />
+                                    }
                                   />
                                   <AccordionTrigger></AccordionTrigger>
                                 </div>
@@ -1447,72 +1684,90 @@ export function CatalogModal() {
                                       </div>
                                     ) : (
                                       // ✅ NÃO muta: copia antes do reverse
-                                      [...historySortedDesc]
-                                       
-                                        .map((ev, idx) => {
-                                          const meta =
-                                            WORKFLOW_STATUS_META[ev.workflow_status] ?? {
-                                              Icon: HelpCircle,
-                                              colorClass: "text-zinc-500",
-                                            };
+                                      [...historySortedDesc].map((ev, idx) => {
+                                        const meta = WORKFLOW_STATUS_META[
+                                          ev.workflow_status
+                                        ] ?? {
+                                          Icon: HelpCircle,
+                                          colorClass: "text-zinc-500",
+                                        };
 
-                                          const { Icon: EvIcon } = meta;
-                                          const username =
-                                            ev.user?.username || ev.user?.email?.split("@")[0] || "Usuário";
+                                        const { Icon: EvIcon } = meta;
+                                        const username =
+                                          ev.user?.username ||
+                                          ev.user?.email?.split("@")[0] ||
+                                          "Usuário";
 
-                                          const total = historySortedDesc.length;
-                                          const isLast = idx === total - 1;
+                                        const total = historySortedDesc.length;
+                                        const isLast = idx === total - 1;
 
-                                          return (
-                                            <div key={ev.id} className="flex gap-2">
-                                              <div className="flex flex-col items-center">
-                                                <Alert className="flex w-14 h-14 items-center justify-center">
-                                                  <div>
-                                                    <EvIcon className={``} size={16} />
-                                                  </div>
-                                                </Alert>
+                                        return (
+                                          <div
+                                            key={ev.id}
+                                            className="flex gap-2"
+                                          >
+                                            <div className="flex flex-col items-center">
+                                              <Alert className="flex w-14 h-14 items-center justify-center">
+                                                <div>
+                                                  <EvIcon
+                                                    className={``}
+                                                    size={16}
+                                                  />
+                                                </div>
+                                              </Alert>
 
-                                                {!isLast && <Separator className="min-h-8" orientation="vertical" />}
-                                              </div>
+                                              {!isLast && (
+                                                <Separator
+                                                  className="min-h-8"
+                                                  orientation="vertical"
+                                                />
+                                              )}
+                                            </div>
 
-                                              <div className="flex-1">
-                                                <p className="text-lg font-medium">{getStatusLabel(ev.workflow_status)}</p>
-
-                                                {ev.detail?.justificativa && (
-                                                  <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
-                                                    {ev.detail.justificativa}
-                                                  </p>
+                                            <div className="flex-1">
+                                              <p className="text-lg font-medium">
+                                                {getStatusLabel(
+                                                  ev.workflow_status
                                                 )}
+                                              </p>
 
-                                                <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
-                                                  <div className="flex gap-1 items-center">
-                                                    <Avatar className="rounded-md h-5 w-5">
-                                                      {ev.user?.photo_url ? (
-                                                        <AvatarImage
-                                                          className="rounded-md h-5 w-5"
-                                                          src={ev.user.photo_url}
-                                                          alt={username}
-                                                        />
-                                                      ) : (
-                                                        <AvatarFallback className="flex items-center justify-center">
-                                                          <User size={10} />
-                                                        </AvatarFallback>
-                                                      )}
-                                                    </Avatar>
-                                                    <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                      {username}
-                                                    </p>
-                                                  </div>
+                                              {ev.detail?.justificativa && (
+                                                <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
+                                                  {ev.detail.justificativa}
+                                                </p>
+                                              )}
 
-                                                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                                    <Calendar size={16} />
-                                                    {formatDateTimeBR(ev.created_at)}
-                                                  </div>
+                                              <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
+                                                <div className="flex gap-1 items-center">
+                                                  <Avatar className="rounded-md h-5 w-5">
+                                                    {ev.user?.photo_url ? (
+                                                      <AvatarImage
+                                                        className="rounded-md h-5 w-5"
+                                                        src={ev.user.photo_url}
+                                                        alt={username}
+                                                      />
+                                                    ) : (
+                                                      <AvatarFallback className="flex items-center justify-center">
+                                                        <User size={10} />
+                                                      </AvatarFallback>
+                                                    )}
+                                                  </Avatar>
+                                                  <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                                    {username}
+                                                  </p>
+                                                </div>
+
+                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                                                  <Calendar size={16} />
+                                                  {formatDateTimeBR(
+                                                    ev.created_at
+                                                  )}
                                                 </div>
                                               </div>
                                             </div>
-                                          );
-                                        })
+                                          </div>
+                                        );
+                                      })
                                     )}
                                   </div>
                                 </AccordionContent>
@@ -1560,7 +1815,7 @@ export function CatalogModal() {
                           catalog={catalog}
                           urlGeral={urlGeral}
                           onUpdated={(updated) => {
-                            (catalog.workflow_history ??= []);
+                            catalog.workflow_history ??= [];
                           }}
                         />
                       </TabsContent>
@@ -1580,8 +1835,8 @@ export function CatalogModal() {
                 Deletar item {titulo} do catálogo
               </DialogTitle>
               <DialogDescription className="text-zinc-500 ">
-                Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão
-                perdidas.
+                Esta ação é irreversível. Ao deletar, todas as informações deste
+                item no catálogo serão perdidas.
               </DialogDescription>
             </DialogHeader>
 
@@ -1589,7 +1844,11 @@ export function CatalogModal() {
               <Button variant="ghost" onClick={closeDelete}>
                 <ArrowUUpLeft size={16} /> Cancelar
               </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
                 <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
               </Button>
             </DialogFooter>
