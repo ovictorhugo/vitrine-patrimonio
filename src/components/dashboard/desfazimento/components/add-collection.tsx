@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Drawer, DrawerContent } from "../../../ui/drawer";
 import { Button } from "../../../ui/button";
 import { Separator } from "../../../ui/separator";
@@ -54,13 +60,37 @@ import exp from "constants";
 /* ================== Tipos compartilhados ================== */
 type UUID = string;
 
-type Unit = { id: UUID; unit_name: string; unit_code: string; unit_siaf?: string };
-type Agency = { id: UUID; agency_name: string; agency_code: string; unit_id: UUID };
-type Sector = { id: UUID; sector_name: string; sector_code: string; agency_id: UUID };
-type LocationEE = { id: UUID; location_name: string; location_code: string; sector_id: UUID };
+type Unit = {
+  id: UUID;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf?: string;
+};
+type Agency = {
+  id: UUID;
+  agency_name: string;
+  agency_code: string;
+  unit_id: UUID;
+};
+type Sector = {
+  id: UUID;
+  sector_name: string;
+  sector_code: string;
+  agency_id: UUID;
+};
+type LocationEE = {
+  id: UUID;
+  location_name: string;
+  location_code: string;
+  sector_id: UUID;
+};
 
 type Material = { id: UUID; material_code: string; material_name: string };
-type LegalGuardian = { id: UUID; legal_guardians_code: string; legal_guardians_name: string };
+type LegalGuardian = {
+  id: UUID;
+  legal_guardians_code: string;
+  legal_guardians_name: string;
+};
 
 type LocationNested = {
   id: UUID;
@@ -73,7 +103,13 @@ type LocationNested = {
     sector_name: string;
     sector_code: string;
     agency_id: UUID;
-    agency?: { id: UUID; agency_name: string; agency_code: string; unit_id: UUID; unit?: Unit };
+    agency?: {
+      id: UUID;
+      agency_name: string;
+      agency_code: string;
+      unit_id: UUID;
+      unit?: Unit;
+    };
   };
   legal_guardian?: LegalGuardian;
 };
@@ -121,7 +157,12 @@ type WorkflowUser = {
     id: UUID;
     name: string;
     description: string;
-    permissions: Array<{ id: UUID; name: string; code: string; description: string }>;
+    permissions: Array<{
+      id: UUID;
+      name: string;
+      code: string;
+      description: string;
+    }>;
   }>;
   system_identity?: { id: UUID; legal_guardian?: LegalGuardian };
 };
@@ -131,15 +172,30 @@ type WorkflowHistoryItem = {
   workflow_status: string;
   detail?: Record<string, unknown>;
   user?: WorkflowUser;
-  transfer_requests?: Array<{ id: UUID; status: string; user?: WorkflowUser; location?: LocationNested }>;
+  transfer_requests?: Array<{
+    id: UUID;
+    status: string;
+    user?: WorkflowUser;
+    location?: LocationNested;
+  }>;
   catalog_id: UUID;
   created_at: string;
 };
 
-export type CollectionItem = { id: UUID; status: boolean; comment: string; catalog: CatalogEntry };
+export type CollectionItem = {
+  id: UUID;
+  status: boolean;
+  comment: string;
+  catalog: CatalogEntry;
+};
 
 type CollectionsListResponse = {
-  collections: { id: UUID; name: string; description: string; created_at: string }[];
+  collections: {
+    id: UUID;
+    name: string;
+    description: string;
+    created_at: string;
+  }[];
 };
 
 type CatalogListResponse =
@@ -180,8 +236,10 @@ function Combobox({
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
   };
-  const scrollLeft = () => scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
-  const scrollRight = () => scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
   useEffect(() => {
     checkScrollability();
     const handleResize = () => checkScrollability();
@@ -196,10 +254,14 @@ function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={triggerClassName ?? "w-[280px] min-w-[280px] justify-between"}
+          className={
+            triggerClassName ?? "w-[280px] min-w-[280px] justify-between"
+          }
         >
           {selected ? (
-            <span className="truncate text-left font-medium">{selected.label}</span>
+            <span className="truncate text-left font-medium">
+              {selected.label}
+            </span>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
@@ -245,7 +307,9 @@ function Combobox({
                     setOpen(false);
                   }}
                 >
-                  <span className="font-medium line-clamp-1 uppercase">{item.label}</span>
+                  <span className="font-medium line-clamp-1 uppercase">
+                    {item.label}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -264,18 +328,20 @@ export function AddToCollectionDrawer({
   headers,
   collectionId, // opcional
   onItemsAdded,
-  type
+  type,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  baseUrl: string;                // ex: urlGeral
-  headers: HeadersInit;           // ex: authHeaders
+  baseUrl: string; // ex: urlGeral
+  headers: HeadersInit; // ex: authHeaders
   collectionId?: string | null;
   type?: string;
   onItemsAdded: (newItems: CollectionItem[]) => void;
 }) {
   /* ================== Estado de coleção ================== */
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(collectionId ?? null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<
+    string | null
+  >(collectionId ?? null);
   const [collections, setCollections] = useState<ComboboxItem[]>([]);
   const needsCollectionSelect = !collectionId;
 
@@ -287,8 +353,11 @@ export function AddToCollectionDrawer({
     if (!needsCollectionSelect || !open) return;
     (async () => {
       try {
-        const res = await fetch(`${baseUrl}collections/?type=${type}`, { headers });
-        if (!res.ok) throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
+        const res = await fetch(`${baseUrl}collections/?type=${type}`, {
+          headers,
+        });
+        if (!res.ok)
+          throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
         const data: CollectionsListResponse = await res.json();
         setCollections(
           (data?.collections ?? []).map((c) => ({
@@ -297,7 +366,9 @@ export function AddToCollectionDrawer({
           }))
         );
       } catch (e: any) {
-        toast("Erro ao listar coleções", { description: e?.message || String(e) });
+        toast("Erro ao listar coleções", {
+          description: e?.message || String(e),
+        });
       }
     })();
   }, [baseUrl, headers, needsCollectionSelect, open, type]);
@@ -334,8 +405,14 @@ export function AddToCollectionDrawer({
     (async () => {
       try {
         const [matRes, guardRes, unitsRes] = await Promise.all([
-          fetch(`${baseUrl}materials/`, { method: "GET", headers: authHeaders }), // ✅ token
-          fetch(`${baseUrl}legal-guardians/`, { method: "GET", headers: authHeaders }), // ✅ token
+          fetch(`${baseUrl}materials/`, {
+            method: "GET",
+            headers: authHeaders,
+          }), // ✅ token
+          fetch(`${baseUrl}legal-guardians/`, {
+            method: "GET",
+            headers: authHeaders,
+          }), // ✅ token
           fetch(`${baseUrl}units/`, { method: "GET", headers: authHeaders }), // ✅ token
         ]);
 
@@ -344,7 +421,8 @@ export function AddToCollectionDrawer({
         const unitsJson = await unitsRes.json().catch(() => ({}));
 
         const mats: Material[] = matJson?.materials ?? matJson ?? [];
-        const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
+        const guards: LegalGuardian[] =
+          guardJson?.legal_guardians ?? guardJson ?? [];
 
         setMaterialItems(
           mats.map((m) => ({
@@ -374,10 +452,13 @@ export function AddToCollectionDrawer({
     async (uid: UUID) => {
       if (!uid) return setAgenciesP([]);
       try {
-        const res = await fetch(`${baseUrl}agencies/?unit_id=${encodeURIComponent(uid)}`, {
-          method: "GET",
-          headers: authHeaders, // ✅ token
-        });
+        const res = await fetch(
+          `${baseUrl}agencies/?unit_id=${encodeURIComponent(uid)}`,
+          {
+            method: "GET",
+            headers: authHeaders, // ✅ token
+          }
+        );
         const json = await res.json();
         setAgenciesP(json?.agencies ?? []);
       } catch {
@@ -391,10 +472,13 @@ export function AddToCollectionDrawer({
     async (aid: UUID) => {
       if (!aid) return setSectorsP([]);
       try {
-        const res = await fetch(`${baseUrl}sectors/?agency_id=${encodeURIComponent(aid)}`, {
-          method: "GET",
-          headers: authHeaders, // ✅ token
-        });
+        const res = await fetch(
+          `${baseUrl}sectors/?agency_id=${encodeURIComponent(aid)}`,
+          {
+            method: "GET",
+            headers: authHeaders, // ✅ token
+          }
+        );
         const json = await res.json();
         setSectorsP(json?.sectors ?? []);
       } catch {
@@ -408,10 +492,13 @@ export function AddToCollectionDrawer({
     async (sid: UUID) => {
       if (!sid) return setLocationsP([]);
       try {
-        const res = await fetch(`${baseUrl}locations/?sector_id=${encodeURIComponent(sid)}`, {
-          method: "GET",
-          headers: authHeaders, // ✅ token
-        });
+        const res = await fetch(
+          `${baseUrl}locations/?sector_id=${encodeURIComponent(sid)}`,
+          {
+            method: "GET",
+            headers: authHeaders, // ✅ token
+          }
+        );
         const json = await res.json();
         setLocationsP(json?.locations ?? []);
       } catch {
@@ -422,14 +509,20 @@ export function AddToCollectionDrawer({
   );
 
   useEffect(() => {
-    setAgencyIdP(null); setSectorIdP(null); setLocationIdP(null);
-    setAgenciesP([]); setSectorsP([]); setLocationsP([]);
+    setAgencyIdP(null);
+    setSectorIdP(null);
+    setLocationIdP(null);
+    setAgenciesP([]);
+    setSectorsP([]);
+    setLocationsP([]);
     if (unitIdP) fetchAgenciesP(unitIdP);
   }, [unitIdP, fetchAgenciesP]);
 
   useEffect(() => {
-    setSectorIdP(null); setLocationIdP(null);
-    setSectorsP([]); setLocationsP([]);
+    setSectorIdP(null);
+    setLocationIdP(null);
+    setSectorsP([]);
+    setLocationsP([]);
     if (agencyIdP) fetchSectorsP(agencyIdP);
   }, [agencyIdP, fetchSectorsP]);
 
@@ -447,7 +540,9 @@ export function AddToCollectionDrawer({
     setAgencyIdP(null);
     setSectorIdP(null);
     setLocationIdP(null);
-    setAgenciesP([]); setSectorsP([]); setLocationsP([]);
+    setAgenciesP([]);
+    setSectorsP([]);
+    setLocationsP([]);
   };
 
   /* ================== Lista de catálogo + seleção ================== */
@@ -511,35 +606,37 @@ export function AddToCollectionDrawer({
       if (agencyIdP) params.set("agency_id", agencyIdP);
       if (sectorIdP) params.set("sector_id", sectorIdP);
       if (locationIdP) params.set("location_id", locationIdP);
-      if (type == 'SMAL') params.set("workflow_status", "DESFAZIMENTO");
-      if (type == 'COMPRAS') params.set("workflow_status", "ALIENACAO");
+      if (type == "SMAL") params.set("workflow_status", "DESFAZIMENTO");
+      if (type == "COMPRAS") params.set("workflow_status", "ALIENACAO");
 
       const url = `${baseUrl}catalog/?${params.toString()}`;
       const res = await fetch(url, { headers });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao carregar catálogo (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao carregar catálogo (HTTP ${res.status}).`
+        );
       }
 
       const data: CatalogListResponse & any = await res.json();
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.catalog_entries)
-          ? (data as any).catalog_entries
-          : Array.isArray((data as any)?.results)
-            ? (data as any).results
-            : [];
+        ? (data as any).catalog_entries
+        : Array.isArray((data as any)?.results)
+        ? (data as any).results
+        : [];
 
       // ✅ tenta pegar total, se existir na API
       const guessedTotal =
         data?.count ?? data?.total ?? data?.total_count ?? null;
-      setTotalCount(
-        typeof guessedTotal === "number" ? guessedTotal : null
-      );
+      setTotalCount(typeof guessedTotal === "number" ? guessedTotal : null);
 
       setCatalogList(list as CatalogEntry[]);
     } catch (e: any) {
-      toast("Erro ao listar catálogo", { description: e?.message || String(e) });
+      toast("Erro ao listar catálogo", {
+        description: e?.message || String(e),
+      });
       setCatalogList([]);
       setTotalCount(null);
     } finally {
@@ -568,7 +665,16 @@ export function AddToCollectionDrawer({
   // quando qualquer filtro mudar, volta para a 1ª página
   useEffect(() => {
     setOffset(0);
-  }, [q, materialId, guardianId, unitIdP, agencyIdP, sectorIdP, locationIdP, type]);
+  }, [
+    q,
+    materialId,
+    guardianId,
+    unitIdP,
+    agencyIdP,
+    sectorIdP,
+    locationIdP,
+    type,
+  ]);
 
   /* ================== Adicionar selecionados ================== */
   const addSelectedToCollection = async () => {
@@ -592,11 +698,14 @@ export function AddToCollectionDrawer({
         selectedCatalogs.map(async (cat) => {
           const payload = { catalog_id: cat.id, status: false, comment: "" };
 
-          const r = await fetch(`${baseUrl}collections/${encodeURIComponent(cid)}/items/`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(payload),
-          });
+          const r = await fetch(
+            `${baseUrl}collections/${encodeURIComponent(cid)}/items/`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify(payload),
+            }
+          );
 
           if (!r.ok) {
             const t = await r.text().catch(() => "");
@@ -610,7 +719,10 @@ export function AddToCollectionDrawer({
           } catch {}
 
           const newItem: CollectionItem = {
-            id: createdId ?? (globalThis.crypto?.randomUUID?.() ?? `${cat.id}::temp`),
+            id:
+              createdId ??
+              globalThis.crypto?.randomUUID?.() ??
+              `${cat.id}::temp`,
             status: false,
             comment: "",
             catalog: cat,
@@ -626,7 +738,9 @@ export function AddToCollectionDrawer({
       setSelectedIds(new Set());
       onOpenChange(false);
     } catch (e: any) {
-      toast("Erro ao adicionar itens", { description: e?.message || String(e) });
+      toast("Erro ao adicionar itens", {
+        description: e?.message || String(e),
+      });
     } finally {
       setAddingItems(false);
     }
@@ -649,8 +763,10 @@ export function AddToCollectionDrawer({
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
   };
-  const scrollLeft = () => scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
-  const scrollRight = () => scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
   useEffect(() => {
     checkScrollability();
     const handleResize = () => checkScrollability();
@@ -672,32 +788,31 @@ export function AddToCollectionDrawer({
       >
         <DialogHeader>
           <div className=" flex justify-between">
-          <div className="flex gap-2">
-   {needsCollectionSelect && (
-          <div>
-            <Combobox
-              items={collections}
-              value={selectedCollectionId}
-              onChange={(v) => setSelectedCollectionId(v)}
-              placeholder="Selecione a coleção"
-              emptyText="Nenhuma coleção encontrada"
-            />
-          </div>
-        )}
+            <div className="flex gap-2">
+              {needsCollectionSelect && (
+                <div>
+                  <Combobox
+                    items={collections}
+                    value={selectedCollectionId}
+                    onChange={(v) => setSelectedCollectionId(v)}
+                    placeholder="Selecione a coleção"
+                    emptyText="Nenhuma coleção encontrada"
+                  />
+                </div>
+              )}
 
               <Button
                 variant="outline"
                 onClick={toggleSelectAll}
                 disabled={catalogList.length === 0}
               >
-                {selectedIds.size === catalogList.length && catalogList.length > 0
+                {selectedIds.size === catalogList.length &&
+                catalogList.length > 0
                   ? "Desmarcar todos"
                   : "Selecionar todos"}
               </Button>
-         </div>
+            </div>
             <div className="flex gap-2">
-             
-
               <Button
                 variant="outline"
                 size="icon"
@@ -708,13 +823,9 @@ export function AddToCollectionDrawer({
               </Button>
             </div>
           </div>
-
-       
         </DialogHeader>
 
         {/* Se não veio collectionId, mostrar seletor de coleção */}
-      
-
 
         {/* Filtros */}
         <div className="space-y-4 ">
@@ -727,7 +838,9 @@ export function AddToCollectionDrawer({
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                        !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                      }`}
                       onClick={scrollLeft}
                       disabled={!canScrollLeft}
                     >
@@ -819,7 +932,11 @@ export function AddToCollectionDrawer({
                             disabled={!sectorIdP}
                           />
 
-                          <Button variant="outline" size="sm" onClick={clearPopupFilters}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearPopupFilters}
+                          >
                             <Trash size={16} /> Limpar filtros
                           </Button>
                         </div>
@@ -829,7 +946,9 @@ export function AddToCollectionDrawer({
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""}`}
+                      className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                      }`}
                       onClick={scrollRight}
                       disabled={!canScrollRight}
                     >
@@ -880,7 +999,9 @@ export function AddToCollectionDrawer({
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            const el = document.getElementById(id) as HTMLInputElement | null;
+                            const el = document.getElementById(
+                              id
+                            ) as HTMLInputElement | null;
                             if (el) el.click();
                           }}
                           onDoubleClick={() => {
@@ -895,54 +1016,54 @@ export function AddToCollectionDrawer({
             )}
           </div>
 
-           {/* Paginação */}
-        <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
-          <span className="text-sm text-muted-foreground">Itens por página:</span>
-          <Select
-            value={limit.toString()}
-            onValueChange={(value) => {
-              const newLimit = parseInt(value);
-              handleNavigate(0, newLimit);
-            }}
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Itens" />
-            </SelectTrigger>
-            <SelectContent>
-              {[12, 24, 36, 48, 84, 162].map((val) => (
-                <SelectItem key={val} value={val.toString()}>
-                  {val}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="w-full flex justify-center items-center gap-10 mt-8">
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              onClick={() => handleNavigate(Math.max(0, offset - limit))}
-              disabled={isFirstPage}
+          {/* Paginação */}
+          <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Itens por página:
+            </span>
+            <Select
+              value={limit.toString()}
+              onValueChange={(value) => {
+                const newLimit = parseInt(value);
+                handleNavigate(0, newLimit);
+              }}
             >
-              <ChevronLeft size={16} className="mr-2" />
-              Anterior
-            </Button>
-
-            <Button
-              onClick={() => !isLastPage && handleNavigate(offset + limit)}
-              disabled={isLastPage}
-            >
-              Próximo
-              <ChevronRight size={16} className="ml-2" />
-            </Button>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Itens" />
+              </SelectTrigger>
+              <SelectContent className="z-[999]">
+                {[12, 24, 36, 48, 84, 162].map((val) => (
+                  <SelectItem key={val} value={val.toString()}>
+                    {val}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+
+          <div className="w-full flex justify-center items-center gap-10 mt-8">
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => handleNavigate(Math.max(0, offset - limit))}
+                disabled={isFirstPage}
+              >
+                <ChevronLeft size={16} className="mr-2" />
+                Anterior
+              </Button>
+
+              <Button
+                onClick={() => !isLastPage && handleNavigate(offset + limit)}
+                disabled={isLastPage}
+              >
+                Próximo
+                <ChevronRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
 
           <ScrollBar orientation="vertical" />
         </ScrollArea>
-
-       
 
         <DialogFooter className="flex items-center justify-between gap-2 mt-4">
           <div className="text-sm text-muted-foreground">
