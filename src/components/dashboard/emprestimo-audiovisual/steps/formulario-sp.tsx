@@ -1,16 +1,16 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Label } from "../../ui/label";
+import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../emprestimo-audiovisual";
 import { AlertCircle, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
-import { Input } from "../../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Input } from "../../../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { User } from "phosphor-react";
-import { UserContext } from "../../../context/context";
-import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
-import { Button } from "../../ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../../ui/command";
-import { cn } from "../../../lib";
+import { UserContext } from "../../../../context/context";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../ui/popover";
+import { Button } from "../../../ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../../../ui/command";
+import { cn } from "../../../../lib";
 
 /** ================= Tipos ================= */
 

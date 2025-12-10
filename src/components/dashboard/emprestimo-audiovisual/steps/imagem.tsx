@@ -18,23 +18,23 @@ import { ArrowUUpLeft } from "phosphor-react";
 import { useDropzone } from "react-dropzone";
 
 import { StepBaseProps } from "../emprestimo-audiovisual"; // mantém seu tipo original
-import { Button } from "../../ui/button";
-import { Badge } from "../../ui/badge";
+import { Button } from "../../../ui/button";
+import { Badge } from "../../../ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../ui/dialog";
+} from "../../../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
-import { Separator } from "../../ui/separator";
+} from "../../../ui/select";
+import { Separator } from "../../../ui/separator";
 
 /** deep equal simples p/ arrays de strings */
 const sameArr = (a?: string[], b?: string[]) => {

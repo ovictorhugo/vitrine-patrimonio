@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 
-export type ModalType = "general" | "visao-geral-user" | 'atualizar-dados' | 'gerenciar-usuarios' | 'configuracoes' | 'lista-patrimonio' | 'visao-sala' | 'novo-item' | 'itens-vitrine' | 'empenhos' | 'create-bar-bode' | 'painel' | 'assinar-documento' | 'itens-desfazimento' | 'transferencia' | 'editar-item' | 'create-temp-asset' | 'temp-asset' | 'commission' | 'administrativo-page' | 'inventario' | 'desfazimento' | 'cargos-funcoes' | 'alienacao' | 'departamento' | 'comissao-apoio-local' | 'user-public-page' | 'finalizados' | 'audiovisual' | 'salas' | 'acervo-historico'
+export type ModalType = "general" | "visao-geral-user" | 'atualizar-dados' | 'gerenciar-usuarios' | 'configuracoes' | 'lista-patrimonio' | 'visao-sala' | 'novo-item' | 'itens-vitrine' | 'empenhos' | 'create-bar-bode' | 'painel' | 'assinar-documento' | 'itens-desfazimento' | 'transferencia' | 'editar-item' | 'create-temp-asset' | 'temp-asset' | 'commission' | 'administrativo-page' | 'inventario' | 'desfazimento' | 'cargos-funcoes' | 'alienacao' | 'departamento' | 'comissao-apoio-local' | 'user-public-page' | 'finalizados' | 'audiovisual' | 'emprestimo-audiovisual' | 'salas' | 'acervo-historico' | 'solicitar-transferencia'
 
 
 interface ModalStore {

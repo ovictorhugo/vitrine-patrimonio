@@ -27,6 +27,7 @@ import {
   Landmark,
   PackageCheck,
   PackageSearch,
+  ArrowRightToLine,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -45,7 +46,9 @@ import { AccountSwitcher } from "./navigation/user-list";
 import { useModal } from "./hooks/use-modal-store";
 import { usePermissions } from "./permissions";
 
-export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebarAdmin({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const { user, loggedIn, role, permission } = useContext(UserContext);
   const { onOpen } = useModal();
 
@@ -64,7 +67,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
     hasFinalizados,
     hasAudiovisual,
     hasSalas,
-    hasAcervoHistorico
+    hasAcervoHistorico,
+    hasEmprestimoAudiovisual,
   } = usePermissions();
 
   // true quando permission já foi preenchido (mesmo que vazio)
@@ -96,20 +100,52 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           icon: Wrench,
           isActive: true,
           items: [
-               ...(loggedIn
-              ? [{ title: "Solicitar empréstimo", url: "/emprestimo-audiovisual", icon: PackageCheck }]
+            ...(loggedIn
+              ? [
+                  {
+                    title: "Solicitar empréstimo",
+                    url: "/pedir-emprestimo-audiovisual",
+                    icon: PackageCheck,
+                  },
+                ]
               : []),
             ...(hasCriarEtiqueta
-              ? [{ title: "Criar etiqueta", url: "/dashboard/criar-etiqueta", icon: Barcode }]
+              ? [
+                  {
+                    title: "Criar etiqueta",
+                    url: "/dashboard/criar-etiqueta",
+                    icon: Barcode,
+                  },
+                ]
               : []),
             ...(hasAnunciarItem
-              ? [{ title: "Anunciar item", url: "/dashboard/novo-item", icon: Plus }]
+              ? [
+                  {
+                    title: "Anunciar item",
+                    url: "/dashboard/novo-item",
+                    icon: Plus,
+                  },
+                ]
               : []),
-            { title: "Busca patrimônio", url: "/buscar-patrimonio", icon: SearchCheck },
-            
-            { title: "Busca catalogo", url: "/buscar-catalogo", icon: PackageSearch },
+            {
+              title: "Busca patrimônio",
+              url: "/buscar-patrimonio",
+              icon: SearchCheck,
+            },
+
+            {
+              title: "Busca catalogo",
+              url: "/buscar-catalogo",
+              icon: PackageSearch,
+            },
             ...(hasBuscaAvancada
-              ? [{ title: "Busca avançada", url: "/dashboard/busca-avancada", icon: TextSearch }]
+              ? [
+                  {
+                    title: "Busca avançada",
+                    url: "/dashboard/busca-avancada",
+                    icon: TextSearch,
+                  },
+                ]
               : []),
           ],
         },
@@ -119,18 +155,28 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           icon: DotsThree,
           isActive: true,
           items: [
-            { title: "Feedback", icon: Bug, onClick: () => onOpen("relatar-problema") },
+            {
+              title: "Feedback",
+              icon: Bug,
+              onClick: () => onOpen("relatar-problema"),
+            },
             { title: "Informações", url: "/informacoes", icon: Info },
           ],
         },
       ],
       projects: [
         { name: "Página Inicial", url: "/", icon: Home },
-        ...(loggedIn 
+        ...(loggedIn
           ? [{ name: "Minha página", url: "/dashboard", icon: User }]
           : []),
         ...(hasAdministrativo
-          ? [{ name: "Administrativo", url: "/dashboard/administrativo", icon: SlidersHorizontal }]
+          ? [
+              {
+                name: "Administrativo",
+                url: "/dashboard/administrativo",
+                icon: SlidersHorizontal,
+              },
+            ]
           : []),
 
         ...(hasMovimentacao
@@ -143,7 +189,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
             ]
           : []),
 
-             ...(hasAudiovisual
+        ...(hasAudiovisual
           ? [
               {
                 name: adminLabel("Audiovisual"),
@@ -153,20 +199,20 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
             ]
           : []),
 
-              ...(hasSalas
+        ...(hasSalas
           ? [
               {
-                name: 'Salas',
+                name: "Salas",
                 url: "/dashboard/salas",
                 icon: DoorOpen,
               },
             ]
           : []),
 
-                ...(hasAcervoHistorico
+        ...(hasAcervoHistorico
           ? [
               {
-                name: 'Acervo Histórico',
+                name: "Acervo Histórico",
                 url: "/dashboard/acervo-historico",
                 icon: Landmark,
               },
@@ -184,7 +230,13 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           : []),
 
         ...(hasCargosFuncoes
-          ? [{ name: "Cargos e funções", url: "/dashboard/cargos-funcoes", icon: Users }]
+          ? [
+              {
+                name: "Cargos e funções",
+                url: "/dashboard/cargos-funcoes",
+                icon: Users,
+              },
+            ]
           : []),
 
         ...(hasComissaoPermanente
@@ -228,7 +280,13 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
           : []),
 
         ...(hasFinalizados
-          ? [{ name: "Finalizados", url: "/dashboard/finalizados", icon: Recycle }]
+          ? [
+              {
+                name: "Finalizados",
+                url: "/dashboard/finalizados",
+                icon: Recycle,
+              },
+            ]
           : []),
       ],
     };
@@ -252,6 +310,12 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
     hasDepartamento,
     hasComissaoApoioLocal,
     hasFinalizados,
+    adminIcon,
+    adminLabel,
+    hasAcervoHistorico,
+    hasAudiovisual,
+    hasSalas,
+    onOpen,
   ]);
 
   // “cinto de segurança”: se algum menu for memoizado demais, remonta ao mudar papel/permissões

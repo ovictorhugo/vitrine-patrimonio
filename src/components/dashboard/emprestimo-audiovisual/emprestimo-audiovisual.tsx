@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,15 +23,15 @@ import React, {
   useState,
 } from "react";
 import ReactDOM from "react-dom/client";
-import { Tabs, TabsContent } from "../ui/tabs";
-import { Progress } from "../ui/progress";
+import { Tabs, TabsContent } from "../../ui/tabs";
+import { Progress } from "../../ui/progress";
 import { useLocation, useNavigate } from "react-router-dom";
-import { cn } from "../../lib";
+import { cn } from "../../../lib";
 
 import { InicioStep } from "./steps/inicio.tsx";
-import { UserContext } from "../../context/context";
+import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
-import { Alert } from "../ui/alert";
+import { Alert } from "../../ui/alert";
 
 /* ➕ UI para Dialog/lista */
 import {
@@ -41,19 +41,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { ScrollArea } from "../ui/scroll-area";
-import { Badge } from "../ui/badge";
-import { Separator } from "../ui/separator";
+} from "../../ui/dialog";
+import { ScrollArea } from "../../ui/scroll-area";
+import { Badge } from "../../ui/badge";
+import { Separator } from "../../ui/separator";
 
 /* =======================================================================================
    ⬇⬇⬇  BLOCO DE UTILIDADES DE PLAQUETA (mesmo esquema do componente Etiqueta)  ⬇⬇⬇
    ======================================================================================= */
 
 import QRCode from "react-qr-code";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { ArrowUUpLeft } from "phosphor-react";
-import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
+import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
 import { PesquisaStep } from "./steps/pesquisa.tsx";
 import { FormularioStep, Patrimonio } from "./steps/formulario.tsx";
 import { FormularioSpStep } from "./steps/formulario-sp.tsx";

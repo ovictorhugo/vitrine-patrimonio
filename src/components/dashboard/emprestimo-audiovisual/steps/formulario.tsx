@@ -1,16 +1,16 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Label } from "../../ui/label";
+import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../emprestimo-audiovisual";
 import { Archive, ArrowRight, CheckIcon, HelpCircle, Hourglass, LoaderCircle, MoveRight, XIcon } from "lucide-react";
-import { Input } from "../../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Input } from "../../../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { User } from "phosphor-react";
-import { UserContext } from "../../../context/context";
-import { Separator } from "../../ui/separator";
-import { Alert } from "../../ui/alert";
-import { Badge } from "../../ui/badge";
-import { useModal } from "../../hooks/use-modal-store";
+import { UserContext } from "../../../../context/context";
+import { Separator } from "../../../ui/separator";
+import { Alert } from "../../../ui/alert";
+import { Badge } from "../../../ui/badge";
+import { useModal } from "../../../hooks/use-modal-store";
 
 /** ====== Tipos ====== */
 export interface Patrimonio {

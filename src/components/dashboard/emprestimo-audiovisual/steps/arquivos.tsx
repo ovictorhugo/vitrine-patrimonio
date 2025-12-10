@@ -12,9 +12,9 @@ import React, {
   useCallback,
   forwardRef,
 } from "react";
-import { Label } from "../../ui/label";
-import { Alert } from "../../ui/alert";
-import { Button } from "../../ui/button";
+import { Label } from "../../../ui/label";
+import { Alert } from "../../../ui/alert";
+import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { StepBaseProps } from "../emprestimo-audiovisual";

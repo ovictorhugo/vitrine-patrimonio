@@ -9,9 +9,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Label } from "../../ui/label";
-import { UserContext } from "../../../context/context";
-import { Input } from "../../ui/input";
+import { Label } from "../../../ui/label";
+import { UserContext } from "../../../../context/context";
+import { Input } from "../../../ui/input";
 
 /* ===== Tipos ===== */
 type FlowMode = "vitrine" | "desfazimento";

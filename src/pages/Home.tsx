@@ -29,8 +29,8 @@ export function Home() {
         } else if(location.pathname == '/informacoes') {
             onOpen('informacoes')
       
-        } else if(location.pathname == '/emprestimo-audiovisual') {
-            onOpen('emprestimo-audiovisual')
+        } else if(location.pathname == '/pedir-emprestimo-audiovisual') {
+            onOpen('pedir-emprestimo-audiovisual')
       
         } 
     }, [location]);

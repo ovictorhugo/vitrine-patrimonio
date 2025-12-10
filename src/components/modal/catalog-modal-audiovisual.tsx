@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
 } from "react";
+import { Textarea } from "../ui/textarea";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { cn } from "../../lib";
@@ -48,6 +49,8 @@ import {
   ChevronsUpDown,
   Check,
   CalendarIcon,
+  ChevronDownIcon,
+  Package2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft } from "phosphor-react";
@@ -67,7 +70,6 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { HeaderResultTypeHome } from "../header-result-type-home";
-
 import { useModal } from "../hooks/use-modal-store";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { Drawer, DrawerContent } from "../ui/drawer";
@@ -85,9 +87,16 @@ import { usePermissions } from "../permissions";
 import { Files } from "../homepage/components/documents-tab-catalog";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { Input } from "../ui/input";
-import { type DateRange } from "react-day-picker";
 import { Label } from "../ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { getDefaultAutoSelectFamily } from "net";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -158,35 +167,6 @@ interface CatalogImageDTO {
   id: string;
   catalog_id: string;
   file_path: string;
-}
-interface Patrimonio {
-  asset_code: string;
-  asset_check_digit: string;
-  atm_number: string;
-  serial_number: string;
-  asset_status: string;
-  asset_value: string;
-  asset_description: string;
-  csv_code: string;
-  accounting_entry_code: string;
-  item_brand: string;
-  item_model: string;
-  group_type_code: string;
-  group_code: string;
-  expense_element_code: string;
-  subelement_code: string;
-  id: string;
-  agency: { agency_name: string; agency_code: string; id: string };
-  unit: { unit_name: string; unit_code: string; unit_siaf: string; id: string };
-  sector: { sector_name: string; sector_code: string; id: string };
-  location: { location_code: string; location_name: string; id: string };
-  material: { id: string; material_code: string; material_name: string };
-  legal_guardian: {
-    id: string;
-    legal_guardians_code: string;
-    legal_guardians_name: string;
-  };
-  is_official: boolean;
 }
 
 type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
@@ -390,10 +370,9 @@ export function AudiovisualModal() {
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "catalog-modal";
 
-  const { urlGeral, user, loggedIn } = useContext(UserContext);
+  const { urlGeral, loggedIn } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
-  // Se você passa data.catalog, uso, senão tento data direto
   const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
 
   const images = useMemo(() => {
@@ -428,15 +407,10 @@ export function AudiovisualModal() {
   // Sempre pega o status atual real (último workflow cronológico)
   const lastWorkflow = historySortedDesc[0];
 
-  const { hasCatalogo, hasAcervoHistorico } = usePermissions();
+  const { hasAcervoHistorico } = usePermissions();
 
   const handleBack = () => onClose(); // no modal, voltar = fechar
   const handleVoltar = () => onClose();
-
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(),
-  });
 
   /* ================= Legal Guardian ================ */
 
@@ -450,40 +424,7 @@ export function AudiovisualModal() {
     guardians: false,
   });
 
-  /** objeto “em branco” seguro */
-  const blankPatrimonio = (): Patrimonio => ({
-    asset_code: "",
-    asset_check_digit: "",
-    atm_number: "",
-    serial_number: "",
-    asset_status: "NI",
-    asset_value: "",
-    asset_description: "",
-    csv_code: "",
-    accounting_entry_code: "",
-    item_brand: "",
-    item_model: "",
-    group_type_code: "",
-    group_code: "",
-    expense_element_code: "",
-    subelement_code: "",
-    id: "",
-    agency: { agency_name: "", agency_code: "", id: "" },
-    unit: { unit_name: "", unit_code: "", unit_siaf: "", id: "" },
-    sector: { sector_name: "", sector_code: "", id: "" },
-    location: { location_code: "", location_name: "", id: "" },
-    material: { id: "", material_code: "", material_name: "" },
-    legal_guardian: {
-      id: "",
-      legal_guardians_code: "",
-      legal_guardians_name: "",
-    },
-    is_official: false,
-  });
-
-  const [objectData, setObjectData] = useState<Patrimonio>(blankPatrimonio());
-
-  // listas e seleção (Material/Responsável)
+  const [observation, setObservation] = useState<string>("");
   const [legalGuardians, setLegalGuardians] = useState<LegalGuardian[]>([]);
   const [selectedGuardianId, setLegalGuardianId] = useState("");
 
@@ -495,14 +436,6 @@ export function AudiovisualModal() {
     }, [value, delay]);
     return debounced;
   }
-
-  const patch = (partial: Partial<Patrimonio>) =>
-    setObjectData((prev) => ({ ...prev, ...partial }));
-
-  const handleChange =
-    (field: keyof Patrimonio) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      patch({ [field]: e.target.value } as Partial<Patrimonio>);
-    };
 
   const fetchLegalGuardians = useCallback(
     async (q?: string) => {
@@ -535,21 +468,11 @@ export function AudiovisualModal() {
   const handleGuardianSelect = (id: string) => {
     const g = legalGuardians.find((x) => x.id === id);
     setLegalGuardianId(g?.id || "");
-    patch({
-      legal_guardian: g
-        ? {
-            id: g.id,
-            legal_guardians_code: g.legal_guardians_code,
-            legal_guardians_name: g.legal_guardians_name,
-          }
-        : { id: "", legal_guardians_code: "", legal_guardians_name: "" },
-    });
   };
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const openDelete = () => setIsDeleteOpen(true);
   const closeDelete = () => setIsDeleteOpen(false);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -655,28 +578,6 @@ export function AudiovisualModal() {
     ? calculateDifference(catalog.created_at)
     : null;
 
-  // Agora você pode acessar com segurança
-  const [workflowReview, setWorkflowReview] = useState(false);
-  const [workflowAnunciados, setWorkflowAnunciados] = useState(false);
-
-  useEffect(() => {
-    if (!catalog) return;
-
-    const current = historySortedDesc[0]?.workflow_status;
-
-    const isReview =
-      current === "REVIEW_REQUESTED_DESFAZIMENTO" ||
-      current === "REVIEW_REQUESTED_VITRINE" ||
-      current === "ADJUSTMENT_VITRINE" ||
-      current === "ADJUSTMENT_DESFAZIMENTO" ||
-      current === "REJEITADOS_COMISSAO";
-
-    const isAnunciado = current === "VITRINE";
-
-    setWorkflowReview(isReview);
-    setWorkflowAnunciados(isAnunciado);
-  }, [catalog, historySortedDesc]);
-
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
@@ -716,151 +617,288 @@ export function AudiovisualModal() {
 
   const [tabOpen, setTabOpen] = useState("visao_geral");
 
-  //////////////JUSTIFICATIVA E AVALIADOR
+  interface WorkflowDetail {
+    inicio: number | string; // Aceita timestamp ou string ISO
+    fim: number | string;
+    [key: string]: any; // Outros campos do detail
+  }
 
-  const REVIEWER_VISIBLE_STATUSES = new Set([
-    "REVIEW_REQUESTED_COMISSION",
-    "REJEITADOS_COMISSAO",
-    "DESFAZIMENTO",
-    "DESCARTADOS",
-    "REVIEW_REQUESTED_VITRINE",
-    "ADJUSTMENT_VITRINE",
-    "REVIEW_REQUESTED_DESFAZIMENTO",
-    "ADJUSTMENT_DESFAZIMENTO",
-  ]);
+  interface WorkflowItem {
+    workflow_status: string;
+    detail: WorkflowDetail;
+    [key: string]: any; // Outros campos do workflow
+  }
 
-  const JUSTIFICATION_VISIBLE_STATUSES = new Set([
-    "REJEITADOS_COMISSAO",
-    "DESFAZIMENTO",
-    "DESCARTADOS",
-    "REVIEW_REQUESTED_VITRINE",
-    "ADJUSTMENT_VITRINE",
-    "REVIEW_REQUESTED_DESFAZIMENTO",
-    "ADJUSTMENT_DESFAZIMENTO",
-  ]);
+  interface WorkflowOutput {
+    inicio: string | number;
+    fim: string | number;
+  }
 
-  function findFirstWorkflowByStatuses(
-    list: any,
-    statuses: string[]
-  ): WorkflowEvent | undefined {
-    if (!list?.length) return undefined;
-    return list.find((ev: WorkflowEvent) =>
-      statuses.includes(ev.workflow_status)
+  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
+
+  // DATAS
+
+  const [openFrom, setOpenFrom] = useState(false);
+  const [openTo, setOpenTo] = useState(false);
+
+  const [dateFrom, setDateFrom] = useState<Date>(new Date());
+  const [dateTo, setDateTo] = useState<Date>(new Date());
+  const [hourFrom, setHourFrom] = useState<number>(11);
+  const [hourTo, setHourTo] = useState<number>(12);
+  const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+
+  const [beginHours, setBeginHours] = useState<number[]>(hours);
+  const [endHours, setEndHours] = useState<number[]>(hours);
+
+  async function getWorkflows() {
+    const res = await fetch(`${urlGeral}catalog/${catalog?.id}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const json = await res.json();
+    const workflows = json?.workflow_history.filter((item) => {
+      const statusValido = item.workflow_status === "AUDIOVISUAL_EMPRESTIMO";
+      return statusValido;
+    });
+
+    setWorkflows(workflows);
+  }
+
+  useEffect(() => {
+    getWorkflows();
+  }, []);
+
+  function getAvailableHours(dateFrom, workflow) {
+    const year = dateFrom.getFullYear();
+    const month = dateFrom.getMonth();
+    const day = dateFrom.getDate();
+
+    return hours.filter((hour) => {
+      const timeToCheck = new Date(year, month, day, hour, 0, 0, 0).getTime();
+
+      const hasConflict = workflow.some((item) => {
+        try {
+          const start = new Date(item.inicio.replace("Z", "")).getTime();
+          const end = new Date(item.fim.replace("Z", "")).getTime();
+          return timeToCheck >= start && timeToCheck < end;
+        } catch {
+          return false;
+        }
+      });
+
+      return !hasConflict;
+    });
+  }
+
+  useEffect(() => {
+    const dateFromClean = new Date(dateFrom);
+    dateFromClean.setHours(0, 0, 0, 0);
+    const hora = dateFromClean.getTime();
+
+    const conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
+      (acc, item) => {
+        if (!item.detail?.inicio || !item.detail?.fim) return acc;
+
+        const inicioTimestamp = new Date(item.detail.inicio).setHours(
+          0,
+          0,
+          0,
+          0
+        );
+        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+        if (hora >= inicioTimestamp && hora <= fimTimestamp) {
+          acc.push({
+            inicio: item.detail.inicio,
+            fim: item.detail.fim,
+          });
+        }
+        return acc;
+      },
+      []
     );
-  }
 
-  function getDetail(
-    ev?: WorkflowEvent | null
-  ): Record<string, any> | undefined {
-    if (!ev) return undefined;
-    return (ev as any).detail ?? undefined;
-  }
-
-  function pickJustificativa(detail?: Record<string, any>): string | undefined {
-    if (!detail) return undefined;
-    const j = detail.justificativa;
-    return typeof j === "string" && j.trim() ? j : undefined;
-  }
-
-  function pickUserFromEvent(
-    ev?: WorkflowEvent | null
-  ): { id?: string; username?: string } | undefined {
-    const u = (ev as any)?.user;
-    if (u && (u.id || u.username)) {
-      return { id: u.id, username: u.username };
+    try {
+      setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
+    } catch (e) {
+      toast.error("Sem data, tente novamente");
     }
-    return undefined;
-  }
+  }, [dateFrom, workflows]);
 
-  const currentStatus = lastWorkflow?.workflow_status ?? "";
-  const shouldShowReviewer = REVIEWER_VISIBLE_STATUSES.has(currentStatus);
-  const shouldShowJustification =
-    JUSTIFICATION_VISIBLE_STATUSES.has(currentStatus);
+  useEffect(() => {
+    const dateFromClean = new Date(dateFrom);
+    dateFromClean.setHours(0, 0, 0, 0);
 
-  const reviewerFromCommission = useMemo(() => {
-    if (!shouldShowReviewer) return undefined;
+    const dateToClean = new Date(dateTo);
+    dateToClean.setHours(0, 0, 0, 0);
 
-    const firstCommission = findFirstWorkflowByStatuses(
-      catalog?.workflow_history,
-      ["REVIEW_REQUESTED_COMISSION"]
-    );
-    const commissionDetail = getDetail(firstCommission);
-    const reviewerFromDetail = commissionDetail?.reviewers?.[0];
+    // CASO 1: Início e Fim no mesmo dia
+    if (dateFromClean.getTime() === dateToClean.getTime()) {
+      const nonConflict = hours.filter(
+        (v) => v > hourFrom && beginHours.includes(v)
+      );
 
-    if (
-      reviewerFromDetail &&
-      (reviewerFromDetail.id || reviewerFromDetail.username)
-    ) {
-      return reviewerFromDetail as { id?: string; username?: string };
+      const firstConflict =
+        hours.find(
+          (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v)
+        ) || 23;
+      setEndHours(
+        hours.filter(
+          (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict
+        )
+      );
+    }
+    // CASO 2: Dias diferentes
+    else {
+      if (!dateFrom || !dateTo) return;
+
+      const hora = dateFromClean.getTime();
+      let conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
+        (acc, item) => {
+          if (!item.detail?.inicio || !item.detail?.fim) return acc;
+
+          const inicioTimestamp = new Date(item.detail.inicio).setHours(
+            0,
+            0,
+            0,
+            0
+          );
+          const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+
+          // Pega tudo que começa depois de hoje OU termina depois de hoje
+          if (hora < inicioTimestamp || hora < fimTimestamp) {
+            acc.push({
+              inicio: item.detail.inicio,
+              fim: item.detail.fim,
+            });
+          }
+          return acc;
+        },
+        []
+      );
+
+      const availableTimes = beginHours.filter((n) => n > hourFrom).length;
+      const totalTimes = hours.filter((n) => n > hourFrom).length;
+      if (
+        availableTimes < totalTimes &&
+        dateFromClean.getTime() < dateToClean.getTime()
+      ) {
+        setEndHours([]);
+        return;
+      }
+
+      dateFromClean.setHours(hourFrom, 0, 0, 0);
+      const startMs = dateFromClean.getTime();
+
+      // Encontramos o timestamp do PRIMEIRO conflito real que acontece a partir do horário de início
+      let closestBarrier = Infinity;
+
+      conflictingWorkflows.forEach((wf) => {
+        if (typeof(wf.inicio) === "number") return;
+        const wfStart = new Date(wf.inicio.replace("Z", "")).getTime();
+
+        // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
+        if (wfStart >= startMs) {
+          // Se ainda não temos barreira, ou se essa é anterior à atual...
+          if (closestBarrier === Infinity || wfStart < closestBarrier) {
+            closestBarrier = wfStart;
+          }
+        }
+      });
+
+      // --- DEFINIR AS HORAS FINAIS ---
+
+      if (closestBarrier) {
+        const barrierDate = new Date(closestBarrier);
+        const barrierDayClean = new Date(closestBarrier).setHours(0, 0, 0, 0);
+        const targetDayMs = dateToClean.getTime();
+
+        // Cenário A: O bloqueio acontece ANTES de chegar no dia final selecionado.
+        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 12. Dia 15 fica inacessível.
+        if (barrierDayClean < targetDayMs) {
+          setEndHours([]);
+        }
+        // Cenário B: O bloqueio é EXATAMENTE no dia final.
+        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 15 às 14:00.
+        // Liberamos as horas do dia 15 apenas até as 14:00.
+        else if (barrierDayClean === targetDayMs) {
+          const limitHour = barrierDate.getHours();
+          // Só mostra horas menores ou iguais ao início do bloqueio
+          setEndHours(hours.filter((h) => h <= limitHour));
+        }
+        // Cenário C: O bloqueio é num dia DEPOIS do dia final.
+        // Ex: Início dia 10, Fim dia 12. Bloqueio dia 20.
+        else {
+          setEndHours(hours);
+        }
+      } else {
+        // Sem conflitos futuros, dia liberado
+        setEndHours(hours);
+      }
+    }
+  }, [dateFrom, hourFrom, beginHours, dateTo, workflows]);
+
+  const mergeDateAndTime = (date: Date, time: number): Date => {
+    const newDate = new Date(date);
+    newDate.setHours(time);
+    newDate.setMinutes(0);
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+    return newDate;
+  };
+
+  async function submit() {
+    if (!dateFrom || !dateTo) {
+      console.error("Datas não selecionadas");
+      return;
     }
 
-    const reviewerFromCommissionUser = pickUserFromEvent(firstCommission);
-    if (reviewerFromCommissionUser) return reviewerFromCommissionUser;
+    const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
+    const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
-    if (
-      [
-        "REVIEW_REQUESTED_VITRINE",
-        "ADJUSTMENT_VITRINE",
-        "REVIEW_REQUESTED_DESFAZIMENTO",
-        "ADJUSTMENT_DESFAZIMENTO",
-      ].includes(currentStatus)
-    ) {
-      const firstAdjustment =
-        findFirstWorkflowByStatuses(catalog?.workflow_history, [
-          "ADJUSTMENT_VITRINE",
-        ]) ??
-        findFirstWorkflowByStatuses(catalog?.workflow_history, [
-          "ADJUSTMENT_DESFAZIMENTO",
-        ]);
-      const reviewerFromAdjustmentUser = pickUserFromEvent(firstAdjustment);
-      if (reviewerFromAdjustmentUser) return reviewerFromAdjustmentUser;
+    if (timestampTo <= timestampFrom) {
+      toast.error(
+        "Horário inválido! A hora final deve ser maior que a inicial."
+      );
+      return;
     }
 
-    return undefined;
-  }, [shouldShowReviewer, currentStatus, catalog?.workflow_history]);
+    const guardian = legalGuardians.find((g) => g.id === selectedGuardianId);
 
-  const justificationText = useMemo(() => {
-    if (!shouldShowJustification) return undefined;
+    const res = await fetch(`${urlGeral}catalog/${catalog?.id}/workflow`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        workflow_status: "AUDIOVISUAL_EMPRESTIMO",
+        detail: {
+          inicio: timestampFrom,
+          fim: timestampTo,
+          legal_guardian: guardian,
+          observation: observation,
+        },
+      }),
+    });
 
-    let wf: WorkflowEvent | undefined;
-
-    if (currentStatus === "REJEITADOS_COMISSAO") {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
-        "REJEITADOS_COMISSAO",
-      ]);
-    } else if (
-      currentStatus === "DESFAZIMENTO" ||
-      currentStatus === "DESCARTADOS"
-    ) {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
-        "DESFAZIMENTO",
-      ]);
-    } else if (currentStatus === "REVIEW_REQUESTED_COMISSION") {
-      wf = findFirstWorkflowByStatuses(catalog?.workflow_history, [
-        "REVIEW_REQUESTED_COMISSION",
-      ]);
-    } else if (
-      [
-        "REVIEW_REQUESTED_VITRINE",
-        "ADJUSTMENT_VITRINE",
-        "REVIEW_REQUESTED_DESFAZIMENTO",
-        "ADJUSTMENT_DESFAZIMENTO",
-      ].includes(currentStatus)
-    ) {
-      wf =
-        findFirstWorkflowByStatuses(catalog?.workflow_history, [
-          "ADJUSTMENT_VITRINE",
-        ]) ??
-        findFirstWorkflowByStatuses(catalog?.workflow_history, [
-          "ADJUSTMENT_DESFAZIMENTO",
-        ]);
+    if (!res.ok) {
+      // Tenta ler detalhes do erro (ex.: 422 com 'detail')
+      let message = "Erro ao solicitar empréstimo";
+      try {
+        const err = await res.json();
+        if (err?.detail) message = JSON.stringify(err.detail);
+        toast.error(message);
+      } catch {
+        toast.error(message);
+      }
+      throw new Error(message);
     } else {
-      return undefined;
+      toast.success("Solicitação de empréstimo realizada com sucesso!");
+      onClose();
     }
-
-    const detail = getDetail(wf);
-    return pickJustificativa(detail);
-  }, [shouldShowJustification, currentStatus, catalog?.workflow_history]);
+  }
 
   ///// ACERVO HISTÓRICO
 
@@ -870,7 +908,6 @@ export function AudiovisualModal() {
   );
 
   useEffect(() => {
-    console.log();
     setIsAcervoHistoricoLocal(
       (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
     );
@@ -1038,41 +1075,6 @@ export function AudiovisualModal() {
                 <TooltipContent className="z-[99]">Ir a página</TooltipContent>
               </Tooltip>
 
-              {(catalog.user?.id === user?.id || hasCatalogo) &&
-                workflowReview && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link to={`/dashboard/editar-item?id=${catalog.id}`}>
-                        <Button
-                          variant="outline"
-                          onClick={() => onClose()}
-                          size="icon"
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[99]">Editar</TooltipContent>
-                  </Tooltip>
-                )}
-
-              {(catalog.user?.id === user?.id || hasCatalogo) &&
-                workflowReview && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={openDelete}
-                        variant="destructive"
-                        size="icon"
-                        disabled={deleting}
-                      >
-                        <Trash size={16} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[99]">Deletar</TooltipContent>
-                  </Tooltip>
-                )}
-
               {hasAcervoHistorico && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1106,12 +1108,6 @@ export function AudiovisualModal() {
                 </Tooltip>
               )}
             </TooltipProvider>
-            {/* Favoritar (opcional) */}
-            {loggedIn && workflowAnunciados && (
-              <div onClick={(e) => e.stopPropagation()}>
-                <LikeButton id={catalog?.id} />
-              </div>
-            )}
           </div>
         </div>
 
@@ -1178,7 +1174,28 @@ export function AudiovisualModal() {
                             onScroll={checkScrollability}
                           >
                             <div className="flex gap-2 h-auto bg-transparent dark:bg-transparent">
-                             
+                              {tabs.map(({ id, label, icon: Icon }) => (
+                                <div
+                                  key={id}
+                                  className={`pb-2 border-b-2 transition-all text-black dark:text-white ${
+                                    tabOpen === id
+                                      ? "border-b-[#719CB8]"
+                                      : "border-b-transparent"
+                                  }`}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setTabOpen(id);
+                                  }}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    className="m-0 flex items-center gap-2"
+                                  >
+                                    <Icon size={16} />
+                                    {label}
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
@@ -1587,34 +1604,184 @@ export function AudiovisualModal() {
                               </div>
                             </div>
 
-                            <div className="m-auto">
-                              <Label>Período de empréstimo</Label>
-                              <Calendar
-                                mode="range"
-                                defaultMonth={dateRange?.from}
-                                selected={dateRange}
-                                onSelect={setDateRange}
-                                numberOfMonths={2}
-                                className="rounded-lg border shadow-sm w-full"
-                                classNames={{
-                                  today: `border-eng-blue`, // Add a border to today's date
-                                }}
-                              />
+                            <div className="">
+                              <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
+                                <div className="flex gap-4">
+                                  <div className="flex flex-1 flex-col gap-3">
+                                    <Label htmlFor="date-from" className="px-1">
+                                      Início do empréstimo
+                                    </Label>
+                                    <Popover
+                                      open={openFrom}
+                                      onOpenChange={setOpenFrom}
+                                      modal={true}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          id="date-from"
+                                          className="w-full justify-between font-normal"
+                                        >
+                                          {dateFrom
+                                            ? dateFrom.toLocaleDateString(
+                                                "pt-BR",
+                                                {
+                                                  day: "2-digit",
+                                                  month: "short",
+                                                  year: "numeric",
+                                                }
+                                              )
+                                            : "Select date"}
+                                          <ChevronDownIcon />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent
+                                        className="w-auto overflow-hidden p-0 z-[99]"
+                                        align="start"
+                                      >
+                                        <Calendar
+                                          mode="single"
+                                          selected={dateFrom}
+                                          captionLayout="dropdown"
+                                          onSelect={(date) => {
+                                            if (!date) return;
+                                            setDateFrom(date);
+                                            setOpenFrom(false);
+                                          }}
+                                        />
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                  <div className="flex flex-col gap-3">
+                                    <Label
+                                      htmlFor="time-from"
+                                      className="invisible px-1"
+                                    >
+                                      From
+                                    </Label>
+                                    <Select
+                                      value={hourFrom.toString()}
+                                      onValueChange={(v) =>
+                                        setHourFrom(Number(v))
+                                      }
+                                      disabled={beginHours.length == 0}
+                                    >
+                                      <SelectTrigger className="w-[100px]">
+                                        <SelectValue placeholder="Itens" />
+                                      </SelectTrigger>
+                                      <SelectContent className="z-[999]">
+                                        {beginHours.map((val) => (
+                                          <SelectItem
+                                            key={val}
+                                            value={val.toString()}
+                                          >
+                                            {`${val}h`}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <div className="flex gap-4">
+                                  <div className="flex flex-1 flex-col gap-3">
+                                    <Label htmlFor="date-to" className="px-1">
+                                      Fim do empréstimo
+                                    </Label>
+                                    <Popover
+                                      open={openTo}
+                                      onOpenChange={setOpenTo}
+                                      modal={true}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          id="date-to"
+                                          className="w-full justify-between font-normal"
+                                        >
+                                          {dateTo
+                                            ? dateTo.toLocaleDateString(
+                                                "pt-BR",
+                                                {
+                                                  day: "2-digit",
+                                                  month: "short",
+                                                  year: "numeric",
+                                                }
+                                              )
+                                            : "Select date"}
+                                          <ChevronDownIcon />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent
+                                        className="w-auto overflow-hidden p-0 z-[99]"
+                                        align="start"
+                                      >
+                                        <Calendar
+                                          mode="single"
+                                          selected={dateTo}
+                                          captionLayout="dropdown"
+                                          onSelect={(date) => {
+                                            if (!date) return;
+                                            setDateTo(date);
+                                            setOpenTo(false);
+                                          }}
+                                          disabled={
+                                            dateFrom && { before: dateFrom }
+                                          }
+                                        />
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                  <div className="flex flex-col gap-3">
+                                    <Label
+                                      htmlFor="time-to"
+                                      className="invisible px-1"
+                                    >
+                                      To
+                                    </Label>
+                                    <Select
+                                      value={hourTo.toString()}
+                                      onValueChange={(v) =>
+                                        setHourTo(Number(v))
+                                      }
+                                      disabled={endHours.length == 0}
+                                    >
+                                      <SelectTrigger className="w-[100px]">
+                                        <SelectValue placeholder="Itens" />
+                                      </SelectTrigger>
+                                      <SelectContent className="z-[999]">
+                                        {endHours.map((val) => (
+                                          <SelectItem
+                                            key={val}
+                                            value={val.toString()}
+                                          >
+                                            {`${val}h`}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
 
                             <div className="grid gap-3 w-full">
                               <Label htmlFor="asset_description">
                                 Observações
                               </Label>
-                              <Input
-                                id="asset_description"
-                                className="w-full h-20"
-                                value={objectData.asset_description}
-                                onChange={handleChange("asset_description")}
+                              <Textarea
+                                id="description"
+                                value={observation}
+                                onChange={(e) => setObservation(e.target.value)}
                               />
                             </div>
                           </div>
                         </>
+                        <div className="flex m-auto mt-8 items-center justify-end">
+                          <Button size="sm" onClick={submit}>
+                            Solicitar empréstimo
+                            <Package2 size={16} className="" />
+                          </Button>
+                        </div>
                       </div>
                     </TabsContent>
                   </Tabs>

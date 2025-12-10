@@ -1,14 +1,14 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowRight, Trash, X } from "lucide-react";
 import { MagnifyingGlass } from "phosphor-react";
-import { Alert } from "../../ui/alert";
-import { Input } from "../../ui/input";
-import { Button } from "../../ui/button";
+import { Alert } from "../../../ui/alert";
+import { Input } from "../../../ui/input";
+import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 import type { StepBaseProps } from "../emprestimo-audiovisual";
-import { useQuery } from "../../modal/search-modal-patrimonio";
-import { UserContext } from "../../../context/context";
-import { Switch } from "../../ui/switch";
+import { useQuery } from "../../../modal/search-modal-patrimonio";
+import { UserContext } from "../../../../context/context";
+import { Switch } from "../../../ui/switch";
 
 export interface PatrimoniosSelecionados {
   term: string;

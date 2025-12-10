@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { StepBaseProps, FlowMode } from "../emprestimo-audiovisual";
 import { ArrowRight, Barcode, Plus } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
-import { Alert } from "../../ui/alert";
-import { Separator } from "../../ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
+import { Alert } from "../../../ui/alert";
+import { Separator } from "../../../ui/separator";
 
 type InicioProps = StepBaseProps<"inicio"> & {
   initialData?: { flowShort?: FlowMode }; // já vem do pai via stepProps.inicio

@@ -17,7 +17,6 @@ import {
   Calendar,
   SquareKanban,
   BookMarked,
-  HeartCrack,
   LucideAlarmClockOff,
   CalendarCheck,
   Wrench,
@@ -80,6 +79,7 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
 import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
+import { Catalog } from "../../homepage/components/catalog";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -238,7 +238,7 @@ export const WORKFLOWS = {
       key: "AUDIOVISUAL_ANUNCIADO",
       name: "Disponíveis",
     },
-    { key: "AUDIOVISUAL_EMPRESTIMO", name: "Em empréstimo" },
+    { key: "AUDIOVISUAL_EMPRESTIMO", name: "Empréstimo em breve" },
     { key: "AUDIOVISUAL_ATRASADO", name: "Atrasado" },
     { key: "AUDIOVISUAL_QUEBRADO", name: "Quebrado" },
   ],
@@ -598,63 +598,6 @@ export function Audiovisual() {
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-  const fetchStatusCounts = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-
-      // mesmos filtros do GET /catalog (exceto workflow_status, porque queremos todos)
-      if (materialId) params.set("material_id", materialId);
-      if (guardianId) params.set("legal_guardian_id", guardianId);
-      if (unitId) params.set("unit_id", unitId);
-      if (agencyId) params.set("agency_id", agencyId);
-      if (sectorId) params.set("sector_id", sectorId);
-      if (locationId) params.set("location_id", locationId);
-      if (debouncedQ) params.set("q", debouncedQ);
-
-      const qs = params.toString();
-      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${
-        qs ? `?${qs}` : ""
-      }`;
-
-      const res = await fetch(url, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data: { status: string; count: number }[] = await res.json();
-
-      const map: Record<string, number> = {};
-      for (const item of data ?? []) {
-        if (!item?.status) continue;
-        map[item.status.trim()] = item.count ?? 0;
-      }
-
-      // usamos tanto para o badge quanto para saber se tem "Mostrar mais"
-      setStatusCounts(map);
-      setTotalByCol(map);
-    } catch (err) {
-      console.error("Erro ao carregar estatísticas:", err);
-    }
-  }, [
-    urlGeral,
-    token,
-    materialId,
-    guardianId,
-    unitId,
-    agencyId,
-    sectorId,
-    locationId,
-    debouncedQ,
-  ]);
-
-  useEffect(() => {
-    fetchStatusCounts();
-  }, [fetchStatusCounts, tab]);
-
   // Modal de mudança de coluna
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<{
@@ -791,30 +734,126 @@ export function Audiovisual() {
           );
         }
 
-        // Atualiza entries globais e board
-        if (append) {
-          // Adiciona aos existentes
-          setBoard((prev) => ({
-            ...prev,
-            [workflowStatus]: [...(prev[workflowStatus] ?? []), ...newEntries],
-          }));
+        if (
+          workflowStatus === "AUDIOVISUAL_ANUNCIADO" ||
+          workflowStatus === "AUDIOVISUAL_EMPRESTIMO"
+        ) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const result = newEntries.reduce<{
+            disponivel: CatalogEntry[];
+            emprestimo: CatalogEntry[];
+          }>(
+            (acc, entry) => {
+              const emprestimos = entry.workflow_history.filter(
+                (h) => h.workflow_status === "AUDIOVISUAL_EMPRESTIMO"
+              );
+
+              const seraEmprestado =
+                (emprestimos.length > 0 &&
+                  emprestimos.every((h) => {
+                    if (!h.detail) return false;
+                    const dataInicio = new Date(h.detail.inicio);
+                    return dataInicio < today;
+                  })) ||
+                emprestimos.length == 0;
+              // ------------------------------------
+
+              if (seraEmprestado) {
+                acc.disponivel.push(entry);
+              } else {
+                acc.emprestimo.push(entry);
+              }
+
+              return acc;
+            },
+            { disponivel: [], emprestimo: [] }
+          );
+
+          // Agora você pode acessar os dois arrays separadamente:
+          const { disponivel, emprestimo } = result;
+
+          setBoard((prev) => {
+            const currentList = prev["AUDIOVISUAL_ANUNCIADO"] ?? [];
+
+            // 1. Cria um conjunto com os IDs que JÁ estão na coluna
+            const existingIds = new Set(currentList.map((e) => e.id));
+
+            // 2. Filtra os novos itens, mantendo apenas os que NÃO tem ID na lista atual
+            const uniqueNewEntries = disponivel.filter(
+              (e) => !existingIds.has(e.id)
+            );
+
+            return {
+              ...prev,
+              ["AUDIOVISUAL_ANUNCIADO"]: [
+                ...currentList, // Mantém os antigos
+                ...uniqueNewEntries, // Adiciona apenas os realmente novos
+              ],
+            };
+          });
+
           setEntries((prev) => {
             const existingIds = new Set(prev.map((e) => e.id));
-            const filtered = newEntries.filter((e) => !existingIds.has(e.id));
+            const filtered = disponivel.filter((e) => !existingIds.has(e.id));
+            return [...prev, ...filtered];
+          });
+
+          setBoard((prev) => {
+            const currentList = prev["AUDIOVISUAL_EMPRESTIMO"] ?? [];
+
+            // 1. Cria um conjunto com os IDs que JÁ estão na coluna
+            const existingIds = new Set(currentList.map((e) => e.id));
+
+            // 2. Filtra os novos itens, mantendo apenas os que NÃO tem ID na lista atual
+            const uniqueNewEntries = emprestimo.filter(
+              (e) => !existingIds.has(e.id)
+            );
+
+            return {
+              ...prev,
+              ["AUDIOVISUAL_EMPRESTIMO"]: [
+                ...currentList, // Mantém os antigos
+                ...uniqueNewEntries, // Adiciona apenas os realmente novos
+              ],
+            };
+          });
+
+          setEntries((prev) => {
+            const existingIds = new Set(prev.map((e) => e.id));
+            const filtered = emprestimo.filter((e) => !existingIds.has(e.id));
             return [...prev, ...filtered];
           });
         } else {
-          // Substitui
-          setBoard((prev) => ({
-            ...prev,
-            [workflowStatus]: newEntries,
-          }));
-          setEntries((prev) => {
-            const otherCols = prev.filter(
-              (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
-            );
-            return [...otherCols, ...newEntries];
-          });
+          // Atualiza entries globais e board
+          if (append) {
+            // Adiciona aos existentes
+            setBoard((prev) => ({
+              ...prev,
+              [workflowStatus]: [
+                ...(prev[workflowStatus] ?? []),
+                ...newEntries,
+              ],
+            }));
+            setEntries((prev) => {
+              const existingIds = new Set(prev.map((e) => e.id));
+              const filtered = newEntries.filter((e) => !existingIds.has(e.id));
+              return [...prev, ...filtered];
+            });
+          } else {
+            // Substitui
+            setBoard((prev) => ({
+              ...prev,
+              [workflowStatus]: newEntries,
+            }));
+            setEntries((prev) => {
+              const otherCols = prev.filter(
+                (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
+              );
+              return [...otherCols, ...newEntries];
+            });
+          }
         }
       } catch (err) {
         console.error("Erro ao buscar coluna:", err);
@@ -852,14 +891,10 @@ export function Audiovisual() {
         // espera terminar antes de ir pra próxima
         await fetchColumnData(key, 0, false);
       }
-
-      // opcional: depois que todas as colunas carregarem,
-      // atualiza as estatísticas já com o board pronto
-      await fetchStatusCounts();
     } finally {
       setLoading(false);
     }
-  }, [columns, fetchColumnData, fetchStatusCounts]);
+  }, [columns, fetchColumnData]);
 
   useEffect(() => {
     setExpandedColumn(null);
@@ -1486,13 +1521,13 @@ export function Audiovisual() {
 
             <Separator orientation="vertical" className="h-8 mx-2" />
 
-            {hasAnunciarItem && (
-              <Link to={"/emprestimo-audiovisual"}>
-                <Button size="sm">
-                  <Plus size={16} className="" />
-                  Anunciar item
-                </Button>
-              </Link>
+            {hasAnunciarItem ? (
+              <Button size="sm" onClick={() => navigate("/dashboard/emprestimo-audiovisual",{ replace: true })}>
+                <Plus size={16} className="" />
+                Anunciar item
+              </Button>
+            ) : (
+              <></>
             )}
           </div>
         </div>

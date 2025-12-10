@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 
 import { VisaoGeralUser } from "../dashboard/dashboard-page/visao-geral-user";
 
-
-
 import { NovoItem } from "../dashboard/novo-item/novo-item";
 import { VisaoSala } from "../dashboard/sala/visao-sala";
 import { ItensVitrine } from "../dashboard/itens-vitrine/itens-vitrine";
@@ -31,9 +29,7 @@ import { Finalizados } from "../dashboard/finalizados/finalizados-page";
 import { Audiovisual } from "../dashboard/audiovisual/audiovisual";
 import { AllSalas } from "../dashboard/salas/all-salas";
 import { AcervoHistorico } from "../dashboard/acervo-historico/acervo-historico";
-
-
-
+import { EmprestimoAudiovisual } from "../dashboard/emprestimo-audiovisual/emprestimo-audiovisual";
 
 const ModalContent = () => {
   const { type } = useModalDashboard();
@@ -47,42 +43,44 @@ const ModalContent = () => {
       return <VisaoSala />;
     case "itens-vitrine":
       return <ItensVitrine />;
-      case "create-bar-bode":
+    case "create-bar-bode":
       return <CreateBarCode />;
-    case 'assinar-documento':
-      return <Assinaturee/>
-    case 'editar-item':
-      return <EditItemVitrine/>
-      case 'create-temp-asset':
-        return <CreateTempAsset/>
-      case 'temp-asset':
-        return <HomepageListTempAsset/>
-      case 'commission':
-        return <Comission/>
-      case 'administrativo-page':
-        return <Admin/>
-       case 'inventario':
-        return <InventarioPage/>
-      case 'desfazimento':
-      return <Desfazimento/>
-      case 'cargos-funcoes':
-      return <CargosFuncoes/>
-      case 'alienacao':
-        return <Alienacao/>
-      case 'departamento':
-        return <DepartamentPage/>
-      case 'comissao-apoio-local':
-        return <ComissaoApoioLocal/>
-      case 'user-public-page':
-        return <UserPublicPage/>
-             case 'finalizados':
-        return <Finalizados/>
-      case 'audiovisual':
-        return <Audiovisual/>
-      case 'salas':
-      return <AllSalas/>
-    case 'acervo-historico':
-      return <AcervoHistorico/>
+    case "assinar-documento":
+      return <Assinaturee />;
+    case "editar-item":
+      return <EditItemVitrine />;
+    case "create-temp-asset":
+      return <CreateTempAsset />;
+    case "temp-asset":
+      return <HomepageListTempAsset />;
+    case "commission":
+      return <Comission />;
+    case "administrativo-page":
+      return <Admin />;
+    case "inventario":
+      return <InventarioPage />;
+    case "desfazimento":
+      return <Desfazimento />;
+    case "cargos-funcoes":
+      return <CargosFuncoes />;
+    case "alienacao":
+      return <Alienacao />;
+    case "departamento":
+      return <DepartamentPage />;
+    case "comissao-apoio-local":
+      return <ComissaoApoioLocal />;
+    case "user-public-page":
+      return <UserPublicPage />;
+    case "finalizados":
+      return <Finalizados />;
+    case "audiovisual":
+      return <Audiovisual />;
+    case "emprestimo-audiovisual":
+      return <EmprestimoAudiovisual />;
+    case "salas":
+      return <AllSalas />;
+    case "acervo-historico":
+      return <AcervoHistorico />;
     default:
       return null;
   }

@@ -9,16 +9,16 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Label } from "../../ui/label";
-import { UserContext } from "../../../context/context";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
-import { Separator } from "../../ui/separator";
+import { Label } from "../../../ui/label";
+import { UserContext } from "../../../../context/context";
+import { Button } from "../../../ui/button";
+import { Input } from "../../../ui/input";
+import { Separator } from "../../../ui/separator";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "../../ui/popover";
+} from "../../../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -26,8 +26,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "../../ui/command";
-import { cn } from "../../../lib";
+} from "../../../ui/command";
+import { cn } from "../../../../lib";
 
 /* ===== Tipos ===== */
 type FlowMode = "vitrine" | "desfazimento";
