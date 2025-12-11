@@ -12,7 +12,12 @@ import { Separator } from "../ui/separator";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserContext } from "../../context/context";
 
-import { AlertCircle, MessageCircle, LogIn, Bell as BellIcon } from "lucide-react";
+import {
+  AlertCircle,
+  MessageCircle,
+  LogIn,
+  Bell as BellIcon,
+} from "lucide-react";
 import { NotificationItemDialog } from "../dashboard/administrativo/components/notification-item";
 
 /* ========================= Tipos da NOVA API ========================= */
@@ -99,9 +104,9 @@ export type NotificationPreview = {
 
 /* ========================= Fallback por TIPO ========================= */
 export const notificationsTypes = [
-  { type: "NEW_LOGIN", icon: LogIn,        bg_color: "bg-gray-200"  },
-  { type: "MESSAGE",   icon: MessageCircle, bg_color: "bg-purple-100" },
-  { type: "SYSTEM",    icon: AlertCircle,   bg_color: "bg-eng-blue" },
+  { type: "NEW_LOGIN", icon: LogIn, bg_color: "bg-gray-200" },
+  { type: "MESSAGE", icon: MessageCircle, bg_color: "bg-purple-100" },
+  { type: "SYSTEM", icon: AlertCircle, bg_color: "bg-eng-blue" },
 ];
 
 /* ========================= Helpers ========================= */
@@ -109,10 +114,13 @@ function isArray<T = any>(v: any): v is T[] {
   return Array.isArray(v);
 }
 
-function resolveListFromData(data?: ApiNotificationPayload): ApiNotificationItem[] {
+function resolveListFromData(
+  data?: ApiNotificationPayload
+): ApiNotificationItem[] {
   if (!data) return [];
   if (isArray<ApiNotificationItem>(data)) return data;
-  if (isArray<ApiNotificationItem>((data as any).notifications)) return (data as any).notifications;
+  if (isArray<ApiNotificationItem>((data as any).notifications))
+    return (data as any).notifications;
   return [];
 }
 
@@ -161,7 +169,9 @@ export function NotificationsHeader({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const storageKey = authToken ? `notifications_${authToken.substring(0, 10)}` : null;
+  const storageKey = authToken
+    ? `notifications_${authToken.substring(0, 10)}`
+    : null;
 
   const saveToStorage = (items: FlatNotification[]) => {
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(items));
@@ -210,7 +220,10 @@ export function NotificationsHeader({
     }
   };
 
-  async function fetchNotifications(isInitial = false, signal?: AbortSignal): Promise<void> {
+  async function fetchNotifications(
+    isInitial = false,
+    signal?: AbortSignal
+  ): Promise<void> {
     if (!authToken) {
       if (isInitial) setLoading(false);
       return;
@@ -232,7 +245,9 @@ export function NotificationsHeader({
         throw new Error(`Erro ao buscar notificações (${res.status})`);
       }
 
-      const payload: ApiNotificationPayload = await res.json().catch(() => ([] as ApiNotificationItem[]));
+      const payload: ApiNotificationPayload = await res
+        .json()
+        .catch(() => [] as ApiNotificationItem[]);
       const rawList: ApiNotificationItem[] = resolveListFromData(payload);
       const list: FlatNotification[] = rawList.map(flattenApiItem);
 
@@ -256,7 +271,10 @@ export function NotificationsHeader({
     if (data) return;
 
     try {
-      const tk = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+      const tk =
+        typeof window !== "undefined"
+          ? localStorage.getItem("jwt_token")
+          : null;
       setAuthToken(tk);
     } catch (e) {
       console.error("[notifications] erro lendo jwt_token:", e);
@@ -339,7 +357,9 @@ export function NotificationsHeader({
     setHasNewNotifications(false);
     setNotifications((prev) =>
       prev.map((n) =>
-        n.id === id ? { ...n, read_at: n.read_at ?? new Date().toISOString() } : n
+        n.id === id
+          ? { ...n, read_at: n.read_at ?? new Date().toISOString() }
+          : n
       )
     );
     const updated = notifications.map((n) =>

@@ -14,6 +14,7 @@ import { SymbolEEWhite } from "./svg/SymbolEEWhite";
 import { LogoVitrineWhite } from "./svg/LogoVitrineWhite";
 import { SymbolEE } from "./svg/SymbolEE";
 import { LogoVitrine } from "./svg/LogoVitrine";
+import { useIsMobile } from "../hooks/use-mobile";
 
 interface LoadingWrapperProps {
   children: React.ReactNode;
@@ -84,14 +85,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
     // se quiser forçar a tela de login:
     // navigate("/auth", { replace: true });
-  }, [
-    navigate,
-    setLoggedIn,
-    setUser,
-    setPermission,
-    setRole,
-    setSessionExpMs,
-  ]);
+  }, [navigate, setLoggedIn, setUser, setPermission, setRole, setSessionExpMs]);
 
   // ========= fetch com retry/backoff =========
   const fetchWithRetry = useCallback(
@@ -203,7 +197,10 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("token-change", onTokenChange as EventListener);
+      window.removeEventListener(
+        "token-change",
+        onTokenChange as EventListener
+      );
     };
   }, []);
 
@@ -256,24 +253,27 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
     };
   }, [token, fetchUser, handleLogout, setSessionExpMs]);
 
+  const isMobile = useIsMobile();
+  const sizeReduction = isMobile ? 2 : 1;
+
   return loading ? (
     <main className="h-screen w-full flex items-center justify-center">
       <div className="animate-pulse">
         {theme === "dark" ? (
           <div className="flex items-center gap-2">
-            <div className="h-16 flex items-center gap-2">
+            <div className={`h-${16 / sizeReduction} flex items-center gap-2`}>
               <SymbolEEWhite />
             </div>
-            <div className="h-10 flex items-center gap-2">
+            <div className={`h-${10 / sizeReduction} flex items-center gap-2`}>
               <LogoVitrineWhite />
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="h-16 flex items-center gap-2">
+            <div className={`h-${16 / sizeReduction} flex items-center gap-2`}>
               <SymbolEE />
             </div>
-            <div className="h-10 flex items-center gap-2">
+            <div className={`h-${10 / sizeReduction} flex items-center gap-2`}>
               <LogoVitrine />
             </div>
           </div>

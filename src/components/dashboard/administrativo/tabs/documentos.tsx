@@ -209,12 +209,9 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
-      const res = await fetch(
-        `${urlGeral}catalog/files?${params.toString()}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      const res = await fetch(`${urlGeral}catalog/files?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
       if (!res.ok) {
         throw new Error(`Erro ao buscar arquivos (${res.status})`);
@@ -324,7 +321,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
   return (
     <div className="space-y-6 p-8">
       {/* Controles de paginação (itens por página) */}
-     
+
       {/* GRID de arquivos */}
       {loading ? (
         <div className="w-full flex items-center justify-center py-10 text-sm text-muted-foreground">
@@ -332,8 +329,6 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
         </div>
       ) : (
         <>
-       
-
           {fileList.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
               {fileList.map((file) => {
@@ -435,7 +430,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
         </>
       )}
 
-       <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
+      <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
         <span className="text-sm text-muted-foreground">Itens por página:</span>
         <Select
           value={limit.toString()}
@@ -458,7 +453,6 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
           </SelectContent>
         </Select>
       </div>
-
 
       {/* Controles de paginação (Anterior / Próximo) */}
       <div className="w-full flex justify-center items-center gap-10 mt-4">

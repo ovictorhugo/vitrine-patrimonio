@@ -14,6 +14,7 @@ import {
   Recycle,
   Settings,
   Store,
+  TimerReset,
   Trash,
   Users,
   Wrench,
@@ -51,21 +52,46 @@ import {
 } from "../../ui/carousel";
 import { Documentos } from "./tabs/documentos";
 import { Statistics } from "./tabs/statistcs";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 export type StatusCount = { status: string; count: number };
 
 export const WORKFLOWS = [
-  { key: "REVIEW_REQUESTED_VITRINE", name: "Avaliação S. Patrimônio - Vitrine", Icon: Hourglass },
+  {
+    key: "REVIEW_REQUESTED_VITRINE",
+    name: "Avaliação S. Patrimônio - Vitrine",
+    Icon: Hourglass,
+  },
   { key: "ADJUSTMENT_VITRINE", name: "Ajustes - Vitrine", Icon: Wrench },
   { key: "VITRINE", name: "Anunciados", Icon: Store },
-  { key: "AGUARDANDO_TRANSFERENCIA", name: "Aguardando transferência", Icon: Clock },
+  {
+    key: "AGUARDANDO_TRANSFERENCIA",
+    name: "Aguardando transferência",
+    Icon: Clock,
+  },
   { key: "TRANSFERIDOS", name: "Transferidos", Icon: Archive },
 
-  { key: "REVIEW_REQUESTED_DESFAZIMENTO", name: "Avaliação S. Patrimônio - Desfazimento", Icon: Hourglass },
-  { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
-  { key: "REVIEW_REQUESTED_COMISSION", name: "LTD - Lista Temporária de Desfazimento", Icon: ListTodo },
+  {
+    key: "REVIEW_REQUESTED_DESFAZIMENTO",
+    name: "Avaliação S. Patrimônio - Desfazimento",
+    Icon: Hourglass,
+  },
+  {
+    key: "ADJUSTMENT_DESFAZIMENTO",
+    name: "Ajustes - Desfazimento",
+    Icon: Wrench,
+  },
+  {
+    key: "REVIEW_REQUESTED_COMISSION",
+    name: "LTD - Lista Temporária de Desfazimento",
+    Icon: ListTodo,
+  },
   { key: "REJEITADOS_COMISSAO", name: "Recusados", Icon: XCircle },
-  { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento", Icon: Trash },
+  {
+    key: "DESFAZIMENTO",
+    name: "LFD - Lista Final de Desfazimento",
+    Icon: Trash,
+  },
   { key: "DESCARTADOS", name: "Processo Finalizado", Icon: Recycle },
 ] as const;
 
@@ -76,12 +102,22 @@ export function Admin() {
   const { user, urlGeral } = useContext(UserContext);
 
   const tabs = [
-    { id: "inventario", label: "Inventário", icon: ListChecks, condition: !hasInventario },
+    {
+      id: "inventario",
+      label: "Inventário",
+      icon: ListChecks,
+      condition: !hasInventario,
+    },
     { id: "notification", label: "Notificações", icon: Bell },
     { id: "feedback", label: "Feedback", icon: Bug },
     { id: "estatisticas", label: "Estatísticas", icon: BarChart },
     { id: "documentos", label: "Documentos", icon: File },
-    { id: "configuration", label: "Configurações", icon: Settings, condition: !hasConfiguracoes },
+    {
+      id: "configuration",
+      label: "Configurações",
+      icon: Settings,
+      condition: !hasConfiguracoes,
+    },
   ];
 
   const visibleTabs = useMemo(() => tabs.filter((t) => !t.condition), [tabs]);
@@ -211,9 +247,15 @@ export function Admin() {
     AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
     TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
 
-    REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+    REVIEW_REQUESTED_DESFAZIMENTO: {
+      Icon: Hourglass,
+      colorClass: "text-amber-500",
+    },
     ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
-    REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
+    REVIEW_REQUESTED_COMISSION: {
+      Icon: ListTodo,
+      colorClass: "text-purple-500",
+    },
     REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
     DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
     DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
@@ -228,6 +270,8 @@ export function Admin() {
   const { onOpen } = useModal();
   const [isOn, setIsOn] = useState(true);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="flex flex-col h-full">
       <Helmet>
@@ -235,8 +279,8 @@ export function Admin() {
       </Helmet>
 
       <main className="flex flex-col ">
-        <div className="flex p-8 items-center justify-between">
-          <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-8 gap-4">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <Button
               onClick={() => {
                 const path = location.pathname;
@@ -252,20 +296,34 @@ export function Admin() {
               }}
               variant="outline"
               size="icon"
-              className="h-7 w-7"
+              className="h-7 w-7 shrink-0" // shrink-0 evita que o botão amasse
             >
               <ChevronLeft className="h-4 w-4" />
               <span className="sr-only">Voltar</span>
             </Button>
 
-            <h1 className="text-xl font-semibold tracking-tight">
+            <h1 className="text-xl font-semibold tracking-tight truncate">
               Módulo Administrativo
             </h1>
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={() => onOpen("import-csv")} size={"sm"}>
-              <FileXls size={16} /> Importar patrimônios
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Button
+              onClick={() => navigate("/dashboard/criar-patrimonio-temporario")}
+              size="sm"
+              className="w-full sm:w-auto" // Botão largura total no mobile
+            >
+              <TimerReset size={16} className="mr-2" />
+              Adicionar patrimônio temporário
+            </Button>
+
+            <Button
+              onClick={() => onOpen("import-csv")}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              <FileXls size={16} className="mr-2" />
+              Importar patrimônios
             </Button>
           </div>
         </div>
@@ -279,7 +337,10 @@ export function Admin() {
               {WORKFLOWS.map(({ key, name }) => {
                 const { Icon } = getMeta(key);
                 return (
-                  <CarouselItem key={key}    className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                  <CarouselItem
+                    key={key}
+                    className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+                  >
                     <Alert className="p-0">
                       <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm truncate font-medium">
@@ -323,9 +384,7 @@ export function Admin() {
                       variant="outline"
                       size="sm"
                       className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${
-                        !canScrollLeft
-                          ? "opacity-30 cursor-not-allowed"
-                          : ""
+                        !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
                       }`}
                       onClick={scrollLeftBtn}
                       disabled={!canScrollLeft}
@@ -375,9 +434,7 @@ export function Admin() {
                       variant="outline"
                       size="sm"
                       className={`absolute right-0 z-10 h-8 w-8 p-0 rounded-md top-1 ${
-                        !canScrollRight
-                          ? "opacity-30 cursor-not-allowed"
-                          : ""
+                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
                       }`}
                       onClick={scrollRightBtn}
                       disabled={!canScrollRight}

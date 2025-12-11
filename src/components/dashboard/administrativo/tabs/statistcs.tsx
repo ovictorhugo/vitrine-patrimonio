@@ -1,4 +1,11 @@
-import { ChevronLeft, ChevronRight, Home, LineChart, Package, Trash } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  LineChart,
+  Package,
+  Trash,
+} from "lucide-react";
 import { Button } from "../../../ui/button";
 import ChartTempoRevisaoComissaoPie from "../../commission/components/ChartTempoRevisaoComissao";
 import ChartTempoRevisaoComissao from "../../commission/components/grafico-comission-REVIEW_REQUESTED";
@@ -9,13 +16,7 @@ import { WORKFLOWS } from "../admin";
 import { Alert } from "../../../ui/alert";
 import { MagnifyingGlass } from "phosphor-react";
 import { Input } from "../../../ui/input";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Separator } from "../../../ui/separator";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GraficoStatusCatalogoPorAgencia } from "../../graficos/GraficoStatusCatalogoPorAgencia";
@@ -140,10 +141,9 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         setLoadingMaterials(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/materials/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/materials/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setMaterials(json?.materials ?? json ?? []);
@@ -209,10 +209,9 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         const params = new URLSearchParams();
         params.set("unit_id", unitId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/agencies/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setAgencies(json?.agencies ?? json ?? []);
@@ -233,10 +232,9 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         const params = new URLSearchParams();
         params.set("agency_id/", agencyId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/sectors/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setSectors(json?.sectors ?? json ?? []);
@@ -257,10 +255,9 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         const params = new URLSearchParams();
         params.set("sector_id", sectorId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/locations/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setLocations(json?.locations ?? json ?? []);
@@ -274,19 +271,31 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
   );
 
   // efeitos de carregamento + cascata
-  useEffect(() => { fetchMaterials(materialQ); }, [fetchMaterials, materialQ]);
-  useEffect(() => { fetchGuardians(guardianQ); }, [fetchGuardians, guardianQ]);
-  useEffect(() => { fetchUnits(unitQ); }, [fetchUnits, unitQ]);
+  useEffect(() => {
+    fetchMaterials(materialQ);
+  }, [fetchMaterials, materialQ]);
+  useEffect(() => {
+    fetchGuardians(guardianQ);
+  }, [fetchGuardians, guardianQ]);
+  useEffect(() => {
+    fetchUnits(unitQ);
+  }, [fetchUnits, unitQ]);
 
   useEffect(() => {
-    setAgencyId(null); setSectorId(null); setLocationId(null);
-    setAgencies([]); setSectors([]); setLocations([]);
+    setAgencyId(null);
+    setSectorId(null);
+    setLocationId(null);
+    setAgencies([]);
+    setSectors([]);
+    setLocations([]);
     if (unitId) fetchAgencies(agencyQ);
   }, [unitId, fetchAgencies, agencyQ]);
 
   useEffect(() => {
-    setSectorId(null); setLocationId(null);
-    setSectors([]); setLocations([]);
+    setSectorId(null);
+    setLocationId(null);
+    setSectors([]);
+    setLocations([]);
     if (agencyId) fetchSectors(sectorQ);
   }, [agencyId, fetchSectors, sectorQ]);
 
@@ -298,56 +307,62 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
 
   // transforma em items
   const materialItems = useMemo(
-    () => (materials ?? []).map((m) => ({
-      id: m.id,
-      code: m.material_code,
-      label: m.material_name || m.material_code,
-    })),
+    () =>
+      (materials ?? []).map((m) => ({
+        id: m.id,
+        code: m.material_code,
+        label: m.material_name || m.material_code,
+      })),
     [materials]
   );
 
   const guardianItems = useMemo(
-    () => (guardians ?? []).map((g) => ({
-      id: g.id,
-      code: g.legal_guardians_code,
-      label: g.legal_guardians_name || g.legal_guardians_code,
-    })),
+    () =>
+      (guardians ?? []).map((g) => ({
+        id: g.id,
+        code: g.legal_guardians_code,
+        label: g.legal_guardians_name || g.legal_guardians_code,
+      })),
     [guardians]
   );
 
   const unitItems = useMemo(
-    () => (units ?? []).map((u) => ({
-      id: u.id,
-      code: u.unit_code,
-      label: u.unit_name || u.unit_code,
-    })),
+    () =>
+      (units ?? []).map((u) => ({
+        id: u.id,
+        code: u.unit_code,
+        label: u.unit_name || u.unit_code,
+      })),
     [units]
   );
 
   const agencyItems = useMemo(
-    () => (agencies ?? []).map((a) => ({
-      id: a.id,
-      code: a.agency_code,
-      label: a.agency_name || a.agency_code,
-    })),
+    () =>
+      (agencies ?? []).map((a) => ({
+        id: a.id,
+        code: a.agency_code,
+        label: a.agency_name || a.agency_code,
+      })),
     [agencies]
   );
 
   const sectorItems = useMemo(
-    () => (sectors ?? []).map((s) => ({
-      id: s.id,
-      code: s.sector_code,
-      label: s.sector_name || s.sector_code,
-    })),
+    () =>
+      (sectors ?? []).map((s) => ({
+        id: s.id,
+        code: s.sector_code,
+        label: s.sector_name || s.sector_code,
+      })),
     [sectors]
   );
 
   const locationItems = useMemo(
-    () => (locations ?? []).map((l) => ({
-      id: l.id,
-      code: l.location_code,
-      label: l.location_name || l.location_code,
-    })),
+    () =>
+      (locations ?? []).map((l) => ({
+        id: l.id,
+        code: l.location_code,
+        label: l.location_name || l.location_code,
+      })),
     [locations]
   );
 
@@ -376,13 +391,13 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
   }, []);
 
   const totalItens = useMemo(() => {
-  if (!statsMap) return 0;
+    if (!statsMap) return 0;
 
-  return Object.values(statsMap).reduce((acc, value) => {
-    const n = typeof value === "number" ? value : Number(value) || 0;
-    return acc + n;
-  }, 0);
-}, [statsMap]);
+    return Object.values(statsMap).reduce((acc, value) => {
+      const n = typeof value === "number" ? value : Number(value) || 0;
+      return acc + n;
+    }, 0);
+  }, [statsMap]);
 
   return (
     <div className="m-8">
@@ -409,9 +424,9 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
             >
               <div className="flex gap-3 items-center">
                 <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-               <div>
-                                     <MagnifyingGlass size={16} className="text-gray-500" />
-                                   </div>
+                  <div>
+                    <MagnifyingGlass size={16} className="text-gray-500" />
+                  </div>
                   <Input
                     className="border-0 p-0 h-9 flex flex-1 w-full"
                     value={q}
@@ -501,27 +516,27 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         </div>
       </div>
 
-       <Alert className="p-0 mb-8">
-                            <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm truncate font-medium">
-                                Total de itens
-                              </CardTitle>
-                              <Package className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold">
-                                {totalItens}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                registrados em toda plataforma
-                              </p>
-                            </CardContent>
-                          </Alert>
+      <Alert className="p-0 mb-8">
+        <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm truncate font-medium">
+            Total de itens
+          </CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalItens}</div>
+          <p className="text-xs text-muted-foreground">
+            registrados em toda plataforma
+          </p>
+        </CardContent>
+      </Alert>
 
-                          <div className="my-8">
-   <HeaderResultTypeHome title={"Visão Geral"} icon={<LineChart size={24} className="text-gray-400" />} />
-
-</div>
+      <div className="my-8">
+        <HeaderResultTypeHome
+          title={"Visão Geral"}
+          icon={<LineChart size={24} className="text-gray-400" />}
+        />
+      </div>
 
       {/* GRÁFICOS */}
       <GraficoStatusCatalogo
@@ -530,55 +545,54 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         title="Todos os itens da plataforma"
       />
 
-       
-{!agencyId && (
-  <div className="mt-8">
-        <GraficoStatusCatalogoPorAgencia />
-      </div>
-)}
+      {!agencyId && (
+        <div className="mt-8">
+          <GraficoStatusCatalogoPorAgencia />
+        </div>
+      )}
 
-{agencyId && (
-   <div className="mt-8">
-        <GraficoStatusCatalogoPorLocation />
-      </div>
-)}
-      
-
+      {agencyId && (
+        <div className="mt-8">
+          <GraficoStatusCatalogoPorLocation />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-8 mt-8">
         <ChartRadialDesfazimento counts={statsMap} />
-   
       </div>
 
-<div className="mt-8">
-   <HeaderResultTypeHome title={"LTD - Lista Temporária de Desfazimento"} icon={<Trash size={24} className="text-gray-400" />} />
-
-</div>
       <div className="mt-8">
-<CarrosselReviewerDesfazimento workflow={'REVIEW_REQUESTED_COMISSION'}/>
+        <HeaderResultTypeHome
+          title={"LTD - Lista Temporária de Desfazimento"}
+          icon={<Trash size={24} className="text-gray-400" />}
+        />
+      </div>
+      <div className="mt-8">
+        <CarrosselReviewerDesfazimento
+          workflow={"REVIEW_REQUESTED_COMISSION"}
+        />
       </div>
 
       <div className="mt-8">
         <ChartTempoRevisaoComissao />
       </div>
 
-   <div className="grid md:grid-cols-2 gap-8 mt-8">
-      
+      <div className="grid md:grid-cols-2 gap-8 mt-8">
         <ChartTempoRevisaoComissaoPie />
       </div>
-<div className="mt-8">
-   <HeaderResultTypeHome title={"LFD - Lista Final de Desfazimento"} icon={<Trash size={24} className="text-gray-400" />} />
-
-</div>
       <div className="mt-8">
-<CarrosselReviewerDesfazimento workflow={'DESFAZIMENTO'}/>
+        <HeaderResultTypeHome
+          title={"LFD - Lista Final de Desfazimento"}
+          icon={<Trash size={24} className="text-gray-400" />}
+        />
+      </div>
+      <div className="mt-8">
+        <CarrosselReviewerDesfazimento workflow={"DESFAZIMENTO"} />
       </div>
 
-       <div className="mt-8">
+      <div className="mt-8">
         <GraficoStatusCatalogoReviewersDesfazimento />
       </div>
-
-      
     </div>
   );
 }

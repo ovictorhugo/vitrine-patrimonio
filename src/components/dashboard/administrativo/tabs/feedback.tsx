@@ -4,7 +4,18 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Alert } from "../../../ui/alert";
 import { UserContext } from "../../../../context/context";
 import { Skeleton } from "../../../ui/skeleton";
-import { Calendar, Mail, Send, Star, Trash, ArrowRight, Loader2, Bug, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Mail,
+  Send,
+  Star,
+  Trash,
+  ArrowRight,
+  Loader2,
+  Bug,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "../../../ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,7 +32,12 @@ import {
 } from "../../../ui/dialog";
 import { Label } from "../../../ui/label";
 import { Textarea } from "../../../ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import {
   Select,
@@ -51,10 +67,10 @@ export function Feedback() {
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit  = Number(qs.get("limit")  || "20");
+  const initialLimit = Number(qs.get("limit") || "20");
 
   const [offset, setOffset] = useState<number>(initialOffset);
-  const [limit, setLimit]   = useState<number>(initialLimit);
+  const [limit, setLimit] = useState<number>(initialLimit);
 
   // paginação auxiliar
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
@@ -82,11 +98,18 @@ export function Feedback() {
     [token]
   );
 
-  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    replace = false
+  ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace }
+    );
   };
 
   useEffect(() => {
@@ -100,13 +123,21 @@ export function Feedback() {
     const url = `${baseUrl}?offset=${_offset}&limit=${_limit}&q=${pesquisaInput}`;
     try {
       if (!append) setLoading(true);
-      const res = await fetch(url, { method: "GET", headers: authHeaders, mode: "cors" });
+      const res = await fetch(url, {
+        method: "GET",
+        headers: authHeaders,
+        mode: "cors",
+      });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao carregar feedbacks (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao carregar feedbacks (HTTP ${res.status}).`
+        );
       }
       const data = await res.json();
-      const list: Feedback[] = Array.isArray(data?.feedbacks) ? data.feedbacks : [];
+      const list: Feedback[] = Array.isArray(data?.feedbacks)
+        ? data.feedbacks
+        : [];
 
       const safe = list.map((f) => ({
         ...f,
@@ -163,7 +194,11 @@ export function Feedback() {
     if (!deleteTarget) return;
     try {
       const url = `${baseUrl}${deleteTarget.id}`; // DELETE /feedback/{feedback_id}
-      const res = await fetch(url, { method: "DELETE", headers: authHeaders, mode: "cors" });
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: authHeaders,
+        mode: "cors",
+      });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(text || `Falha ao excluir (HTTP ${res.status}).`);
@@ -207,7 +242,11 @@ export function Feedback() {
       const res = await fetch(`${urlGeral}emails/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ to: replyTarget.email, subject: replyTitle, message: replyMessage }),
+        body: JSON.stringify({
+          to: replyTarget.email,
+          subject: replyTitle,
+          message: replyMessage,
+        }),
       });
       if (!res.ok) throw new Error(`Falha ao enviar (HTTP ${res.status}).`);
 
@@ -235,9 +274,9 @@ export function Feedback() {
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
 
- 
-
-  const itemsLoading = Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="w-full rounded-md h-[170px]" />);
+  const itemsLoading = Array.from({ length: 8 }, (_, i) => (
+    <Skeleton key={i} className="w-full rounded-md h-[170px]" />
+  ));
 
   const getColor = (rating: number) => {
     if (rating <= 2) return "bg-red-500";
@@ -266,22 +305,31 @@ export function Feedback() {
         <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <AccordionTrigger className="px-0">
-              <HeaderResultTypeHome title={"Todos os Feedbacks"} icon={<Bug size={24} className="text-gray-400" />} />
+              <HeaderResultTypeHome
+                title={"Todos os Feedbacks"}
+                icon={<Bug size={24} className="text-gray-400" />}
+              />
             </AccordionTrigger>
 
             <AccordionContent className="p-0">
               {loading ? (
-                <div className="flex gap-4 flex-col">
-                  {itemsLoading}
-                </div>
+                <div className="flex gap-4 flex-col">{itemsLoading}</div>
               ) : (
                 <div className="grid gap-3">
                   {feedbacks
-                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .sort(
+                      (a, b) =>
+                        new Date(b.created_at).getTime() -
+                        new Date(a.created_at).getTime()
+                    )
                     .map((f) => {
                       const formattedDate = (() => {
                         try {
-                          return format(new Date(f.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
+                          return format(
+                            new Date(f.created_at),
+                            "dd 'de' MMMM 'de' yyyy, HH:mm",
+                            { locale: ptBR }
+                          );
                         } catch {
                           return f.created_at;
                         }
@@ -289,7 +337,11 @@ export function Feedback() {
 
                       return (
                         <div className="flex group" key={f.id}>
-                          <Alert className={`rounded-r-none border-r-0 w-2 min-w-2 p-0 ${getColor(Number(f.rating))}`} />
+                          <Alert
+                            className={`rounded-r-none border-r-0 w-2 min-w-2 p-0 ${getColor(
+                              Number(f.rating)
+                            )}`}
+                          />
                           <Alert className="rounded-l-none">
                             <div className="flex justify-between items-start gap-4">
                               <div>
@@ -335,7 +387,9 @@ export function Feedback() {
 
                             <Separator className="my-4" />
                             <div>
-                              <p className="text-gray-500 text-sm">{f.description}</p>
+                              <p className="text-gray-500 text-sm">
+                                {f.description}
+                              </p>
                             </div>
                           </Alert>
                         </div>
@@ -351,8 +405,16 @@ export function Feedback() {
                   {/* Carregar mais (mantido) */}
                   {hasMore && feedbacks.length > 0 && (
                     <div className="flex justify-center pt-2">
-                      <Button onClick={handleLoadMore} disabled={loadingMore} variant="outline">
-                        {loadingMore ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowRight className="mr-2" size={16} />}
+                      <Button
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        variant="outline"
+                      >
+                        {loadingMore ? (
+                          <Loader2 className="animate-spin mr-2" size={16} />
+                        ) : (
+                          <ArrowRight className="mr-2" size={16} />
+                        )}
                         Carregar mais
                       </Button>
                     </div>
@@ -414,9 +476,12 @@ export function Feedback() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[600px]">Excluir feedback</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[600px]">
+              Excluir feedback
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Esta ação é <span className="font-semibold">irreversível</span>. Deseja realmente excluir o feedback de{" "}
+              Esta ação é <span className="font-semibold">irreversível</span>.
+              Deseja realmente excluir o feedback de{" "}
               <span className="font-semibold">{deleteTarget?.name}</span>?
             </DialogDescription>
           </DialogHeader>
@@ -426,7 +491,7 @@ export function Feedback() {
               <Separator className="my-4" />
               <div className="space-y-2 mb-4">
                 <Label>Descrição</Label>
-                <Textarea disabled value={deleteTarget?.description}/>
+                <Textarea disabled value={deleteTarget?.description} />
               </div>
             </>
           )}
@@ -458,9 +523,12 @@ export function Feedback() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[600px]">Responder feedback</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[600px]">
+              Responder feedback
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Revise o assunto e a mensagem. O e-mail do destinatário já está preenchido.
+              Revise o assunto e a mensagem. O e-mail do destinatário já está
+              preenchido.
             </DialogDescription>
           </DialogHeader>
 
@@ -469,21 +537,36 @@ export function Feedback() {
           <div className="space-y-4">
             <div className="flex flex-col space-y-1.5">
               <Label>Para</Label>
-              <Input disabled value={replyTarget?.email || ""} className="bg-muted cursor-not-allowed" />
+              <Input
+                disabled
+                value={replyTarget?.email || ""}
+                className="bg-muted cursor-not-allowed"
+              />
             </div>
 
             <div className="flex flex-col space-y-1.5">
               <Label>Assunto</Label>
-              <Input value={replyTitle} onChange={(e) => setReplyTitle(e.target.value)} />
+              <Input
+                value={replyTitle}
+                onChange={(e) => setReplyTitle(e.target.value)}
+              />
             </div>
 
             <div className="flex flex-col space-y-1.5">
               <Label>Mensagem</Label>
-              <Textarea value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} />
+              <Textarea
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+              />
               {replyTarget && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Alert className={` h-4 w-4 min-w-2 p-0 rounded-md ${getColor(Number(replyTarget.rating))}`} />
-                  Nota recebida: <span className="font-medium">{replyTarget.rating}/10</span>
+                  <Alert
+                    className={` h-4 w-4 min-w-2 p-0 rounded-md ${getColor(
+                      Number(replyTarget.rating)
+                    )}`}
+                  />
+                  Nota recebida:{" "}
+                  <span className="font-medium">{replyTarget.rating}/10</span>
                 </p>
               )}
             </div>
@@ -495,8 +578,17 @@ export function Feedback() {
                 <ArrowUUpLeft size={16} /> Cancelar
               </Button>
             </DialogClose>
-            <Button onClick={handleSendReply} disabled={replySending || !replyTitle.trim() || !replyMessage.trim()}>
-              {replySending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Send className="mr-2" size={16} />}
+            <Button
+              onClick={handleSendReply}
+              disabled={
+                replySending || !replyTitle.trim() || !replyMessage.trim()
+              }
+            >
+              {replySending ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : (
+                <Send className="mr-2" size={16} />
+              )}
               Enviar resposta
             </Button>
           </DialogFooter>

@@ -6,21 +6,31 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../../ui/accordion";
-import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { UserContext } from "../../../../context/context";
 import { Skeleton } from "../../../ui/skeleton";
 import { Alert } from "../../../ui/alert";
 
 import { toast } from "sonner";
 import axios from "axios";
-import { CatalogEntriesResponse, ItemPatrimonio } from "../../../homepage/components/item-patrimonio";
+import {
+  CatalogEntriesResponse,
+  ItemPatrimonio,
+} from "../../../homepage/components/item-patrimonio";
 import { Button } from "../../../ui/button";
 import { CatalogEntry } from "./anunciados";
 
-
 export function Favoritos() {
   const { urlGeral } = useContext(UserContext);
-  const token = (typeof window !== "undefined" && localStorage.getItem("jwt_token")) || "";
+  const token =
+    (typeof window !== "undefined" && localStorage.getItem("jwt_token")) || "";
 
   const [favorites, setFavorites] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,10 +62,13 @@ export function Favoritos() {
     const fetchCatalog = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${urlGeral}favorites/?workflow_status=VITRINE`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
+        const res = await axios.get(
+          `${urlGeral}favorites/?workflow_status=VITRINE`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          }
+        );
         if (!cancelled && res.status === 200) {
           setFavorites(normalizeFavorites(res.data));
         }
@@ -159,18 +172,20 @@ export function Favoritos() {
               variant="outline"
               size="sm"
               className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollLeft || disableNav ? "opacity-30 cursor-not-allowed" : ""
+                !canScrollLeft || disableNav
+                  ? "opacity-30 cursor-not-allowed"
+                  : ""
               }`}
               onClick={(event) => {
-                  event.stopPropagation();
-                scrollLeft()
+                event.stopPropagation();
+                scrollLeft();
               }}
               disabled={!canScrollLeft || disableNav}
             >
               <ChevronLeft size={16} />
             </Button>
 
-            <div className="mx-4">
+            <div className="mx-12">
               <div
                 ref={scrollAreaRef}
                 className="overflow-x-auto scrollbar-hide"
@@ -179,11 +194,16 @@ export function Favoritos() {
                 <div className="flex gap-6 whitespace-nowrap py-2">
                   {loading ? (
                     Array.from({ length: 8 }).map((_, i) => (
-                      <Skeleton key={i} className="w-64 aspect-square rounded-lg" />
+                      <Skeleton
+                        key={i}
+                        className="w-64 aspect-square rounded-lg"
+                      />
                     ))
                   ) : favorites.length === 0 ? (
-                    <div className="w-full pr-4">
-                      <Alert variant="default">Você ainda não tem favoritos.</Alert>
+                    <div className="w-full">
+                      <Alert variant="default">
+                        Você ainda não tem favoritos.
+                      </Alert>
                     </div>
                   ) : (
                     favorites.map((item) => (
@@ -202,11 +222,13 @@ export function Favoritos() {
               variant="outline"
               size="sm"
               className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollRight || disableNav ? "opacity-30 cursor-not-allowed" : ""
+                !canScrollRight || disableNav
+                  ? "opacity-30 cursor-not-allowed"
+                  : ""
               }`}
               onClick={(event) => {
-                  event.stopPropagation();
-                  scrollRight()
+                event.stopPropagation();
+                scrollRight();
               }}
               disabled={!canScrollRight || disableNav}
             >

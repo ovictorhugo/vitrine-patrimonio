@@ -16,14 +16,18 @@ import type {
   NotificationPreview,
 } from "../../../header/notifications";
 import { notificationsTypes } from "../../../header/notifications";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 // Helpers de parsing (copiados do Header para evitar ciclo)
 const isArray = Array.isArray as <T = any>(v: any) => v is T[];
 
-function resolveListFromData(data?: ApiNotificationPayload): ApiNotificationItem[] {
+function resolveListFromData(
+  data?: ApiNotificationPayload
+): ApiNotificationItem[] {
   if (!data) return [];
   if (isArray<ApiNotificationItem>(data)) return data;
-  if (isArray<ApiNotificationItem>((data as any).notifications)) return (data as any).notifications;
+  if (isArray<ApiNotificationItem>((data as any).notifications))
+    return (data as any).notifications;
   return [];
 }
 
@@ -121,7 +125,9 @@ export function PerfilSegurancaDashboard() {
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
-        throw new Error(text || `Falha ao atualizar (HTTP ${response.status}).`);
+        throw new Error(
+          text || `Falha ao atualizar (HTTP ${response.status}).`
+        );
       }
 
       toast("Dados atualizados com sucesso", {
@@ -159,7 +165,9 @@ export function PerfilSegurancaDashboard() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const storageKey = authToken ? `notifications_${authToken.substring(0, 10)}` : null;
+  const storageKey = authToken
+    ? `notifications_${authToken.substring(0, 10)}`
+    : null;
 
   const saveToStorage = (items: FlatNotification[]) => {
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(items));
@@ -208,7 +216,10 @@ export function PerfilSegurancaDashboard() {
     }
   };
 
-  async function fetchNotifications(isInitial = false, signal?: AbortSignal): Promise<void> {
+  async function fetchNotifications(
+    isInitial = false,
+    signal?: AbortSignal
+  ): Promise<void> {
     if (!authToken) {
       if (isInitial) setLoading(false);
       return;
@@ -230,7 +241,9 @@ export function PerfilSegurancaDashboard() {
         throw new Error(`Erro ao buscar notificações (${res.status})`);
       }
 
-      const payload: ApiNotificationPayload = await res.json().catch(() => ([] as ApiNotificationItem[]));
+      const payload: ApiNotificationPayload = await res
+        .json()
+        .catch(() => [] as ApiNotificationItem[]);
       const rawList: ApiNotificationItem[] = resolveListFromData(payload);
       const list: FlatNotification[] = rawList.map(flattenApiItem);
 
@@ -253,7 +266,10 @@ export function PerfilSegurancaDashboard() {
   // Token e listeners
   useEffect(() => {
     try {
-      const tk = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+      const tk =
+        typeof window !== "undefined"
+          ? localStorage.getItem("jwt_token")
+          : null;
       setAuthToken(tk);
     } catch (e) {
       console.error("[notifications] erro lendo jwt_token:", e);
@@ -313,7 +329,9 @@ export function PerfilSegurancaDashboard() {
     setHasNewNotifications(false);
     setNotifications((prev) =>
       prev.map((n) =>
-        n.id === id ? { ...n, read_at: n.read_at ?? new Date().toISOString() } : n
+        n.id === id
+          ? { ...n, read_at: n.read_at ?? new Date().toISOString() }
+          : n
       )
     );
     const updated = notifications.map((n) =>
@@ -330,12 +348,16 @@ export function PerfilSegurancaDashboard() {
     setVisibleCount(PAGE_SIZE);
   }, [authToken]);
 
+  const isMobile = useIsMobile();
+
   return (
-    <div className="flex gap-8 p-8 pt-0">
+    <div className={`flex${isMobile ? "-column" : ""} gap-8 p-8 pt-0`}>
       <div className="flex flex-col flex-1 w-full gap-8">
         {/* INFORMAÇÕES BÁSICAS */}
         <fieldset className="grid gap-4 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950">
-          <legend className="-ml-1 px-1 text-sm font-medium">Informações básicas</legend>
+          <legend className="-ml-1 px-1 text-sm font-medium">
+            Informações básicas
+          </legend>
 
           <div className="flex w-full flex-col gap-2">
             <Label>Nome completo</Label>
@@ -361,7 +383,9 @@ export function PerfilSegurancaDashboard() {
               <Label>Matrícula</Label>
               <Input
                 value={data.matricula}
-                onChange={(e) => setData({ ...data, matricula: e.target.value })}
+                onChange={(e) =>
+                  setData({ ...data, matricula: e.target.value })
+                }
                 type="text"
               />
             </div>
@@ -382,7 +406,9 @@ export function PerfilSegurancaDashboard() {
 
         {/* CONTATO */}
         <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950">
-          <legend className="-ml-1 px-1 text-sm font-medium">Contato e perfis</legend>
+          <legend className="-ml-1 px-1 text-sm font-medium">
+            Contato e perfis
+          </legend>
 
           <div className="flex flex-col md:flex-row w-full gap-4 items-end">
             <div className="flex w-full flex-col gap-2">
@@ -398,7 +424,9 @@ export function PerfilSegurancaDashboard() {
               <Label>ID Lattes</Label>
               <Input
                 value={data.lattes_id}
-                onChange={(e) => setData({ ...data, lattes_id: e.target.value })}
+                onChange={(e) =>
+                  setData({ ...data, lattes_id: e.target.value })
+                }
                 type="text"
               />
             </div>
@@ -407,13 +435,17 @@ export function PerfilSegurancaDashboard() {
 
         {/* AUTORIZAÇÕES */}
         <fieldset className="grid gap-6 rounded-lg p-4 bg-white dark:border-neutral-800 border border-neutral-200 dark:bg-neutral-950">
-          <legend className="-ml-1 px-1 text-sm font-medium">Autorizações e permissões</legend>
+          <legend className="-ml-1 px-1 text-sm font-medium">
+            Autorizações e permissões
+          </legend>
 
           <div className="flex gap-4 items-center">
             <Switch
               checked={data.verify}
               disabled
-              onCheckedChange={(checked) => setData({ ...data, verify: checked })}
+              onCheckedChange={(checked) =>
+                setData({ ...data, verify: checked })
+              }
             />
             <div className="flex flex-col">
               <p className="font-medium">Conta verificada</p>
@@ -429,16 +461,26 @@ export function PerfilSegurancaDashboard() {
           onClick={handleSubmit}
           disabled={isSubmitting}
         >
-          <RefreshCcw size={16} className={isSubmitting ? "animate-spin" : ""} />
+          <RefreshCcw
+            size={16}
+            className={isSubmitting ? "animate-spin" : ""}
+          />
           {isSubmitting ? "Salvando..." : "Atualizar dados"}
         </Button>
       </div>
 
       {/* PAINEL DE NOTIFICAÇÕES */}
-      <div className="max-w-[400px] w-[400px] min-w-[400px]">
+      <div
+        className={`${
+          isMobile ? "w-full" : "max-w-[400px] w-[400px] min-w-[400px]"
+        }`}
+      >
         <h1 className="mb-4 text-2xl font-semibold">Notificações</h1>
 
-        <div ref={listRef} className="grid gap-4 max-h-[70vh] overflow-auto pr-2">
+        <div
+          ref={listRef}
+          className="grid gap-4 max-h-[70vh] overflow-auto pr-2"
+        >
           {loading ? (
             <div className="p-4 text-center text-sm text-gray-500 h-full flex items-center justify-center">
               Carregando notificações...
@@ -467,7 +509,9 @@ export function PerfilSegurancaDashboard() {
                   size="sm"
                   className="justify-center"
                   onClick={() =>
-                    setVisibleCount((c) => Math.min(c + PAGE_SIZE, notifications.length))
+                    setVisibleCount((c) =>
+                      Math.min(c + PAGE_SIZE, notifications.length)
+                    )
                   }
                 >
                   Mostrar mais

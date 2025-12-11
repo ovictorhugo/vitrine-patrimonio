@@ -1,7 +1,20 @@
-import { ListChecks, Plus, Loader2, Trash, Pencil, RefreshCcw, Settings } from "lucide-react";
+import {
+  ListChecks,
+  Plus,
+  Loader2,
+  Trash,
+  Pencil,
+  RefreshCcw,
+  Settings,
+} from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { toast } from "sonner";
 import { Skeleton } from "../../../ui/skeleton";
@@ -111,10 +124,15 @@ export function Configuration() {
   const fetchSettings = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${urlGeral}settings/`, { method: "GET", headers: authHeaders });
+      const res = await fetch(`${urlGeral}settings/`, {
+        method: "GET",
+        headers: authHeaders,
+      });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao carregar configurações (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao carregar configurações (HTTP ${res.status}).`
+        );
       }
       const data: SettingsResponse = await res.json();
       setSettings(Array.isArray(data?.settings) ? data.settings : []);
@@ -136,38 +154,59 @@ export function Configuration() {
   const handleCreate = async () => {
     try {
       if (!keyNew.trim()) {
-        toast("Informe a chave", { description: "O campo 'Chave' está vazio.", action: { label: "Fechar", onClick: () => {} } });
+        toast("Informe a chave", {
+          description: "O campo 'Chave' está vazio.",
+          action: { label: "Fechar", onClick: () => {} },
+        });
         return;
       }
       if (!valueNew.trim()) {
-        toast("Informe o valor", { description: "O campo 'Valor' está vazio.", action: { label: "Fechar", onClick: () => {} } });
+        toast("Informe o valor", {
+          description: "O campo 'Valor' está vazio.",
+          action: { label: "Fechar", onClick: () => {} },
+        });
         return;
       }
 
       setCreating(true);
-      const body = { key: keyNew.trim(), value: valueNew.trim(), description: descriptionNew || null };
-      const res = await fetch(`${urlGeral}settings/`, { method: "POST", headers: authHeaders, body: JSON.stringify(body) });
+      const body = {
+        key: keyNew.trim(),
+        value: valueNew.trim(),
+        description: descriptionNew || null,
+      };
+      const res = await fetch(`${urlGeral}settings/`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao criar configuração (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao criar configuração (HTTP ${res.status}).`
+        );
       }
 
       // Alguns backends retornam o item criado; se não, criamos um stub coerente
       let created: SettingDTO | null = null;
-      try { created = await res.json(); } catch {}
+      try {
+        created = await res.json();
+      } catch {}
       if (!created) {
         created = {
           key: body.key,
           value: body.value,
           description: body.description,
-          id: (globalThis.crypto?.randomUUID?.() ?? `tmp-${Date.now()}`),
+          id: globalThis.crypto?.randomUUID?.() ?? `tmp-${Date.now()}`,
           created_at: new Date().toISOString(),
           updated_at: null,
         };
       }
 
       // ✅ Atualiza estado local (sem novo GET)
-      setSettings(prev => [created as SettingDTO, ...prev.filter(s => s.key !== created!.key)]);
+      setSettings((prev) => [
+        created as SettingDTO,
+        ...prev.filter((s) => s.key !== created!.key),
+      ]);
 
       toast("Configuração criada com sucesso!", {
         description: `“${body.key}” foi adicionada.`,
@@ -200,25 +239,39 @@ export function Configuration() {
     try {
       setSavingEdit(true);
       const body = { value: editValue, description: editDescription || null };
-      const res = await fetch(`${urlGeral}settings/${encodeURIComponent(editing.key)}`, {
-        method: "PUT",
-        headers: authHeaders,
-        body: JSON.stringify(body),
-      });
+      const res = await fetch(
+        `${urlGeral}settings/${encodeURIComponent(editing.key)}`,
+        {
+          method: "PUT",
+          headers: authHeaders,
+          body: JSON.stringify(body),
+        }
+      );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao atualizar configuração (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao atualizar configuração (HTTP ${res.status}).`
+        );
       }
 
       let updated: SettingDTO | null = null;
-      try { updated = await res.json(); } catch {}
+      try {
+        updated = await res.json();
+      } catch {}
 
       // ✅ Atualiza estado local (sem novo GET)
-      setSettings(prev => prev.map(s =>
-        s.key === editing.key
-          ? (updated ?? { ...s, value: body.value, description: body.description, updated_at: new Date().toISOString() })
-          : s
-      ));
+      setSettings((prev) =>
+        prev.map((s) =>
+          s.key === editing.key
+            ? updated ?? {
+                ...s,
+                value: body.value,
+                description: body.description,
+                updated_at: new Date().toISOString(),
+              }
+            : s
+        )
+      );
 
       toast("Configuração atualizada!", {
         description: `“${editing.key}” foi atualizada com sucesso.`,
@@ -239,15 +292,20 @@ export function Configuration() {
 
   const handleDelete = async (key: string) => {
     try {
-      setDeletingKeys(prev => ({ ...prev, [key]: true }));
-      const res = await fetch(`${urlGeral}settings/${encodeURIComponent(key)}`, { method: "DELETE", headers: authHeaders });
+      setDeletingKeys((prev) => ({ ...prev, [key]: true }));
+      const res = await fetch(
+        `${urlGeral}settings/${encodeURIComponent(key)}`,
+        { method: "DELETE", headers: authHeaders }
+      );
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao deletar configuração (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao deletar configuração (HTTP ${res.status}).`
+        );
       }
 
       // ✅ Atualiza estado local (sem novo GET)
-      setSettings(prev => prev.filter(s => s.key !== key));
+      setSettings((prev) => prev.filter((s) => s.key !== key));
 
       toast("Configuração removida", {
         description: `“${key}” foi excluída.`,
@@ -259,7 +317,7 @@ export function Configuration() {
         action: { label: "Fechar", onClick: () => {} },
       });
     } finally {
-      setDeletingKeys(prev => ({ ...prev, [key]: false }));
+      setDeletingKeys((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -288,7 +346,10 @@ export function Configuration() {
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogTrigger asChild>
-          <Alert onClick={() => setIsCreateOpen(true)} className="flex items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:bg-transparent dark:hover:bg-neutral-800">
+          <Alert
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center cursor-pointer gap-4 bg-transparent transition-all hover:bg-neutral-100 dark:bg-transparent dark:hover:bg-neutral-800"
+          >
             <div className="bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 rounded-md p-4 border ">
               <Plus size={20} />
             </div>
@@ -298,8 +359,13 @@ export function Configuration() {
 
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar configuração</DialogTitle>
-            <DialogDescription className="text-zinc-500">Crie uma chave de configuração para personalizar o comportamento do sistema.</DialogDescription>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar configuração
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Crie uma chave de configuração para personalizar o comportamento
+              do sistema.
+            </DialogDescription>
           </DialogHeader>
 
           <Separator className="my-4" />
@@ -317,12 +383,21 @@ export function Configuration() {
 
             <div className="flex flex-col space-y-1.5 w-full flex-1">
               <Label htmlFor="setting-value">Valor</Label>
-              <Input id="setting-value" value={valueNew} onChange={(e) => setValueNew(e.target.value)} type="text"  />
+              <Input
+                id="setting-value"
+                value={valueNew}
+                onChange={(e) => setValueNew(e.target.value)}
+                type="text"
+              />
             </div>
 
             <div className="flex flex-col space-y-1.5 w-full flex-1">
               <Label htmlFor="setting-description">Descrição</Label>
-              <Textarea id="setting-description" value={descriptionNew} onChange={(e) => setDescriptionNew(e.target.value)} />
+              <Textarea
+                id="setting-description"
+                value={descriptionNew}
+                onChange={(e) => setDescriptionNew(e.target.value)}
+              />
             </div>
           </div>
 
@@ -334,7 +409,12 @@ export function Configuration() {
             </DialogClose>
 
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />} Adicionar
+              {creating ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <Plus size={16} />
+              )}{" "}
+              Adicionar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -343,7 +423,10 @@ export function Configuration() {
       <Accordion type="single" collapsible defaultValue="item-1">
         <AccordionItem value="item-1">
           <AccordionTrigger className="px-0">
-            <HeaderResultTypeHome title={"Todas as configurações"} icon={<Settings size={24} className="text-gray-400" />} />
+            <HeaderResultTypeHome
+              title={"Todas as configurações"}
+              icon={<Settings size={24} className="text-gray-400" />}
+            />
           </AccordionTrigger>
 
           <AccordionContent className="p-0">
@@ -354,33 +437,52 @@ export function Configuration() {
                 <Skeleton className="w-full h-16" />
               </div>
             ) : settings.length === 0 ? (
-              <div className="items-center justify-center w-full flex text-center pt-6">Nenhuma configuração encontrada.</div>
+              <div className="items-center justify-center w-full flex text-center pt-6">
+                Nenhuma configuração encontrada.
+              </div>
             ) : (
               <div className="grid gap-3">
                 {settings.map((s) => (
-                  <Alert key={s.id} className="flex group items-start  gap-4 justify-between">
+                  <Alert
+                    key={s.id}
+                    className="flex group items-start  gap-4 justify-between"
+                  >
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold break-all">{s.key}</div>
-                      <div className="text-sm text-muted-foreground break-all text-gray-500 tesxt-sm">Valor da variável: {s.value}</div>
+                      <div className="text-sm font-semibold break-all">
+                        {s.key}
+                      </div>
+                      <div className="text-sm text-muted-foreground break-all text-gray-500 tesxt-sm">
+                        Valor da variável: {s.value}
+                      </div>
                       {s.description ? (
-                        <div className="text-sm  text-gray-500 text-muted-foreground mt-8 break-words">{s.description}</div>
+                        <div className="text-sm  text-gray-500 text-muted-foreground mt-8 break-words">
+                          {s.description}
+                        </div>
                       ) : null}
-                      
                     </div>
 
                     <div className="group-hover:flex items-center gap-2 shrink-0 hidden ">
-                      <Button className="w-8 h-8"  variant="outline" size="icon" onClick={() => openEdit(s)}>
-                        <Pencil size={16} className="" /> 
+                      <Button
+                        className="w-8 h-8"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openEdit(s)}
+                      >
+                        <Pencil size={16} className="" />
                       </Button>
                       <Button
-                        variant='destructive'
+                        variant="destructive"
                         size="icon"
                         onClick={() => openConfirmDelete(s.key)} // <<< abre modal
                         disabled={!!deletingKeys[s.key]}
-                       className="w-8 h-8"
+                        className="w-8 h-8"
                         aria-label={`Excluir ${s.key}`}
                       >
-                        {deletingKeys[s.key] ? <Loader2 size={16} className="animate-spin" /> : <Trash size={16} />}
+                        {deletingKeys[s.key] ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Trash size={16} />
+                        )}
                       </Button>
                     </div>
                   </Alert>
@@ -395,8 +497,12 @@ export function Configuration() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Editar configuração</DialogTitle>
-            <DialogDescription className="text-zinc-500">Atualize o valor e a descrição da chave selecionada.</DialogDescription>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Editar configuração
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Atualize o valor e a descrição da chave selecionada.
+            </DialogDescription>
           </DialogHeader>
 
           <Separator className="my-4" />
@@ -410,12 +516,20 @@ export function Configuration() {
 
               <div className="flex flex-col space-y-1.5 w-full flex-1">
                 <Label htmlFor="edit-value">Valor</Label>
-                <Input id="edit-value" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+                <Input
+                  id="edit-value"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                />
               </div>
 
               <div className="flex flex-col space-y-1.5 w-full flex-1">
                 <Label htmlFor="edit-description">Descrição</Label>
-                <Textarea id="edit-description" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+                <Textarea
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
               </div>
             </div>
           ) : null}
@@ -427,7 +541,12 @@ export function Configuration() {
               </Button>
             </DialogClose>
             <Button onClick={handleUpdate} disabled={savingEdit || !editing}>
-              {savingEdit ? <Loader2 className="animate-spin" size={16} /> : <Pencil size={16} />} Salvar alterações
+              {savingEdit ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <Pencil size={16} />
+              )}{" "}
+              Salvar alterações
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -436,21 +555,33 @@ export function Configuration() {
       {/* ======== NOVO: Modal de confirmação de exclusão ======== */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
-             <DialogHeader>
-                        <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Excluir configuração</DialogTitle>
-                        <DialogDescription className="text-zinc-500">
-                         Tem certeza que deseja excluir <span className="font-mono font-medium">{confirmDelKey}</span>? Essa ação não pode ser desfeita.
-                        </DialogDescription>
-                      </DialogHeader>
-        
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Excluir configuração
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Tem certeza que deseja excluir{" "}
+              <span className="font-mono font-medium">{confirmDelKey}</span>?
+              Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
           <DialogFooter>
             <DialogClose disabled={confirmLoading}>
-                <Button variant="ghost">
+              <Button variant="ghost">
                 <ArrowUUpLeft size={16} /> Cancelar
               </Button>
             </DialogClose>
-            <Button variant={'destructive'} onClick={confirmAndDelete} disabled={confirmLoading}>
-              {confirmLoading ? <Loader2 size={16} className=" animate-spin" /> : <Trash size={16} className="" />}
+            <Button
+              variant={"destructive"}
+              onClick={confirmAndDelete}
+              disabled={confirmLoading}
+            >
+              {confirmLoading ? (
+                <Loader2 size={16} className=" animate-spin" />
+              ) : (
+                <Trash size={16} className="" />
+              )}
               Excluir definitivamente
             </Button>
           </DialogFooter>

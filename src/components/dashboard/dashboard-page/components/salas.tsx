@@ -21,10 +21,31 @@ import { Alert } from "../../../ui/alert";
 import { Link } from "react-router-dom";
 import { Button } from "../../../ui/button";
 
-type Unit = { unit_name: string; unit_code: string; unit_siaf: string; id: string };
-type Agency = { agency_name: string; agency_code: string; unit_id: string; id: string; unit: Unit };
-type Sector = { agency_id: string; sector_name: string; sector_code: string; id: string; agency: Agency };
-type LegalGuardian = { legal_guardians_code: string; legal_guardians_name: string; id: string };
+type Unit = {
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+  id: string;
+};
+type Agency = {
+  agency_name: string;
+  agency_code: string;
+  unit_id: string;
+  id: string;
+  unit: Unit;
+};
+type Sector = {
+  agency_id: string;
+  sector_name: string;
+  sector_code: string;
+  id: string;
+  agency: Agency;
+};
+type LegalGuardian = {
+  legal_guardians_code: string;
+  legal_guardians_name: string;
+  id: string;
+};
 
 type LocationDTO = {
   legal_guardian_id: string;
@@ -45,7 +66,6 @@ export function Salas() {
   const [loadingLoc, setLoadingLoc] = useState(false);
   const [errorLoc, setErrorLoc] = useState<string | null>(null);
 
-  
   // ====== Fetch com abort e estados ======
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +84,8 @@ export function Salas() {
           },
           signal: controller.signal,
         });
-        if (!res.ok) throw new Error(`Falha ao carregar locais (${res.status})`);
+        if (!res.ok)
+          throw new Error(`Falha ao carregar locais (${res.status})`);
         const data: LocationsResponse = await res.json();
         if (cancelled) return;
         setLocations(data.locations ?? []);
@@ -162,10 +183,12 @@ export function Salas() {
               variant="outline"
               size="sm"
               className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollLeft || disableNav ? "opacity-30 cursor-not-allowed" : ""
+                !canScrollLeft || disableNav
+                  ? "opacity-30 cursor-not-allowed"
+                  : ""
               }`}
               onClick={(event) => {
-  event.stopPropagation();
+                event.stopPropagation();
                 scrollLeft();
               }}
               disabled={!canScrollLeft || disableNav}
@@ -173,7 +196,7 @@ export function Salas() {
               <ChevronLeft size={16} />
             </Button>
 
-            <div className="mx-4">
+            <div className="mx-12">
               <div
                 ref={scrollAreaRef}
                 className="overflow-x-auto scrollbar-hide"
@@ -182,34 +205,43 @@ export function Salas() {
                 <div className="flex whitespace-nowrap gap-6 py-2">
                   {loadingLoc ? (
                     Array.from({ length: 8 }).map((_, i) => (
-                      <Skeleton key={i} className="w-64 aspect-square rounded-lg" />
+                      <Skeleton
+                        key={i}
+                        className="w-64 aspect-square rounded-lg"
+                      />
                     ))
                   ) : errorLoc ? (
-                    <div className="w-full pr-4">
+                    <div className="w-full">
                       <Alert variant="destructive">{errorLoc}</Alert>
                     </div>
                   ) : locations.length === 0 ? (
-                    <div className="w-full pr-4">
+                    <div className="w-full">
                       <Alert variant="default">Você ainda não tem salas.</Alert>
                     </div>
                   ) : (
                     locations.map((location) => (
-                      <Link key={location.id} to={`/dashboard/sala?loc_id=${location.id}`} className="w-64">
+                      <Link
+                        key={location.id}
+                        to={`/dashboard/sala?loc_id=${location.id}`}
+                        className="w-64"
+                      >
                         <Alert className="w-64 flex justify-between flex-col aspect-square cursor-pointer">
-                         <div>
-                             <div className="flex items-center gap-2">
-  <div className="flex items-center gap-1 min-w-0">
-    <p className="truncate text-sm text-gray-500 dark:text-gray-300 ">
-      {location.sector.agency.agency_name}
-    </p>
-    <ChevronRight size={14} className="flex-shrink-0" />
-    <p className="truncate text-sm text-gray-500 dark:text-gray-300">
-      {location.sector.sector_name}
-    </p>
-  </div>
-</div>
-
-                         </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <p className="truncate text-sm text-gray-500 dark:text-gray-300 ">
+                                  {location.sector.agency.agency_name}
+                                </p>
+                                <ChevronRight
+                                  size={14}
+                                  className="flex-shrink-0"
+                                />
+                                <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+                                  {location.sector.sector_name}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                           <p className="text-xl  font-semibold whitespace-normal">
                             {location.location_name}
                           </p>
@@ -227,10 +259,12 @@ export function Salas() {
               variant="outline"
               size="sm"
               className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollRight || disableNav ? "opacity-30 cursor-not-allowed" : ""
+                !canScrollRight || disableNav
+                  ? "opacity-30 cursor-not-allowed"
+                  : ""
               }`}
               onClick={(event) => {
-                  event.stopPropagation();
+                event.stopPropagation();
                 scrollRight();
               }}
               disabled={!canScrollRight || disableNav}

@@ -971,7 +971,7 @@ export function NovoItem() {
   }, [idx, STEPS]);
   const goNext = useCallback(() => {
     if (!isLast && canGoNext) {
-      console.log("🚀 Wizard NO MOMENTO de sair do step:", wizard);
+      //console.log("🚀 Wizard NO MOMENTO de sair do step:", wizard);
       setActive(STEPS[idx + 1].key);
     }
   }, [idx, STEPS, isLast, canGoNext, wizard]);

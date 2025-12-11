@@ -71,7 +71,7 @@ export function AcervoHistorico() {
       </div>
 
       <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
-<BlockItemsVitrine workflow="ACERVO_HISTORICO"/>
+<BlockItemsVitrine workflow={["ACERVO_HISTORICO"]}/>
       </div>
 
 </main>

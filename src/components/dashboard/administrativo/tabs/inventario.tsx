@@ -1,12 +1,32 @@
-import { ListChecks, Plus, Loader2, Trash, User, Pencil, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  ListChecks,
+  Plus,
+  Loader2,
+  Trash,
+  User,
+  Pencil,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
-import { CardDescription, CardFooter, CardHeader, CardTitle } from "../../../ui/card";
+import {
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../ui/card";
 import { Input } from "../../../ui/input";
 import { Label } from "../../../ui/label";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../../../../context/context";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -25,7 +45,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { ArrowUUpLeft } from "phosphor-react";
 import { Separator } from "../../../ui/separator";
 import { Switch } from "../../../ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 
 // ===== Tipos da API =====
 type UserDTO = {
@@ -69,7 +95,10 @@ export function Inventario() {
 
   // Dialog de exclusão
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; key: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    key: string;
+  } | null>(null);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
@@ -98,11 +127,18 @@ export function Inventario() {
   const isFirstPage = offset === 0;
   const isLastPage = inventories.length < limit;
 
-  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    replace = false
+  ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace }
+    );
   };
 
   useEffect(() => {
@@ -118,15 +154,17 @@ export function Inventario() {
 
       // Se sua API aceita offset/limit na query, seguimos o padrão do exemplo:
       // /inventories/?offset=...&limit=...
-      const url = `${urlGeral}inventories/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(
-        limit
-      )}`;
+      const url = `${urlGeral}inventories/?offset=${encodeURIComponent(
+        offset
+      )}&limit=${encodeURIComponent(limit)}`;
 
       const res = await fetch(url, { method: "GET", headers: authHeaders });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao carregar inventários (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao carregar inventários (HTTP ${res.status}).`
+        );
       }
 
       const data: InventoriesResponse = await res.json();
@@ -170,7 +208,9 @@ export function Inventario() {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao criar inventário (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao criar inventário (HTTP ${res.status}).`
+        );
       }
 
       toast("Inventário criado com sucesso!", {
@@ -213,7 +253,9 @@ export function Inventario() {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Falha ao excluir inventário (HTTP ${res.status}).`);
+        throw new Error(
+          text || `Falha ao excluir inventário (HTTP ${res.status}).`
+        );
       }
 
       toast("Inventário excluído", {
@@ -284,18 +326,28 @@ export function Inventario() {
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
-        throw new Error(t || `Falha ao atualizar inventário (HTTP ${res.status}).`);
+        throw new Error(
+          t || `Falha ao atualizar inventário (HTTP ${res.status}).`
+        );
       }
-      toast("Inventário atualizado", { description: "Alterações salvas com sucesso." });
+      toast("Inventário atualizado", {
+        description: "Alterações salvas com sucesso.",
+      });
       setEditOpen(false);
       setEditTarget(null);
 
       // Atualiza o item na página atual (sem perder a paginação)
       setInventories((prev) =>
-        prev.map((i) => (i.id === (editTarget?.id ?? "") ? { ...i, key: editKey.trim(), avaliable: editAvailable } : i))
+        prev.map((i) =>
+          i.id === (editTarget?.id ?? "")
+            ? { ...i, key: editKey.trim(), avaliable: editAvailable }
+            : i
+        )
       );
     } catch (e: any) {
-      toast("Erro ao salvar alterações", { description: e?.message || "Tente novamente." });
+      toast("Erro ao salvar alterações", {
+        description: e?.message || "Tente novamente.",
+      });
     } finally {
       setSavingEdit(false);
     }
@@ -319,9 +371,12 @@ export function Inventario() {
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar inventário</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar inventário
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Crie um inventário para organizar os registros de bens em todas as salas.
+              Crie um inventário para organizar os registros de bens em todas as
+              salas.
             </DialogDescription>
           </DialogHeader>
 
@@ -330,7 +385,12 @@ export function Inventario() {
           <div className="mb-4">
             <div className="flex flex-col space-y-1.5 w-full flex-1">
               <Label htmlFor="inventory-name">Nome do inventário</Label>
-              <Input id="inventory-name" value={key} onChange={(e) => setKey(e.target.value)} type="text" />
+              <Input
+                id="inventory-name"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                type="text"
+              />
             </div>
           </div>
 
@@ -342,7 +402,11 @@ export function Inventario() {
             </DialogClose>
 
             <Button onClick={handleSubmit} disabled={creating}>
-              {creating ? <Loader2 className=" animate-spin" size={16} /> : <Plus size={16} className="" />}
+              {creating ? (
+                <Loader2 className=" animate-spin" size={16} />
+              ) : (
+                <Plus size={16} className="" />
+              )}
               Adicionar inventário
             </Button>
           </DialogFooter>
@@ -352,7 +416,10 @@ export function Inventario() {
       <Accordion type="single" collapsible defaultValue="item-1">
         <AccordionItem value="item-1">
           <AccordionTrigger className="px-0">
-            <HeaderResultTypeHome title={"Todos os inventários"} icon={<ListChecks size={24} className="text-gray-400" />} />
+            <HeaderResultTypeHome
+              title={"Todos os inventários"}
+              icon={<ListChecks size={24} className="text-gray-400" />}
+            />
           </AccordionTrigger>
 
           <AccordionContent className="p-0">
@@ -363,22 +430,31 @@ export function Inventario() {
                 <Skeleton className="w-full h-16" />
               </div>
             ) : inventories.length === 0 ? (
-              <div className="items-center justify-center w-full flex text-center pt-6">Nenhum inventário encontrado.</div>
+              <div className="items-center justify-center w-full flex text-center pt-6">
+                Nenhum inventário encontrado.
+              </div>
             ) : (
               <div className="grid gap-4 ">
                 {inventories.map((inv) => (
                   <div key={inv.id} className="relative group flex">
                     <div className="w-2 min-w-2 rounded-l-md border dark:border-neutral-800 bg-eng-blue" />
                     <Alert className="rounded-l-none items-center flex justify-between border-l-0 w-full cursor-pointer hover:shadow-sm transition">
-                      <Link to={`/dashboard/inventario?inv_id=${inv.id}`} className="flex-1 min-w-0">
+                      <Link
+                        to={`/dashboard/inventario?inv_id=${inv.id}`}
+                        className="flex-1 min-w-0"
+                      >
                         <div>
                           <div className="flex items-center mb-2 justify-between min-h-8 ">
-                            <span className="font-medium text-lg truncate">{inv.key}</span>
+                            <span className="font-medium text-lg truncate">
+                              {inv.key}
+                            </span>
                           </div>
 
                           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
                             <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">Criado por:</span>
+                              <span className="text-muted-foreground">
+                                Criado por:
+                              </span>
                               <span className="font-medium flex items-center gap-1">
                                 <Avatar className="rounded-md h-5 w-5 shrink-0">
                                   <AvatarImage
@@ -394,11 +470,17 @@ export function Inventario() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <div className={`w-4 h-4 rounded-md ${inv.avaliable ? "bg-green-500" : "bg-red-500"}`} />
+                              <div
+                                className={`w-4 h-4 rounded-md ${
+                                  inv.avaliable ? "bg-green-500" : "bg-red-500"
+                                }`}
+                              />
                               {inv.avaliable ? "Disponível" : "Encerrado"}
                             </div>
 
-                            <div className="flex items-center gap-2">Início: {formatDateTimeBR(inv.created_at)}</div>
+                            <div className="flex items-center gap-2">
+                              Início: {formatDateTimeBR(inv.created_at)}
+                            </div>
                           </div>
                         </div>
                       </Link>
@@ -474,10 +556,13 @@ export function Inventario() {
             disabled={isFirstPage}
           >
             {/* você pode importar ChevronLeft/ChevronRight se quiser repetir o estilo idêntico */}
-         <ChevronLeft size={16} className="" />     Anterior
+            <ChevronLeft size={16} className="" /> Anterior
           </Button>
-          <Button onClick={() => !isLastPage && setOffset((prev) => prev + limit)} disabled={isLastPage}>
-         Próximo  <ChevronRight size={16} className="" />   
+          <Button
+            onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+            disabled={isLastPage}
+          >
+            Próximo <ChevronRight size={16} className="" />
           </Button>
         </div>
       </div>
@@ -486,9 +571,12 @@ export function Inventario() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Excluir inventário</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Excluir inventário
+            </DialogTitle>
             <DialogDescription className="text-zinc-500 ">
-              Esta ação é <span className="font-semibold">irreversível</span>. Para confirmar, digite exatamente o nome do inventário:{" "}
+              Esta ação é <span className="font-semibold">irreversível</span>.
+              Para confirmar, digite exatamente o nome do inventário:{" "}
               <span className=" font-semibold ">{deleteTarget?.key}</span>
             </DialogDescription>
           </DialogHeader>
@@ -503,9 +591,13 @@ export function Inventario() {
               onChange={(e) => setDeleteText(e.target.value)}
               autoFocus
             />
-            {!!deleteTarget && deleteText.trim() && deleteText.trim() !== deleteTarget.key && (
-              <p className="text-xs text-red-500">O texto digitado não corresponde ao nome do inventário.</p>
-            )}
+            {!!deleteTarget &&
+              deleteText.trim() &&
+              deleteText.trim() !== deleteTarget.key && (
+                <p className="text-xs text-red-500">
+                  O texto digitado não corresponde ao nome do inventário.
+                </p>
+              )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -520,9 +612,17 @@ export function Inventario() {
             >
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={!confirmEnabled || deleting}>
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash size={16} />}
-               Confirmar exclusão
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={!confirmEnabled || deleting}
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash size={16} />
+              )}
+              Confirmar exclusão
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -532,8 +632,12 @@ export function Inventario() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium">Editar inventário</DialogTitle>
-            <DialogDescription className="text-zinc-500">Atualize as informações e confirme para salvar.</DialogDescription>
+            <DialogTitle className="text-2xl mb-2 font-medium">
+              Editar inventário
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Atualize as informações e confirme para salvar.
+            </DialogDescription>
           </DialogHeader>
 
           <Separator className="my-4" />
@@ -541,21 +645,39 @@ export function Inventario() {
           <div className="space-y-4">
             <div className="grid gap-2">
               <Label>Nome do inventário</Label>
-              <Input value={editKey} onChange={(e) => setEditKey(e.target.value)} placeholder="Digite o novo nome" />
+              <Input
+                value={editKey}
+                onChange={(e) => setEditKey(e.target.value)}
+                placeholder="Digite o novo nome"
+              />
             </div>
 
             <div className="flex items-center justify-between">
               <Label>Disponível</Label>
-              <Switch checked={editAvailable} onCheckedChange={(v) => setEditAvailable(!!v)} />
+              <Switch
+                checked={editAvailable}
+                onCheckedChange={(v) => setEditAvailable(!!v)}
+              />
             </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={savingEdit}>
+            <Button
+              variant="ghost"
+              onClick={() => setEditOpen(false)}
+              disabled={savingEdit}
+            >
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button onClick={handleEditSave} disabled={savingEdit || !editKey.trim()}>
-              {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
+            <Button
+              onClick={handleEditSave}
+              disabled={savingEdit || !editKey.trim()}
+            >
+              {savingEdit ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check size={16} />
+              )}
               Salvar alterações
             </Button>
           </DialogFooter>

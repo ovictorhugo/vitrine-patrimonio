@@ -1,4 +1,11 @@
-import { useContext, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { UserContext } from "../../../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Repeat, Trash } from "lucide-react";
@@ -33,7 +40,7 @@ export interface CatalogResponse {
 
 /* ===== Props ===== */
 interface Props {
-  workflow: string;
+  workflow: string[];
   type?: string;
   value?: string; // filtro workflow que vem do pai
   workflowOptions?: string[];
@@ -41,7 +48,8 @@ interface Props {
 }
 
 /* ===== Helpers de URL/filtros (compatível com seu modal) ===== */
-const first = (v: string | null) => (v ? v.split(";").filter(Boolean)[0] ?? "" : "");
+const first = (v: string | null) =>
+  v ? v.split(";").filter(Boolean)[0] ?? "" : "";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   if (val && val.trim().length > 0) sp.set(key, val);
@@ -49,11 +57,17 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
 };
 
 // aceita tanto plural quanto singular (prioriza plural)
-const getPluralOrSingular = (sp: URLSearchParams, pluralKey: string, singularKey: string) =>
-  sp.get(pluralKey) ?? sp.get(singularKey);
+const getPluralOrSingular = (
+  sp: URLSearchParams,
+  pluralKey: string,
+  singularKey: string
+) => sp.get(pluralKey) ?? sp.get(singularKey);
 
-const firstFromPluralOrSingular = (sp: URLSearchParams, pluralKey: string, singularKey: string) =>
-  first(getPluralOrSingular(sp, pluralKey, singularKey));
+const firstFromPluralOrSingular = (
+  sp: URLSearchParams,
+  pluralKey: string,
+  singularKey: string
+) => first(getPluralOrSingular(sp, pluralKey, singularKey));
 
 export function BlockItemsVitrine(props: Props) {
   const { urlGeral } = useContext(UserContext);
@@ -72,7 +86,9 @@ export function BlockItemsVitrine(props: Props) {
     first(queryUrl.get("material_ids") ?? queryUrl.get("material_id"))
   );
   const [legalGuardianId, setLegalGuardianId] = useState(
-    first(queryUrl.get("legal_guardian_ids") ?? queryUrl.get("legal_guardian_id"))
+    first(
+      queryUrl.get("legal_guardian_ids") ?? queryUrl.get("legal_guardian_id")
+    )
   );
   const [locationId, setLocationId] = useState(
     first(queryUrl.get("location_ids") ?? queryUrl.get("location_id"))
@@ -143,7 +159,9 @@ export function BlockItemsVitrine(props: Props) {
       } catch {}
       closeDelete();
     } catch (e: any) {
-      toast("Erro ao excluir", { description: e?.message || "Tente novamente." });
+      toast("Erro ao excluir", {
+        description: e?.message || "Tente novamente.",
+      });
     } finally {
       setDeleting(false);
     }
@@ -171,28 +189,62 @@ export function BlockItemsVitrine(props: Props) {
 
   const handleConfirmMove = useCallback(async () => {
     if (!moveTargetId || !moveStatus) return;
+
     try {
       setMoving(true);
+
       const payload = {
         workflow_status: moveStatus,
         detail: { observation: { text: moveObs } },
       };
+
       const r = await fetch(`${baseUrl}/catalog/${moveTargetId}/workflow`, {
         method: "POST",
         headers: { ...baseHeaders },
         body: JSON.stringify(payload),
       });
+
       if (!r.ok) {
         const t = await r.text().catch(() => "");
         throw new Error(`Falha ao movimentar (${r.status}): ${t}`);
       }
 
-      // Se o destino for diferente do workflow do bloco atual, remove o item da lista
-      if (moveStatus !== props.workflow) {
-        setItems((prev) => prev.filter((it) => it.id !== moveTargetId));
-      }
+      // --- CORREÇÃO AQUI ---
 
-      // Emite o mesmo evento global (mantém consistência com o modal de item)
+      setItems((prev) => {
+        // 1. Normaliza os workflows permitidos nesta lista para um Array
+        // Se props.workflow for string, vira [string]. Se for array, mantém.
+        const allowedWorkflows = Array.isArray(props.workflow)
+          ? props.workflow
+          : [props.workflow];
+
+        // 2. Verifica se o NOVO status deve continuar visível nesta tela
+        const shouldStayInList = allowedWorkflows.includes(moveStatus);
+
+        if (!shouldStayInList) {
+          // CASO A: O item foi para um status que esta lista não exibe -> REMOVE
+          return prev.filter((it) => it.id !== moveTargetId);
+        } else {
+          // CASO B: O item mudou de status, mas continua nesta lista -> ATUALIZA
+          return prev.map((it) => {
+            if (it.id === moveTargetId) {
+              // Atualiza o workflow_status localmente para refletir a mudança visual
+              // Nota: Ajuste a estrutura abaixo conforme seu objeto 'CatalogEntry' real
+              return {
+                ...it,
+                workflow_status: moveStatus, // Se estiver na raiz
+                // Se estiver dentro de um objeto aninhado (ex: last_workflow), atualize lá:
+                // last_workflow: { ...it.last_workflow, workflow_status: moveStatus }
+              };
+            }
+            return it;
+          });
+        }
+      });
+
+      // ---------------------
+
+      // Emite o evento global para outras partes da tela se atualizarem
       try {
         window.dispatchEvent(
           new CustomEvent("catalog:workflow-updated", {
@@ -210,10 +262,13 @@ export function BlockItemsVitrine(props: Props) {
     } finally {
       setMoving(false);
     }
-  }, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders, props.workflow]);
-
+  }, [moveTargetId, moveStatus, moveObs, baseUrl, baseHeaders, props.workflow]); // Dependências ok
   // ===== Atualiza URL (mantendo PLURAL do modal) e scroll =====
-  const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    doScroll = true
+  ) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", newOffset.toString());
     sp.set("limit", newLimit.toString());
@@ -301,42 +356,69 @@ export function BlockItemsVitrine(props: Props) {
         setLoading(true);
         setError(null);
 
-        const url = new URL(`${baseUrl}/catalog/`);
-        // filtro de workflow (obrigatório)
-        if (props.workflow) url.searchParams.set("workflow_status", props.workflow);
+        // 1. Normaliza a entrada para garantir que seja sempre um array
+        // Se props.workflow for undefined, cria um array com [undefined] para rodar a busca genérica 1 vez
+        const workflowsToFetch = Array.isArray(props.workflow)
+          ? props.workflow
+          : props.workflow
+          ? [props.workflow]
+          : [null];
 
-        // busca textual
-        if (q) url.searchParams.set("q", q);
+        // 2. Mapeia cada workflow para uma Promise de fetch
+        const requests = workflowsToFetch.map(async (wfStatus) => {
+          const url = new URL(`${baseUrl}/catalog/`);
 
-        // converte plural->singular para API
-        if (materialId) url.searchParams.set("material_id", materialId);
-        if (legalGuardianId) url.searchParams.set("legal_guardian_id", legalGuardianId);
-        if (locationId) url.searchParams.set("location_id", locationId);
-        if (unitId) url.searchParams.set("unit_id", unitId);
-        if (agencyId) url.searchParams.set("agency_id", agencyId);
-        if (sectorId) url.searchParams.set("sector_id", sectorId);
+          // Aplica o workflow específico desta iteração
+          if (wfStatus) url.searchParams.set("workflow_status", wfStatus);
 
-        if (props.user_id) url.searchParams.set("user_id", props.user_id);
-        if (props.type === "user_id")
-          url.searchParams.set("user_id", props.value || "");
-        if (props.type === "location_id")
-          url.searchParams.set("location_id", props.value || "");
-        if (props.type === "reviewer_id")
-          url.searchParams.set("reviewer_id", props.value || "");
+          // --- Aplica os filtros comuns (repetidos para cada URL) ---
 
-        url.searchParams.set("offset", String(offset));
-        url.searchParams.set("limit", String(limit));
+          // busca textual
+          if (q) url.searchParams.set("q", q);
 
-        const res = await fetch(url.toString(), {
-          method: "GET",
-          signal: controller.signal,
-          headers: baseHeaders,
+          // converte plural->singular para API
+          if (materialId) url.searchParams.set("material_id", materialId);
+          if (legalGuardianId)
+            url.searchParams.set("legal_guardian_id", legalGuardianId);
+          if (locationId) url.searchParams.set("location_id", locationId);
+          if (unitId) url.searchParams.set("unit_id", unitId);
+          if (agencyId) url.searchParams.set("agency_id", agencyId);
+          if (sectorId) url.searchParams.set("sector_id", sectorId);
+
+          if (props.user_id) url.searchParams.set("user_id", props.user_id);
+
+          if (props.type === "user_id")
+            url.searchParams.set("user_id", props.value || "");
+          if (props.type === "location_id")
+            url.searchParams.set("location_id", props.value || "");
+          if (props.type === "reviewer_id")
+            url.searchParams.set("reviewer_id", props.value || "");
+
+          url.searchParams.set("offset", String(offset));
+          url.searchParams.set("limit", String(limit));
+
+          const res = await fetch(url.toString(), {
+            method: "GET",
+            signal: controller.signal,
+            headers: baseHeaders,
+          });
+
+          if (!res.ok)
+            throw new Error(`Erro ao buscar catálogo (${res.status})`);
+
+          return res.json() as Promise<CatalogResponse>;
         });
 
-        if (!res.ok) throw new Error(`Erro ao buscar catálogo (${res.status})`);
+        // 3. Aguarda todas as requisições terminarem
+        const responses = await Promise.all(requests);
 
-        const data: CatalogResponse = await res.json();
-        setItems(Array.isArray(data.catalog_entries) ? data.catalog_entries : []);
+        // 4. Combina os resultados de todas as chamadas em um único array
+        // O flatMap pega o array de arrays [[item1], [item2]] e transforma em [item1, item2]
+        const combinedItems = responses.flatMap((data) =>
+          Array.isArray(data.catalog_entries) ? data.catalog_entries : []
+        );
+
+        setItems(combinedItems);
         setLoading(false);
       } catch (e: any) {
         if (e.name !== "AbortError") {
@@ -379,25 +461,57 @@ export function BlockItemsVitrine(props: Props) {
     []
   );
 
-  // Remover item da lista quando algum outro lugar mover o workflow
+  // Remover ou Atualizar item da lista quando algum outro lugar mover o workflow
   useEffect(() => {
     const handler = (e: any) => {
-      const detail = e?.detail as { id?: string; newStatus?: string } | undefined;
+      const detail = e?.detail as
+        | { id?: string; newStatus?: string }
+        | undefined;
+
       if (!detail?.id) return;
-      // Se o item está na lista atual e o novo status é diferente do filtro do bloco, remove
+
       setItems((prev) => {
-        const has = prev.some((it) => it.id === detail.id);
-        if (!has) return prev;
-        if (detail.newStatus && detail.newStatus !== props.workflow) {
+        // 1. Verifica se o item existe nesta lista
+        const exists = prev.some((it) => it.id === detail.id);
+        if (!exists) return prev;
+
+        // 2. Normaliza os workflows permitidos nesta lista (String -> Array)
+        const allowedWorkflows = Array.isArray(props.workflow)
+          ? props.workflow
+          : [props.workflow];
+
+        // 3. Verifica se o item deve permanecer na lista
+        // (Se newStatus não vier definido, assumimos que não deve filtrar, ou removemos por segurança.
+        //  Aqui assumi que se tiver newStatus, checamos. Se não tiver, mantém.)
+        const shouldStay = detail.newStatus
+          ? allowedWorkflows.includes(detail.newStatus)
+          : true; // Ou false, dependendo de quão estrito você quer ser
+
+        if (!shouldStay) {
+          // CASO A: O novo status não pertence a esta lista -> REMOVE
           return prev.filter((it) => it.id !== detail.id);
         }
+
+        // CASO B: O item mudou de status mas continua aqui -> ATUALIZA
+        // Isso evita que o item fique com a cor/status "velho" até recarregar
+        if (detail.newStatus) {
+          return prev.map((it) =>
+            it.id === detail.id
+              ? { ...it, workflow_status: detail.newStatus }
+              : it
+          );
+        }
+
         return prev;
       });
     };
 
     window.addEventListener("catalog:workflow-updated" as any, handler as any);
     return () =>
-      window.removeEventListener("catalog:workflow-updated" as any, handler as any);
+      window.removeEventListener(
+        "catalog:workflow-updated" as any,
+        handler as any
+      );
   }, [props.workflow]);
 
   // Remover item quando for excluído em outro lugar (ex.: modal de item)
@@ -416,7 +530,7 @@ export function BlockItemsVitrine(props: Props) {
   return (
     <div ref={containerRef}>
       {loading && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {skeletons.map((item, index) => (
             <div className="w-full" key={index}>
               {item}
@@ -426,7 +540,7 @@ export function BlockItemsVitrine(props: Props) {
       )}
 
       {!loading && items.length > 0 && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {items.map((item: CatalogEntry) => (
             <ItemPatrimonio
               key={item.id}
@@ -506,7 +620,8 @@ export function BlockItemsVitrine(props: Props) {
               Deletar item do catálogo
             </DialogTitle>
             <DialogDescription className="text-zinc-500 ">
-              Esta ação é irreversível. Ao deletar, todas as informações deste item no catálogo serão perdidas.
+              Esta ação é irreversível. Ao deletar, todas as informações deste
+              item no catálogo serão perdidas.
             </DialogDescription>
           </DialogHeader>
 
@@ -533,7 +648,8 @@ export function BlockItemsVitrine(props: Props) {
               Movimentar item do catálogo
             </DialogTitle>
             <DialogDescription className="text-zinc-500 text-center">
-              Selecione um status e (opcionalmente) escreva uma observação para registrar no histórico do item.
+              Selecione um status e (opcionalmente) escreva uma observação para
+              registrar no histórico do item.
             </DialogDescription>
           </DialogHeader>
 

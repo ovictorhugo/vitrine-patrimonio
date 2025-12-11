@@ -58,12 +58,12 @@ export function PedirEmprestimoAudiovisual() {
               Saiba o que é e como utilizar a plataforma
               <ArrowRight size={12} />
             </Link>
-            <h1 className="z-[2] text-center max-w-[930px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-              Todos os itens preservados pelo seu{" "}
+            <h1 className="z-[2] text-center max-w-[700px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+              Todos os itens disponíveis em{" "}
               <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
-                valor histórico
+                um só lugar
               </strong>
-              , simbólico ou antiguidade.
+              , simples e prático.
             </h1>
             <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
@@ -74,7 +74,9 @@ export function PedirEmprestimoAudiovisual() {
         </div>
 
         <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
-          <BlockItemsVitrine workflow="AUDIOVISUAL_EMPRESTIMO" />
+          <BlockItemsVitrine
+            workflow={["AUDIOVISUAL_EMPRESTIMO", "AUDIOVISUAL_ANUNCIADO"]}
+          />
         </div>
       </main>
     </div>

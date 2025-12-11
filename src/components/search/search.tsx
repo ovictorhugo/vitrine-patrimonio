@@ -15,7 +15,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useQuery } from "../authentication/signIn";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import { useIsMobile } from "../../hooks/use-mobile";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const first = (v: string | null) =>
   v ? v.split(";").filter(Boolean)[0] ?? "" : ("" as string);
@@ -92,7 +92,6 @@ export function Search() {
     Number(queryUrl.get("limit") || "24")
   );
 
-  const [loading, setLoading] = useState<boolean>(false);
   const [hasNavigated, setHasNavigated] = useState(false);
 
   /** ===== Helpers URL ===== */
@@ -166,7 +165,6 @@ export function Search() {
         : Array.isArray(json)
         ? json
         : [];
-      console.log(list);
       setMaterials(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -369,11 +367,6 @@ export function Search() {
     navigate({ pathname: location.pathname, search: sp.toString() });
   };
 
-  /** ===== Barra de busca no padrão do seu modelo ===== */
-  const [maria, setMaria] = useState(false);
-  const [version, setVersion] = useState(false);
-  const [searchType, setSearchType] = useState<string>("");
-
   // tipo ativo para cor do botão (prioriza o que estiver setado)
   const activeKind =
     (selectedMaterial && "material") ||
@@ -409,52 +402,14 @@ export function Search() {
     }, 300);
   };
 
-  const [input, setInput] = useState("");
-  // apenas UM item selecionado (de um ÚNICO tipo)
-  const [picked, setPicked] = useState<Picked | null>(null);
-
-  // selecionar (troca qualquer seleção anterior — mantém sempre 1 item/1 tipo)
-  const choose = (k: Kind, id: string, label: string) => {
-    setPicked({ kind: k, id, label });
-    setInput("");
-  };
-
-  // aplicar = escreve somente o tipo selecionado e limpa os demais
-  const apply = () => {
-    const sp = new URLSearchParams(location.search);
-    // limpa todos
-    sp.delete("material_ids");
-    sp.delete("legal_guardian_ids");
-    sp.delete("location_ids");
-    sp.delete("unit_ids");
-    sp.delete("agency_ids");
-    sp.delete("sector_ids");
-
-    if (picked) {
-      const param =
-        picked.kind === "material"
-          ? "material_ids"
-          : picked.kind === "guardian"
-          ? "legal_guardian_ids"
-          : picked.kind === "location"
-          ? "location_ids"
-          : picked.kind === "unit"
-          ? "unit_ids"
-          : picked.kind === "agency"
-          ? "agency_ids"
-          : "sector_ids";
-      sp.set(param, picked.id);
-      sp.set("offset", "0");
-    }
-
-    navigate({ pathname: location.pathname, search: sp.toString() });
-  };
-
-  // limpar seleção (não altera URL até aplicar)
-  const clearPicked = () => setPicked(null);
+  const isMobile = useIsMobile();
 
   return (
-    <Alert className="h-14 mt-4 mb-2 p-2 flex items-center justify-between">
+    <Alert
+      className={`${
+        isMobile ? "h-12" : "h-14"
+      } mt-4 mb-2 p-2 flex items-center justify-between`}
+    >
       <div className="flex items-center gap-2 w-full flex-1">
         <Play
           size={16}

@@ -22,6 +22,7 @@ import { usePermissions } from "../../permissions";
 import { useNavigate } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 /** ========= Tipagens herdadas ========= */
 export interface Unit {
@@ -252,7 +253,7 @@ function ItemPatrimonioBase(props: Props) {
     firstStatus === "REVIEW_REQUESTED_VITRINE" ||
     firstStatus === "ADJUSTMENT_VITRINE" ||
     firstStatus === "ADJUSTMENT_DESFAZIMENTO" ||
-    firstStatus === "REJEITADOS_COMISSAO"
+    firstStatus === "REJEITADOS_COMISSAO";
 
   const workflowAnunciados = firstStatus === "VITRINE";
 
@@ -281,6 +282,7 @@ function ItemPatrimonioBase(props: Props) {
       baseForSet.includes("?") ? "&" : "?"
     }w=24&q=10`;
   }
+  const isMobile = useIsMobile();
 
   return (
     <div
@@ -303,12 +305,8 @@ function ItemPatrimonioBase(props: Props) {
                     {diff.months > 0
                       ? `${diff.months} ${
                           diff.months === 1 ? "mês" : "meses"
-                        } e ${diff.days} ${
-                          diff.days === 1 ? "dia" : "dias"
-                        }`
-                      : `${diff.days} ${
-                          diff.days === 1 ? "dia" : "dias"
-                        }`}
+                        } e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
+                      : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
                   </Badge>
 
                   <Badge
@@ -322,37 +320,37 @@ function ItemPatrimonioBase(props: Props) {
 
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono ou permissão) */}
-              {(((props.user.id === user?.id) || hasCatalogo) &&
-                workflowReview) && (
-                <Button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    navigate(`/dashboard/editar-item?id=${props.id}`);
-                  }}
-                  size="icon"
-                  variant="outline"
-                  className="h-8 w-8 group-hover:flex hidden transition-all"
-                >
-                  <Pencil size={16} />
-                </Button>
-              )}
+              {(props.user.id === user?.id || hasCatalogo) &&
+                workflowReview && (
+                  <Button
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/dashboard/editar-item?id=${props.id}`);
+                    }}
+                    size="icon"
+                    variant="outline"
+                    className="h-8 w-8 group-hover:flex hidden transition-all"
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                )}
 
               {/* Deletar (somente dono ou permissão) */}
-              {(((props.user.id === user?.id) || hasCatalogo) &&
+              {(props.user.id === user?.id || hasCatalogo) &&
                 workflowReview &&
-                props.onPromptDelete) && (
-                <Button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    props.onPromptDelete?.();
-                  }}
-                  className="h-8 w-8 group-hover:flex hidden transition-all"
-                  variant="destructive"
-                  size="icon"
-                >
-                  <Trash size={16} />
-                </Button>
-              )}
+                props.onPromptDelete && (
+                  <Button
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      props.onPromptDelete?.();
+                    }}
+                    className="h-8 w-8 group-hover:flex hidden transition-all"
+                    variant="destructive"
+                    size="icon"
+                  >
+                    <Trash size={16} />
+                  </Button>
+                )}
 
               {/* Favoritar (apenas Vitrine) */}
               {loggedIn && workflowAnunciados && (
@@ -415,52 +413,97 @@ function ItemPatrimonioBase(props: Props) {
           </CarouselContent>
 
           {/* Setas continuam, mas com 1 imagem não vão fazer nada – visualmente ok */}
-        
         </Carousel>
       </div>
 
       {/* Rodapé: material + código + avatar */}
-      <Alert className="rounded-none p-3 flex justify-between items-center">
-        <div className="w-full">
-          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
-            <p className="font-medium truncate min-w-0" title={materialNome}>
-              {materialNome}
-            </p>
 
-            <p className="text-sm flex items-center gap-1 whitespace-nowrap shrink-0">
-              <Barcode size={16} />{" "}
-              {assetCode}
-              {assetDgv ? `-${assetDgv}` : ""}
-            </p>
+      {isMobile ? (
+        <Alert className="rounded-none p-3 flex justify-between items-center">
+          <div className="w-full">
+            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
+              <p
+                className="font-medium text-sm truncate min-w-0"
+                title={materialNome}
+              >
+                {materialNome}
+              </p>
 
-            <Tooltip>
-              <TooltipTrigger>
-                <Avatar
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    window.open(`/user?id=${props.user.id}`, "_blank");
-                  }}
-                  className="h-6 w-6 rounded-md shrink-0"
-                >
-                  <AvatarImage
-                    src={`${urlGeral}user/upload/${props.user.id}/icon`}
-                  />
-                  <AvatarFallback>
-                    <User size={12} />
-                  </AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{props.user.username}</p>
-              </TooltipContent>
-            </Tooltip>
+              <p className="text-xs flex items-center gap-1 whitespace-nowrap shrink-0">
+                <Barcode size={12} /> {assetCode}
+                {assetDgv ? `-${assetDgv}` : ""}
+              </p>
+
+              <Tooltip>
+                <TooltipTrigger>
+                  <Avatar
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      window.open(`/user?id=${props.user.id}`, "_blank");
+                    }}
+                    className="h-5 w-5 rounded-md shrink-0"
+                  >
+                    <AvatarImage
+                      src={`${urlGeral}user/upload/${props.user.id}/icon`}
+                    />
+                    <AvatarFallback>
+                      <User size={10} />
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{props.user.username}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <p className="text-xs line-clamp-1 text-gray-500 ">
+              {props.description}
+            </p>
           </div>
+        </Alert>
+      ) : (
+        <Alert className="rounded-none p-3 flex justify-between items-center">
+          <div className="w-full">
+            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 mb-1 min-w-0">
+              <p className="font-medium truncate min-w-0" title={materialNome}>
+                {materialNome}
+              </p>
 
-          <p className="text-sm line-clamp-1 text-gray-500 ">
-            {props.description}
-          </p>
-        </div>
-      </Alert>
+              <p className="text-sm flex items-center gap-1 whitespace-nowrap shrink-0">
+                <Barcode size={16} /> {assetCode}
+                {assetDgv ? `-${assetDgv}` : ""}
+              </p>
+
+              <Tooltip>
+                <TooltipTrigger>
+                  <Avatar
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      window.open(`/user?id=${props.user.id}`, "_blank");
+                    }}
+                    className="h-6 w-6 rounded-md shrink-0"
+                  >
+                    <AvatarImage
+                      src={`${urlGeral}user/upload/${props.user.id}/icon`}
+                    />
+                    <AvatarFallback>
+                      <User size={12} />
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{props.user.username}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <p className="text-sm line-clamp-1 text-gray-500 ">
+              {props.description}
+            </p>
+          </div>
+        </Alert>
+      )}
 
       <div
         className={`h-2 border rounded-b-md border-t-0 ${
@@ -473,18 +516,14 @@ function ItemPatrimonioBase(props: Props) {
 }
 
 /** Evita re-render desnecessário durante o drag */
-export const ItemPatrimonio = React.memo(
-  ItemPatrimonioBase,
-  (prev, next) => {
-    return (
-      prev.id === next.id &&
-      prev.selected === next.selected &&
-      prev.noImages === next.noImages &&
-      prev.thumbOnly === next.thumbOnly &&
-      prev.asset?.asset_code === next.asset?.asset_code &&
-      prev.asset?.asset_check_digit === next.asset?.asset_check_digit &&
-      (prev.images?.[0]?.file_path ?? "") ===
-        (next.images?.[0]?.file_path ?? "")
-    );
-  }
-);
+export const ItemPatrimonio = React.memo(ItemPatrimonioBase, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.selected === next.selected &&
+    prev.noImages === next.noImages &&
+    prev.thumbOnly === next.thumbOnly &&
+    prev.asset?.asset_code === next.asset?.asset_code &&
+    prev.asset?.asset_check_digit === next.asset?.asset_check_digit &&
+    (prev.images?.[0]?.file_path ?? "") === (next.images?.[0]?.file_path ?? "")
+  );
+});

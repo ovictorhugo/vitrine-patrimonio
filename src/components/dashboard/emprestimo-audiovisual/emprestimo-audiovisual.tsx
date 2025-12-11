@@ -1232,7 +1232,7 @@ export function EmprestimoAudiovisual() {
         );
       }
 
-      console.log(catalogId, assetId, createCatalog, upAudioVis);
+      //console.log(catalogId, assetId, createCatalog, upAudioVis);
       // sucesso 🎉
       setCreatedAssetId(assetId || null);
       setCreatedCatalogId(catalogId || null);

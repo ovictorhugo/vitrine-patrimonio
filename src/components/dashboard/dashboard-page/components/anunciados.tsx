@@ -73,6 +73,7 @@ import { GraficoStatusCatalogo } from "./chart-workflows";
 import { Combobox, ComboboxItem } from "../../itens-vitrine/itens-vitrine";
 import { Separator } from "../../../ui/separator";
 import { DownloadPdfButton } from "../../../download/download-pdf-button";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* =========================
    Tipos mínimos do backend
@@ -1597,6 +1598,8 @@ export function Anunciados(props: {
     setSectors([]);
     setLocations([]);
   };
+
+  const isMobile = useIsMobile();
   return (
     <div className="flex flex-col gap-8 p-8 pt-0">
       {/* Header com toggle de abas */}
@@ -1639,7 +1642,28 @@ export function Anunciados(props: {
             method="catalog"
           />
         </div>
-        <div>
+        {isMobile ? (
+          <div className="flex-column w-[40%]">
+            <Button
+              size="sm"
+              onClick={() => setTab("vitrine")}
+              variant={tab === "vitrine" ? "default" : "outline"}
+              className="rounded-b-none w-[150px]"
+            >
+              <Store size={16} className="" />
+              Vitrine
+            </Button>
+            <Button
+              onClick={() => setTab("desfazimento")}
+              size="xs"
+              variant={tab !== "vitrine" ? "default" : "outline"}
+              className="rounded-t-none   w-[150px]"
+            >
+              <Trash size={16} className="" />
+              Desfazimento
+            </Button>
+          </div>
+        ) : (
           <div className="flex">
             <Button
               size="sm"
@@ -1660,7 +1684,7 @@ export function Anunciados(props: {
               Desfazimento
             </Button>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="flex gap-4 items-center">
@@ -1677,7 +1701,7 @@ export function Anunciados(props: {
             <ChevronLeft size={16} />
           </Button>
 
-          <div className="mx-14">
+          <div className="mx-12">
             <div
               ref={scrollAreaRef}
               className="overflow-x-auto scrollbar-hide"
@@ -1798,7 +1822,7 @@ export function Anunciados(props: {
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
         {/* === Cards de resumo === */}
         <TabsContent value="vitrine" className="p-0 m-0">
-          <Carousel className="w-full flex gap-4 px-4 items-center">
+          <Carousel className="w-full flex gap-4  items-center">
             <div className="absolute left-0 z-[9]">
               <CarouselPrevious />
             </div>
@@ -1905,7 +1929,7 @@ export function Anunciados(props: {
                     className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
                   >
                     <Alert className="p-0">
-                      <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
+                      <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 ">
                         <CardTitle className="text-sm truncate font-medium">
                           {name}
                         </CardTitle>
@@ -1955,7 +1979,7 @@ export function Anunciados(props: {
               }
               setOpenKeys(next);
             }}
-            className="mt-4 grid gap-8"
+            className="mt-4 grid"
           >
             {(focusedKey
               ? WORKFLOWS.desfazimento.filter(({ key }) => key === focusedKey)

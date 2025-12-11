@@ -71,7 +71,7 @@ export function Finalizados() {
       </div>
 
       <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
-<BlockItemsVitrine workflow="DESCARTADOS"/>
+<BlockItemsVitrine workflow={["DESCARTADOS"]}/>
       </div>
 
 </main>

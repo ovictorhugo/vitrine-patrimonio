@@ -1,68 +1,25 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
 import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { useTheme } from "next-themes";
 
 import { UserContext } from "../../context/context";
-import fump_bg from "../../assets/fump_bg.png";
 
-import {
-  Armchair,
-  ArrowRight,
-  Camera,
-  ChalkboardSimple,
-  ComputerTower,
-  Desktop,
-  DotsThree,
-  Folder,
-  Ladder,
-  Laptop,
-  MagnifyingGlass,
-  Phone,
-  Printer,
-  ProjectorScreen,
-  Scales,
-  Television,
-  Timer,
-  Wrench as WrenchPhosphor,
-} from "phosphor-react";
+import { ArrowRight } from "phosphor-react";
 
-import {
-  Archive,
-  Clock,
-  Fan,
-  Heart,
-  Hourglass,
-  Info,
-  ListTodo,
-  Package,
-  RefreshCcw,
-  Recycle,
-  Store,
-  Trash,
-  User,
-  WalletCards,
-  XCircle,
-  // se seus ícones vierem de outro lugar, mantenha os seus imports originais
-} from "lucide-react";
+import { Info, Store, Trash } from "lucide-react";
 
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Tabs, TabsContent } from "../ui/tabs";
 
-import { ItemPatrimonio } from "./components/item-patrimonio";
 import { Search } from "../search/search";
 import { BlockItemsVitrine } from "./components/block-items-vitrine";
 
-import { useModal } from "../hooks/use-modal-store";
 import { useQuery } from "../authentication/signIn";
 import { StatusCount, WORKFLOWS } from "../dashboard/administrativo/admin";
 import { WorkflowAreaChart } from "../dashboard/graficos/workflow-area-chart";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 type Material = {
   material_code: string;
@@ -93,8 +50,8 @@ export function HomeInicial() {
         });
 
         const data: MaterialsResponse = await response.json();
-        console.log("URL:", urlPalavrasChaves);
-        console.log("DATA:", data);
+        //console.log("URL:", urlPalavrasChaves);
+        //console.log("DATA:", data);
 
         if (data && Array.isArray(data.materials)) {
           setWords(data);
@@ -125,9 +82,6 @@ export function HomeInicial() {
       search: `?${params.toString()}`,
     });
   }
-
-  const { onOpen } = useModal();
-  const { theme } = useTheme();
 
   // ================== STATS POR WORKFLOW ==================
   const [statsMap, setStatsMap] = useState<Record<string, number>>({});
@@ -227,6 +181,8 @@ export function HomeInicial() {
   const getCount = (key: string) => statsMap?.[key] ?? 0;
 
   const [tab, setTab] = useState("desfazimento");
+  const isMobile = useIsMobile();
+
   return (
     <div className="    ">
       <Helmet>
@@ -286,56 +242,84 @@ export function HomeInicial() {
           </div>
 
           <div className="flex md:hiddeen justify-center md:hidden flex-wrap gap-3 z-[3] w-full lg:hidden">
-            {(words?.materials ?? []).slice(0, 10).map((material, index) => (
-              <div
-                key={material.id ?? index}
-                className="flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-                onClick={() => handlePesquisaChange(material)}
-              >
-                {material.material_name}
-              </div>
-            ))}
+            {(words?.materials ?? [])
+              .slice(0, isMobile ? 5 : 10)
+              .map((material, index) => (
+                <div
+                  key={material.id ?? index}
+                  className="flex gap-2 capitalize h-8 cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                  onClick={() => handlePesquisaChange(material)}
+                >
+                  {material.material_name}
+                </div>
+              ))}
           </div>
         </div>
       </div>
 
       <div className="w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
         <div>
-          <Alert className="rounded-b-none items-center flex gap-4 justify-between border-b-0 dark:bg-neutral-700 bg-neutral-100">
-            <div>
-              <div className=" gap-3 flex">
-                <Info className="h-4 w-4" />
-                <div>
-                  <AlertTitle>Interpretação dos dados</AlertTitle>
-                  <AlertDescription className="text-xs hidden  md:block">
-                    Os dados exibidos na plataforma consideram apenas os{" "}
-                    <strong>cadastrados</strong>. As contagens abaixo refletem o
-                    estado atual conforme os fluxos.
-                  </AlertDescription>
+          {isMobile ? (
+            <Alert className="rounded-b-none items-center flex gap-2 justify-between border-b-0 dark:bg-neutral-700 bg-neutral-100">
+              <div>
+                <div className=" gap-2 flex">
+                  <Info className="h-5 w-5" />
+                  <div>
+                    <AlertTitle>Interpretação dos dados</AlertTitle>
+                    <AlertDescription className="text-xs hidden  md:block">
+                      Os dados exibidos na plataforma consideram apenas os{" "}
+                      <strong>cadastrados</strong>. As contagens abaixo refletem
+                      o estado atual conforme os fluxos.
+                    </AlertDescription>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex">
-              <Button
-                size="sm"
-                onClick={() => setTab("vitrine")}
-                variant={tab === "vitrine" ? "default" : "outline"}
-                className="rounded-r-none"
-              >
-                <Store size={16} className="" />
-                Vitrine
-              </Button>
-              <Button
-                onClick={() => setTab("desfazimento")}
-                size="sm"
-                variant={tab !== "vitrine" ? "default" : "outline"}
-                className="rounded-l-none"
-              >
-                <Trash size={16} className="" />
-                Desfazimento
-              </Button>
-            </div>
-          </Alert>
+
+              <div className="flex-column w-[40%]">
+                <Button
+                  size="sm"
+                  onClick={() => setTab("vitrine")}
+                  variant={tab === "vitrine" ? "default" : "outline"}
+                  className="rounded-b-none w-[150px]"
+                >
+                  <Store size={16} className="" />
+                  Vitrine
+                </Button>
+                <Button
+                  onClick={() => setTab("desfazimento")}
+                  size="xs"
+                  variant={tab !== "vitrine" ? "default" : "outline"}
+                  className="rounded-t-none   w-[150px]"
+                >
+                  <Trash size={16} className="" />
+                  Desfazimento
+                </Button>
+              </div>
+            </Alert>
+          ) : (
+            <Alert className="rounded-b-none items-center flex gap-4 justify-between border-b-0 dark:bg-neutral-700 bg-neutral-100">
+              <div className="flex">
+                <Button
+                  size="sm"
+                  onClick={() => setTab("vitrine")}
+                  variant={tab === "vitrine" ? "default" : "outline"}
+                  className="rounded-r-none"
+                >
+                  <Store size={16} className="" />
+                  Vitrine
+                </Button>
+                <Button
+                  onClick={() => setTab("desfazimento")}
+                  size="sm"
+                  variant={tab !== "vitrine" ? "default" : "outline"}
+                  className="rounded-l-none"
+                >
+                  <Trash size={16} className="" />
+                  Desfazimento
+                </Button>
+              </div>
+            </Alert>
+          )}
 
           {/* ====== NOVO BLOCO COM TABS DE WORKFLOW ====== */}
 
@@ -383,7 +367,7 @@ export function HomeInicial() {
 
                   return (
                     <div key={key} className="">
-                      <CardHeader className="flex flex-row items-center pb-2 justify-between space-y-0">
+                      <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${ isMobile? "p-0" : ""}`}>
                         <div className="min-w-0">
                           <CardTitle className="text-[0.9rem] md:text-sm font-medium truncate">
                             {meta?.name ?? key}
@@ -408,7 +392,7 @@ export function HomeInicial() {
           </Tabs>
         </div>
 
-        <BlockItemsVitrine workflow="VITRINE" />
+        <BlockItemsVitrine workflow={["VITRINE"]} />
       </div>
     </div>
   );

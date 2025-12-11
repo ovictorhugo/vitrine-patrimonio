@@ -781,7 +781,7 @@ export function ListaFinalDesfazimento() {
               </div>
 
               <AccordionContent className="p-0">
-                <BlockItemsVitrine workflow="DESFAZIMENTO" />
+                <BlockItemsVitrine workflow={["DESFAZIMENTO"]} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -800,7 +800,7 @@ export function ListaFinalDesfazimento() {
 
               <AccordionContent className="p-0">
                 <BlockItemsVitrine
-                  workflow="DESFAZIMENTO"
+                  workflow={["DESFAZIMENTO"]}
                   type="reviewer_id"
                   value={user?.id}
                 />
