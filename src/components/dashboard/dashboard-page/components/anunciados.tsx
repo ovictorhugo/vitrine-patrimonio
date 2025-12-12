@@ -1643,7 +1643,7 @@ export function Anunciados(props: {
           />
         </div>
         {isMobile ? (
-          <div className="flex-column w-[40%]">
+          <div className="flex flex-col w-[40%]">
             <Button
               size="sm"
               onClick={() => setTab("vitrine")}

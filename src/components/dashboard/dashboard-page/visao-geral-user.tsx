@@ -25,6 +25,7 @@ import { Patrimonios } from "./tabs/patrimonios";
 import { PerfilSegurancaDashboard } from "./tabs/perfil-seguranca";
 import { CatalogPage } from "./tabs/catalogo";
 import { Transfers } from "./tabs/transfers";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 export function VisaoGeralUser() {
   const tabs = [
@@ -165,6 +166,8 @@ export function VisaoGeralUser() {
     input.click();
   };
 
+  const isMobile = useIsMobile();
+
   return (
     <main className=" w-full grid grid-cols-1 ">
       <Helmet>
@@ -184,11 +187,9 @@ export function VisaoGeralUser() {
                 className={`w-full h-full rounded-md bg-black/25 pb-0 md:pb-0 p-4 md:p-8 flex-col flex justify-between `}
               >
                 <div
-                  className="
-                    flex flex-col items-center gap-4 justify-between
-
-                    md:flex-row
-                  "
+                  className={`flex gap-4 justify-between md:flex-row ${
+                    isMobile ? "pt-4" : ""
+                  }`}
                 >
                   <div className="flex gap-2">
                     <Button
@@ -200,26 +201,14 @@ export function VisaoGeralUser() {
                       <ChevronLeft className="h-4 w-4" />
                       <span className="sr-only">Voltar</span>
                     </Button>
-                    <div
-                      className="
-                        flex flex-col gap-2
-
-                        md:flex-col
-
-                        lg:flex-row
-                      "
-                    >
+                    <div className="flex gap-2 md:flex-col lg:flex-row">
                       <h1 className="flex-1 shrink-0 text-white whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
                         Dashboard
                       </h1>
                     </div>
                   </div>
 
-                  <div
-                    className="
-                      flex items-center gap-2 flex-wrap
-                    "
-                  >
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"

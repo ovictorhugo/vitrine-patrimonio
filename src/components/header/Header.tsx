@@ -53,7 +53,7 @@ export function Header() {
           </div>
           <div className="h-4 w-[1px]  bg-neutral-200 dark:bg-neutral-800"></div>
 
-          <div className="flex-column justify-center m-auto w-[250px] pl-10 mb-0">
+          <div className="flex flex-col justify-center m-auto w-[250px] pl-10 mb-0">
             <Link to={""} target="_blank" className=" whitespace-nowrap ">
               <img
                 src={theme == "dark" ? logo_4_white : logo_4}

@@ -275,7 +275,7 @@ export function HomeInicial() {
                 </div>
               </div>
 
-              <div className="flex-column w-[40%]">
+              <div className="flex flex-col w-[40%]">
                 <Button
                   size="sm"
                   onClick={() => setTab("vitrine")}
@@ -367,7 +367,11 @@ export function HomeInicial() {
 
                   return (
                     <div key={key} className="">
-                      <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${ isMobile? "p-0" : ""}`}>
+                      <CardHeader
+                        className={`flex flex-row items-center justify-between space-y-0 ${
+                          isMobile ? "p-3" : ""
+                        }`}
+                      >
                         <div className="min-w-0">
                           <CardTitle className="text-[0.9rem] md:text-sm font-medium truncate">
                             {meta?.name ?? key}

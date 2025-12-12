@@ -86,6 +86,7 @@ import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
 import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -1464,6 +1465,7 @@ export function ItensVitrine() {
   }, [handlePointerMoveWhileDrag]);
 
   const [isImage, setIsImage] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -1736,173 +1738,344 @@ export function ItensVitrine() {
                 onDragEnd={handleDragEnd}
                 onDragUpdate={handleDragUpdate}
               >
-                <div className="flex gap-4 min-w-[980px] h-full">
-                  {columns.map((col) => {
-                    const items = board[col.key] ?? [];
-                    const slice = items.slice(0, expandedVisible);
-                    const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                      Icon: HelpCircle,
-                      colorClass: "text-zinc-500",
-                    };
-                    const { Icon } = meta;
+                {isMobile ? (
+                  <div className="flex flex-col gap-4 w-full h-full overflow-y-auto pb-10">
+                    {columns.map((col) => {
+                      const items = board[col.key] ?? [];
+                      const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                        Icon: HelpCircle,
+                        colorClass: "text-zinc-500",
+                      };
+                      const { Icon } = meta;
+                      const totalForCol = statusCounts[col.key] ?? items.length;
 
-                    // 👇 NOVO
-                    const totalForCol = statusCounts[col.key] ?? items.length;
-
-                    return (
-                      <Alert
-                        key={col.key}
-                        ref={(el) => (colRefs.current[col.key] = el)}
-                        className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                      return (
+                        <Alert
+                          key={col.key}
+                          ref={(el) => (colRefs.current[col.key] = el)}
+                          className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Icon size={16} />
-                              <span
-                                title={col.name}
-                                className="font-semibold truncate"
-                              >
-                                {col.name}
-                              </span>
-                            </div>
-                            <Badge variant="outline" className="shrink-0">
-                              {totalForCol}
-                            </Badge>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={() => setExpandedColumn(col.key)}
-                            title="Expandir coluna"
-                          >
-                            <Maximize2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <Separator className="mb-2" />
-
-                        <Droppable droppableId={col.key}>
-                          {(provided, snapshot) => (
-                            <div className="flex-1 min-h-0">
-                              {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="flex flex-col min-h-0 w-full max-w-full relative h-full"
-                              >
-                                <ScrollArea
-                                  className={`h-full relative flex ${
-                                    snapshot.isDraggingOver
-                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                      : ""
-                                  } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Icon size={16} />
+                                <span
+                                  title={col.name}
+                                  className="font-semibold truncate"
                                 >
-                                  {(loading || loadingColumns[col.key]) &&
-                                  !items.length ? (
-                                    <>
-                                      <Skeleton className="aspect-square w-full rounded-md" />
-                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                    </>
-                                  ) : null}
-
-                                  {items.map((entry, idx) => (
-                                    <div
-                                      key={entry.id}
-                                      className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
-                                    >
-                                      <CardItemDropdown
-                                        entry={entry}
-                                        index={idx}
-                                        draggableId={entry.id} // ADICIONAR esta prop
-                                        isImage={isImage}
-                                        onPromptDelete={() =>
-                                          openDelete(entry.id)
-                                        }
-                                      />
-                                    </div>
-                                  ))}
-
-                                  {(() => {
-                                    const totalFromTotals = totalByCol[col.key];
-                                    const totalFromStats =
-                                      statusCounts[col.key];
-
-                                    // 1) escolhe total confiável
-                                    let effectiveTotal: number | undefined;
-
-                                    if (
-                                      typeof totalFromTotals === "number" &&
-                                      totalFromTotals >= items.length
-                                    ) {
-                                      effectiveTotal = totalFromTotals;
-                                    } else if (
-                                      typeof totalFromStats === "number" &&
-                                      totalFromStats >= items.length
-                                    ) {
-                                      effectiveTotal = totalFromStats;
-                                    }
-
-                                    const loaded = items.length;
-
-                                    // 2) loading inicial (apenas skeleton)
-                                    const isInitialLoading =
-                                      (loading || loadingColumns[col.key]) &&
-                                      loaded === 0;
-
-                                    if (isInitialLoading) return null;
-
-                                    // 3) decide hasMore mantendo sua regra original
-                                    let hasMore = false;
-
-                                    if (effectiveTotal != null) {
-                                      hasMore = loaded < effectiveTotal;
-                                    } else if (!q.trim()) {
-                                      hasMore =
-                                        loaded > 0 && loaded % PAGE_SIZE === 0;
-                                    }
-
-                                    if (!hasMore) return null;
-
-                                    return (
-                                      <div className="pt-2">
-                                        <Button
-                                          variant="outline"
-                                          className="w-full"
-                                          onClick={() => showMoreCol(col.key)}
-                                          disabled={loadingColumns[col.key]}
-                                        >
-                                          {loadingColumns[col.key] ? (
-                                            <>
-                                              <Loader
-                                                size={16}
-                                                className="animate-spin"
-                                              />
-                                              Carregando...
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Plus size={16} />
-                                              Mostrar mais
-                                            </>
-                                          )}
-                                        </Button>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  <ScrollBar orientation="vertical" />
-                                </ScrollArea>
+                                  {col.name}
+                                </span>
                               </div>
+                              <Badge variant="outline" className="shrink-0">
+                                {totalForCol}
+                              </Badge>
                             </div>
-                          )}
-                        </Droppable>
-                      </Alert>
-                    );
-                  })}
-                </div>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={() => setExpandedColumn(col.key)}
+                              title="Expandir coluna"
+                            >
+                              <Maximize2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <Separator className="mb-2" />
+
+                          <Droppable droppableId={col.key}>
+                            {(provided, snapshot) => (
+                              <div className="flex-1 min-h-0">
+                                {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                >
+                                  <ScrollArea
+                                    className={`h-full relative flex ${
+                                      snapshot.isDraggingOver
+                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                        : ""
+                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                  >
+                                    {(loading || loadingColumns[col.key]) &&
+                                    !items.length ? (
+                                      <>
+                                        <Skeleton className="aspect-square w-full rounded-md" />
+                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                      </>
+                                    ) : null}
+
+                                    {items.map((entry, idx) => (
+                                      <div
+                                        key={entry.id}
+                                        className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
+                                      >
+                                        <CardItemDropdown
+                                          entry={entry}
+                                          index={idx}
+                                          draggableId={entry.id} // ADICIONAR esta prop
+                                          isImage={isImage}
+                                          onPromptDelete={() =>
+                                            openDelete(entry.id)
+                                          }
+                                        />
+                                      </div>
+                                    ))}
+
+                                    {(() => {
+                                      const totalFromTotals =
+                                        totalByCol[col.key];
+                                      const totalFromStats =
+                                        statusCounts[col.key];
+
+                                      // 1) escolhe total confiável
+                                      let effectiveTotal: number | undefined;
+
+                                      if (
+                                        typeof totalFromTotals === "number" &&
+                                        totalFromTotals >= items.length
+                                      ) {
+                                        effectiveTotal = totalFromTotals;
+                                      } else if (
+                                        typeof totalFromStats === "number" &&
+                                        totalFromStats >= items.length
+                                      ) {
+                                        effectiveTotal = totalFromStats;
+                                      }
+
+                                      const loaded = items.length;
+
+                                      // 2) loading inicial (apenas skeleton)
+                                      const isInitialLoading =
+                                        (loading || loadingColumns[col.key]) &&
+                                        loaded === 0;
+
+                                      if (isInitialLoading) return null;
+
+                                      // 3) decide hasMore mantendo sua regra original
+                                      let hasMore = false;
+
+                                      if (effectiveTotal != null) {
+                                        hasMore = loaded < effectiveTotal;
+                                      } else if (!q.trim()) {
+                                        hasMore =
+                                          loaded > 0 &&
+                                          loaded % PAGE_SIZE === 0;
+                                      }
+
+                                      if (!hasMore) return null;
+
+                                      return (
+                                        <div className="pt-2">
+                                          <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => showMoreCol(col.key)}
+                                            disabled={loadingColumns[col.key]}
+                                          >
+                                            {loadingColumns[col.key] ? (
+                                              <>
+                                                <Loader
+                                                  size={16}
+                                                  className="animate-spin"
+                                                />
+                                                Carregando...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Plus size={16} />
+                                                Mostrar mais
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
+                                      );
+                                    })()}
+
+                                    <ScrollBar orientation="vertical" />
+                                  </ScrollArea>
+                                </div>
+                              </div>
+                            )}
+                          </Droppable>
+                        </Alert>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex gap-4 min-w-[980px] h-full">
+                    {columns.map((col) => {
+                      const items = board[col.key] ?? [];
+                      const slice = items.slice(0, expandedVisible);
+                      const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                        Icon: HelpCircle,
+                        colorClass: "text-zinc-500",
+                      };
+                      const { Icon } = meta;
+
+                      // 👇 NOVO
+                      const totalForCol = statusCounts[col.key] ?? items.length;
+
+                      return (
+                        <Alert
+                          key={col.key}
+                          ref={(el) => (colRefs.current[col.key] = el)}
+                          className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Icon size={16} />
+                                <span
+                                  title={col.name}
+                                  className="font-semibold truncate"
+                                >
+                                  {col.name}
+                                </span>
+                              </div>
+                              <Badge variant="outline" className="shrink-0">
+                                {totalForCol}
+                              </Badge>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={() => setExpandedColumn(col.key)}
+                              title="Expandir coluna"
+                            >
+                              <Maximize2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <Separator className="mb-2" />
+
+                          <Droppable droppableId={col.key}>
+                            {(provided, snapshot) => (
+                              <div className="flex-1 min-h-0">
+                                {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                >
+                                  <ScrollArea
+                                    className={`h-full relative flex ${
+                                      snapshot.isDraggingOver
+                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                        : ""
+                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                  >
+                                    {(loading || loadingColumns[col.key]) &&
+                                    !items.length ? (
+                                      <>
+                                        <Skeleton className="aspect-square w-full rounded-md" />
+                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                      </>
+                                    ) : null}
+
+                                    {items.map((entry, idx) => (
+                                      <div
+                                        key={entry.id}
+                                        className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
+                                      >
+                                        <CardItemDropdown
+                                          entry={entry}
+                                          index={idx}
+                                          draggableId={entry.id} // ADICIONAR esta prop
+                                          isImage={isImage}
+                                          onPromptDelete={() =>
+                                            openDelete(entry.id)
+                                          }
+                                        />
+                                      </div>
+                                    ))}
+
+                                    {(() => {
+                                      const totalFromTotals =
+                                        totalByCol[col.key];
+                                      const totalFromStats =
+                                        statusCounts[col.key];
+
+                                      // 1) escolhe total confiável
+                                      let effectiveTotal: number | undefined;
+
+                                      if (
+                                        typeof totalFromTotals === "number" &&
+                                        totalFromTotals >= items.length
+                                      ) {
+                                        effectiveTotal = totalFromTotals;
+                                      } else if (
+                                        typeof totalFromStats === "number" &&
+                                        totalFromStats >= items.length
+                                      ) {
+                                        effectiveTotal = totalFromStats;
+                                      }
+
+                                      const loaded = items.length;
+
+                                      // 2) loading inicial (apenas skeleton)
+                                      const isInitialLoading =
+                                        (loading || loadingColumns[col.key]) &&
+                                        loaded === 0;
+
+                                      if (isInitialLoading) return null;
+
+                                      // 3) decide hasMore mantendo sua regra original
+                                      let hasMore = false;
+
+                                      if (effectiveTotal != null) {
+                                        hasMore = loaded < effectiveTotal;
+                                      } else if (!q.trim()) {
+                                        hasMore =
+                                          loaded > 0 &&
+                                          loaded % PAGE_SIZE === 0;
+                                      }
+
+                                      if (!hasMore) return null;
+
+                                      return (
+                                        <div className="pt-2">
+                                          <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => showMoreCol(col.key)}
+                                            disabled={loadingColumns[col.key]}
+                                          >
+                                            {loadingColumns[col.key] ? (
+                                              <>
+                                                <Loader
+                                                  size={16}
+                                                  className="animate-spin"
+                                                />
+                                                Carregando...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Plus size={16} />
+                                                Mostrar mais
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
+                                      );
+                                    })()}
+
+                                    <ScrollBar orientation="vertical" />
+                                  </ScrollArea>
+                                </div>
+                              </div>
+                            )}
+                          </Droppable>
+                        </Alert>
+                      );
+                    })}
+                  </div>
+                )}
               </DragDropContext>
             </div>
           </div>
