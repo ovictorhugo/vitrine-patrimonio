@@ -41,6 +41,7 @@ import { Input } from "../../../ui/input";
 import { MagnifyingGlass } from "phosphor-react";
 import { Button } from "../../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export type StatusCount = { status: string; count: number };
 
@@ -50,7 +51,11 @@ const WORKFLOWS = [
     name: "Avaliação S. Patrimônio - Desfazimento",
     Icon: Hourglass,
   },
-  { key: "ADJUSTMENT_DESFAZIMENTO", name: "Ajustes - Desfazimento", Icon: Wrench },
+  {
+    key: "ADJUSTMENT_DESFAZIMENTO",
+    name: "Ajustes - Desfazimento",
+    Icon: Wrench,
+  },
   {
     key: "REVIEW_REQUESTED_COMISSION",
     name: "LTD - Lista Temporária de Desfazimento",
@@ -187,10 +192,9 @@ export function Estatistica() {
         setLoadingMaterials(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/materials/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/materials/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setMaterials(json?.materials ?? json ?? []);
@@ -233,10 +237,9 @@ export function Estatistica() {
         setLoadingUnits(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/units/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/units/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setUnits(json?.units ?? json ?? []);
@@ -257,10 +260,9 @@ export function Estatistica() {
         const params = new URLSearchParams();
         params.set("unit_id", unitId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/agencies/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setAgencies(json?.agencies ?? json ?? []);
@@ -281,10 +283,9 @@ export function Estatistica() {
         const params = new URLSearchParams();
         params.set("agency_id", agencyId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/sectors/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setSectors(json?.sectors ?? json ?? []);
@@ -305,10 +306,9 @@ export function Estatistica() {
         const params = new URLSearchParams();
         params.set("sector_id", sectorId);
         if (search) params.set("q", search);
-        const res = await fetch(
-          `${baseUrl}/locations/?${params.toString()}`,
-          { headers: authHeaders }
-        );
+        const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
+          headers: authHeaders,
+        });
         if (!res.ok) throw new Error();
         const json = await res.json();
         setLocations(json?.locations ?? json ?? []);
@@ -322,19 +322,31 @@ export function Estatistica() {
   );
 
   // efeitos de carregamento + cascata
-  useEffect(() => { fetchMaterials(materialQ); }, [fetchMaterials, materialQ]);
-  useEffect(() => { fetchGuardians(guardianQ); }, [fetchGuardians, guardianQ]);
-  useEffect(() => { fetchUnits(unitQ); }, [fetchUnits, unitQ]);
+  useEffect(() => {
+    fetchMaterials(materialQ);
+  }, [fetchMaterials, materialQ]);
+  useEffect(() => {
+    fetchGuardians(guardianQ);
+  }, [fetchGuardians, guardianQ]);
+  useEffect(() => {
+    fetchUnits(unitQ);
+  }, [fetchUnits, unitQ]);
 
   useEffect(() => {
-    setAgencyId(null); setSectorId(null); setLocationId(null);
-    setAgencies([]); setSectors([]); setLocations([]);
+    setAgencyId(null);
+    setSectorId(null);
+    setLocationId(null);
+    setAgencies([]);
+    setSectors([]);
+    setLocations([]);
     if (unitId) fetchAgencies(agencyQ);
   }, [unitId, fetchAgencies, agencyQ]);
 
   useEffect(() => {
-    setSectorId(null); setLocationId(null);
-    setSectors([]); setLocations([]);
+    setSectorId(null);
+    setLocationId(null);
+    setSectors([]);
+    setLocations([]);
     if (agencyId) fetchSectors(sectorQ);
   }, [agencyId, fetchSectors, sectorQ]);
 
@@ -471,9 +483,15 @@ export function Estatistica() {
     AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
     TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
 
-    REVIEW_REQUESTED_DESFAZIMENTO: { Icon: Hourglass, colorClass: "text-amber-500" },
+    REVIEW_REQUESTED_DESFAZIMENTO: {
+      Icon: Hourglass,
+      colorClass: "text-amber-500",
+    },
     ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
-    REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
+    REVIEW_REQUESTED_COMISSION: {
+      Icon: ListTodo,
+      colorClass: "text-purple-500",
+    },
     REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
     DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
     DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
@@ -508,124 +526,240 @@ export function Estatistica() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  const isMobile = useIsMobile();
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
-
       {/* ===== FILTROS */}
-      <div className="flex gap-4 items-center mb-2">
-        <div className="relative grid grid-cols-1 w-full">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-            }`}
-            onClick={scrollLeftBtn}
-            disabled={!canScrollLeft}
-          >
-            <ChevronLeft size={16} />
-          </Button>
-
-          <div className="mx-14">
-            <div
-              ref={scrollAreaRef}
-              className="overflow-x-auto scrollbar-hide"
-              onScroll={checkScrollability}
+      {isMobile ? (
+        <div className="flex gap-4 items-center mb-2">
+          <div className="relative grid grid-cols-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+                !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+              onClick={scrollLeftBtn}
+              disabled={!canScrollLeft}
             >
-              <div className="flex gap-3 items-center">
-                <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                <div>
-                                     <MagnifyingGlass size={16} className="text-gray-500" />
-                                   </div>
-                  <Input
-                    className="border-0 p-0 h-9 flex flex-1 w-full"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Buscar por código, descrição, material, marca, modelo..."
+              <ChevronLeft size={16} />
+            </Button>
+
+            <div className="mx-8">
+              <div
+                ref={scrollAreaRef}
+                className="overflow-x-auto scrollbar-hide"
+                onScroll={checkScrollability}
+              >
+                <div className="flex gap-3 items-center">
+                  <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                    <div>
+                      <MagnifyingGlass size={16} className="text-gray-500" />
+                    </div>
+                    <Input
+                      className="border-0 p-0 h-9 flex flex-1 w-full"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="Buscar por código, descrição, material, marca, modelo..."
+                    />
+                  </Alert>
+
+                  <Combobox
+                    items={materialItems}
+                    value={materialId}
+                    onChange={(v) => setMaterialId(v)}
+                    onSearch={setMaterialQ}
+                    isLoading={loadingMaterials}
+                    placeholder="Material"
                   />
-                </Alert>
 
-                <Combobox
-                  items={materialItems}
-                  value={materialId}
-                  onChange={(v) => setMaterialId(v)}
-                  onSearch={setMaterialQ}
-                  isLoading={loadingMaterials}
-                  placeholder="Material"
-                />
+                  <Combobox
+                    items={guardianItems}
+                    value={guardianId}
+                    onChange={(v) => setGuardianId(v)}
+                    onSearch={setGuardianQ}
+                    isLoading={loadingGuardians}
+                    placeholder="Responsável"
+                  />
 
-                <Combobox
-                  items={guardianItems}
-                  value={guardianId}
-                  onChange={(v) => setGuardianId(v)}
-                  onSearch={setGuardianQ}
-                  isLoading={loadingGuardians}
-                  placeholder="Responsável"
-                />
+                  <Separator className="h-8" orientation="vertical" />
 
-                <Separator className="h-8" orientation="vertical" />
+                  <Combobox
+                    items={unitItems}
+                    value={unitId}
+                    onChange={(v) => setUnitId(v)}
+                    onSearch={setUnitQ}
+                    isLoading={loadingUnits}
+                    placeholder="Unidade"
+                  />
 
-                <Combobox
-                  items={unitItems}
-                  value={unitId}
-                  onChange={(v) => setUnitId(v)}
-                  onSearch={setUnitQ}
-                  isLoading={loadingUnits}
-                  placeholder="Unidade"
-                />
+                  <Combobox
+                    items={agencyItems}
+                    value={agencyId}
+                    onChange={(v) => setAgencyId(v)}
+                    onSearch={setAgencyQ}
+                    isLoading={loadingAgencies}
+                    placeholder="Organização"
+                    disabled={!unitId}
+                  />
 
-                <Combobox
-                  items={agencyItems}
-                  value={agencyId}
-                  onChange={(v) => setAgencyId(v)}
-                  onSearch={setAgencyQ}
-                  isLoading={loadingAgencies}
-                  placeholder="Organização"
-                  disabled={!unitId}
-                />
+                  <Combobox
+                    items={sectorItems}
+                    value={sectorId}
+                    onChange={(v) => setSectorId(v)}
+                    onSearch={setSectorQ}
+                    isLoading={loadingSectors}
+                    placeholder="Setor"
+                    disabled={!agencyId}
+                  />
 
-                <Combobox
-                  items={sectorItems}
-                  value={sectorId}
-                  onChange={(v) => setSectorId(v)}
-                  onSearch={setSectorQ}
-                  isLoading={loadingSectors}
-                  placeholder="Setor"
-                  disabled={!agencyId}
-                />
+                  <Combobox
+                    items={locationItems}
+                    value={locationId}
+                    onChange={(v) => setLocationId(v)}
+                    onSearch={setLocationQ}
+                    isLoading={loadingLocations}
+                    placeholder="Local de guarda"
+                    disabled={!sectorId}
+                  />
 
-                <Combobox
-                  items={locationItems}
-                  value={locationId}
-                  onChange={(v) => setLocationId(v)}
-                  onSearch={setLocationQ}
-                  isLoading={loadingLocations}
-                  placeholder="Local de guarda"
-                  disabled={!sectorId}
-                />
-
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <Trash size={16} />
-                  Limpar filtros
-                </Button>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <Trash size={16} />
+                    Limpar filtros
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
-              !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-            }`}
-            onClick={scrollRightBtn}
-            disabled={!canScrollRight}
-          >
-            <ChevronRight size={16} />
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+                !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+              onClick={scrollRightBtn}
+              disabled={!canScrollRight}
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex gap-4 items-center mb-2">
+          <div className="relative grid grid-cols-1 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+              onClick={scrollLeftBtn}
+              disabled={!canScrollLeft}
+            >
+              <ChevronLeft size={16} />
+            </Button>
+
+            <div className="mx-14">
+              <div
+                ref={scrollAreaRef}
+                className="overflow-x-auto scrollbar-hide"
+                onScroll={checkScrollability}
+              >
+                <div className="flex gap-3 items-center">
+                  <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                    <div>
+                      <MagnifyingGlass size={16} className="text-gray-500" />
+                    </div>
+                    <Input
+                      className="border-0 p-0 h-9 flex flex-1 w-full"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="Buscar por código, descrição, material, marca, modelo..."
+                    />
+                  </Alert>
+
+                  <Combobox
+                    items={materialItems}
+                    value={materialId}
+                    onChange={(v) => setMaterialId(v)}
+                    onSearch={setMaterialQ}
+                    isLoading={loadingMaterials}
+                    placeholder="Material"
+                  />
+
+                  <Combobox
+                    items={guardianItems}
+                    value={guardianId}
+                    onChange={(v) => setGuardianId(v)}
+                    onSearch={setGuardianQ}
+                    isLoading={loadingGuardians}
+                    placeholder="Responsável"
+                  />
+
+                  <Separator className="h-8" orientation="vertical" />
+
+                  <Combobox
+                    items={unitItems}
+                    value={unitId}
+                    onChange={(v) => setUnitId(v)}
+                    onSearch={setUnitQ}
+                    isLoading={loadingUnits}
+                    placeholder="Unidade"
+                  />
+
+                  <Combobox
+                    items={agencyItems}
+                    value={agencyId}
+                    onChange={(v) => setAgencyId(v)}
+                    onSearch={setAgencyQ}
+                    isLoading={loadingAgencies}
+                    placeholder="Organização"
+                    disabled={!unitId}
+                  />
+
+                  <Combobox
+                    items={sectorItems}
+                    value={sectorId}
+                    onChange={(v) => setSectorId(v)}
+                    onSearch={setSectorQ}
+                    isLoading={loadingSectors}
+                    placeholder="Setor"
+                    disabled={!agencyId}
+                  />
+
+                  <Combobox
+                    items={locationItems}
+                    value={locationId}
+                    onChange={(v) => setLocationId(v)}
+                    onSearch={setLocationQ}
+                    isLoading={loadingLocations}
+                    placeholder="Local de guarda"
+                    disabled={!sectorId}
+                  />
+
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <Trash size={16} />
+                    Limpar filtros
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+              onClick={scrollRightBtn}
+              disabled={!canScrollRight}
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ===== CARDS/WORKFLOWS */}
       <Carousel className="w-full flex gap-4 px-4 items-center">
@@ -636,7 +770,10 @@ export function Estatistica() {
           {WORKFLOWS.map(({ key, name }) => {
             const { Icon } = getMeta(key);
             return (
-              <CarouselItem key={key} className="basis-1/4">
+              <CarouselItem
+                key={key}
+                className={isMobile ? "basis-1/2" : "basis-1/4"}
+              >
                 <Alert className="p-0">
                   <CardHeader className="flex gap-8 flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm truncate font-medium">

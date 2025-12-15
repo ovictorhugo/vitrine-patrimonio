@@ -1907,7 +1907,11 @@ export function ItensVitrine() {
                         <Alert
                           key={col.key}
                           ref={(el) => (colRefs.current[col.key] = el)}
-                          className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
+                          className={
+                            isMobile
+                              ? "w-[320px] min-w-[320px] h-full flex flex-col min-w-0 overflow-hidden mb-8"
+                              : "h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
+                          }
                         >
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">

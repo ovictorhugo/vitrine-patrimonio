@@ -51,16 +51,15 @@ export function DownloadPdfButton({
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let baseUrl = `http://localhost:5055/${method}/pdf/`;
+      let baseUrl = `${urlGeral}/${method}/pdf/`;
       let downloadUrl = buildUrl(baseUrl, filters);
       if (method === "collections") {
-        baseUrl = `http://localhost:5055/${method}/${filters.collection_id}/items/pdf`;
+        baseUrl = `${urlGeral}/${method}/${filters.collection_id}/items/pdf`;
         downloadUrl = buildUrl(baseUrl, {});
       } else if (method === "item") {
-        baseUrl = `http://localhost:5055/catalog/pdf/${id}`;
+        baseUrl = `${urlGeral}/catalog/pdf/${id}`;
         downloadUrl = buildUrl(baseUrl, {});
       }
-      console.log(downloadUrl);
 
       const res = await fetch(downloadUrl, {
         headers: {

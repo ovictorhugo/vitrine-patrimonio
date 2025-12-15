@@ -75,6 +75,7 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { Checkbox } from "../../../ui/checkbox";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ============================
    Types
@@ -820,6 +821,8 @@ export function Roles({
   const membersCount = (roleId: string) => roleUsers[roleId]?.length ?? 0;
   const [isCAL, setIsCAL] = useState(false);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="p-8 gap-8 flex flex-col">
       <div className="w-full">
@@ -1016,7 +1019,7 @@ export function Roles({
               </div>
             ) : (
               <>
-                <div className="grid gap-4">
+                <div className="grid gap-2">
                   {roles.map((role) => {
                     const usersForRole = roleUsers[role.id] || [];
                     const loadingRU = !!loadingRoleUsers[role.id];
@@ -1025,20 +1028,35 @@ export function Roles({
                       <Accordion type="single" collapsible key={role.id}>
                         <AccordionItem value={role.id}>
                           <Alert className="p-0">
-                            <CardHeader className="flex group flex-row py-0 items-start bg-neutral-200 rounded-t-md dark:bg-neutral-700">
-                              <div className="flex items-center justify-between w-full">
-                                <CardTitle className="group flex flex-col  w-fit gap-1 text-lg py-6">
-                                  <div className="w-fit flex gap-2 items-center">
-                                    {role.name}
-                                  </div>
-
-                                  {roleContext == "Administrador" && (
-                                    <div className="text-xs font-normal ">
-                                      {role.id}
+                            <CardHeader className="flex group flex-row py-0 bg-neutral-200 rounded-t-md dark:bg-neutral-700">
+                              <div
+                                className={
+                                  isMobile
+                                    ? "flex group flex-col justify-between w-full"
+                                    : "flex items-center justify-between w-full"
+                                }
+                              >
+                                <div className="flex justify-between">
+                                  <CardTitle className="group flex flex-col w-fit gap-1 text-lg py-6">
+                                    <div className="w-fit flex gap-2 items-center">
+                                      {role.name}
                                     </div>
-                                  )}
-                                </CardTitle>
-                                <div className="flex gap-3 items-center">
+
+                                    {roleContext == "Administrador" && (
+                                      <div className="text-xs font-normal ">
+                                        {role.id}
+                                      </div>
+                                    )}
+                                  </CardTitle>
+                                  {isMobile ? <AccordionTrigger /> : <> </>}
+                                </div>
+                                <div
+                                  className={
+                                    isMobile
+                                      ? "hidden group-hover:grid grid grid-cols-2 gap-2 p-0 pb-4"
+                                      : "flex gap-3 items-center"
+                                  }
+                                >
                                   {/* Permissões */}
                                   <Dialog
                                     open={openPermissionsForRoleId === role.id}
@@ -1051,7 +1069,9 @@ export function Roles({
                                   >
                                     <DialogTrigger asChild>
                                       <Button
-                                        className="hidden group-hover:flex transition-all"
+                                        className={`${
+                                          isMobile ? "" : "hidden"
+                                        } group-hover:flex transition-all`}
                                         variant="outline"
                                       >
                                         <GitBranchPlus size={16} />
@@ -1218,7 +1238,9 @@ export function Roles({
                                   {/* Editar cargo */}
                                   <Button
                                     variant="outline"
-                                    className="hidden group-hover:flex transition-all"
+                                    className={`${
+                                      isMobile ? "" : "hidden"
+                                    } group-hover:flex transition-all`}
                                     onClick={() => openEditDialog(role)}
                                   >
                                     <Pencil size={16} />
@@ -1236,7 +1258,9 @@ export function Roles({
                                   >
                                     <DialogTrigger asChild>
                                       <Button
-                                        className="hidden group-hover:flex transition-all"
+                                        className={`${
+                                          isMobile ? "" : "hidden"
+                                        } group-hover:flex transition-all`}
                                         onClick={() =>
                                           handleOpenAddUser(role.id)
                                         }
@@ -1344,7 +1368,9 @@ export function Roles({
                                   {/* Excluir role */}
                                   <Button
                                     variant="destructive"
-                                    className="hidden group-hover:flex transition-all"
+                                    className={`${
+                                      isMobile ? "" : "hidden"
+                                    } group-hover:flex transition-all`}
                                     onClick={() =>
                                       openDeleteDialog(role.id, role.name)
                                     }
@@ -1352,8 +1378,7 @@ export function Roles({
                                     <Trash size={16} />
                                     Excluir
                                   </Button>
-
-                                  <AccordionTrigger />
+                                  {isMobile ? <> </> : <AccordionTrigger />}
                                 </div>
                               </div>
                             </CardHeader>

@@ -85,6 +85,7 @@ import { CardContent, CardHeader, CardTitle } from "../../../ui/card";
 import { handleDownloadXlsx } from "../../itens-vitrine/handle-download";
 import { usePermissions } from "../../../permissions";
 import { DownloadPdfButton } from "../../../download/download-pdf-button";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -1304,6 +1305,7 @@ export function AdmComission() {
 
   const { hasAnunciarItem, hasCargosFuncoes } = usePermissions();
   const [isImage, setIsImage] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="p-4 md:p-8  gap-8 flex flex-col h-full">
@@ -1323,7 +1325,7 @@ export function AdmComission() {
           </CardContent>
         </Alert>
 
-        {showFilters && (
+        {showFilters && !isMobile && (
           <div className="flex gap-4 items-center">
             <div className="relative grid grid-cols-1">
               <Button
@@ -1486,11 +1488,162 @@ export function AdmComission() {
           </div>
         )}
 
+         {showFilters && isMobile && (
+                  <div className="flex flex-col gap-4 items-center">
+                    <div className="relative grid grid-cols-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+                          !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                        }`}
+                        onClick={scrollLeft}
+                        disabled={!canScrollLeft}
+                      >
+                        <ChevronLeft size={16} />
+                      </Button>
+        
+                      <div className="mx-8">
+                        <div
+                          ref={scrollAreaRef}
+                          className="overflow-x-auto scrollbar-hide"
+                          onScroll={checkScrollability}
+                        >
+                          <div className="flex gap-2 items-center">
+                            <Alert className="w-auto min-w-[220px] py-0 h-10 rounded-md flex gap-1 items-center">
+                              <div>
+                                <MagnifyingGlass size={16} className="text-gray-500" />
+                              </div>
+                              <div className="relative w-full">
+                                <Input
+                                  className="border-0 p-0 h-9 flex flex-1 w-full"
+                                  value={q}
+                                  onChange={(e) => setQ(e.target.value)}
+                                  placeholder="Buscar por código, descrição, material, marca, modelo..."
+                                />
+                              </div>
+                            </Alert>
+        
+                            <Combobox
+                              items={materialItems}
+                              value={materialId}
+                              onChange={(v) => setMaterialId(v)}
+                              onSearch={setMaterialQ}
+                              isLoading={loadingMaterials}
+                              placeholder="Material"
+                            />
+        
+                            <Combobox
+                              items={guardianItems}
+                              value={guardianId}
+                              onChange={(v) => setGuardianId(v)}
+                              onSearch={setGuardianQ}
+                              isLoading={loadingGuardians}
+                              placeholder="Responsável"
+                            />
+        
+                            <Separator className="h-8" orientation="vertical" />
+        
+                            <Combobox
+                              items={(units ?? []).map((u) => ({
+                                id: u.id,
+                                code: u.unit_code,
+                                label: u.unit_name || u.unit_code,
+                              }))}
+                              value={unitId}
+                              onChange={(v) => setUnitId(v)}
+                              onSearch={setUnitQ}
+                              isLoading={loadingUnits}
+                              placeholder="Unidade"
+                            />
+        
+                            <Combobox
+                              items={(agencies ?? []).map((a) => ({
+                                id: a.id,
+                                code: a.agency_code,
+                                label: a.agency_name || a.agency_code,
+                              }))}
+                              value={agencyId}
+                              onChange={(v) => setAgencyId(v)}
+                              onSearch={setAgencyQ}
+                              isLoading={loadingAgencies}
+                              placeholder={"Organização"}
+                              disabled={!unitId}
+                            />
+        
+                            <Combobox
+                              items={(sectors ?? []).map((s) => ({
+                                id: s.id,
+                                code: s.sector_code,
+                                label: s.sector_name || s.sector_code,
+                              }))}
+                              value={sectorId}
+                              onChange={(v) => setSectorId(v)}
+                              onSearch={setSectorQ}
+                              isLoading={loadingSectors}
+                              placeholder={"Setor"}
+                              disabled={!agencyId}
+                            />
+        
+                            <Combobox
+                              items={(locations ?? []).map((l) => ({
+                                id: l.id,
+                                code: l.location_code,
+                                label: l.location_name || l.location_code,
+                              }))}
+                              value={locationId}
+                              onChange={(v) => setLocationId(v)}
+                              onSearch={setLocationQ}
+                              isLoading={loadingLocations}
+                              placeholder="Local de guarda"
+                              disabled={!sectorId}
+                            />
+                          </div>
+                        </div>
+                      </div>
+        
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+                          !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                        }`}
+                        onClick={scrollRight}
+                        disabled={!canScrollRight}
+                      >
+                        <ChevronRight size={16} />
+                      </Button>
+                    </div>
+                    <div className="flex gap-3">
+                      {hasCargosFuncoes && (
+                        <RoleMembers
+                          roleId={ROLE_COMISSAO_ID}
+                          title="Comissão de desfazimento"
+                        />
+                      )}
+                      {expandedColumn === null && (
+                        <Button
+                          onClick={() => setIsImage(!isImage)}
+                          variant={"outline"}
+                          size={"icon"}
+                          className="h-9"
+                        >
+                          {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={clearFilters}>
+                        <Trash size={16} />
+                        Limpar filtros
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
         {expandedColumn === null ? (
           <div className={`relative flex-1 `}>
             {/* Skeleton enquanto as colunas (comissão) ainda não chegaram */}
             {!commissionUsers.length && (loadingCommissionUsers || loading) ? (
-              <div className="flex  gap-4 mt-4">
+              <div className="flex gap-4 mt-4">
                 {Array.from({ length: 7 }).map((_, i) => (
                   <Alert
                     key={i}
@@ -1521,7 +1674,13 @@ export function AdmComission() {
                   onDragUpdate={handleDragUpdate}
                   onDragEnd={handleDragEnd}
                 >
-                  <div className="flex gap-4 min-w-[980px] h-full">
+                  <div
+                    className={
+                      isMobile
+                        ? "flex flex-col gap-4 min-h-[980px] w-full"
+                        : "flex gap-4 min-w-[980px] h-full"
+                    }
+                  >
                     {columns.map((col) => {
                       const items = board[col.key] ?? [];
                       const meta = WORKFLOW_STATUS_META[col.key] ?? {
@@ -1536,7 +1695,11 @@ export function AdmComission() {
                         <Alert
                           key={col.key}
                           ref={(el) => (colRefs.current[col.key] = el)}
-                          className="w-[320px] min-w-[320px]  h-full flex flex-col min-h-0 overflow-hidden"
+                          className={
+                            isMobile
+                              ? "h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden"
+                              : "w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
+                          }
                         >
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">

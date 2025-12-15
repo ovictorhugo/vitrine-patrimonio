@@ -38,6 +38,7 @@ import { MagnifyingGlass } from "phosphor-react";
 import { Input } from "../../../ui/input";
 import { Combobox } from "../../itens-vitrine/itens-vitrine";
 import { Separator } from "../../../ui/separator";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* Tipos mínimos do fetch */
 type UUID = string;
@@ -595,10 +596,12 @@ export function ListaFinalDesfazimento() {
     });
   };
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="flex flex-col gap-8 p-8 ">
       {/* topo */}
-      <div className="flex justify-between items-center">
+      <div className={isMobile ? "flex flex-col-reverse gap-4 justify-between items-center" : "flex justify-between items-center"}>
         <div className="flex items-center gap-3">
           <DownloadPdfButton
             filters={{ workflow_status: "DESFAZIMENTO" }}
@@ -639,117 +642,231 @@ export function ListaFinalDesfazimento() {
       </div>
 
       {/* ===== filtros scrolláveis */}
-      <div className="relative grid grid-cols-1">
-        <Button
-          variant="outline"
-          size="sm"
-          className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-            !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-          }`}
-          onClick={scrollLeftBtn}
-          disabled={!canScrollLeft}
-        >
-          <ChevronLeft size={16} />
-        </Button>
-
-        <div className="mx-14">
-          <div
-            ref={scrollAreaRef}
-            className="overflow-x-auto scrollbar-hide"
-            onScroll={checkScrollability}
+      {isMobile ? (
+        <div className="relative grid grid-cols-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollLeftBtn}
+            disabled={!canScrollLeft}
           >
-            <div className="flex gap-3 items-center">
-              <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                <div>
-                  <MagnifyingGlass size={16} className="text-gray-500" />
-                </div>
-                <Input
-                  className="border-0 p-0 h-9 flex flex-1 w-full"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar por código, descrição, material, marca, modelo..."
+            <ChevronLeft size={16} />
+          </Button>
+
+          <div className="mx-8">
+            <div
+              ref={scrollAreaRef}
+              className="overflow-x-auto scrollbar-hide"
+              onScroll={checkScrollability}
+            >
+              <div className="flex gap-3 items-center">
+                <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                  <div>
+                    <MagnifyingGlass size={16} className="text-gray-500" />
+                  </div>
+                  <Input
+                    className="border-0 p-0 h-9 flex flex-1 w-full"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Buscar por código, descrição, material, marca, modelo..."
+                  />
+                </Alert>
+
+                <Combobox
+                  items={materialItems}
+                  value={materialId}
+                  onChange={(v) => setMaterialId(v)}
+                  onSearch={setMaterialQ}
+                  isLoading={loadingMaterials}
+                  placeholder="Material"
                 />
-              </Alert>
 
-              <Combobox
-                items={materialItems}
-                value={materialId}
-                onChange={(v) => setMaterialId(v)}
-                onSearch={setMaterialQ}
-                isLoading={loadingMaterials}
-                placeholder="Material"
-              />
+                <Combobox
+                  items={guardianItems}
+                  value={guardianId}
+                  onChange={(v) => setGuardianId(v)}
+                  onSearch={setGuardianQ}
+                  isLoading={loadingGuardians}
+                  placeholder="Responsável"
+                />
 
-              <Combobox
-                items={guardianItems}
-                value={guardianId}
-                onChange={(v) => setGuardianId(v)}
-                onSearch={setGuardianQ}
-                isLoading={loadingGuardians}
-                placeholder="Responsável"
-              />
+                <Separator className="h-8" orientation="vertical" />
 
-              <Separator className="h-8" orientation="vertical" />
+                <Combobox
+                  items={unitItems}
+                  value={unitId}
+                  onChange={(v) => setUnitId(v)}
+                  onSearch={setUnitQ}
+                  isLoading={loadingUnits}
+                  placeholder="Unidade"
+                />
 
-              <Combobox
-                items={unitItems}
-                value={unitId}
-                onChange={(v) => setUnitId(v)}
-                onSearch={setUnitQ}
-                isLoading={loadingUnits}
-                placeholder="Unidade"
-              />
+                <Combobox
+                  items={agencyItems}
+                  value={agencyId}
+                  onChange={(v) => setAgencyId(v)}
+                  onSearch={setAgencyQ}
+                  isLoading={loadingAgencies}
+                  placeholder="Organização"
+                  disabled={!unitId}
+                />
 
-              <Combobox
-                items={agencyItems}
-                value={agencyId}
-                onChange={(v) => setAgencyId(v)}
-                onSearch={setAgencyQ}
-                isLoading={loadingAgencies}
-                placeholder="Organização"
-                disabled={!unitId}
-              />
+                <Combobox
+                  items={sectorItems}
+                  value={sectorId}
+                  onChange={(v) => setSectorId(v)}
+                  onSearch={setSectorQ}
+                  isLoading={loadingSectors}
+                  placeholder="Setor"
+                  disabled={!agencyId}
+                />
 
-              <Combobox
-                items={sectorItems}
-                value={sectorId}
-                onChange={(v) => setSectorId(v)}
-                onSearch={setSectorQ}
-                isLoading={loadingSectors}
-                placeholder="Setor"
-                disabled={!agencyId}
-              />
+                <Combobox
+                  items={locationItems}
+                  value={locationId}
+                  onChange={(v) => setLocationId(v)}
+                  onSearch={setLocationQ}
+                  isLoading={loadingLocations}
+                  placeholder="Local de guarda"
+                  disabled={!sectorId}
+                />
 
-              <Combobox
-                items={locationItems}
-                value={locationId}
-                onChange={(v) => setLocationId(v)}
-                onSearch={setLocationQ}
-                isLoading={loadingLocations}
-                placeholder="Local de guarda"
-                disabled={!sectorId}
-              />
-
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <Trash size={16} />
-                Limpar filtros
-              </Button>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <Trash size={16} />
+                  Limpar filtros
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
-            !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-          }`}
-          onClick={scrollRightBtn}
-          disabled={!canScrollRight}
-        >
-          <ChevronRight size={16} />
-        </Button>
-      </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+              !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollRightBtn}
+            disabled={!canScrollRight}
+          >
+            <ChevronRight size={16} />
+          </Button>
+        </div>
+      ) : (
+        <div className="relative grid grid-cols-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollLeftBtn}
+            disabled={!canScrollLeft}
+          >
+            <ChevronLeft size={16} />
+          </Button>
+
+          <div className="mx-14">
+            <div
+              ref={scrollAreaRef}
+              className="overflow-x-auto scrollbar-hide"
+              onScroll={checkScrollability}
+            >
+              <div className="flex gap-3 items-center">
+                <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                  <div>
+                    <MagnifyingGlass size={16} className="text-gray-500" />
+                  </div>
+                  <Input
+                    className="border-0 p-0 h-9 flex flex-1 w-full"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Buscar por código, descrição, material, marca, modelo..."
+                  />
+                </Alert>
+
+                <Combobox
+                  items={materialItems}
+                  value={materialId}
+                  onChange={(v) => setMaterialId(v)}
+                  onSearch={setMaterialQ}
+                  isLoading={loadingMaterials}
+                  placeholder="Material"
+                />
+
+                <Combobox
+                  items={guardianItems}
+                  value={guardianId}
+                  onChange={(v) => setGuardianId(v)}
+                  onSearch={setGuardianQ}
+                  isLoading={loadingGuardians}
+                  placeholder="Responsável"
+                />
+
+                <Separator className="h-8" orientation="vertical" />
+
+                <Combobox
+                  items={unitItems}
+                  value={unitId}
+                  onChange={(v) => setUnitId(v)}
+                  onSearch={setUnitQ}
+                  isLoading={loadingUnits}
+                  placeholder="Unidade"
+                />
+
+                <Combobox
+                  items={agencyItems}
+                  value={agencyId}
+                  onChange={(v) => setAgencyId(v)}
+                  onSearch={setAgencyQ}
+                  isLoading={loadingAgencies}
+                  placeholder="Organização"
+                  disabled={!unitId}
+                />
+
+                <Combobox
+                  items={sectorItems}
+                  value={sectorId}
+                  onChange={(v) => setSectorId(v)}
+                  onSearch={setSectorQ}
+                  isLoading={loadingSectors}
+                  placeholder="Setor"
+                  disabled={!agencyId}
+                />
+
+                <Combobox
+                  items={locationItems}
+                  value={locationId}
+                  onChange={(v) => setLocationId(v)}
+                  onSearch={setLocationQ}
+                  isLoading={loadingLocations}
+                  placeholder="Local de guarda"
+                  disabled={!sectorId}
+                />
+
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <Trash size={16} />
+                  Limpar filtros
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+              !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+            onClick={scrollRightBtn}
+            disabled={!canScrollRight}
+          >
+            <ChevronRight size={16} />
+          </Button>
+        </div>
+      )}  
 
       {/* ===== card único DESFAZIMENTO */}
       <Alert className="p-0">
