@@ -148,8 +148,6 @@ export const InformacoesAdicionaisStep = forwardRef<
     }
   }, [initialData]);
 
-
-
   /** ========= 2) LÓGICA CO/TU/OT ========= */
   const CO: 0 | 1 = useMemo(() => {
     if (estadoAtual === "ocioso" || estadoAtual === "recuperavel") return 1;
@@ -165,27 +163,26 @@ export const InformacoesAdicionaisStep = forwardRef<
     if (!shouldShowSituacao && situacao) setSituacao("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShowSituacao]);
-const getIdx = useCallback(
-  (tuOverride?: boolean, otOverride?: boolean) => {
-    const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
-    const otFlag = otOverride ?? otLocal;
+  const getIdx = useCallback(
+    (tuOverride?: boolean, otOverride?: boolean) => {
+      const tuFlag = tuOverride ?? tuLocal; // se não passar override, usa o state atual
+      const otFlag = otOverride ?? otLocal;
 
-    const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
-    const ot = otFlag ? 1 : 0; // OT alta => 1
+      const tu = tuFlag ? 1 : 0; // TU >= 10 => 1
+      const ot = otFlag ? 1 : 0; // OT alta => 1
 
-    if (estadoAtual === "anti-economico") {
-      if (tu === 1 && ot === 1) return 7;
-      if (tu === 1 && ot === 0) return 3;
-      if (tu === 0 && ot === 1) return 5;
-      return 4;
-    }
+      if (estadoAtual === "anti-economico") {
+        if (tu === 1 && ot === 1) return 7;
+        if (tu === 1 && ot === 0) return 3;
+        if (tu === 0 && ot === 1) return 5;
+        return 4;
+      }
 
-    const CO = estadoAtual === "quebrado" ? 0 : 1;
-    return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  },
-  [estadoAtual, tuLocal, otLocal]
-);
-
+      const CO = estadoAtual === "quebrado" ? 0 : 1;
+      return ((CO << 2) | (tu << 1) | ot) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    },
+    [estadoAtual, tuLocal, otLocal]
+  );
 
   const gerarTexto = useCallback(
     (tuOverride?: boolean, otOverride?: boolean) => {
@@ -587,8 +584,14 @@ const getIdx = useCallback(
 
   /** ========= 9) ESCALA 7 NÍVEIS ========= */
   const nivelPorIdx: Record<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, number> = {
-    4: 0, 5: 1, 6: 2, 7: 3,
-    0: 4, 1: 5, 2: 6, 3: 6,
+    4: 0,
+    5: 1,
+    6: 2,
+    7: 3,
+    0: 4,
+    1: 5,
+    2: 6,
+    3: 6,
   };
 
   const escala7 = [
@@ -913,16 +916,21 @@ const getIdx = useCallback(
             </Alert>
           ) : (
             <div className="grid gap-2 w-full">
-              <Label htmlFor="observacoes">
-                Justificativa (descrição do estado do item)*
-              </Label>
 
               {justificativaEhModelo && (
-                <p className="text-xs text-red-500">
-                  Obrigatório: personalize a justificativa com uso,
-                  funcionamento, defeitos, histórico de manutenção e
-                  ano/critério de tombamento para prosseguir.
-                </p>
+                <div>
+                  <div className="flex gap-2 items-center mb-3">
+                    <AlertCircle size={24} />
+                    <p className="font-medium w-55">
+                      Justificativa personalizada, favor editar:
+                    </p>
+                  </div>
+                  <p className="text-s text-red-500">
+                    Dica: Personalize a justificativa com uso, funcionamento,
+                    defeitos, histórico de manutenção e ano/critério de
+                    tombamento para prosseguir.
+                  </p>
+                </div>
               )}
 
               <Textarea

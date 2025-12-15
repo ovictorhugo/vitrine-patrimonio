@@ -179,7 +179,7 @@ export function Roles({
   // criação de role
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-    const [pesquisaInput, setPesquisaInput] = useState("");
+  const [pesquisaInput, setPesquisaInput] = useState("");
 
   // listagem de roles
   const [roles, setRoles] = useState<RoleDTO[]>([]);
@@ -244,7 +244,7 @@ export function Roles({
     Record<string, boolean>
   >({});
 
-  const { urlGeral, role:roleContext } = useContext(UserContext);
+  const { urlGeral, role: roleContext } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
   const authHeaders: HeadersInit = useMemo(
     () => ({
@@ -337,32 +337,34 @@ export function Roles({
     [urlGeral, authHeaders]
   );
 
-const fetchUsers = useCallback(async () => {
-  try {
-    setLoadingUsers(true);
-    const res = await fetch(`${urlGeral}users/?q=${encodeURIComponent(userSearch)}`, {
-      method: "GET",
-      headers: authHeaders,
-    });
-    await assertOk(res, "Falha ao carregar usuários");
-    const data = await safeJson<UsersResponse>(res);
-    setAllUsers(Array.isArray(data?.users) ? data.users : []);
-  } catch (e: any) {
-    toast("Erro ao carregar usuários", {
-      description: e?.message || String(e),
-      action: { label: "Fechar", onClick: () => {} },
-    });
-  } finally {
-    setLoadingUsers(false);
-  }
-}, [urlGeral, authHeaders, userSearch]);
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoadingUsers(true);
+      const res = await fetch(
+        `${urlGeral}users/?q=${encodeURIComponent(userSearch)}`,
+        {
+          method: "GET",
+          headers: authHeaders,
+        }
+      );
+      await assertOk(res, "Falha ao carregar usuários");
+      const data = await safeJson<UsersResponse>(res);
+      setAllUsers(Array.isArray(data?.users) ? data.users : []);
+    } catch (e: any) {
+      toast("Erro ao carregar usuários", {
+        description: e?.message || String(e),
+        action: { label: "Fechar", onClick: () => {} },
+      });
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [urlGeral, authHeaders, userSearch]);
 
-useEffect(() => {
-  // opcional: evitar fetch com string vazia ou muito curta
-  // if (!userSearch.trim()) return;
-  fetchUsers();
-}, [fetchUsers]);
-
+  useEffect(() => {
+    // opcional: evitar fetch com string vazia ou muito curta
+    // if (!userSearch.trim()) return;
+    fetchUsers();
+  }, [fetchUsers]);
 
   const fetchPermissions = useCallback(async () => {
     try {
@@ -482,7 +484,12 @@ useEffect(() => {
       setRoles((prev) =>
         prev.map((r) =>
           r.id === (updated?.id || editTarget.id)
-            ? { ...r, ...updated, name: editName.trim(), description: editDesc.trim() }
+            ? {
+                ...r,
+                ...updated,
+                name: editName.trim(),
+                description: editDesc.trim(),
+              }
             : r
         )
       );
@@ -566,7 +573,10 @@ useEffect(() => {
       setRoleUsers((prev) => {
         const current = prev[roleId] ?? [];
         const exists = current.some((u) => u.id === selectedUser.id);
-        return { ...prev, [roleId]: exists ? current : [...current, selectedUser] };
+        return {
+          ...prev,
+          [roleId]: exists ? current : [...current, selectedUser],
+        };
       });
 
       toast("Usuário adicionado", {
@@ -585,10 +595,10 @@ useEffect(() => {
 
   const handleRemoveUserFromRole = async (roleId: string, userId: string) => {
     try {
-      const res = await fetch(
-        `${urlGeral}roles/${roleId}/users/${userId}`,
-        { method: "DELETE", headers: authHeaders }
-      );
+      const res = await fetch(`${urlGeral}roles/${roleId}/users/${userId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
       await assertOk(res, "Falha ao remover usuário");
 
       setRoleUsers((prev) => {
@@ -611,7 +621,10 @@ useEffect(() => {
   /* ============================
      Permissions management — local only
      ============================ */
-  const handleOpenPermissionsForRole = async (open: boolean, roleId: string) => {
+  const handleOpenPermissionsForRole = async (
+    open: boolean,
+    roleId: string
+  ) => {
     setOpenPermissionsForRoleId(open ? roleId : null);
     setSelectedPermissionId("");
     if (open && !allPermissions.length) await fetchPermissions();
@@ -679,7 +692,9 @@ useEffect(() => {
           r.id === roleId
             ? {
                 ...r,
-                permissions: (r.permissions ?? []).filter((p) => p.id !== permissionId),
+                permissions: (r.permissions ?? []).filter(
+                  (p) => p.id !== permissionId
+                ),
               }
             : r
         )
@@ -701,7 +716,9 @@ useEffect(() => {
 
   /* ===== Permissões: listar & deletar (modal global) ===== */
   const [permSearch, setPermSearch] = useState("");
-  const [deletingGlobalPermId, setDeletingGlobalPermId] = useState<string | null>(null);
+  const [deletingGlobalPermId, setDeletingGlobalPermId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (openListPerm) fetchPermissions();
@@ -801,8 +818,7 @@ useEffect(() => {
   const { hasPermissoes } = usePermissions();
 
   const membersCount = (roleId: string) => roleUsers[roleId]?.length ?? 0;
-const [isCAL, setIsCAL] = useState(false);
-
+  const [isCAL, setIsCAL] = useState(false);
 
   return (
     <div className="p-8 gap-8 flex flex-col">
@@ -840,19 +856,18 @@ const [isCAL, setIsCAL] = useState(false);
         </Carousel>
       </div>
 
-        <Alert className="h-14 p-2 flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 w-full flex-1">
-                <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
-                <Input
-                  value={pesquisaInput}
-                  onChange={(e) => setPesquisaInput(e.target.value)}
-                  type="text"
-                  className="border-0 w-full"
-                />
-              </div>
-              <div className="w-fit" />
-            </Alert>
-      
+      <Alert className="h-14 p-2 flex items-center justify-between w-full">
+        <div className="flex items-center gap-2 w-full flex-1">
+          <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
+          <Input
+            value={pesquisaInput}
+            onChange={(e) => setPesquisaInput(e.target.value)}
+            type="text"
+            className="border-0 w-full"
+          />
+        </div>
+        <div className="w-fit" />
+      </Alert>
 
       {/* Criar cargo */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -864,65 +879,64 @@ const [isCAL, setIsCAL] = useState(false);
             <p className="font-medium">Adicionar cargo</p>
           </Alert>
         </DialogTrigger>
-<DialogContent>
-  <DialogHeader>
-    <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-      Adicionar cargo
-    </DialogTitle>
-    <DialogDescription className="text-zinc-500">
-      Crie um perfil de acesso com nome e descrição.
-    </DialogDescription>
-  </DialogHeader>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar cargo
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Crie um perfil de acesso com nome e descrição.
+            </DialogDescription>
+          </DialogHeader>
 
-  <Separator className="my-4" />
+          <Separator className="my-4" />
 
-  <div className="grid gap-4">
-   <Alert className="flex items-center gap-2">
-  <Checkbox
-    checked={isCAL}
-    onCheckedChange={(checked) => {
-      setIsCAL(!!checked);
-      if (checked && !name.startsWith("CAL - ")) {
-        setName(`CAL - ${name}`);
-      } else if (!checked && name.startsWith("CAL - ")) {
-        setName(name.replace(/^CAL - /, ""));
-      }
-    }}
-  />
-  <Label>É uma Comissão de Apoio Local (CAL)?</Label>
-</Alert>
+          <div className="grid gap-4">
+            <Alert className="flex items-center gap-2">
+              <Checkbox
+                checked={isCAL}
+                onCheckedChange={(checked) => {
+                  setIsCAL(!!checked);
+                  if (checked && !name.startsWith("CAL - ")) {
+                    setName(`CAL - ${name}`);
+                  } else if (!checked && name.startsWith("CAL - ")) {
+                    setName(name.replace(/^CAL - /, ""));
+                  }
+                }}
+              />
+              <Label>É uma Comissão de Apoio Local (CAL)?</Label>
+            </Alert>
 
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
 
-    <div className="grid gap-1.5">
-      <Label>Nome</Label>
-      <Input value={name} onChange={(e) => setName(e.target.value)} />
-    </div>
+            <div className="grid gap-1.5">
+              <Label>Descrição</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
 
-    <div className="grid gap-1.5">
-      <Label>Descrição</Label>
-      <Textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-    </div>
-  </div>
-
-  <DialogFooter>
-    <DialogClose asChild>
-      <Button variant="ghost">
-        <ArrowUUpLeft size={16} /> Cancelar
-      </Button>
-    </DialogClose>
-    <Button onClick={handleCreateRole} disabled={creating}>
-      {creating ? (
-        <Loader2 className="animate-spin " size={16} />
-      ) : (
-        <Plus className="" size={16} />
-      )}
-      Adicionar cargo
-    </Button>
-  </DialogFooter>
-</DialogContent>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost">
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+            </DialogClose>
+            <Button onClick={handleCreateRole} disabled={creating}>
+              {creating ? (
+                <Loader2 className="animate-spin " size={16} />
+              ) : (
+                <Plus className="" size={16} />
+              )}
+              Adicionar cargo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
       {/* Criar permissão global */}
@@ -989,7 +1003,6 @@ const [isCAL, setIsCAL] = useState(false);
 
           <AccordionContent className="p-0">
             {/* Itens por página */}
-            
 
             {loadingList ? (
               <div className="flex gap-4 flex-col">
@@ -1019,22 +1032,28 @@ const [isCAL, setIsCAL] = useState(false);
                                     {role.name}
                                   </div>
 
-                                 {roleContext == 'Administrador' && (
-                                   <div className="text-xs font-normal ">
-                                    {role.id}
-                                  </div>
-                                 )}
+                                  {roleContext == "Administrador" && (
+                                    <div className="text-xs font-normal ">
+                                      {role.id}
+                                    </div>
+                                  )}
                                 </CardTitle>
                                 <div className="flex gap-3 items-center">
                                   {/* Permissões */}
                                   <Dialog
                                     open={openPermissionsForRoleId === role.id}
                                     onOpenChange={(open) =>
-                                      handleOpenPermissionsForRole(open, role.id)
+                                      handleOpenPermissionsForRole(
+                                        open,
+                                        role.id
+                                      )
                                     }
                                   >
                                     <DialogTrigger asChild>
-                                      <Button className="hidden group-hover:flex transition-all" variant="outline">
+                                      <Button
+                                        className="hidden group-hover:flex transition-all"
+                                        variant="outline"
+                                      >
                                         <GitBranchPlus size={16} />
                                         Permissões
                                       </Button>
@@ -1073,7 +1092,9 @@ const [isCAL, setIsCAL] = useState(false);
                                                 <Button
                                                   size="icon"
                                                   variant="destructive"
-                                                  disabled={removingPermId === p.id}
+                                                  disabled={
+                                                    removingPermId === p.id
+                                                  }
                                                   onClick={() =>
                                                     handleRemovePermissionFromRole(
                                                       role.id,
@@ -1102,7 +1123,9 @@ const [isCAL, setIsCAL] = useState(false);
 
                                       {/* Vincular permissão existente */}
                                       <div className="grid gap-2">
-                                        <Label>Vincular permissão existente</Label>
+                                        <Label>
+                                          Vincular permissão existente
+                                        </Label>
                                         <div className="flex gap-2 items-center">
                                           <Popover
                                             modal
@@ -1122,7 +1145,8 @@ const [isCAL, setIsCAL] = useState(false);
                                                 {selectedPermissionId
                                                   ? allPermissions.find(
                                                       (p) =>
-                                                        p.id === selectedPermissionId
+                                                        p.id ===
+                                                        selectedPermissionId
                                                     )?.name
                                                   : loadingPerms
                                                   ? "Carregando permissões..."
@@ -1135,7 +1159,8 @@ const [isCAL, setIsCAL] = useState(false);
                                                 <CommandInput />
                                                 <CommandList>
                                                   <CommandEmpty>
-                                                    Nenhuma permissão encontrada.
+                                                    Nenhuma permissão
+                                                    encontrada.
                                                   </CommandEmpty>
                                                   <CommandGroup>
                                                     {allPermissions.map((p) => (
@@ -1143,13 +1168,18 @@ const [isCAL, setIsCAL] = useState(false);
                                                         key={p.id}
                                                         value={`${p.name} ${p.code}`}
                                                         onSelect={() => {
-                                                          setSelectedPermissionId(p.id);
-                                                          setPermPopoverOpen(false);
+                                                          setSelectedPermissionId(
+                                                            p.id
+                                                          );
+                                                          setPermPopoverOpen(
+                                                            false
+                                                          );
                                                         }}
                                                       >
                                                         <Check
                                                           className={`mr-2 h-4 w-4 ${
-                                                            selectedPermissionId === p.id
+                                                            selectedPermissionId ===
+                                                            p.id
                                                               ? "opacity-100"
                                                               : "opacity-0"
                                                           }`}
@@ -1172,7 +1202,9 @@ const [isCAL, setIsCAL] = useState(false);
 
                                           <Button
                                             onClick={() =>
-                                              handleLinkPermissionToRole(role.id)
+                                              handleLinkPermissionToRole(
+                                                role.id
+                                              )
                                             }
                                             disabled={!selectedPermissionId}
                                           >
@@ -1205,7 +1237,9 @@ const [isCAL, setIsCAL] = useState(false);
                                     <DialogTrigger asChild>
                                       <Button
                                         className="hidden group-hover:flex transition-all"
-                                        onClick={() => handleOpenAddUser(role.id)}
+                                        onClick={() =>
+                                          handleOpenAddUser(role.id)
+                                        }
                                       >
                                         <User size={16} />
                                         Adicionar membro
@@ -1217,7 +1251,8 @@ const [isCAL, setIsCAL] = useState(false);
                                           Adicionar usuário
                                         </DialogTitle>
                                         <DialogDescription className="text-zinc-500 ">
-                                          Todos os usuários cadastrados no sistema
+                                          Todos os usuários cadastrados no
+                                          sistema
                                         </DialogDescription>
                                       </DialogHeader>
                                       <Separator className="my-4" />
@@ -1251,7 +1286,9 @@ const [isCAL, setIsCAL] = useState(false);
                                                     ? "bg-neutral-100 dark:bg-neutral-800"
                                                     : ""
                                                 }`}
-                                                onClick={() => setSelectedUser(u)}
+                                                onClick={() =>
+                                                  setSelectedUser(u)
+                                                }
                                               >
                                                 <Avatar className="cursor-pointer rounded-md h-8 w-8 mr-2 ">
                                                   <AvatarImage
@@ -1297,7 +1334,8 @@ const [isCAL, setIsCAL] = useState(false);
                                           }
                                           disabled={!selectedUser}
                                         >
-                                          <Plus size={16} className="mr-2" /> Adicionar
+                                          <Plus size={16} className="mr-2" />{" "}
+                                          Adicionar
                                         </Button>
                                       </DialogFooter>
                                     </DialogContent>
@@ -1399,44 +1437,48 @@ const [isCAL, setIsCAL] = useState(false);
                 </div>
 
                 <div className="hidden md:flex md:justify-end mb-3 mt-5 items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Itens por página:
-              </span>
-              <Select
-                value={limit.toString()}
-                onValueChange={(value) => {
-                  const newLimit = parseInt(value);
-                  setOffset(0);
-                  setLimit(newLimit);
-                  handleNavigate(0, newLimit);
-                }}
-              >
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Itens" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[6, 12, 24, 36, 48, 84, 162].map((val) => (
-                    <SelectItem key={val} value={val.toString()}>
-                      {val}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  <span className="text-sm text-muted-foreground">
+                    Itens por página:
+                  </span>
+                  <Select
+                    value={limit.toString()}
+                    onValueChange={(value) => {
+                      const newLimit = parseInt(value);
+                      setOffset(0);
+                      setLimit(newLimit);
+                      handleNavigate(0, newLimit);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Itens" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[6, 12, 24, 36, 48, 84, 162].map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                          {val}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Paginação */}
                 <div className="w-full flex justify-center items-center gap-10 mt-8">
                   <div className="flex gap-4">
                     <Button
                       variant="outline"
-                      onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+                      onClick={() =>
+                        setOffset((prev) => Math.max(0, prev - limit))
+                      }
                       disabled={isFirstPage}
                     >
                       <ChevronLeft size={16} className="mr-2" />
                       Anterior
                     </Button>
                     <Button
-                      onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+                      onClick={() =>
+                        !isLastPage && setOffset((prev) => prev + limit)
+                      }
                       disabled={isLastPage}
                     >
                       Próximo
@@ -1498,7 +1540,9 @@ const [isCAL, setIsCAL] = useState(false);
               variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={
-                !deleteTarget || deleteText.trim() !== deleteTarget.name || deleting
+                !deleteTarget ||
+                deleteText.trim() !== deleteTarget.name ||
+                deleting
               }
             >
               {deleting ? (
@@ -1556,7 +1600,10 @@ const [isCAL, setIsCAL] = useState(false);
             >
               <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button onClick={handleEditConfirm} disabled={editing || !editName.trim()}>
+            <Button
+              onClick={handleEditConfirm}
+              disabled={editing || !editName.trim()}
+            >
               {editing ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

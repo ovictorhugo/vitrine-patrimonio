@@ -1,19 +1,8 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  DoorClosed,
-  Trash,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, DoorClosed, Trash } from "lucide-react";
 import { MagnifyingGlass } from "phosphor-react";
 import { Helmet } from "react-helmet";
 import { useLocation, useNavigate } from "react-router-dom";
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { UserContext } from "../../../context/context";
 import { Button } from "../../ui/button";
@@ -37,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { Combobox } from "../itens-vitrine/itens-vitrine";
 import { Skeleton } from "../../ui/skeleton";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 /* =========================
    Tipos (ajuste se necessário)
@@ -538,6 +528,8 @@ export function AllSalas() {
      Render
   ========================= */
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="flex flex-col h-full">
       <Helmet>
@@ -574,271 +566,434 @@ export function AllSalas() {
         </div>
 
         <div className="p-8 pt-0 grid gap-8">
-            {/* Barra horizontal de filtros */}
-        <div className="relative grid grid-cols-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-            }`}
-            onClick={scrollLeft}
-            disabled={!canScrollLeft}
-          >
-            <ChevronLeft size={16} />
-          </Button>
+          {/* Barra horizontal de filtros */}
+          {isMobile ? (
+            <div className="relative grid grid-cols-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+              >
+                <ChevronLeft size={16} />
+              </Button>
 
-          <div className="mx-14">
-            <div
-              ref={scrollAreaRef}
-              className="overflow-x-auto scrollbar-hide"
-              onScroll={checkScrollability}
-            >
-              <div className="flex gap-3 items-center">
-                {/* Busca geral */}
-                <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                  <div>
-                    <MagnifyingGlass size={16} className="text-gray-500" />
-                  </div>
-                  <div className="relative w-full">
-                    <Input
-                      className="border-0 p-0 h-9 flex flex-1 w-full"
-                      value={q}
-                      onChange={(e) => {
-                        setOffset(0);
-                        setQ(e.target.value);
-                      }}
-                      placeholder="Buscar por nome/código da sala, setor, organização..."
-                    />
-                  </div>
-                </Alert>
-
-         
-
-                {/* Responsável */}
-                <Combobox
-                  items={guardianItems}
-                  value={guardianId}
-                  onChange={(v) => {
-                    setOffset(0);
-                    setGuardianId(v);
-                  }}
-                  onSearch={setGuardianQ}
-                  isLoading={loadingGuardians}
-                  placeholder="Responsável"
-                />
-
-                <Separator className="h-8" orientation="vertical" />
-
-                {/* Unidade */}
-                <Combobox
-                  items={(units ?? []).map((u) => ({
-                    id: u.id,
-                    code: u.unit_code,
-                    label: u.unit_name || u.unit_code,
-                  }))}
-                  value={unitId}
-                  onChange={(v) => {
-                    setOffset(0);
-                    setUnitId(v);
-                    setAgencyId(null);
-                    setSectorId(null);
-                    setLocationId(null);
-                  }}
-                  onSearch={setUnitQ}
-                  isLoading={loadingUnits}
-                  placeholder="Unidade"
-                />
-
-                {/* Organização */}
-                <Combobox
-                  items={(agencies ?? []).map((a) => ({
-                    id: a.id,
-                    code: a.agency_code,
-                    label: a.agency_name || a.agency_code,
-                  }))}
-                  value={agencyId}
-                  onChange={(v) => {
-                    setOffset(0);
-                    setAgencyId(v);
-                    setSectorId(null);
-                    setLocationId(null);
-                  }}
-                  onSearch={setAgencyQ}
-                  isLoading={loadingAgencies}
-                  placeholder="Organização"
-                  disabled={!unitId}
-                />
-
-                {/* Setor */}
-                <Combobox
-                  items={(sectors ?? []).map((s) => ({
-                    id: s.id,
-                    code: s.sector_code,
-                    label: s.sector_name || s.sector_code,
-                  }))}
-                  value={sectorId}
-                  onChange={(v) => {
-                    setOffset(0);
-                    setSectorId(v);
-                    setLocationId(null);
-                  }}
-                  onSearch={setSectorQ}
-                  isLoading={loadingSectors}
-                  placeholder="Setor"
-                  disabled={!agencyId}
-                />
-
-             
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <Trash size={16} />
-                  Limpar filtros
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
-              !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-            }`}
-            onClick={scrollRight}
-            disabled={!canScrollRight}
-          >
-            <ChevronRight size={16} />
-          </Button>
-        </div>
-
-        {/* Accordion */}
-        <Accordion type="single" collapsible defaultValue="item-1">
-          <AccordionItem value="item-1">
-            <AccordionTrigger className="px-0">
-              <HeaderResultTypeHome
-                title={"Todas as salas"}
-                icon={<DoorClosed size={24} className="text-gray-400" />}
-              />
-            </AccordionTrigger>
-
-            <AccordionContent className="p-0">
-              <div className="">
-                {loadingRooms ? (
-                   <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-
-                  <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
-                  </div>
-                ) : rooms.length === 0 ? (
-                  <p className="text-sm text-center">
-                    Nenhuma sala encontrada.
-                  </p>
-                ) : (
-                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                    {
-                         rooms.map((room) => (
-                    <button
-                      key={room.id}
-                      type="button"
-                      onClick={() => handleClickRoom(room)}
-                      className="w-full aspect-square text-left"
-                      title={room.location_name}
-                    >
-                      <Alert className=" flex justify-between flex-col aspect-square cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 min-w-0">
-                            <p className="truncate text-sm text-gray-500 dark:text-gray-300">
-                              {room.sector?.agency?.agency_name}
-                            </p>
-                            <ChevronRight
-                              size={14}
-                              className="flex-shrink-0"
-                            />
-                            <p className="truncate text-sm text-gray-500 dark:text-gray-300">
-                              {room.sector?.sector_name}
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="text-xl font-semibold whitespace-normal">
-                          {room.location_name}
-                        </p>
-                      </Alert>
-                    </button>
-                  ))
-                    }
-                 </div>
-                )}
-              </div>
-
-              {/* ===== Paginação ===== */}
-              <div className="hidden md:flex md:justify-end mt-5 items-center gap-2 px-8">
-                <span className="text-sm text-muted-foreground">
-                  Itens por página:
-                </span>
-                <Select
-                  value={limit.toString()}
-                  onValueChange={(value) => {
-                    const newLimit = parseInt(value);
-                    const newOffset = 0;
-                    setOffset(newOffset);
-                    setLimit(newLimit);
-                    handleNavigate(newOffset, newLimit);
-                  }}
+              <div className="mx-8">
+                <div
+                  ref={scrollAreaRef}
+                  className="overflow-x-auto scrollbar-hide"
+                  onScroll={checkScrollability}
                 >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue placeholder="Itens" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[12, 24, 36, 48, 84, 162].map((val) => (
-                      <SelectItem key={val} value={val.toString()}>
-                        {val}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="flex gap-2 items-center">
+                    {/* Busca geral */}
+                    <Alert className="w-[300px] min-w-[220px] py-0 h-10 rounded-md flex gap-1 items-center">
+                      <div>
+                        <MagnifyingGlass size={16} className="text-gray-500" />
+                      </div>
+                      <div className="relative w-full">
+                        <Input
+                          className="border-0 p-0 h-9 flex flex-1 w-full"
+                          value={q}
+                          onChange={(e) => {
+                            setOffset(0);
+                            setQ(e.target.value);
+                          }}
+                          placeholder="Buscar por nome/código da sala, setor, organização..."
+                        />
+                      </div>
+                    </Alert>
 
-              <div className="w-full flex justify-center items-center gap-10 mt-8 pb-8">
-                <div className="flex gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setOffset((prev) => Math.max(0, prev - limit))
-                    }
-                    disabled={isFirstPage}
-                  >
-                    <ChevronLeft size={16} className="mr-2" />
-                    Anterior
-                  </Button>
+                    {/* Responsável */}
+                    <Combobox
+                      items={guardianItems}
+                      value={guardianId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setGuardianId(v);
+                      }}
+                      onSearch={setGuardianQ}
+                      isLoading={loadingGuardians}
+                      placeholder="Responsável"
+                    />
 
-                  <Button
-                    onClick={() =>
-                      !isLastPage && setOffset((prev) => prev + limit)
-                    }
-                    disabled={isLastPage}
-                  >
-                    Próximo
-                    <ChevronRight size={16} className="ml-2" />
-                  </Button>
+                    <Separator className="h-8" orientation="vertical" />
+
+                    {/* Unidade */}
+                    <Combobox
+                      items={(units ?? []).map((u) => ({
+                        id: u.id,
+                        code: u.unit_code,
+                        label: u.unit_name || u.unit_code,
+                      }))}
+                      value={unitId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setUnitId(v);
+                        setAgencyId(null);
+                        setSectorId(null);
+                        setLocationId(null);
+                      }}
+                      onSearch={setUnitQ}
+                      isLoading={loadingUnits}
+                      placeholder="Unidade"
+                    />
+
+                    {/* Organização */}
+                    <Combobox
+                      items={(agencies ?? []).map((a) => ({
+                        id: a.id,
+                        code: a.agency_code,
+                        label: a.agency_name || a.agency_code,
+                      }))}
+                      value={agencyId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setAgencyId(v);
+                        setSectorId(null);
+                        setLocationId(null);
+                      }}
+                      onSearch={setAgencyQ}
+                      isLoading={loadingAgencies}
+                      placeholder="Organização"
+                      disabled={!unitId}
+                    />
+
+                    {/* Setor */}
+                    <Combobox
+                      items={(sectors ?? []).map((s) => ({
+                        id: s.id,
+                        code: s.sector_code,
+                        label: s.sector_name || s.sector_code,
+                      }))}
+                      value={sectorId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setSectorId(v);
+                        setLocationId(null);
+                      }}
+                      onSearch={setSectorQ}
+                      isLoading={loadingSectors}
+                      placeholder="Setor"
+                      disabled={!agencyId}
+                    />
+
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      <Trash size={16} />
+                      Limpar filtros
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        </div>
 
-        
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          ) : (
+            <div className="relative grid grid-cols-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+
+              <div className="mx-14">
+                <div
+                  ref={scrollAreaRef}
+                  className="overflow-x-auto scrollbar-hide"
+                  onScroll={checkScrollability}
+                >
+                  <div className="flex gap-3 items-center">
+                    {/* Busca geral */}
+                    <Alert className="w-[300px] min-w-[220px] py-0 h-10 rounded-md flex gap-3 items-center">
+                      <div>
+                        <MagnifyingGlass size={16} className="text-gray-500" />
+                      </div>
+                      <div className="relative w-full">
+                        <Input
+                          className="border-0 p-0 h-9 flex flex-1 w-full"
+                          value={q}
+                          onChange={(e) => {
+                            setOffset(0);
+                            setQ(e.target.value);
+                          }}
+                          placeholder="Buscar por nome/código da sala, setor, organização..."
+                        />
+                      </div>
+                    </Alert>
+
+                    {/* Responsável */}
+                    <Combobox
+                      items={guardianItems}
+                      value={guardianId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setGuardianId(v);
+                      }}
+                      onSearch={setGuardianQ}
+                      isLoading={loadingGuardians}
+                      placeholder="Responsável"
+                    />
+
+                    <Separator className="h-8" orientation="vertical" />
+
+                    {/* Unidade */}
+                    <Combobox
+                      items={(units ?? []).map((u) => ({
+                        id: u.id,
+                        code: u.unit_code,
+                        label: u.unit_name || u.unit_code,
+                      }))}
+                      value={unitId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setUnitId(v);
+                        setAgencyId(null);
+                        setSectorId(null);
+                        setLocationId(null);
+                      }}
+                      onSearch={setUnitQ}
+                      isLoading={loadingUnits}
+                      placeholder="Unidade"
+                    />
+
+                    {/* Organização */}
+                    <Combobox
+                      items={(agencies ?? []).map((a) => ({
+                        id: a.id,
+                        code: a.agency_code,
+                        label: a.agency_name || a.agency_code,
+                      }))}
+                      value={agencyId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setAgencyId(v);
+                        setSectorId(null);
+                        setLocationId(null);
+                      }}
+                      onSearch={setAgencyQ}
+                      isLoading={loadingAgencies}
+                      placeholder="Organização"
+                      disabled={!unitId}
+                    />
+
+                    {/* Setor */}
+                    <Combobox
+                      items={(sectors ?? []).map((s) => ({
+                        id: s.id,
+                        code: s.sector_code,
+                        label: s.sector_name || s.sector_code,
+                      }))}
+                      value={sectorId}
+                      onChange={(v) => {
+                        setOffset(0);
+                        setSectorId(v);
+                        setLocationId(null);
+                      }}
+                      onSearch={setSectorQ}
+                      isLoading={loadingSectors}
+                      placeholder="Setor"
+                      disabled={!agencyId}
+                    />
+
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      <Trash size={16} />
+                      Limpar filtros
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          )}
+
+          {/* Accordion */}
+          <Accordion type="single" collapsible defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="px-0">
+                <HeaderResultTypeHome
+                  title={"Todas as salas"}
+                  icon={<DoorClosed size={24} className="text-gray-400" />}
+                />
+              </AccordionTrigger>
+
+              <AccordionContent className="p-0">
+                <div className="">
+                  {loadingRooms ? (
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+
+                      <Skeleton className="aspect-square w-full rounded-lg"></Skeleton>
+                    </div>
+                  ) : rooms.length === 0 ? (
+                    <p className="text-sm text-center">
+                      Nenhuma sala encontrada.
+                    </p>
+                  ) : (
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                      {isMobile
+                        ? rooms.map((room) => (
+                            <button
+                              key={room.id}
+                              type="button"
+                              onClick={() => handleClickRoom(room)}
+                              className="w-full aspect-square text-left"
+                              title={room.location_name}
+                            >
+                              <Alert className=" flex justify-between flex-col aspect-square cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 min-w-0  flex-wrap">
+                                    <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+                                      {room.sector?.agency?.agency_name}
+                                    </p>
+                                    <div className="flex items-center min-w-0">
+                                      <ChevronRight
+                                        size={14}
+                                        className="flex-shrink-0"
+                                      />
+                                      <p className="truncate text-xs text-gray-500 dark:text-gray-300">
+                                        {room.sector?.sector_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <p className="text-sm font-semibold whitespace-normal">
+                                  {room.location_name}
+                                </p>
+                              </Alert>
+                            </button>
+                          ))
+                        : rooms.map((room) => (
+                            <button
+                              key={room.id}
+                              type="button"
+                              onClick={() => handleClickRoom(room)}
+                              className="w-full aspect-square text-left"
+                              title={room.location_name}
+                            >
+                              <Alert className=" flex justify-between flex-col aspect-square cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                                    <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+                                      {room.sector?.agency?.agency_name}
+                                    </p>
+                                    <div className="flex items-center min-w-0">
+                                      <ChevronRight
+                                        size={14}
+                                        className="flex-shrink-0"
+                                      />
+                                      <p className="truncate text-sm text-gray-500 dark:text-gray-300">
+                                        {room.sector?.sector_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <p className="text-lg font-semibold whitespace-normal">
+                                  {room.location_name}
+                                </p>
+                              </Alert>
+                            </button>
+                          ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ===== Paginação ===== */}
+                <div className="hidden md:flex md:justify-end mt-5 items-center gap-2 px-8">
+                  <span className="text-sm text-muted-foreground">
+                    Itens por página:
+                  </span>
+                  <Select
+                    value={limit.toString()}
+                    onValueChange={(value) => {
+                      const newLimit = parseInt(value);
+                      const newOffset = 0;
+                      setOffset(newOffset);
+                      setLimit(newLimit);
+                      handleNavigate(newOffset, newLimit);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Itens" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[12, 24, 36, 48, 84, 162].map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                          {val}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-full flex justify-center items-center gap-10 mt-8 pb-8">
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setOffset((prev) => Math.max(0, prev - limit))
+                      }
+                      disabled={isFirstPage}
+                    >
+                      <ChevronLeft size={16} className="mr-2" />
+                      Anterior
+                    </Button>
+
+                    <Button
+                      onClick={() =>
+                        !isLastPage && setOffset((prev) => prev + limit)
+                      }
+                      disabled={isLastPage}
+                    >
+                      Próximo
+                      <ChevronRight size={16} className="ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
       </main>
     </div>
   );

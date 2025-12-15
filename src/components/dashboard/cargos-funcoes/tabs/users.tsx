@@ -116,7 +116,7 @@ export function UsersPage() {
   const { urlGeral, role } = useContext(UserContext);
   const [users, setUsers] = useState<APIUser[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-   const [pesquisaInput, setPesquisaInput] = useState("");
+  const [pesquisaInput, setPesquisaInput] = useState("");
 
   // Controle do Dialog de edição
   const [open, setOpen] = useState<boolean>(false);
@@ -126,7 +126,7 @@ export function UsersPage() {
   const [form, setForm] = useState<PutUserPayload>({
     password: "",
     username: "",
-    id:"",
+    id: "",
     email: "",
     provider: "",
     linkedin: "",
@@ -139,8 +139,6 @@ export function UsersPage() {
     verify: true,
     institution_id: "",
   });
-
-
 
   // ---- Estados para exclusão ----
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
@@ -163,11 +161,18 @@ export function UsersPage() {
   const isFirstPage = offset === 0;
   const isLastPage = users.length < limit;
 
-  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    replace = false
+  ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace }
+    );
   };
 
   useEffect(() => {
@@ -180,7 +185,9 @@ export function UsersPage() {
     setLoading(true);
     try {
       // padrão: /users/?offset=...&limit=...
-      const url = `${urlGeral}users/?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}&q=${pesquisaInput}`;
+      const url = `${urlGeral}users/?offset=${encodeURIComponent(
+        offset
+      )}&limit=${encodeURIComponent(limit)}&q=${pesquisaInput}`;
 
       const resp = await fetch(url, {
         mode: "cors",
@@ -192,7 +199,9 @@ export function UsersPage() {
 
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
-        throw new Error(text || `Falha ao carregar usuários (HTTP ${resp.status}).`);
+        throw new Error(
+          text || `Falha ao carregar usuários (HTTP ${resp.status}).`
+        );
       }
 
       const data: GetUsersResponse = await resp.json();
@@ -217,7 +226,7 @@ export function UsersPage() {
   const openEditDialog = (u: APIUser) => {
     setSelectedUserId(u.id);
     setForm({
-      password:u.password ?? "",
+      password: u.password ?? "",
       id: u.id,
       username: u.username ?? "",
       email: u.email ?? "",
@@ -281,7 +290,9 @@ export function UsersPage() {
       });
 
       setUsers((prev) =>
-        prev.map((u) => (u.id === selectedUserId ? ({ ...u, ...form } as APIUser) : u))
+        prev.map((u) =>
+          u.id === selectedUserId ? ({ ...u, ...form } as APIUser) : u
+        )
       );
 
       setOpen(false);
@@ -322,7 +333,9 @@ export function UsersPage() {
       }
 
       toast("Usuário excluído", {
-        description: `O usuário ${deleteTarget.email || deleteTarget.username} foi removido.`,
+        description: `O usuário ${
+          deleteTarget.email || deleteTarget.username
+        } foi removido.`,
       });
 
       setDeleteOpen(false);
@@ -343,7 +356,7 @@ export function UsersPage() {
 
   const deleteCheckValue = deleteTarget?.email?.trim()
     ? deleteTarget.email.trim()
-    : (deleteTarget?.username?.trim() ?? "");
+    : deleteTarget?.username?.trim() ?? "";
 
   const confirmEnabled =
     !!deleteTarget &&
@@ -374,15 +387,21 @@ export function UsersPage() {
       return;
     }
     if (!email.trim()) {
-      toast("E-mail obrigatório", { description: "Preencha o e-mail do usuário." });
+      toast("E-mail obrigatório", {
+        description: "Preencha o e-mail do usuário.",
+      });
       return;
     }
     if (!password.trim() || !confirmPassword.trim()) {
-      toast("Senha obrigatória", { description: "Preencha e confirme a senha." });
+      toast("Senha obrigatória", {
+        description: "Preencha e confirme a senha.",
+      });
       return;
     }
     if (password !== confirmPassword) {
-      toast("Senhas não conferem", { description: "A confirmação precisa ser igual à senha." });
+      toast("Senhas não conferem", {
+        description: "A confirmação precisa ser igual à senha.",
+      });
       return;
     }
 
@@ -430,18 +449,23 @@ export function UsersPage() {
         verify: (created as any)?.verify ?? true,
         institution_id: (created as any)?.institution_id ?? "",
         roles: (created as any)?.roles ?? [],
-        system_identity:
-          (created as any)?.system_identity ?? {
+        system_identity: (created as any)?.system_identity ?? {
+          id: "",
+          legal_guardian: {
             id: "",
-            legal_guardian: { id: "", legal_guardians_code: "", legal_guardians_name: "" },
+            legal_guardians_code: "",
+            legal_guardians_name: "",
           },
+        },
       };
 
       // adiciona localmente (apenas para feedback imediato)
       setUsers((prev) => [createdUser, ...prev]);
 
       toast("Usuário criado com sucesso!", {
-        description: `${createdUser.email || createdUser.username} adicionado à lista.`,
+        description: `${
+          createdUser.email || createdUser.username
+        } adicionado à lista.`,
       });
 
       // limpa e fecha modal
@@ -459,7 +483,8 @@ export function UsersPage() {
     } catch (error: any) {
       console.error(error);
       const msg = String(error?.message || "");
-      const conflict = msg.includes("409") || msg.toLowerCase().includes("conflict");
+      const conflict =
+        msg.includes("409") || msg.toLowerCase().includes("conflict");
       toast(conflict ? "E-mail já cadastrado" : "Erro ao criar usuário", {
         description: conflict
           ? "Este e-mail já está em uso. Tente outro endereço."
@@ -484,18 +509,18 @@ export function UsersPage() {
         </CardContent>
       </Alert>
 
-        <Alert className="h-14 mt-8 p-2 flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2 w-full flex-1">
-                      <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
-                      <Input
-                        value={pesquisaInput}
-                        onChange={(e) => setPesquisaInput(e.target.value)}
-                        type="text"
-                        className="border-0 w-full"
-                      />
-                    </div>
-                    <div className="w-fit" />
-                  </Alert>
+      <Alert className="h-14 mt-8 p-2 flex items-center justify-between w-full">
+        <div className="flex items-center gap-2 w-full flex-1">
+          <MagnifyingGlass size={16} className="whitespace-nowrap w-10" />
+          <Input
+            value={pesquisaInput}
+            onChange={(e) => setPesquisaInput(e.target.value)}
+            type="text"
+            className="border-0 w-full"
+          />
+        </div>
+        <div className="w-fit" />
+      </Alert>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
@@ -509,9 +534,12 @@ export function UsersPage() {
 
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar usuário externo</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar usuário externo
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Adicione usuários que não possuem Minha UFMG para acesso na plataforma
+              Adicione usuários que não possuem Minha UFMG para acesso na
+              plataforma
             </DialogDescription>
           </DialogHeader>
 
@@ -546,7 +574,11 @@ export function UsersPage() {
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -570,7 +602,11 @@ export function UsersPage() {
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
                 >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -582,7 +618,11 @@ export function UsersPage() {
             </Button>
 
             <Button onClick={handleCreateUser} disabled={creating}>
-              {creating ? <Loader2 className="animate-spin " size={16} /> : <Plus className="" size={16} />}
+              {creating ? (
+                <Loader2 className="animate-spin " size={16} />
+              ) : (
+                <Plus className="" size={16} />
+              )}
               Adicionar usuário
             </Button>
           </DialogFooter>
@@ -599,7 +639,7 @@ export function UsersPage() {
           <AccordionTrigger className="px-0">
             <HeaderResultTypeHome
               title={"Todos os usuários"}
-              icon={<Users size={24} className="text-gray-400"/>}
+              icon={<Users size={24} className="text-gray-400" />}
             />
           </AccordionTrigger>
 
@@ -757,12 +797,10 @@ export function UsersPage() {
             <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
               Editar informações de {form.username}
             </DialogTitle>
-            
+
             <DialogDescription className="text-zinc-500 ">
               Atualize os campos e clique em <b>Salvar</b>.
             </DialogDescription>
-
-           
           </DialogHeader>
 
           <Separator className="my-4" />
@@ -801,7 +839,9 @@ export function UsersPage() {
                 <Label>Matrícula</Label>
                 <Input
                   value={form.matricula}
-                  onChange={(e) => handleFormChange("matricula", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("matricula", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -825,24 +865,17 @@ export function UsersPage() {
               </div>
             </div>
 
-           
-
-             {role == "Administrador" && (
-                <div className="flex flex-col gap-2 w-full">
+            {role == "Administrador" && (
+              <div className="flex flex-col gap-2 w-full">
                 <Label>Identificador</Label>
-                <Input
-                disabled
-                  value={form.id}
-              
-                />
+                <Input disabled value={form.id} />
               </div>
-             
             )}
           </div>
 
           <DialogFooter className="mt-4">
             <Button variant="ghost" onClick={() => setOpen(false)}>
-              <ArrowUUpLeft size={16} />   Cancelar
+              <ArrowUUpLeft size={16} /> Cancelar
             </Button>
             <Button onClick={onSubmit}>
               <RefreshCcw size={16} className="" />
@@ -862,9 +895,7 @@ export function UsersPage() {
             <DialogDescription className="text-zinc-500 ">
               Esta ação é <span className="font-semibold">irreversível</span>.
               Para confirmar, digite exatamente:{" "}
-              <span className="font-semibold">
-                {deleteCheckValue || "—"}
-              </span>
+              <span className="font-semibold">{deleteCheckValue || "—"}</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -905,8 +936,10 @@ export function UsersPage() {
             >
               {deleting ? (
                 <Loader2 size={16} className="animate-spin" />
-              ) : <Trash size={16} />}
-               Confirmar exclusão
+              ) : (
+                <Trash size={16} />
+              )}
+              Confirmar exclusão
             </Button>
           </DialogFooter>
         </DialogContent>
