@@ -36,7 +36,7 @@ export function HomeInicial() {
   const { urlGeral } = useContext(UserContext);
 
   const urlPalavrasChaves = useMemo(() => {
-    return `${urlGeral}catalog/search/materials`;
+    return `${urlGeral}catalog/search/materials?workflow_status=VITRINE`;
   }, [urlGeral]);
 
   useEffect(() => {
