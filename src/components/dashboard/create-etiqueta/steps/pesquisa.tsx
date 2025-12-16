@@ -10,6 +10,7 @@ import { UserContext } from "../../../../context/context";
 import { StepBaseProps } from "../../novo-item/novo-item";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "../../../authentication/signIn";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export interface PatrimoniosSelecionados {
   term: string;
@@ -21,15 +22,17 @@ type SearchItem =
   | { type: "cod"; bem_cod: string; bem_dgv: string }
   | { type: "atm"; bem_num_atm: string };
 
-const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> => i.type === "cod";
-const isAtm = (i: SearchItem): i is Extract<SearchItem, { type: "atm" }> => i.type === "atm";
+const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> =>
+  i.type === "cod";
+const isAtm = (i: SearchItem): i is Extract<SearchItem, { type: "atm" }> =>
+  i.type === "atm";
 
 export function PesquisaStepCB({
-  value_item,       // controlado pelo pai
+  value_item, // controlado pelo pai
   onValidityChange, // avisa se há seleção
-  onStateChange,    // envia nova seleção
-  type,             // controlado pelo pai
-  step
+  onStateChange, // envia nova seleção
+  type, // controlado pelo pai
+  step,
 }: StepBaseProps<"pesquisa">) {
   // Estado APENAS do input e resultados
   const [input, setInput] = useState("");
@@ -59,9 +62,17 @@ export function PesquisaStepCB({
   }
 
   const searchAssetIdentifier = (q: string) =>
-    fetchArrayByKey(`${API_BASE}/asset-identifier?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "asset_identifier");
+    fetchArrayByKey(
+      `${API_BASE}/asset-identifier?q=${encodeURIComponent(
+        q.replace(/-/g, "")
+      )}`,
+      "asset_identifier"
+    );
   const searchAtmNumber = (q: string) =>
-    fetchArrayByKey(`${API_BASE}/atm-number?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "atm_number");
+    fetchArrayByKey(
+      `${API_BASE}/atm-number?q=${encodeURIComponent(q.replace(/-/g, ""))}`,
+      "atm_number"
+    );
 
   // ========= Normalização de input =========
   const normalizeInput = (value: string): string => {
@@ -150,7 +161,10 @@ export function PesquisaStepCB({
     const sp = new URLSearchParams(location.search);
     keys.forEach((k) => sp.delete(k));
     const next = sp.toString();
-    navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: next ? `?${next}` : "" },
+      { replace: true }
+    );
   };
 
   // Selecionou um resultado -> comunica o PAI e limpa a lista
@@ -186,6 +200,8 @@ export function PesquisaStepCB({
     if (cod) setInput(cod);
   }, [cod]);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -193,7 +209,13 @@ export function PesquisaStepCB({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
         </h1>
       </div>
@@ -219,7 +241,11 @@ export function PesquisaStepCB({
                     } text-white border-0`}
                   >
                     {String(value_item).replace(/[|;]/g, "")}
-                    <X size={12} onClick={handleClearSelection} className="cursor-pointer" />
+                    <X
+                      size={12}
+                      onClick={handleClearSelection}
+                      className="cursor-pointer"
+                    />
                   </div>
                 </div>
               ) : (
@@ -242,7 +268,11 @@ export function PesquisaStepCB({
 
           <div className="w-fit flex gap-2">
             {value_item && (
-              <Button size={"icon"} variant={"ghost"} onClick={handleClearSelection}>
+              <Button
+                size={"icon"}
+                variant={"ghost"}
+                onClick={handleClearSelection}
+              >
                 <Trash size={16} />
               </Button>
             )}
@@ -255,7 +285,9 @@ export function PesquisaStepCB({
             <div className="flex flex-col gap-8">
               {filteredItems.some(isCod) && (
                 <div>
-                  <p className="uppercase font-medium text-xs mb-3">Identificador (código-dígito)</p>
+                  <p className="uppercase font-medium text-xs mb-3">
+                    Identificador (código-dígito)
+                  </p>
                   <div className="flex flex-wrap gap-3">
                     {filteredItems
                       .filter(isCod)
@@ -278,7 +310,9 @@ export function PesquisaStepCB({
 
               {filteredItems.some(isAtm) && (
                 <div>
-                  <p className="uppercase font-medium text-xs mb-3">Código ATM</p>
+                  <p className="uppercase font-medium text-xs mb-3">
+                    Código ATM
+                  </p>
                   <div className="flex flex-wrap gap-3">
                     {filteredItems
                       .filter(isAtm)
@@ -286,7 +320,9 @@ export function PesquisaStepCB({
                       .map((props, index) => (
                         <div
                           key={index}
-                          onClick={() => handlePesquisa(props.bem_num_atm, "atm")}
+                          onClick={() =>
+                            handlePesquisa(props.bem_num_atm, "atm")
+                          }
                           className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
                         >
                           {props.bem_num_atm}

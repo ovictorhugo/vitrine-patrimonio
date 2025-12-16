@@ -7,6 +7,7 @@ import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useQuery } from "../modal/search-modal-patrimonio";
 import { UserContext } from "../../context/context";
+import { useIsMobile } from "../../hooks/use-mobile";
 export type StepBaseProps<K extends keyof StepPropsMap> = {
   value: K;
   step: number;
@@ -126,7 +127,6 @@ export function PesquisaStep({
     // Busca simples
     const [assetIdentifiers] = await Promise.all([fetchArray()]);
 
-
     // Filtra os asset_identifiers pelo que o usuário digitou
     const filteredIds = (assetIdentifiers || []).filter((id) => {
       const idStr = String(id); // ex: "1234567-8"
@@ -228,6 +228,8 @@ export function PesquisaStep({
     if (cod) setInput(cod);
   }, [cod]);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -235,7 +237,13 @@ export function PesquisaStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Pesquise pelo identificador (código-dígito) do patrimônio:
         </h1>
       </div>

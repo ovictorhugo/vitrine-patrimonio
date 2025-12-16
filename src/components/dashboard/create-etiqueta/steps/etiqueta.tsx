@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { ArrowRight, Barcode, Download, LayoutDashboard, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  Barcode,
+  Download,
+  LayoutDashboard,
+  Plus,
+} from "lucide-react";
 import { Button } from "../../../ui/button";
 import QRCode from "react-qr-code";
 import { useNavigate } from "react-router-dom";
@@ -33,52 +39,174 @@ const qrUrlFrom = (d: Patrimonio) => {
 
 /* ========== CODE 128 (Subset B) — SVG inline ========== */
 const CODE128_PATTERNS = [
-  "212222","222122","222221","121223","121322","131222","122213","122312","132212","221213",
-  "221312","231212","112232","122132","122231","113222","123122","123221","223211","221132",
-  "221231","213212","223112","312131","311222","321122","321221","312212","322112","322211",
-  "212123","212321","232121","111323","131123","131321","112313","132113","132311","211313",
-  "231113","231311","112133","112331","132131","113123","113321","133121","313121","211331",
-  "231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
-  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214",
-  "112412","122114","122411","142112","142211","241211","221114","413111","241112","134111",
-  "111242","121142","121241","114212","124112","124211","411212","421112","421211","212141",
-  "214121","412121","111143","111341","131141","114113","114311","411113","411311","113141",
-  "114131","311141","411131","211412","211214","211232","2331112"
+  "212222",
+  "222122",
+  "222221",
+  "121223",
+  "121322",
+  "131222",
+  "122213",
+  "122312",
+  "132212",
+  "221213",
+  "221312",
+  "231212",
+  "112232",
+  "122132",
+  "122231",
+  "113222",
+  "123122",
+  "123221",
+  "223211",
+  "221132",
+  "221231",
+  "213212",
+  "223112",
+  "312131",
+  "311222",
+  "321122",
+  "321221",
+  "312212",
+  "322112",
+  "322211",
+  "212123",
+  "212321",
+  "232121",
+  "111323",
+  "131123",
+  "131321",
+  "112313",
+  "132113",
+  "132311",
+  "211313",
+  "231113",
+  "231311",
+  "112133",
+  "112331",
+  "132131",
+  "113123",
+  "113321",
+  "133121",
+  "313121",
+  "211331",
+  "231131",
+  "213113",
+  "213311",
+  "213131",
+  "311123",
+  "311321",
+  "331121",
+  "312113",
+  "312311",
+  "332111",
+  "314111",
+  "221411",
+  "431111",
+  "111224",
+  "111422",
+  "121124",
+  "121421",
+  "141122",
+  "141221",
+  "112214",
+  "112412",
+  "122114",
+  "122411",
+  "142112",
+  "142211",
+  "241211",
+  "221114",
+  "413111",
+  "241112",
+  "134111",
+  "111242",
+  "121142",
+  "121241",
+  "114212",
+  "124112",
+  "124211",
+  "411212",
+  "421112",
+  "421211",
+  "212141",
+  "214121",
+  "412121",
+  "111143",
+  "111341",
+  "131141",
+  "114113",
+  "114311",
+  "411113",
+  "411311",
+  "113141",
+  "114131",
+  "311141",
+  "411131",
+  "211412",
+  "211214",
+  "211232",
+  "2331112",
 ];
 function encodeCode128B(text: string) {
   for (const ch of text) {
     const cc = ch.charCodeAt(0);
     if (cc < 32 || cc > 126) {
-      throw new Error(`Caractere inválido para Code128B: ${JSON.stringify(ch)} (charCode ${cc})`);
+      throw new Error(
+        `Caractere inválido para Code128B: ${JSON.stringify(
+          ch
+        )} (charCode ${cc})`
+      );
     }
   }
-  const startCode = 104, stopCode = 106;
+  const startCode = 104,
+    stopCode = 106;
   const codes: number[] = [];
   for (let i = 0; i < text.length; i++) codes.push(text.charCodeAt(i) - 32);
   let sum = startCode;
   for (let i = 0; i < codes.length; i++) sum += codes[i] * (i + 1);
   const check = sum % 103;
   const sequence = [startCode, ...codes, check, stopCode];
-  return sequence.map(v => CODE128_PATTERNS[v]);
+  return sequence.map((v) => CODE128_PATTERNS[v]);
 }
 function modulesCount(patterns: string[]) {
-  return patterns.reduce((acc, p) => acc + p.split("").reduce((a, d) => a + parseInt(d, 10), 0), 0);
+  return patterns.reduce(
+    (acc, p) => acc + p.split("").reduce((a, d) => a + parseInt(d, 10), 0),
+    0
+  );
 }
 export const Barcode128SVG: React.FC<{
-  value: string; heightPx?: number; modulePx?: number; fullWidth?: boolean; className?: string;
-}> = ({ value, heightPx = 35, modulePx = 1.5, fullWidth = false, className = "" }) => {
+  value: string;
+  heightPx?: number;
+  modulePx?: number;
+  fullWidth?: boolean;
+  className?: string;
+}> = ({
+  value,
+  heightPx = 35,
+  modulePx = 1.5,
+  fullWidth = false,
+  className = "",
+}) => {
   if (!value) return null;
   let patterns: string[] = [];
-  try { patterns = encodeCode128B(value); } catch { return null; }
+  try {
+    patterns = encodeCode128B(value);
+  } catch {
+    return null;
+  }
   const totalModules = modulesCount(patterns);
   let x = 0;
   const bars: React.ReactNode[] = [];
   for (const p of patterns) {
-    const widths = p.split("").map(n => parseInt(n, 10));
+    const widths = p.split("").map((n) => parseInt(n, 10));
     let isBar = true;
     for (const w of widths) {
-      if (isBar) bars.push(<rect key={`${x}`} x={x} y={0} width={w} height={1} fill="#000" />);
-      x += w; isBar = !isBar;
+      if (isBar)
+        bars.push(
+          <rect key={`${x}`} x={x} y={0} width={w} height={1} fill="#000" />
+        );
+      x += w;
+      isBar = !isBar;
     }
   }
   const svgWidth = fullWidth ? "100%" : totalModules * modulePx;
@@ -100,7 +228,11 @@ export const Barcode128SVG: React.FC<{
 /* ========== Variantes de etiqueta (sem depender do front) ========== */
 type LabelProps = { data: Patrimonio } & React.HTMLAttributes<HTMLDivElement>;
 
-export const MiniLabel: React.FC<LabelProps> = ({ data, className = "", ...rest }) => {
+export const MiniLabel: React.FC<LabelProps> = ({
+  data,
+  className = "",
+  ...rest
+}) => {
   const fullCode = fullCodeFrom(data);
   const qrValue = qrUrlFrom(data);
   return (
@@ -108,18 +240,31 @@ export const MiniLabel: React.FC<LabelProps> = ({ data, className = "", ...rest 
       <div className="w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-black border-r-0 bg-eng-blue min-h-full" />
       <div className="dark:bg-white border rounded-r-md px-4 border-black rounded-l-none items-center flex gap-4 p-0">
         <div className="flex py-2 flex-col h-full justify-center w-full">
-          <p className="dark:text-black uppercase text-center font-semibold text-sm relative -top-2">Engenharia UFMG</p>
+          <p className="dark:text-black uppercase text-center font-semibold text-sm relative -top-2">
+            Engenharia UFMG
+          </p>
           <div className="h-7">
-            <Barcode128SVG value={fullCode} heightPx={28} modulePx={1.5} fullWidth />
+            <Barcode128SVG
+              value={fullCode}
+              heightPx={28}
+              modulePx={1.5}
+              fullWidth
+            />
           </div>
-          <div className="font-bold dark:text-black relative -top-2 text-center">{fullCode}</div>
+          <div className="font-bold dark:text-black relative -top-2 text-center">
+            {fullCode}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export const SmallLabel: React.FC<LabelProps> = ({ data, className = "", ...rest }) => {
+export const SmallLabel: React.FC<LabelProps> = ({
+  data,
+  className = "",
+  ...rest
+}) => {
   const fullCode = fullCodeFrom(data);
   const qrValue = qrUrlFrom(data);
   return (
@@ -130,10 +275,19 @@ export const SmallLabel: React.FC<LabelProps> = ({ data, className = "", ...rest
           <QRCode size={96} value={qrValue} />
         </div>
         <div className="flex flex-col h-full justify-center">
-          <p className="dark:text-black font-semibold text-sm uppercase relative -top-2">Engenharia UFMG</p>
-          <div className="font-bold dark:text-black mb-2 text-xl relative -top-2">{fullCode}</div>
+          <p className="dark:text-black font-semibold text-sm uppercase relative -top-2">
+            Engenharia UFMG
+          </p>
+          <div className="font-bold dark:text-black mb-2 text-xl relative -top-2">
+            {fullCode}
+          </div>
           <div className="h-8">
-            <Barcode128SVG value={fullCode} heightPx={32} modulePx={1.4} fullWidth />
+            <Barcode128SVG
+              value={fullCode}
+              heightPx={32}
+              modulePx={1.4}
+              fullWidth
+            />
           </div>
         </div>
       </div>
@@ -141,7 +295,11 @@ export const SmallLabel: React.FC<LabelProps> = ({ data, className = "", ...rest
   );
 };
 
-export const MediumLabel: React.FC<LabelProps> = ({ data, className = "", ...rest }) => {
+export const MediumLabel: React.FC<LabelProps> = ({
+  data,
+  className = "",
+  ...rest
+}) => {
   const fullCode = fullCodeFrom(data);
   const qrValue = qrUrlFrom(data);
   return (
@@ -152,8 +310,12 @@ export const MediumLabel: React.FC<LabelProps> = ({ data, className = "", ...res
           <QRCode size={180} value={qrValue} />
         </div>
         <div className="flex flex-col h-full justify-center flex-1">
-          <p className="dark:text-black font-semibold text-sm uppercase relative -top-2">Engenharia UFMG</p>
-          <div className="font-bold text-2xl dark:text-black relative -top-2">{fullCode}</div>
+          <p className="dark:text-black font-semibold text-sm uppercase relative -top-2">
+            Engenharia UFMG
+          </p>
+          <div className="font-bold text-2xl dark:text-black relative -top-2">
+            {fullCode}
+          </div>
           <div className="border-b border-black my-2" />
           <div className=" relative -top-2 ">
             <p className="font-bold  dark:text-black uppercase leading-tight">
@@ -180,11 +342,14 @@ export const MediumLabel: React.FC<LabelProps> = ({ data, className = "", ...res
 const MM_TO_PX = (mm: number) => Math.round(mm * 3.779528);
 
 /** Defina AQUI as medidas reais das etiquetas (em mm) */
-const SIZE_PRESETS_MM: Record<"d" | "a" | "b", { w: number; h: number; label: string }> = {
+const SIZE_PRESETS_MM: Record<
+  "d" | "a" | "b",
+  { w: number; h: number; label: string }
+> = {
   // d = Pequena, a = Média, b = Grande (ajuste conforme sua régua real)
-  d: { w: 50,  h: 20, label: "Pequena" }, // antes 60x25mm
-  a: { w: 70,  h: 30, label: "Média"   }, // antes 80x35mm
-  b: { w: 90,  h: 45, label: "Grande"  }, // antes 100x50mm
+  d: { w: 50, h: 20, label: "Pequena" }, // antes 60x25mm
+  a: { w: 70, h: 30, label: "Média" }, // antes 80x35mm
+  b: { w: 90, h: 45, label: "Grande" }, // antes 100x50mm
 };
 
 /** Componente que garante LxA exatos em pixels e escala a etiqueta escolhida para caber */
@@ -270,15 +435,15 @@ async function renderOffscreenAndCapture(
   root.render(element);
 
   // Espera renderização completa + fontes carregarem
-  await new Promise((r) => requestAnimationFrame(() => 
-    requestAnimationFrame(() => r(null))
-  )); // Double RAF para garantir layout completo
-  
+  await new Promise((r) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => r(null)))
+  ); // Double RAF para garantir layout completo
+
   if ((document as any).fonts?.ready) {
-    try { 
-      await (document as any).fonts.ready; 
+    try {
+      await (document as any).fonts.ready;
       // Pequena espera extra após fontes carregarem
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     } catch {}
   }
 
@@ -295,7 +460,7 @@ async function renderOffscreenAndCapture(
     border: target.style.border,
     boxSizing: target.style.boxSizing,
   };
-  
+
   // Force estilos para garantir renderização consistente
   Object.assign(target.style, {
     backgroundColor: "#ffffff",
@@ -321,7 +486,7 @@ async function renderOffscreenAndCapture(
     windowHeight: document.documentElement.clientHeight,
     onclone: (clonedDoc) => {
       // Force fontes no documento clonado
-      const style = clonedDoc.createElement('style');
+      const style = clonedDoc.createElement("style");
       style.textContent = `
         * {
           -webkit-font-smoothing: antialiased;
@@ -330,7 +495,7 @@ async function renderOffscreenAndCapture(
         }
       `;
       clonedDoc.head.appendChild(style);
-    }
+    },
   });
 
   // Restaura estilos
@@ -362,7 +527,7 @@ export function EtiquetaStepCB({
 
   const handleDownload = async () => {
     if (!data) return;
-    
+
     try {
       const { jsPDF } = await import("jspdf");
 
@@ -379,7 +544,11 @@ export function EtiquetaStepCB({
       const { w, h } = SIZE_PRESETS_MM[selectedSize];
 
       // Cria um PDF no formato A4 (ou o que preferir) e insere a etiqueta no centro com w x h mm
-      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pdf = new jsPDF({
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
 
@@ -388,9 +557,8 @@ export function EtiquetaStepCB({
 
       pdf.addImage(imgData, "PNG", x, y, w, h, undefined, "MEDIUM");
       pdf.save(`etiqueta_${fullCode || (data as any)?.id}.pdf`);
-      
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
+      console.error("Erro ao gerar PDF:", error);
     }
   };
 
@@ -417,9 +585,15 @@ export function EtiquetaStepCB({
               onValueChange={(v) => v && setSelectedSize(v as any)}
               value={selectedSize}
             >
-              <ToggleGroupItem className="w-full" value="d">Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)</ToggleGroupItem>
-              <ToggleGroupItem className="w-full" value="a">Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)</ToggleGroupItem>
-              <ToggleGroupItem className="w-full" value="b">Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)</ToggleGroupItem>
+              <ToggleGroupItem className="w-full" value="d">
+                Pequena ({SIZE_PRESETS_MM.d.w}×{SIZE_PRESETS_MM.d.h} mm)
+              </ToggleGroupItem>
+              <ToggleGroupItem className="w-full" value="a">
+                Média ({SIZE_PRESETS_MM.a.w}×{SIZE_PRESETS_MM.a.h} mm)
+              </ToggleGroupItem>
+              <ToggleGroupItem className="w-full" value="b">
+                Grande ({SIZE_PRESETS_MM.b.w}×{SIZE_PRESETS_MM.b.h} mm)
+              </ToggleGroupItem>
             </ToggleGroup>
           </div>
         </div>
@@ -431,18 +605,27 @@ export function EtiquetaStepCB({
             <div>
               <p className="font-medium">Plaqueta de identificação</p>
               <p className="text-gray-500 text-sm">
-                Geramos a plaqueta com tamanho físico exato (mm). Clique para baixar em <strong>PDF</strong>.
+                Geramos a plaqueta com tamanho físico exato (mm). Clique para
+                baixar em <strong>PDF</strong>.
               </p>
             </div>
           </div>
-          <Button className="h-8 w-8" variant="ghost" size="icon" onClick={handleDownload} disabled={!data}>
+          <Button
+            className="h-8 w-8"
+            variant="ghost"
+            size="icon"
+            onClick={handleDownload}
+            disabled={!data}
+          >
             <Download size={16} />
           </Button>
         </Alert>
 
         {/* Ações */}
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          <Button onClick={onNew}><Plus className="mr-2 h-4 w-4" /> Criar novo</Button>
+          <Button onClick={onNew}>
+            <Plus className="mr-2 h-4 w-4" /> Criar novo
+          </Button>
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <LayoutDashboard size={16} /> Ir para o dashboard
           </Button>

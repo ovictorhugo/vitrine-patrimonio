@@ -32,6 +32,7 @@ import {
 import { Separator } from "../../../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
 import { useDropzone } from "react-dropzone";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 // contrato mínimo p/ encaixar no wizard existente
 type OnValidity = (v: boolean) => void;
@@ -75,8 +76,8 @@ const fileToDataUrl = (file: File) =>
  * ======================================================= */
 type ImageSlotEditProps = {
   index: number;
-  src?: string;               // imagem do backend
-  tempSrc?: string;           // preview temporário
+  src?: string; // imagem do backend
+  tempSrc?: string; // preview temporário
   busy?: boolean;
   onClickEmpty: () => void;
   onRemove: (i: number) => void;
@@ -170,9 +171,7 @@ export function ImagemStepEdit({
   onStateChange,
 }: Props) {
   /** FONTE DE VERDADE: imagens no backend (id + file_path) */
-  const [images, setImages] = useState<ImageItem[]>(
-    () => existingImages ?? []
-  );
+  const [images, setImages] = useState<ImageItem[]>(() => existingImages ?? []);
 
   /** previews temporários por slot enquanto sobe */
   const [tempSlots, setTempSlots] = useState<Record<number, string>>({});
@@ -210,7 +209,9 @@ export function ImagemStepEdit({
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   // câmera
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
+    []
+  );
   const [selectedCamera, setSelectedCamera] = useState("");
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
@@ -307,7 +308,8 @@ export function ImagemStepEdit({
     } catch (e) {
       console.error("Erro ao iniciar câmera:", e);
       toast("Erro ao iniciar câmera", {
-        description: "Tente selecionar outra câmera ou verifique as permissões.",
+        description:
+          "Tente selecionar outra câmera ou verifique as permissões.",
         action: { label: "Fechar", onClick: () => {} },
       });
     }
@@ -570,6 +572,7 @@ export function ImagemStepEdit({
       navigator.mediaDevices.removeEventListener?.("devicechange", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMediaDevices]);
+  const isMobile = useIsMobile();
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -578,7 +581,13 @@ export function ImagemStepEdit({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-xl font-semibold max-w-[700px]"
+              : "mb-16 text-4xl font-semibold max-w-[700px]"
+          }
+        >
           Insira as fotos do patrimônio — capriche no clique!
         </h1>
       </div>
@@ -606,7 +615,9 @@ export function ImagemStepEdit({
             <PanelRightOpen size={24} />
             <div>
               <p className="font-medium">Passo 3</p>
-              <p className="text-gray-500 text-sm">Imagem lateral ou traseira</p>
+              <p className="text-gray-500 text-sm">
+                Imagem lateral ou traseira
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -752,7 +763,9 @@ export function ImagemStepEdit({
                       <Button
                         className="w-full"
                         onClick={safeInitCamera}
-                        disabled={camStatus === "requesting" || !hasMediaDevices}
+                        disabled={
+                          camStatus === "requesting" || !hasMediaDevices
+                        }
                         type="button"
                       >
                         {camStatus === "requesting" ? (

@@ -62,6 +62,7 @@ import { LocalStep } from "./steps/local.tsx";
 import { ImagemStep } from "./steps/imagem.tsx";
 import { ArquivosStep } from "./steps/arquivos.tsx";
 import { FinalStep } from "./steps/final.tsx";
+import { useIsMobile } from "../../../hooks/use-mobile.tsx";
 
 /* Código de Barras Code128B (SVG inline) */
 const CODE128_PATTERNS = [
@@ -1460,18 +1461,34 @@ export function EmprestimoAudiovisual() {
 
   // Tela de LOADING (finalização)
   if (isFinishing) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
-          <div className="text-eng-blue mb-4 animate-pulse">
-            <LoaderCircle size={108} className="animate-spin" />
+    const isMobile = useIsMobile();
+
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
           </div>
-          <p className="font-medium text-lg max-w-[500px] text-center">
-            {loadingMessage}
-          </p>
         </div>
-      </div>
-    );
+      );
+    } else
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
   }
 
   // Tela de SUCESSO (após finalizar) — agora com o MESMO esquema de plaqueta do "etiqueta"

@@ -503,7 +503,7 @@ function StatusAccordion({
                 <ChevronLeft size={16} />
               </Button>
 
-              <div className="mx-4">
+              <div className="mx-12">
                 <div
                   ref={scrollAreaRef}
                   className="overflow-x-auto scrollbar-hide"
@@ -518,7 +518,7 @@ function StatusAccordion({
                         />
                       ))
                     ) : items.length === 0 ? (
-                      <div className="w-full pr-4">
+                      <div className="w-full">
                         <Alert variant="default">
                           Nenhum item para este status.
                         </Alert>
@@ -1822,7 +1822,7 @@ export function Anunciados(props: {
       <Tabs value={tab} onValueChange={(v) => setTab(v as BoardKind)}>
         {/* === Cards de resumo === */}
         <TabsContent value="vitrine" className="p-0 m-0">
-          <Carousel className="w-full flex gap-4  items-center">
+          <Carousel className="w-full flex gap-4 px-4 items-center">
             <div className="absolute left-0 z-[9]">
               <CarouselPrevious />
             </div>

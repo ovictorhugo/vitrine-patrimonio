@@ -3,14 +3,28 @@ import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../novo-item";
 import { AlertCircle, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
 import { Input } from "../../../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { User } from "phosphor-react";
 import { UserContext } from "../../../../context/context";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../ui/popover";
 import { Button } from "../../../ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../../../ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../../../ui/command";
 import { cn } from "../../../../lib";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /** ================= Tipos ================= */
 
@@ -36,7 +50,11 @@ export interface Patrimonio {
   sector: { sector_name: string; sector_code: string; id: string };
   location: { location_code: string; location_name: string; id: string };
   material: { id: string; material_code: string; material_name: string };
-  legal_guardian: { id: string; legal_guardians_code: string; legal_guardians_name: string };
+  legal_guardian: {
+    id: string;
+    legal_guardians_code: string;
+    legal_guardians_name: string;
+  };
   is_official: boolean;
 }
 
@@ -75,7 +93,11 @@ const blankPatrimonio = (): Patrimonio => ({
   sector: { sector_name: "", sector_code: "", id: "" },
   location: { location_code: "", location_name: "", id: "" },
   material: { id: "", material_code: "", material_name: "" },
-  legal_guardian: { id: "", legal_guardians_code: "", legal_guardians_name: "" },
+  legal_guardian: {
+    id: "",
+    legal_guardians_code: "",
+    legal_guardians_name: "",
+  },
   is_official: false,
 });
 
@@ -128,12 +150,14 @@ export function FormularioSpStep({
   onStateChange,
   type,
   initialData,
-  step
+  step,
 }: Props) {
   const { urlGeral } = useContext(UserContext);
 
   // estado principal
-  const [data, setData] = useState<Patrimonio>(initialData ?? blankPatrimonio());
+  const [data, setData] = useState<Patrimonio>(
+    initialData ?? blankPatrimonio()
+  );
 
   // listas e seleção (Material/Responsável)
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -163,7 +187,8 @@ export function FormularioSpStep({
       const next = { ...prev };
       if (next.asset_status !== "NI") next.asset_status = "NI";
       if (!next.asset_code) next.asset_code = gerarCodigo();
-      if (!next.asset_check_digit) next.asset_check_digit = gerarDgv(next.asset_code);
+      if (!next.asset_check_digit)
+        next.asset_check_digit = gerarDgv(next.asset_code);
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,39 +210,53 @@ export function FormularioSpStep({
 
   /** ---------- Fetches das listas (com ?q=) ---------- */
 
-  const fetchMaterials = useCallback(async (q?: string) => {
-    const reqId = ++materialReqIdRef.current;
-    setLoading((p) => ({ ...p, materials: true }));
-    try {
-      const params = q ? `?q=${encodeURIComponent(q)}` : "";
-      const res = await fetch(`${urlGeral}materials/${params}`, { headers: { Accept: "application/json" } });
-      const json: { materials: Material[] } = await res.json();
-      if (materialReqIdRef.current !== reqId) return; // resposta antiga
-      setMaterials(Array.isArray(json?.materials) ? json.materials : []);
-    } catch (e) {
-      if (materialReqIdRef.current === reqId) setMaterials([]);
-      console.error("Erro ao buscar materiais:", e);
-    } finally {
-      if (materialReqIdRef.current === reqId) setLoading((p) => ({ ...p, materials: false }));
-    }
-  }, [urlGeral]);
+  const fetchMaterials = useCallback(
+    async (q?: string) => {
+      const reqId = ++materialReqIdRef.current;
+      setLoading((p) => ({ ...p, materials: true }));
+      try {
+        const params = q ? `?q=${encodeURIComponent(q)}` : "";
+        const res = await fetch(`${urlGeral}materials/${params}`, {
+          headers: { Accept: "application/json" },
+        });
+        const json: { materials: Material[] } = await res.json();
+        if (materialReqIdRef.current !== reqId) return; // resposta antiga
+        setMaterials(Array.isArray(json?.materials) ? json.materials : []);
+      } catch (e) {
+        if (materialReqIdRef.current === reqId) setMaterials([]);
+        console.error("Erro ao buscar materiais:", e);
+      } finally {
+        if (materialReqIdRef.current === reqId)
+          setLoading((p) => ({ ...p, materials: false }));
+      }
+    },
+    [urlGeral]
+  );
 
-  const fetchLegalGuardians = useCallback(async (q?: string) => {
-    const reqId = ++guardianReqIdRef.current;
-    setLoading((p) => ({ ...p, guardians: true }));
-    try {
-      const params = q ? `?q=${encodeURIComponent(q)}` : "";
-      const res = await fetch(`${urlGeral}legal-guardians/${params}`, { headers: { Accept: "application/json" } });
-      const json: { legal_guardians: LegalGuardian[] } = await res.json();
-      if (guardianReqIdRef.current !== reqId) return; // resposta antiga
-      setLegalGuardians(Array.isArray(json?.legal_guardians) ? json.legal_guardians : []);
-    } catch (e) {
-      if (guardianReqIdRef.current === reqId) setLegalGuardians([]);
-      console.error("Erro ao buscar responsáveis:", e);
-    } finally {
-      if (guardianReqIdRef.current === reqId) setLoading((p) => ({ ...p, guardians: false }));
-    }
-  }, [urlGeral]);
+  const fetchLegalGuardians = useCallback(
+    async (q?: string) => {
+      const reqId = ++guardianReqIdRef.current;
+      setLoading((p) => ({ ...p, guardians: true }));
+      try {
+        const params = q ? `?q=${encodeURIComponent(q)}` : "";
+        const res = await fetch(`${urlGeral}legal-guardians/${params}`, {
+          headers: { Accept: "application/json" },
+        });
+        const json: { legal_guardians: LegalGuardian[] } = await res.json();
+        if (guardianReqIdRef.current !== reqId) return; // resposta antiga
+        setLegalGuardians(
+          Array.isArray(json?.legal_guardians) ? json.legal_guardians : []
+        );
+      } catch (e) {
+        if (guardianReqIdRef.current === reqId) setLegalGuardians([]);
+        console.error("Erro ao buscar responsáveis:", e);
+      } finally {
+        if (guardianReqIdRef.current === reqId)
+          setLoading((p) => ({ ...p, guardians: false }));
+      }
+    },
+    [urlGeral]
+  );
 
   // carregar inicialmente
   useEffect(() => {
@@ -239,7 +278,11 @@ export function FormularioSpStep({
     const m = materials.find((x) => x.id === id);
     patch({
       material: m
-        ? { id: m.id, material_code: m.material_code, material_name: m.material_name }
+        ? {
+            id: m.id,
+            material_code: m.material_code,
+            material_name: m.material_name,
+          }
         : { id: "", material_code: "", material_name: "" },
     });
   };
@@ -270,6 +313,7 @@ export function FormularioSpStep({
 
   const [openGuardian, setOpenGuardian] = useState(false);
   const [openMaterial, setOpenMaterial] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -278,7 +322,13 @@ export function FormularioSpStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Adicione os dados de patrimônio:
         </h1>
       </div>
@@ -289,15 +339,15 @@ export function FormularioSpStep({
           <div>
             <p className="font-medium">Dados de patrimônio</p>
             <p className="text-gray-500 text-sm">
-              O cadastro do item na plataforma não caracteriza o processo de tombamento.
-              Significa apenas que o bem está registrado no sistema, ainda que não possua plaqueta de identificação.
+              O cadastro do item na plataforma não caracteriza o processo de
+              tombamento. Significa apenas que o bem está registrado no sistema,
+              ainda que não possua plaqueta de identificação.
             </p>
           </div>
         </div>
 
         <div className="flex gap-2 w-full">
           <div className="flex flex-col gap-4 w-full ">
-
             {/* Linha 1 */}
             <div className="flex gap-4 w-full flex-col lg:flex-row ">
               {/* Código (somente leitura) */}
@@ -318,7 +368,12 @@ export function FormularioSpStep({
               <div className="grid gap-3 w-full">
                 <Label htmlFor="asset_check_digit">Díg. Verificador</Label>
                 <div className="flex items-center gap-3">
-                  <Input id="asset_check_digit" className="w-full" value={data.asset_check_digit} disabled />
+                  <Input
+                    id="asset_check_digit"
+                    className="w-full"
+                    value={data.asset_check_digit}
+                    disabled
+                  />
                 </div>
               </div>
 
@@ -336,8 +391,11 @@ export function FormularioSpStep({
                       disabled={loading.materials}
                     >
                       {selectedMaterialId
-                        ? materials.find((m) => m.id === selectedMaterialId)?.material_name
-                        : loading.materials ? "Carregando..." : "Selecione o material"}
+                        ? materials.find((m) => m.id === selectedMaterialId)
+                            ?.material_name
+                        : loading.materials
+                        ? "Carregando..."
+                        : "Selecione o material"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -351,11 +409,21 @@ export function FormularioSpStep({
                         }}
                       />
                       <CommandList>
-                        <CommandEmpty>{loading.materials ? "Carregando..." : "Nenhum material encontrado."}</CommandEmpty>
+                        <CommandEmpty>
+                          {loading.materials
+                            ? "Carregando..."
+                            : "Nenhum material encontrado."}
+                        </CommandEmpty>
                         <CommandGroup>
                           {materials
                             .slice()
-                            .sort((a, b) => a.material_name.localeCompare(b.material_name, "pt-BR", { sensitivity: "base" }))
+                            .sort((a, b) =>
+                              a.material_name.localeCompare(
+                                b.material_name,
+                                "pt-BR",
+                                { sensitivity: "base" }
+                              )
+                            )
                             .map((m) => (
                               <CommandItem
                                 key={m.id}
@@ -368,11 +436,15 @@ export function FormularioSpStep({
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    selectedMaterialId === m.id ? "opacity-100" : "opacity-0"
+                                    selectedMaterialId === m.id
+                                      ? "opacity-100"
+                                      : "opacity-0"
                                   )}
                                 />
                                 <div className="flex flex-col">
-                                  <span className="text-sm">{m.material_name}</span>
+                                  <span className="text-sm">
+                                    {m.material_name}
+                                  </span>
                                 </div>
                               </CommandItem>
                             ))}
@@ -438,8 +510,12 @@ export function FormularioSpStep({
                         disabled={loading.guardians}
                       >
                         {selectedGuardianId
-                          ? legalGuardians.find((g) => g.id === selectedGuardianId)?.legal_guardians_name
-                          : loading.guardians ? "Carregando..." : "Selecione o responsável"}
+                          ? legalGuardians.find(
+                              (g) => g.id === selectedGuardianId
+                            )?.legal_guardians_name
+                          : loading.guardians
+                          ? "Carregando..."
+                          : "Selecione o responsável"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -453,12 +529,20 @@ export function FormularioSpStep({
                           }}
                         />
                         <CommandList>
-                          <CommandEmpty>{loading.guardians ? "Carregando..." : "Nenhum responsável encontrado."}</CommandEmpty>
+                          <CommandEmpty>
+                            {loading.guardians
+                              ? "Carregando..."
+                              : "Nenhum responsável encontrado."}
+                          </CommandEmpty>
                           <CommandGroup>
                             {legalGuardians
                               .slice()
                               .sort((a, b) =>
-                                a.legal_guardians_name.localeCompare(b.legal_guardians_name, "pt-BR", { sensitivity: "base" })
+                                a.legal_guardians_name.localeCompare(
+                                  b.legal_guardians_name,
+                                  "pt-BR",
+                                  { sensitivity: "base" }
+                                )
                               )
                               .map((g) => (
                                 <CommandItem
@@ -472,11 +556,15 @@ export function FormularioSpStep({
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      selectedGuardianId === g.id ? "opacity-100" : "opacity-0"
+                                      selectedGuardianId === g.id
+                                        ? "opacity-100"
+                                        : "opacity-0"
                                     )}
                                   />
                                   <div className="flex flex-col">
-                                    <span className="text-sm">{g.legal_guardians_name}</span>
+                                    <span className="text-sm">
+                                      {g.legal_guardians_name}
+                                    </span>
                                   </div>
                                 </CommandItem>
                               ))}
@@ -488,7 +576,6 @@ export function FormularioSpStep({
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

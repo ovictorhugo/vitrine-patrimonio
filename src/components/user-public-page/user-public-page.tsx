@@ -36,6 +36,7 @@ import {
 import { HeaderResultTypeHome } from "../header-result-type-home";
 import { usePermissions } from "../permissions";
 import { Anunciados } from "../dashboard/dashboard-page/components/anunciados";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 interface Permission {
   id: string;
@@ -294,21 +295,36 @@ export function UserPublicPage() {
     input.click();
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
-          <div className="text-eng-blue mb-4 animate-pulse">
-            <LoaderCircle size={108} className="animate-spin" />
-          </div>
-          <p className="font-medium text-lg max-w-[500px] text-center">
-            {loadingMessage}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const isMobile = useIsMobile();
 
+  if (loading) {
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+    } else
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+  }
   if (!user) {
     return (
       <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">

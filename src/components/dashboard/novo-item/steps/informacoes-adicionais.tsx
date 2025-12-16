@@ -46,6 +46,7 @@ import {
 } from "../../../ui/accordion";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
 
@@ -491,6 +492,8 @@ export const InformacoesAdicionaisStep = forwardRef<
   //   },
   // });
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -498,7 +501,13 @@ export const InformacoesAdicionaisStep = forwardRef<
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Forneça algumas informações adicionais...
         </h1>
       </div>

@@ -1907,11 +1907,7 @@ export function ItensVitrine() {
                         <Alert
                           key={col.key}
                           ref={(el) => (colRefs.current[col.key] = el)}
-                          className={
-                            isMobile
-                              ? "w-[320px] min-w-[320px] h-full flex flex-col min-w-0 overflow-hidden mb-8"
-                              : "h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
-                          }
+                          className="min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
                         >
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -2255,16 +2251,52 @@ export function ItensVitrine() {
 
               return (
                 <div key={col.key}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
+                  <div
+                    className={
+                      isMobile
+                        ? "flex flex-col items-center justify-between mb-4 mt-6"
+                        : "flex items-center justify-between mb-4"
+                    }
+                  >
+                    {isMobile ? (
+                      <div className="w-full flex justify-start mb-5 pl-1">
+                        <Button
+                          size={isMobile ? "xs" : "sm"}
+                          onClick={() => setExpandedColumn(null)}
+                          className="self-start"
+                        >
+                          <ChevronLeft size={16} />
+                          Voltar ao quadro
+                        </Button>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
+                    <div className="flex items-center gap-1 mr-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Icon size={16} />
-                        <h2 className="text-lg font-semibold">{col.name}</h2>
+                        <h2
+                          className={
+                            isMobile
+                              ? "text-base text-center font-semibold"
+                              : "text-lg font-semibold"
+                          }
+                        >
+                          {col.name}
+                        </h2>
                       </div>
-                      <Badge variant="outline">{totalForCol}</Badge>
+                      <Badge
+                        variant="outline"
+                        className={isMobile ? "w-6 items-center hidden" : ""}
+                      >
+                        {totalForCol}
+                      </Badge>
                     </div>
-
-                    <div className="flex gap-3">
+                    <div
+                      className={
+                        isMobile ? "flex flex-row  gap-3 mt-4 " : "flex gap-3"
+                      }
+                    >
                       <DownloadPdfButton
                         filters={{
                           material_id: materialId || undefined,
@@ -2277,27 +2309,32 @@ export function ItensVitrine() {
                         }}
                         label="Baixar PDF"
                         method="catalog"
+                        size={isMobile ? "xs" : "sm"}
                       />
                       <Button
-                        size={"sm"}
+                        size={isMobile ? "xs" : "sm"}
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >
                         <Download size={16} />
                         Baixar csv
                       </Button>
-                      <Button
-                        size={"sm"}
-                        onClick={() => setExpandedColumn(null)}
-                      >
-                        <ChevronLeft size={16} />
-                        Voltar ao quadro
-                      </Button>
+                      {isMobile ? (
+                        <></>
+                      ) : (
+                        <Button
+                          size={isMobile ? "xs" : "sm"}
+                          onClick={() => setExpandedColumn(null)}
+                        >
+                          <ChevronLeft size={16} />
+                          Voltar ao quadro
+                        </Button>
+                      )}
                     </div>
                   </div>
 
                   {(loading || loadingColumns[col.key]) && !items.length ? (
-                    <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                       <Skeleton className="aspect-square w-full rounded-md" />
 
                       <Skeleton className="aspect-square w-full rounded-md" />
@@ -2312,7 +2349,7 @@ export function ItensVitrine() {
                     </div>
                   ) : null}
 
-                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {slice.map((item) => (
                       <ItemPatrimonio
                         key={item.id}

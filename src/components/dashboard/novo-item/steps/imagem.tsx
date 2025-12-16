@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { Separator } from "../../../ui/separator";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /** deep equal simples p/ arrays de strings */
 const sameArr = (a?: string[], b?: string[]) => {
@@ -77,8 +78,8 @@ function ImageSlot({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (accepted) => onDropFiles(accepted, index),
     accept: { "image/*": [] },
-    multiple: true,     // pode soltar várias; pipeline limita a 4
-    noClick: true,      // clique continua com o seu botão
+    multiple: true, // pode soltar várias; pipeline limita a 4
+    noClick: true, // clique continua com o seu botão
     noKeyboard: true,
   });
 
@@ -134,8 +135,8 @@ export function ImagemStep({
   imagens, // vem do pai (pode ser undefined no primeiro paint)
 }: StepBaseProps<"imagens">) {
   /** ===== estado local é a FONTE DE VERDADE ===== */
-  const [images, setImages] = useState<string[]>(
-    () => (Array.isArray(imagens) ? imagens : [])
+  const [images, setImages] = useState<string[]>(() =>
+    Array.isArray(imagens) ? imagens : []
   );
   /** Snapshot real para upload (cópia temporária congelada) */
   const imageBlobsRef = useRef<(Blob | null)[]>(
@@ -259,7 +260,9 @@ export function ImagemStep({
   };
 
   /** ===== Câmera ===== */
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>(
+    []
+  );
   const [selectedCamera, setSelectedCamera] = useState("");
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
@@ -352,7 +355,8 @@ export function ImagemStep({
     } catch (e) {
       console.error("Erro ao iniciar câmera:", e);
       toast("Erro ao iniciar câmera", {
-        description: "Tente selecionar outra câmera ou verifique as permissões.",
+        description:
+          "Tente selecionar outra câmera ou verifique as permissões.",
         action: { label: "Fechar", onClick: () => {} },
       });
     }
@@ -474,6 +478,8 @@ export function ImagemStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -481,7 +487,13 @@ export function ImagemStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Insira as fotos do patrimônio — capriche no clique!
         </h1>
       </div>
@@ -510,7 +522,8 @@ export function ImagemStep({
             <div>
               <p className="font-medium">Passo 3</p>
               <p className="text-gray-500 text-sm">
-                Imagem lateral ou traseira (com indicação de marca e modelo quando houver)
+                Imagem lateral ou traseira (com indicação de marca e modelo
+                quando houver)
               </p>
             </div>
           </div>
@@ -559,7 +572,8 @@ export function ImagemStep({
                     Adicionar imagem
                   </DialogTitle>
                   <DialogDescription className="text-zinc-500">
-                    Você pode capturar uma nova imagem com a câmera ou escolher um arquivo do computador.
+                    Você pode capturar uma nova imagem com a câmera ou escolher
+                    um arquivo do computador.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -589,7 +603,8 @@ export function ImagemStep({
 
                 {!hasMediaDevices && (
                   <p className="text-xs text-red-500 mt-3">
-                    O acesso à câmera não é suportado neste navegador/dispositivo.
+                    O acesso à câmera não é suportado neste
+                    navegador/dispositivo.
                   </p>
                 )}
               </DialogContent>
@@ -603,7 +618,8 @@ export function ImagemStep({
                     Capturar foto
                   </DialogTitle>
                   <DialogDescription className="text-zinc-500">
-                    Fotografe o item com boa iluminação. Esta foto será usada no Sistema Patrimônio.
+                    Fotografe o item com boa iluminação. Esta foto será usada no
+                    Sistema Patrimônio.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -615,11 +631,14 @@ export function ImagemStep({
                     <div className="rounded-md border p-3 text-sm">
                       {camStatus === "idle" && (
                         <p>
-                          Clique em <strong>Ativar câmera</strong> para listar os dispositivos disponíveis.
+                          Clique em <strong>Ativar câmera</strong> para listar
+                          os dispositivos disponíveis.
                         </p>
                       )}
                       {camStatus === "requesting" && (
-                        <p>Solicitando acesso à câmera… confirme no navegador.</p>
+                        <p>
+                          Solicitando acesso à câmera… confirme no navegador.
+                        </p>
                       )}
                       {camStatus === "denied" && (
                         <p className="text-red-600">
@@ -629,7 +648,8 @@ export function ImagemStep({
                       )}
                       {!window.isSecureContext && (
                         <p className="text-amber-600 mt-2">
-                          Dica: acesse via <strong>HTTPS</strong> para liberar o uso da câmera.
+                          Dica: acesse via <strong>HTTPS</strong> para liberar o
+                          uso da câmera.
                         </p>
                       )}
                     </div>
@@ -647,7 +667,9 @@ export function ImagemStep({
                       <Button
                         className="w-full"
                         onClick={safeInitCamera}
-                        disabled={camStatus === "requesting" || !hasMediaDevices}
+                        disabled={
+                          camStatus === "requesting" || !hasMediaDevices
+                        }
                         type="button"
                       >
                         {camStatus === "requesting" ? (
@@ -655,7 +677,9 @@ export function ImagemStep({
                         ) : (
                           <Camera size={16} />
                         )}
-                        {camStatus === "requesting" ? "Ativando…" : "Ativar câmera"}
+                        {camStatus === "requesting"
+                          ? "Ativando…"
+                          : "Ativar câmera"}
                       </Button>
                     </div>
                   </div>
@@ -688,7 +712,9 @@ export function ImagemStep({
                           <div className="space-y-2 mt-4">
                             <Select
                               value={selectedCamera}
-                              onValueChange={(value) => setSelectedCamera(value)}
+                              onValueChange={(value) =>
+                                setSelectedCamera(value)
+                              }
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Selecione a câmera" />
@@ -742,7 +768,8 @@ export function ImagemStep({
                           />
                           <canvas ref={canvasRef} className="hidden" />
                           <div className="absolute top-2 left-2 flex gap-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                            <Camera size={16} /> {stream ? "Ao vivo" : "Iniciando..."}
+                            <Camera size={16} />{" "}
+                            {stream ? "Ao vivo" : "Iniciando..."}
                           </div>
                         </div>
 

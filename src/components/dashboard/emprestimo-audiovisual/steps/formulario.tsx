@@ -1,9 +1,24 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../emprestimo-audiovisual";
-import { Archive, ArrowRight, CheckIcon, HelpCircle, Hourglass, LoaderCircle, MoveRight, XIcon } from "lucide-react";
+import {
+  Archive,
+  ArrowRight,
+  CheckIcon,
+  HelpCircle,
+  Hourglass,
+  LoaderCircle,
+  MoveRight,
+  XIcon,
+} from "lucide-react";
 import { Input } from "../../../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { User } from "phosphor-react";
 import { UserContext } from "../../../../context/context";
@@ -11,6 +26,7 @@ import { Separator } from "../../../ui/separator";
 import { Alert } from "../../../ui/alert";
 import { Badge } from "../../../ui/badge";
 import { useModal } from "../../../hooks/use-modal-store";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /** ====== Tipos ====== */
 export interface Patrimonio {
@@ -35,7 +51,11 @@ export interface Patrimonio {
   sector: { sector_name: string; sector_code: string; id: string };
   location: { location_code: string; location_name: string; id: string };
   material: { material_code: string; material_name: string; id: string };
-  legal_guardian: { legal_guardians_code: string; legal_guardians_name: string; id: string };
+  legal_guardian: {
+    legal_guardians_code: string;
+    legal_guardians_name: string;
+    id: string;
+  };
   is_official: boolean;
 }
 
@@ -61,7 +81,11 @@ const blankPatrimonio = (): Patrimonio => ({
   sector: { sector_name: "", sector_code: "", id: "" },
   location: { location_code: "", location_name: "", id: "" },
   material: { material_code: "", material_name: "", id: "" },
-  legal_guardian: { legal_guardians_code: "", legal_guardians_name: "", id: "" },
+  legal_guardian: {
+    legal_guardians_code: "",
+    legal_guardians_name: "",
+    id: "",
+  },
   is_official: false,
 });
 
@@ -80,60 +104,60 @@ function normalizeAsset(raw: any): Patrimonio {
   const safeStr = (v: any) => (v == null ? "" : String(v));
 
   // caminhos aninhados do novo payload
-  const loc  = raw?.location ?? null;
+  const loc = raw?.location ?? null;
   const sect = loc?.sector ?? null;
-  const ag   = sect?.agency ?? null;
+  const ag = sect?.agency ?? null;
   const unit = ag?.unit ?? null;
 
   return {
-    asset_code:            safeStr(raw?.asset_code),
-    asset_check_digit:     safeStr(raw?.asset_check_digit),
-    atm_number:            safeStr(raw?.atm_number),
-    serial_number:         safeStr(raw?.serial_number),
-    asset_status:          safeStr(raw?.asset_status),
-    asset_value:           safeStr(raw?.asset_value),
-    asset_description:     safeStr(raw?.asset_description),
-    csv_code:              safeStr(raw?.csv_code),
+    asset_code: safeStr(raw?.asset_code),
+    asset_check_digit: safeStr(raw?.asset_check_digit),
+    atm_number: safeStr(raw?.atm_number),
+    serial_number: safeStr(raw?.serial_number),
+    asset_status: safeStr(raw?.asset_status),
+    asset_value: safeStr(raw?.asset_value),
+    asset_description: safeStr(raw?.asset_description),
+    csv_code: safeStr(raw?.csv_code),
     accounting_entry_code: safeStr(raw?.accounting_entry_code),
-    item_brand:            safeStr(raw?.item_brand),
-    item_model:            safeStr(raw?.item_model),
-    group_type_code:       safeStr(raw?.group_type_code),
-    group_code:            safeStr(raw?.group_code),
-    expense_element_code:  safeStr(raw?.expense_element_code),
-    subelement_code:       safeStr(raw?.subelement_code),
-    id:                    safeStr(raw?.id),
+    item_brand: safeStr(raw?.item_brand),
+    item_model: safeStr(raw?.item_model),
+    group_type_code: safeStr(raw?.group_type_code),
+    group_code: safeStr(raw?.group_code),
+    expense_element_code: safeStr(raw?.expense_element_code),
+    subelement_code: safeStr(raw?.subelement_code),
+    id: safeStr(raw?.id),
 
     agency: {
       agency_name: safeStr(ag?.agency_name),
       agency_code: safeStr(ag?.agency_code),
-      id:          safeStr(ag?.id),
+      id: safeStr(ag?.id),
     },
     unit: {
       unit_name: safeStr(unit?.unit_name),
       unit_code: safeStr(unit?.unit_code),
       unit_siaf: safeStr(unit?.unit_siaf),
-      id:        safeStr(unit?.id),
+      id: safeStr(unit?.id),
     },
     sector: {
       sector_name: safeStr(sect?.sector_name),
       sector_code: safeStr(sect?.sector_code),
-      id:          safeStr(sect?.id),
+      id: safeStr(sect?.id),
     },
     location: {
       location_code: safeStr(loc?.location_code),
       location_name: safeStr(loc?.location_name),
-      id:            safeStr(loc?.id),
+      id: safeStr(loc?.id),
     },
 
     material: {
       material_code: safeStr(raw?.material?.material_code),
       material_name: safeStr(raw?.material?.material_name),
-      id:            safeStr(raw?.material?.id),
+      id: safeStr(raw?.material?.id),
     },
     legal_guardian: {
       legal_guardians_code: safeStr(raw?.legal_guardian?.legal_guardians_code),
       legal_guardians_name: safeStr(raw?.legal_guardian?.legal_guardians_name),
-      id:                   safeStr(raw?.legal_guardian?.id),
+      id: safeStr(raw?.legal_guardian?.id),
     },
 
     is_official: Boolean(raw?.is_official),
@@ -148,13 +172,16 @@ export function FormularioStep({
   step,
   initialData,
   showLocation,
-}: StepBaseProps<"formulario"> & { initialData?: Patrimonio, showLocation?: boolean }) {
-  const { urlGeral, loggedIn } = useContext(UserContext) 
+}: StepBaseProps<"formulario"> & {
+  initialData?: Patrimonio;
+  showLocation?: boolean;
+}) {
+  const { urlGeral, loggedIn } = useContext(UserContext);
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Patrimonio>(
-  initialData ? normalizeAsset(initialData as any) : blankPatrimonio()
-);
+    initialData ? normalizeAsset(initialData as any) : blankPatrimonio()
+  );
   // Debounce do valor vindo do passo anterior
   const debouncedValue = useDebounced(value_item ?? "", 500);
 
@@ -202,7 +229,6 @@ export function FormularioStep({
   const abortRef = useRef<AbortController | null>(null);
   const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
 
-  
   useEffect(() => {
     if (!url) return;
 
@@ -219,7 +245,7 @@ export function FormularioStep({
           signal: ac.signal,
           headers: {
             Accept: "application/json",
-           Authorization: token ? `Bearer ${token}` : "",
+            Authorization: token ? `Bearer ${token}` : "",
           },
         });
 
@@ -238,7 +264,7 @@ export function FormularioStep({
           setData(blankPatrimonio());
         }
 
-         if (abortRef.current === ac) {
+        if (abortRef.current === ac) {
           setLoading(false);
           abortRef.current = null;
         }
@@ -254,7 +280,6 @@ export function FormularioStep({
     };
   }, [url]);
 
-  
   const qualisColor: Record<string, string> = {
     BM: "bg-green-500",
     AE: "bg-red-500",
@@ -262,7 +287,7 @@ export function FormularioStep({
     OC: "bg-blue-500",
     RE: "bg-purple-500",
   };
-  
+
   const csvCodToText: Record<string, string> = {
     BM: "Bom",
     AE: "Anti-Econômico",
@@ -271,10 +296,9 @@ export function FormularioStep({
     RE: "Recuperável",
   };
 
-
   const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
-    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> as any }, // HelpCircle (phosphor) opcional
+    NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any }, // HelpCircle (phosphor) opcional
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
     TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
     MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
@@ -286,56 +310,85 @@ export function FormularioStep({
 
   const status = statusMap[bemStaTrimmed];
 
-  const showCard =
-    Boolean(data.asset_code);
+  const showCard = Boolean(data.asset_code);
 
-         const [loadingMessage, setLoadingMessage] = useState("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
-          
-              useEffect(() => {
-                let timeouts: NodeJS.Timeout[] = [];
-              
-               
-                  setLoadingMessage("Estamos procurando todas as informações no nosso banco de dados, aguarde.");
-              
-                  timeouts.push(setTimeout(() => {
-                    setLoadingMessage("Estamos quase lá, continue aguardando...");
-                  }, 5000));
-              
-                  timeouts.push(setTimeout(() => {
-                    setLoadingMessage("Só mais um pouco...");
-                  }, 10000));
-              
-                  timeouts.push(setTimeout(() => {
-                    setLoadingMessage("Está demorando mais que o normal... estamos tentando encontrar tudo.");
-                  }, 15000));
-              
-                  timeouts.push(setTimeout(() => {
-                    setLoadingMessage("Estamos empenhados em achar todos os dados, aguarde só mais um pouco");
-                  }, 15000));
-                
-              
-                return () => {
-                  // Limpa os timeouts ao desmontar ou quando isOpen mudar
-                  timeouts.forEach(clearTimeout);
-                };
-              }, []);
+  const [loadingMessage, setLoadingMessage] = useState(
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+  );
 
-              const {onOpen} = useModal()
-    
-   if (loading) {
-            return (
-              <div className="flex justify-center items-center h-full">
-              <div className="w-full flex flex-col items-center justify-center h-full">
-                <div className="text-eng-blue mb-4 animate-pulse">
-                  <LoaderCircle size={108} className="animate-spin" />
-                </div>
-                <p className="font-medium text-lg max-w-[500px] text-center">
-                  {loadingMessage}
-                </p>
-              </div>
+  useEffect(() => {
+    let timeouts: NodeJS.Timeout[] = [];
+
+    setLoadingMessage(
+      "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    );
+
+    timeouts.push(
+      setTimeout(() => {
+        setLoadingMessage("Estamos quase lá, continue aguardando...");
+      }, 5000)
+    );
+
+    timeouts.push(
+      setTimeout(() => {
+        setLoadingMessage("Só mais um pouco...");
+      }, 10000)
+    );
+
+    timeouts.push(
+      setTimeout(() => {
+        setLoadingMessage(
+          "Está demorando mais que o normal... estamos tentando encontrar tudo."
+        );
+      }, 15000)
+    );
+
+    timeouts.push(
+      setTimeout(() => {
+        setLoadingMessage(
+          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+        );
+      }, 15000)
+    );
+
+    return () => {
+      // Limpa os timeouts ao desmontar ou quando isOpen mudar
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
+
+  const { onOpen } = useModal();
+
+  const isMobile = useIsMobile();
+
+  if (loading) {
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
             </div>
-            );
-          }
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+    } else
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+  }
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -344,84 +397,101 @@ export function FormularioStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Agora, confira se as informações estão corretas:
         </h1>
       </div>
 
       <div className="ml-8">
-      {showCard && (
+        {showCard && (
           <>
-          <div className="flex group cursor-pointer " onClick={() => onOpen('patrimonio', {...data})}>
             <div
-              className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-                qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
-              } min-h-full`}
-            />
-            <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
-              <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-                <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
-                  {data.asset_code?.trim()} - {data.asset_check_digit}
-                  {!!data.atm_number && data.atm_number !== "None" && (
-                    <Badge variant="outline">ATM: {data.atm_number}</Badge>
-                  )}
-                </p>
-              </div>
-
-              <div className="flex flex-col p-4 pt-0 justify-between">
-                <div>
-                  <div className="text-lg mb-2 font-bold">{data.material.material_name || "Sem nome"}</div>
-                  <p className="text-left mb-4 uppercase">{data.asset_description}</p>
-
-                  <div className="flex flex-wrap gap-3">
-                    {!!data.csv_code && data.csv_code !== "None" && (
-                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                        <div
-                          className={`w-4 h-4 rounded-md ${
-                            qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300"
-                          }`}
-                        />
-                        {csvCodToText[csvCodTrimmed as keyof typeof csvCodToText] || "—"}
-                      </div>
+              className="flex group cursor-pointer "
+              onClick={() => onOpen("patrimonio", { ...data })}
+            >
+              <div
+                className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+                  qualisColor[csvCodTrimmed as keyof typeof qualisColor] ||
+                  "bg-zinc-300"
+                } min-h-full`}
+              />
+              <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
+                <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
+                  <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
+                    {data.asset_code?.trim()} - {data.asset_check_digit}
+                    {!!data.atm_number && data.atm_number !== "None" && (
+                      <Badge variant="outline">ATM: {data.atm_number}</Badge>
                     )}
-
-                    {status && (
-                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                        {status.icon}
-                        {status.text}
-                      </div>
-                    )}
-
-                    {loggedIn && (
-                      <>
-                      {!!data.legal_guardian.legal_guardians_name &&
-                      data.legal_guardian.legal_guardians_name !== "None" && (
-                        <div className="flex gap-1 items-center">
-                          <Avatar className="rounded-md h-5 w-5">
-                            <AvatarImage
-                              className="rounded-md h-5 w-5"
-                              src={`${urlGeral}ResearcherData/Image?name=${data.legal_guardian.legal_guardians_name}`}
-                            />
-                            <AvatarFallback className="flex items-center justify-center">
-                              <User size={10} />
-                            </AvatarFallback>
-                          </Avatar>
-                          <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                            {data.legal_guardian.legal_guardians_name}
-                          </p>
-                        </div>
-                      )}
-                      </>
-                    )}
-                  </div>
+                  </p>
                 </div>
 
-                
-              </div>
-            </Alert>
-          </div>
-          
-          <Separator className="my-8" />
+                <div className="flex flex-col p-4 pt-0 justify-between">
+                  <div>
+                    <div className="text-lg mb-2 font-bold">
+                      {data.material.material_name || "Sem nome"}
+                    </div>
+                    <p className="text-left mb-4 uppercase">
+                      {data.asset_description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-3">
+                      {!!data.csv_code && data.csv_code !== "None" && (
+                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                          <div
+                            className={`w-4 h-4 rounded-md ${
+                              qualisColor[
+                                csvCodTrimmed as keyof typeof qualisColor
+                              ] || "bg-zinc-300"
+                            }`}
+                          />
+                          {csvCodToText[
+                            csvCodTrimmed as keyof typeof csvCodToText
+                          ] || "—"}
+                        </div>
+                      )}
+
+                      {status && (
+                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                          {status.icon}
+                          {status.text}
+                        </div>
+                      )}
+
+                      {loggedIn && (
+                        <>
+                          {!!data.legal_guardian.legal_guardians_name &&
+                            data.legal_guardian.legal_guardians_name !==
+                              "None" && (
+                              <div className="flex gap-1 items-center">
+                                <Avatar className="rounded-md h-5 w-5">
+                                  <AvatarImage
+                                    className="rounded-md h-5 w-5"
+                                    src={`${urlGeral}ResearcherData/Image?name=${data.legal_guardian.legal_guardians_name}`}
+                                  />
+                                  <AvatarFallback className="flex items-center justify-center">
+                                    <User size={10} />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                  {data.legal_guardian.legal_guardians_name}
+                                </p>
+                              </div>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Alert>
+            </div>
+
+            <Separator className="my-8" />
           </>
         )}
 
@@ -432,7 +502,13 @@ export function FormularioStep({
                 <div className="grid gap-3 w-full">
                   <Label htmlFor="asset_code">Código</Label>
                   <div className="flex items-center gap-3">
-                    <Input disabled id="asset_code" className="w-full" value={data.asset_code} readOnly />
+                    <Input
+                      disabled
+                      id="asset_code"
+                      className="w-full"
+                      value={data.asset_code}
+                      readOnly
+                    />
                   </div>
                 </div>
               )}
@@ -441,7 +517,13 @@ export function FormularioStep({
                 <div className="grid gap-3 w-full">
                   <Label htmlFor="asset_check_digit">Díg. Verificador</Label>
                   <div className="flex items-center gap-3">
-                    <Input disabled id="asset_check_digit" className="w-full" value={data.asset_check_digit} readOnly />
+                    <Input
+                      disabled
+                      id="asset_check_digit"
+                      className="w-full"
+                      value={data.asset_check_digit}
+                      readOnly
+                    />
                   </div>
                 </div>
               )}
@@ -450,7 +532,13 @@ export function FormularioStep({
                 <div className="grid gap-3 w-full">
                   <Label htmlFor="atm_number">Número ATM</Label>
                   <div className="flex items-center gap-3">
-                    <Input disabled id="atm_number" className="w-full" value={data.atm_number} readOnly />
+                    <Input
+                      disabled
+                      id="atm_number"
+                      className="w-full"
+                      value={data.atm_number}
+                      readOnly
+                    />
                   </div>
                 </div>
               )}
@@ -458,7 +546,13 @@ export function FormularioStep({
               <div className="grid gap-3 w-full">
                 <Label htmlFor="material_name">Material</Label>
                 <div className="flex items-center gap-3">
-                  <Input disabled id="material_name" className="w-full" value={data.material.material_name} readOnly />
+                  <Input
+                    disabled
+                    id="material_name"
+                    className="w-full"
+                    value={data.material.material_name}
+                    readOnly
+                  />
                 </div>
               </div>
             </div>
@@ -482,20 +576,30 @@ export function FormularioStep({
                 </div>
               </div>
 
-          
-                <div className="grid gap-3 w-full">
+              <div className="grid gap-3 w-full">
                 <Label htmlFor="asset_value">Valor</Label>
                 <div className="flex items-center gap-3">
-                  <Input disabled id="asset_value" className="w-full" value={data.asset_value} readOnly />
+                  <Input
+                    disabled
+                    id="asset_value"
+                    className="w-full"
+                    value={data.asset_value}
+                    readOnly
+                  />
                 </div>
               </div>
-        
 
               {data.accounting_entry_code && (
                 <div className="grid gap-3 w-full">
                   <Label htmlFor="accounting_entry_code">Termo de resp.</Label>
                   <div className="flex items-center gap-3">
-                    <Input disabled id="accounting_entry_code" className="w-full" value={data.accounting_entry_code} readOnly />
+                    <Input
+                      disabled
+                      id="accounting_entry_code"
+                      className="w-full"
+                      value={data.accounting_entry_code}
+                      readOnly
+                    />
                   </div>
                 </div>
               )}
@@ -504,63 +608,76 @@ export function FormularioStep({
             <div className="grid gap-3 w-full">
               <Label htmlFor="asset_description">Descrição </Label>
               <div className="flex items-center gap-3">
-                <Input disabled id="asset_description" className="w-full" value={data.asset_description} readOnly />
-              </div>
-            </div>
-
-           {loggedIn && (
-              <div className="grid gap-3 w-full">
-              <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
-              <div className="flex items-center gap-3">
-                {data.legal_guardian.legal_guardians_name && (
-                  <Avatar className="rounded-md h-10 w-10 border dark:border-neutral-800">
-                    <AvatarImage
-                      className="rounded-md h-10 w-10"
-                      src={`ResearcherData/Image?name=${data.legal_guardian.legal_guardians_name}`}
-                    />
-                    <AvatarFallback className="flex items-center justify-center">
-                      <User size={10} />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
                 <Input
-                  id="pes_nome"
-                  className="w-full"
-                  value={data.legal_guardian.legal_guardians_name}
                   disabled
+                  id="asset_description"
+                  className="w-full"
+                  value={data.asset_description}
+                  readOnly
                 />
               </div>
             </div>
-           )}
 
-          {(showLocation ) && (
-              <div className={`grid gap-4 w-full grid-cols-1 ${loggedIn ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
-                          <div className="grid gap-2">
-                            <Label>Unidade</Label>
-                            <Input disabled value={data.unit.unit_name} />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Organização</Label>
-                            <Input disabled value={data.agency.agency_name} />
-                          </div>
-                         {loggedIn && (
-                            <div className="grid gap-2">
-                            <Label>Setor / Departamento</Label>
-                            <Input disabled value={data.sector.sector_name} />
-                          </div>
-                         )}
+            {loggedIn && (
+              <div className="grid gap-3 w-full">
+                <Label htmlFor="pes_nome">Responsável (nome completo)</Label>
+                <div className="flex items-center gap-3">
+                  {data.legal_guardian.legal_guardians_name && (
+                    <Avatar className="rounded-md h-10 w-10 border dark:border-neutral-800">
+                      <AvatarImage
+                        className="rounded-md h-10 w-10"
+                        src={`ResearcherData/Image?name=${data.legal_guardian.legal_guardians_name}`}
+                      />
+                      <AvatarFallback className="flex items-center justify-center">
+                        <User size={10} />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <Input
+                    id="pes_nome"
+                    className="w-full"
+                    value={data.legal_guardian.legal_guardians_name}
+                    disabled
+                  />
+                </div>
+              </div>
+            )}
 
-                          {loggedIn && (
-                            <div className="grid gap-2">
-                            <Label>Local de guarda</Label>
-                            <Input disabled value={data.location.location_name} />
-                          </div>
-                          )}
-                        </div>
-          )}
+            {showLocation && (
+              <div
+                className={`grid gap-4 w-full grid-cols-1 ${
+                  loggedIn ? "md:grid-cols-4" : "md:grid-cols-2"
+                }`}
+              >
+                <div className="grid gap-2">
+                  <Label>Unidade</Label>
+                  <Input disabled value={data.unit.unit_name} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Organização</Label>
+                  <Input disabled value={data.agency.agency_name} />
+                </div>
+                {loggedIn && (
+                  <div className="grid gap-2">
+                    <Label>Setor / Departamento</Label>
+                    <Input disabled value={data.sector.sector_name} />
+                  </div>
+                )}
 
-          {(!loggedIn ) && ( <p className="mt-4 text-sm ">Para mais informações, acesse com o Minha UFMG</p>)}
+                {loggedIn && (
+                  <div className="grid gap-2">
+                    <Label>Local de guarda</Label>
+                    <Input disabled value={data.location.location_name} />
+                  </div>
+                )}
+              </div>
+            )}
 
+            {!loggedIn && (
+              <p className="mt-4 text-sm ">
+                Para mais informações, acesse com o Minha UFMG
+              </p>
+            )}
           </div>
         </div>
       </div>

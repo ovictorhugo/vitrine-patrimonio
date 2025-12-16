@@ -3,10 +3,32 @@ import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle, ChevronLeft, ChevronRight, Combine, Inbox, Info, Loader2, Package, PackageOpen, Pencil, Plus,  Trash, XCircle } from "lucide-react";
 import {
-  Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
+  ArrowRight,
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Combine,
+  Inbox,
+  Info,
+  Loader2,
+  Package,
+  PackageOpen,
+  Pencil,
+  Plus,
+  Trash,
+  XCircle,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "../../ui/dialog";
 import { Label } from "../../ui/label";
 import { Input } from "../../ui/input";
@@ -24,14 +46,30 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 
 import { Search } from "../../search/search";
 
-import { DragDropContext, DropResult, BeforeCapture, OnBeforeCaptureResponder } from "@hello-pangea/dnd";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../ui/accordion";
+import {
+  DragDropContext,
+  DropResult,
+  BeforeCapture,
+  OnBeforeCaptureResponder,
+} from "@hello-pangea/dnd";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
 
 import { Alert } from "../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { usePermissions } from "../../permissions";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
 import { AddToCollectionDrawer } from "../desfazimento/components/add-collection";
 import { BlockItemsVitrine } from "../desfazimento/components/block-items-vitrine";
 import { RowsItemsVitrine } from "../desfazimento/components/rows-items-vitrine";
@@ -41,7 +79,7 @@ import { CollectionPage } from "./tabs/collection-page";
 type CollectionResponse = { collections: CollectionDTO[] };
 
 type StatusCount = {
-  status: string
+  status: string;
   count: number;
 };
 
@@ -75,11 +113,18 @@ export function Alienacao() {
   const isFirstPage = offset === 0;
   const isLastPage = collections.length < limit;
 
-  const handleNavigate = (newOffset: number, newLimit: number, replace = false) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    replace = false
+  ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace });
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace }
+    );
   };
 
   useEffect(() => {
@@ -90,30 +135,42 @@ export function Alienacao() {
   // seleção da grade
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // função registrada pela grade para remover itens após POST
-  const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(() => () => {});
+  const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(
+    () => () => {}
+  );
 
   // ===== coleções (com paginação)
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const url = `${urlGeral}collections/?type=COMPRAS&offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`;
+      const url = `${urlGeral}collections/?type=COMPRAS&offset=${encodeURIComponent(
+        offset
+      )}&limit=${encodeURIComponent(limit)}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
-      if (!res.ok) throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
+      if (!res.ok)
+        throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
       const data: CollectionResponse = await res.json();
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
-      toast.error("Erro ao carregar coleções", { description: e?.message || String(e) });
+      toast.error("Erro ao carregar coleções", {
+        description: e?.message || String(e),
+      });
     } finally {
       setLoadingList(false);
     }
   };
-  useEffect(() => { fetchInventories(); /* eslint-disable-next-line */ }, [urlGeral, offset, limit]);
+  useEffect(() => {
+    fetchInventories(); /* eslint-disable-next-line */
+  }, [urlGeral, offset, limit]);
 
   // criar coleção
   const [isOpen, setIsOpen] = useState(false);
   const handleSubmit = async () => {
     try {
-      if (!key.trim()) { toast("Informe o nome da coleção"); return; }
+      if (!key.trim()) {
+        toast("Informe o nome da coleção");
+        return;
+      }
       setCreating(true);
       const res = await fetch(`${urlGeral}collections/`, {
         method: "POST",
@@ -121,19 +178,24 @@ export function Alienacao() {
         body: JSON.stringify({ description, name: key, type: "COMPRAS" }),
       });
       if (!res.ok) throw new Error(`Falha ao criar (HTTP ${res.status})`);
-      await res.json().catch(()=>null);
+      await res.json().catch(() => null);
       toast.success("Coleção criada");
-      setKey(""); setDescription(""); setIsOpen(false);
+      setKey("");
+      setDescription("");
+      setIsOpen(false);
       // ✅ volta para a primeira página e refaz busca
       setOffset(0);
       await fetchInventories();
     } catch (e: any) {
       toast.error("Erro ao criar", { description: e?.message || String(e) });
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+    }
   };
 
   const [openAdd, setOpenAdd] = useState(false);
-  const handleItemsAdded = (newItems: any[]) => toast.success(`${newItems.length} item(ns) adicionado(s).`);
+  const handleItemsAdded = (newItems: any[]) =>
+    toast.success(`${newItems.length} item(ns) adicionado(s).`);
 
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
@@ -171,14 +233,20 @@ export function Alienacao() {
     const { x, y } = lastPoint.current;
     const els = document.elementsFromPoint(x, y) as HTMLElement[];
     for (const el of els) {
-      if (el.classList.contains('collection-drop-target') && root.contains(el)) {
-        const collectionId = el.getAttribute('data-collection-id');
+      if (
+        el.classList.contains("collection-drop-target") &&
+        root.contains(el)
+      ) {
+        const collectionId = el.getAttribute("data-collection-id");
         if (collectionId) return collectionId;
       }
       let cur: HTMLElement | null = el;
       while (cur && cur !== document.body) {
-        if (cur.classList.contains('collection-drop-target') && root.contains(cur)) {
-          const collectionId = cur.getAttribute('data-collection-id');
+        if (
+          cur.classList.contains("collection-drop-target") &&
+          root.contains(cur)
+        ) {
+          const collectionId = cur.getAttribute("data-collection-id");
           if (collectionId) return collectionId;
         }
         cur = cur.parentElement as HTMLElement | null;
@@ -206,13 +274,17 @@ export function Alienacao() {
       return;
     }
 
-    const targetCollection = collections.find((c) => c.id === targetCollectionId);
+    const targetCollection = collections.find(
+      (c) => c.id === targetCollectionId
+    );
     if (!targetCollection) {
       toast.message("Alvo não é uma coleção conhecida.");
       return;
     }
 
-    const ids = (selectedIds.size ? Array.from(selectedIds) : [draggableId]).filter(Boolean);
+    const ids = (
+      selectedIds.size ? Array.from(selectedIds) : [draggableId]
+    ).filter(Boolean);
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -225,7 +297,11 @@ export function Alienacao() {
         fetch(`${urlGeral}collections/${targetCollection.id}/items/`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ catalog_id: catalogId, status: false, comment: "" }),
+          body: JSON.stringify({
+            catalog_id: catalogId,
+            status: false,
+            comment: "",
+          }),
         })
       )
     );
@@ -238,7 +314,9 @@ export function Alienacao() {
     });
 
     if (okIds.length) {
-      toast.success(`${okIds.length} item(ns) adicionados em "${targetCollection.name}"`);
+      toast.success(
+        `${okIds.length} item(ns) adicionados em "${targetCollection.name}"`
+      );
       removeFromGrid(okIds);
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -259,7 +337,9 @@ export function Alienacao() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [newName, setNewName] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
-  const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(null);
+  const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(
+    null
+  );
 
   const currentCollection = useMemo(
     () => collections.find((c) => c.id === currentCollectionId) || null,
@@ -273,8 +353,14 @@ export function Alienacao() {
     }
   }, [currentCollection]);
 
-  const openEditFor = (id: string) => { setCurrentCollectionId(id); setEditOpen(true); };
-  const openDeleteFor = (id: string) => { setCurrentCollectionId(id); setDeleteOpen(true); };
+  const openEditFor = (id: string) => {
+    setCurrentCollectionId(id);
+    setEditOpen(true);
+  };
+  const openDeleteFor = (id: string) => {
+    setCurrentCollectionId(id);
+    setDeleteOpen(true);
+  };
 
   const handleUpdateCollection = async () => {
     if (!currentCollectionId) return;
@@ -290,7 +376,11 @@ export function Alienacao() {
         throw new Error(text || "Erro ao atualizar a coleção.");
       }
       setCollections((prev) =>
-        prev.map((c) => (c.id === currentCollectionId ? { ...c, name: newName, description: newDescription } : c))
+        prev.map((c) =>
+          c.id === currentCollectionId
+            ? { ...c, name: newName, description: newDescription }
+            : c
+        )
       );
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
@@ -313,7 +403,9 @@ export function Alienacao() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao deletar a coleção.");
       }
-      setCollections((prev) => prev.filter((c) => c.id !== currentCollectionId));
+      setCollections((prev) =>
+        prev.filter((c) => c.id !== currentCollectionId)
+      );
       toast.success("Coleção deletada.");
       setDeleteOpen(false);
       setCurrentCollectionId(null);
@@ -387,14 +479,16 @@ export function Alienacao() {
 
   const { hasColecoes } = usePermissions();
 
-  const ROLE_COMISSAO_ID = import.meta.env.VITE_ID_SESSAO_DE_MANUTENCAO_E_LOGISTICA;
-
+  const ROLE_COMISSAO_ID = import.meta.env
+    .VITE_ID_SESSAO_DE_MANUTENCAO_E_LOGISTICA;
 
   if (type_search) return <CollectionPage />;
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
-      <Helmet><title>Alienação | Sistema Patrimônio</title></Helmet>
+      <Helmet>
+        <title>Alienação | Sistema Patrimônio</title>
+      </Helmet>
 
       {/* HEADER */}
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -405,10 +499,15 @@ export function Alienacao() {
               if (location.search.length > 0) navigate(path);
               else {
                 const seg = path.split("/").filter(Boolean);
-                if (seg.length > 1) { seg.pop(); navigate("/" + seg.join("/")); } else navigate("/");
+                if (seg.length > 1) {
+                  seg.pop();
+                  navigate("/" + seg.join("/"));
+                } else navigate("/");
               }
             }}
-            variant="outline" size="icon" className="h-7 w-7"
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
@@ -418,18 +517,28 @@ export function Alienacao() {
 
         <div className="hidden gap-3 items-center xl:flex">
           {hasColecoes && (
-            <Button size="sm" variant='outline' onClick={()=>setOpenAdd(true)}><Plus size={16}/> Adicionar itens</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setOpenAdd(true)}
+            >
+              <Plus size={16} /> Adicionar itens
+            </Button>
           )}
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             {hasColecoes && (
               <DialogTrigger asChild>
-                <Button size="sm"><Plus size={16}/> Adicionar coleção</Button>
+                <Button size="sm">
+                  <Plus size={16} /> Adicionar coleção
+                </Button>
               </DialogTrigger>
             )}
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Adicionar coleção</DialogTitle>
+                <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                  Adicionar coleção
+                </DialogTitle>
                 <DialogDescription className="text-zinc-500 ">
                   Crie uma coleção e agrupe dos Itens da Alienação
                 </DialogDescription>
@@ -438,35 +547,61 @@ export function Alienacao() {
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
                   <Label>Nome*</Label>
-                  <Input value={key} onChange={(e)=>setKey(e.target.value)} />
+                  <Input value={key} onChange={(e) => setKey(e.target.value)} />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
-                  <Textarea value={description} onChange={(e)=>setDescription(e.target.value)} />
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
-                <DialogClose asChild><Button variant="ghost"><ArrowUUpLeft size={16}/> Cancelar</Button></DialogClose>
+                <DialogClose asChild>
+                  <Button variant="ghost">
+                    <ArrowUUpLeft size={16} /> Cancelar
+                  </Button>
+                </DialogClose>
                 <Button onClick={handleSubmit} disabled={creating}>
-                  {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Criar coleção
+                  {creating ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Plus size={16} />
+                  )}{" "}
+                  Criar coleção
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
           {hasColecoes && (
-            <RoleMembers roleId={ROLE_COMISSAO_ID} title="Seção de Manutenção e Apoio Logístico" />
+            <RoleMembers
+              roleId={ROLE_COMISSAO_ID}
+              title="Seção de Manutenção e Apoio Logístico"
+            />
           )}
         </div>
       </div>
 
       {/* HERO + BUSCA */}
-      <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20" >
-        <Link to={'/informacoes'} className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"><Info size={12} /><div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>Saiba o que é e como utilizar a plataforma<ArrowRight size={12} /></Link>
+      <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+        <Link
+          to={"/informacoes"}
+          className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"
+        >
+          <Info size={12} />
+          <div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
+          Saiba o que é e como utilizar a plataforma
+          <ArrowRight size={12} />
+        </Link>
 
-      <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">alienação</strong>
-</h1>
+        <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+          Agrupe os itens em coleções para o controle e{" "}
+          <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
+            alienação
+          </strong>
+        </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
         <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
@@ -497,7 +632,6 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
 
       {/* ============ DND CONTEXT ============ */}
       <DragDropContext onBeforeCapture={onBeforeCapture} onDragEnd={onDragEnd}>
-
         {/* ===== Coleções (com paginação) ===== */}
         <Accordion
           type="single"
@@ -519,17 +653,23 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
                 className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 "
               >
                 {loadingList ? (
-                  Array.from({length:8}).map((_,i)=> <div key={i} className="w-full"><Skeleton className="w-full aspect-square" /></div>)
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="w-full">
+                      <Skeleton className="w-full aspect-square" />
+                    </div>
+                  ))
                 ) : collections.length === 0 ? (
-                  <div className="col-span-full items-center justify-center w-full flex text-center pt-6">Nenhuma coleção encontrada.</div>
+                  <div className="col-span-full items-center justify-center w-full flex text-center pt-6">
+                    Nenhuma coleção encontrada.
+                  </div>
                 ) : (
-                  collections.map((c)=> (
+                  collections.map((c) => (
                     <CollectionItem
                       key={c.id}
                       props={c}
                       type="ALIENAÇÃO"
-                      onEdit={()=>openEditFor(c.id)}
-                      onDelete={()=>openDeleteFor(c.id)}
+                      onEdit={() => openEditFor(c.id)}
+                      onDelete={() => openDeleteFor(c.id)}
                     />
                   ))
                 )}
@@ -537,7 +677,9 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
 
               {/* ===== Paginação das Coleções ===== */}
               <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
-                <span className="text-sm text-muted-foreground">Itens por página:</span>
+                <span className="text-sm text-muted-foreground">
+                  Itens por página:
+                </span>
                 <Select
                   value={limit.toString()}
                   onValueChange={(value) => {
@@ -564,14 +706,18 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
                 <div className="flex gap-4">
                   <Button
                     variant="outline"
-                    onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+                    onClick={() =>
+                      setOffset((prev) => Math.max(0, prev - limit))
+                    }
                     disabled={isFirstPage}
                   >
                     <ChevronLeft size={16} className="mr-2" />
                     Anterior
                   </Button>
                   <Button
-                    onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+                    onClick={() =>
+                      !isLastPage && setOffset((prev) => prev + limit)
+                    }
                     disabled={isLastPage}
                   >
                     Próximo
@@ -580,7 +726,6 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
                 </div>
               </div>
             </AccordionContent>
-
           </AccordionItem>
         </Accordion>
 
@@ -589,14 +734,25 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
           <AccordionItem value="item-1">
             <div className="flex ">
               <div className="flex gap-4 w-full justify-between items-center ">
-                <HeaderResultTypeHome title="Todos os itens" icon={<Package size={24} className="text-gray-400" />} />
+                <HeaderResultTypeHome
+                  title="Todos os itens"
+                  icon={<Package size={24} className="text-gray-400" />}
+                />
 
                 <div className="flex gap-3 mr-3 items-center h-full">
-                  <Button onClick={() => setTypeVisu("rows")} variant={typeVisu == "block" ? "ghost" : "outline"} size={"icon"}>
+                  <Button
+                    onClick={() => setTypeVisu("rows")}
+                    variant={typeVisu == "block" ? "ghost" : "outline"}
+                    size={"icon"}
+                  >
                     <Rows size={16} className=" whitespace-nowrap" />
                   </Button>
 
-                  <Button onClick={() => setTypeVisu("block")} variant={typeVisu == "block" ? "outline" : "ghost"} size={"icon"}>
+                  <Button
+                    onClick={() => setTypeVisu("block")}
+                    variant={typeVisu == "block" ? "outline" : "ghost"}
+                    size={"icon"}
+                  >
                     <SquaresFour size={16} className=" whitespace-nowrap" />
                   </Button>
                 </div>
@@ -611,34 +767,38 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
                   workflow="ALIENACAO"
                   selectedIds={selectedIds}
                   onChangeSelected={setSelectedIds}
-                  registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
+                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
                 />
               ) : (
                 <RowsItemsVitrine
                   workflow="ALIENACAO"
                   selectedIds={selectedIds}
                   onChangeSelected={setSelectedIds}
-                  registerRemove={(fn)=>setRemoveFromGrid(()=>fn)}
+                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
                 />
               )}
             </AccordionContent>
-
           </AccordionItem>
         </Accordion>
       </DragDropContext>
 
       <AddToCollectionDrawer
-      type={'COMPRAS'}
-        open={openAdd} onOpenChange={(o)=>setOpenAdd(o)}
-        baseUrl={urlGeral} headers={authHeaders}
-        collectionId={null} onItemsAdded={handleItemsAdded}
+        type={"COMPRAS"}
+        open={openAdd}
+        onOpenChange={(o) => setOpenAdd(o)}
+        baseUrl={urlGeral}
+        headers={authHeaders}
+        collectionId={null}
+        onItemsAdded={handleItemsAdded}
       />
 
       {/* =================== Dialog EDITAR =================== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">Editar coleção</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Editar coleção
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
               Altere o nome e a descrição da coleção.
             </DialogDescription>
@@ -649,20 +809,30 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
           <div className="grid gap-4">
             <div className="grid gap-1.5">
               <Label>Nome</Label>
-              <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Descrição</Label>
-              <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+              <Textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+              />
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditOpen(false)}>
-              <ArrowUUpLeft size={16} />  Cancelar
+              <ArrowUUpLeft size={16} /> Cancelar
             </Button>
             <Button onClick={handleUpdateCollection} disabled={updateLoading}>
-              {updateLoading ? <Loader2 className="animate-spin " size={16} /> : <Pencil className=" " size={16} />}
+              {updateLoading ? (
+                <Loader2 className="animate-spin " size={16} />
+              ) : (
+                <Pencil className=" " size={16} />
+              )}
               Salvar alterações
             </Button>
           </DialogFooter>
@@ -673,18 +843,29 @@ Agrupe os itens em coleções para o  controle e <strong className="bg-eng-blue 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">Deletar coleção</DialogTitle>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px]">
+              Deletar coleção
+            </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Tem certeza que deseja excluir esta coleção? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir esta coleção? Esta ação não pode
+              ser desfeita.
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-              <ArrowUUpLeft size={16} />    Cancelar
+              <ArrowUUpLeft size={16} /> Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDeleteCollection} disabled={deleteLoading}>
-              {deleteLoading ? <Loader2 className="animate-spin " size={16} /> : <Trash className=" " size={16} />}
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCollection}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <Loader2 className="animate-spin " size={16} />
+              ) : (
+                <Trash className=" " size={16} />
+              )}
               Deletar coleção
             </Button>
           </DialogFooter>

@@ -1078,12 +1078,15 @@ export function Roles({
                                         Permissões
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+
+                                    {/* O DialogContent já está com w-[90%] via a alteração anterior, 
+      agora o conteúdo interno precisa respeitar isso */}
+                                    <DialogContent className="max-h-[90vh] overflow-y-auto">
                                       <DialogHeader>
-                                        <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                                        <DialogTitle className="text-xl sm:text-2xl mb-2 font-medium break-words">
                                           Permissões do cargo
                                         </DialogTitle>
-                                        <DialogDescription className="text-zinc-500 ">
+                                        <DialogDescription className="text-zinc-500 text-sm break-words">
                                           Adicione, exclua e edite as permissões
                                           do cargo {role.name}
                                         </DialogDescription>
@@ -1099,13 +1102,14 @@ export function Roles({
                                             {role.permissions.map((p) => (
                                               <div
                                                 key={p.id}
-                                                className="flex group items-center justify-between border rounded-md px-3 py-2"
+                                                className="flex group items-center justify-between border rounded-md px-3 py-2 gap-2"
                                               >
-                                                <div className="flex flex-col">
-                                                  <span className="font-medium min-h-8 items-center flex">
+                                                {/* min-w-0 é CRUCIAL aqui para o texto quebrar linha dentro do flex */}
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                  <span className="font-medium items-center flex break-words">
                                                     {p.name}
                                                   </span>
-                                                  <span className="text-xs text-gray-500">
+                                                  <span className="text-xs text-gray-500 truncate">
                                                     {p.description}
                                                   </span>
                                                 </div>
@@ -1121,7 +1125,13 @@ export function Roles({
                                                       p.id
                                                     )
                                                   }
-                                                  className="w-8 h-8 hidden group-hover:flex transition-all"
+                                                  // Removi o 'hidden' do mobile para garantir que dê para deletar,
+                                                  // mas mantive a lógica de hover para desktop se preferir
+                                                  className={`w-8 h-8 shrink-0 ${
+                                                    isMobile
+                                                      ? "flex"
+                                                      : "hidden group-hover:flex"
+                                                  } transition-all`}
                                                 >
                                                   {removingPermId === p.id ? (
                                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1146,7 +1156,9 @@ export function Roles({
                                         <Label>
                                           Vincular permissão existente
                                         </Label>
-                                        <div className="flex gap-2 items-center">
+
+                                        {/* CORREÇÃO PRINCIPAL: flex-col no mobile, flex-row no desktop (sm) */}
+                                        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                                           <Popover
                                             modal
                                             open={permPopoverOpen}
@@ -1157,26 +1169,33 @@ export function Roles({
                                                 variant="outline"
                                                 role="combobox"
                                                 aria-expanded={permPopoverOpen}
-                                                className="w-[340px] justify-between"
+                                                // Mudança: w-full no mobile, w-[340px] ou flex-1 no desktop
+                                                className="w-full sm:flex-1 justify-between truncate"
                                                 onClick={() => {
                                                   fetchPermissions();
                                                 }}
                                               >
-                                                {selectedPermissionId
-                                                  ? allPermissions.find(
-                                                      (p) =>
-                                                        p.id ===
-                                                        selectedPermissionId
-                                                    )?.name
-                                                  : loadingPerms
-                                                  ? "Carregando permissões..."
-                                                  : "Selecione uma permissão"}
+                                                <span className="truncate">
+                                                  {selectedPermissionId
+                                                    ? allPermissions.find(
+                                                        (p) =>
+                                                          p.id ===
+                                                          selectedPermissionId
+                                                      )?.name
+                                                    : loadingPerms
+                                                    ? "Carregando..." // Encurtei o texto para evitar quebra no mobile muito pequeno
+                                                    : "Selecione uma permissão"}
+                                                </span>
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                               </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-[340px] p-0 z-[999]">
+                                            {/* O conteúdo do Popover deve ter a largura do container pai ou fixa responsiva */}
+                                            <PopoverContent
+                                              className="w-[var(--radix-popover-trigger-width)] p-0 z-[999]"
+                                              align="start"
+                                            >
                                               <Command>
-                                                <CommandInput />
+                                                <CommandInput placeholder="Buscar permissão..." />
                                                 <CommandList>
                                                   <CommandEmpty>
                                                     Nenhuma permissão
@@ -1227,8 +1246,11 @@ export function Roles({
                                               )
                                             }
                                             disabled={!selectedPermissionId}
+                                            // No mobile o botão fica largura total para facilitar o toque
+                                            className="w-full sm:w-auto"
                                           >
-                                            <Plus size={16} /> Vincular
+                                            <Plus size={16} className="mr-2" />{" "}
+                                            Vincular
                                           </Button>
                                         </div>
                                       </div>

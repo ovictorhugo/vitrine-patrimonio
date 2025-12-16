@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { StepBaseProps } from "../../novo-item/novo-item";
 import { UserContext } from "../../../../context/context";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ===================== Tipos ===================== */
 type ExistingFileDTO = {
@@ -605,6 +606,7 @@ export const InformacoesAdicionaisStep = forwardRef<
   ] as const;
 
   const nivelAtivo = nivelPorIdx[getIdx()];
+  const isMobile = useIsMobile();
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -613,7 +615,13 @@ export const InformacoesAdicionaisStep = forwardRef<
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[700px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-xl font-semibold max-w-[700px]"
+              : "mb-16 text-4xl font-semibold max-w-[700px]"
+          }
+        >
           Forneça algumas informações adicionais...
         </h1>
       </div>
@@ -916,7 +924,6 @@ export const InformacoesAdicionaisStep = forwardRef<
             </Alert>
           ) : (
             <div className="grid gap-2 w-full">
-
               {justificativaEhModelo && (
                 <div>
                   <div className="flex gap-2 items-center mb-3">

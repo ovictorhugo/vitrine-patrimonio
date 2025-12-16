@@ -98,6 +98,7 @@ import {
 } from "../homepage/components/documents-tab-catalog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -1141,21 +1142,36 @@ export function ItemPage() {
     }
   }, [postWorkflow]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
-          <div className="text-eng-blue mb-4 animate-pulse">
-            <LoaderCircle size={108} className="animate-spin" />
-          </div>
-          <p className="font-medium text-lg max-w-[500px] text-center">
-            {loadingMessage}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const isMobile = useIsMobile();
 
+  if (loading) {
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+    } else
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+  }
   if (!catalog) {
     return (
       <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">

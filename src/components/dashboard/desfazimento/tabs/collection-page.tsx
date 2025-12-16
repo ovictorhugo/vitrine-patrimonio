@@ -83,6 +83,7 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { DownloadPdfButton } from "../../../download/download-pdf-button";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 // ================== Types ==================
 type UUID = string;
@@ -318,6 +319,8 @@ function Combobox({
 export function CollectionPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isMobile = useIsMobile();
 
   const queryUrl = useQuery();
   const collection_id = queryUrl.get("collection_id");
@@ -987,18 +990,33 @@ export function CollectionPage() {
 
   // ===== loading somente da coleção (primeiro acesso) =====
   if (loadingCollection && !collection) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
-          <div className="text-eng-blue mb-4 animate-pulse">
-            <LoaderCircle size={108} className="animate-spin" />
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
           </div>
-          <p className="font-medium text-lg max-w-[500px] text-center">
-            {loadingMessage}
-          </p>
         </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   if (!collection) {
@@ -1068,49 +1086,63 @@ export function CollectionPage() {
           </div>
 
           {hasColecoes && (
-            <div className="flex items-center gap-2">
-              <Button
-                size={"icon"}
-                variant="outline"
-                onClick={() => setEditOpen(true)}
+            <div
+              className={
+                isMobile
+                  ? "flex flex-col items-center gap-4 w-full"
+                  : "flex items-center gap-2"
+              }
+            >
+              <div
+                className={isMobile ? "flex flex-row-reverse gap-4" : "flex"}
               >
-                <Pencil size={16} />
-              </Button>
-              <Button
-                size={"icon"}
-                variant="destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash size={16} />
-              </Button>
+                <div className={isMobile ? "flex gap-2" : "flex gap-2"}>
+                  <Button
+                    size={"icon"}
+                    variant="outline"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                  <Button
+                    size={"icon"}
+                    variant="destructive"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <Trash size={16} />
+                  </Button>
+                </div>
 
-              <Button
-                variant={"outline"}
-                onClick={() => setDiscardOpen(true)}
-                disabled={countDesfazimento === 0}
-                title={
-                  countDesfazimento === 0
-                    ? "Nenhum item coletado para descartar"
-                    : "Enviar coletados para DESCARTADOS"
-                }
-              >
-                <Recycle size={16} className="mr-1" />
-                Descartar coletados{" "}
-                <Badge variant={"outline"}>{countDesfazimento}</Badge>
-              </Button>
-              <DownloadPdfButton
-                filters={{ collection_id: collection_id || undefined }}
-                label="Baixar PDF"
-                method="collections"
-              />
-              <Button onClick={() => setOpenAdd(true)}>
-                <Plus size={16} /> Adicionar item
-              </Button>
+                <Button
+                  variant={"outline"}
+                  onClick={() => setDiscardOpen(true)}
+                  disabled={countDesfazimento === 0}
+                  title={
+                    countDesfazimento === 0
+                      ? "Nenhum item coletado para descartar"
+                      : "Enviar coletados para DESCARTADOS"
+                  }
+                >
+                  <Recycle size={16} className="mr-1" />
+                  Descartar coletados
+                  <Badge variant={"outline"}>{countDesfazimento}</Badge>
+                </Button>
+              </div>
+              <div className="flex gap-4">
+                <DownloadPdfButton
+                  filters={{ collection_id: collection_id || undefined }}
+                  label="Baixar PDF"
+                  method="collections"
+                />
+                <Button onClick={() => setOpenAdd(true)}>
+                  <Plus size={16} /> Adicionar item
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+        <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
           <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
             {collection.name}
           </h3>
@@ -1225,16 +1257,16 @@ export function CollectionPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                }`}
+                className={`absolute left-0 z-10 h-10 ${
+                  isMobile ? "w-5" : "w-10"
+                } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
                 <ChevronLeft size={16} />
               </Button>
 
-              <div className="mx-14">
+              <div className={isMobile ? "mx-8" : "mx-14"}>
                 <div
                   ref={scrollAreaRef}
                   className="overflow-x-auto scrollbar-hide"
@@ -1351,7 +1383,9 @@ export function CollectionPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                className={`absolute right-0 z-10 h-10 ${
+                  isMobile ? "w-5" : "w-10"
+                } p-0 rounded-md ${
                   !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
                 }`}
                 onClick={scrollRight}
@@ -1460,7 +1494,7 @@ export function CollectionPage() {
 
                   <AccordionContent className="p-0">
                     {loadingItems ? (
-                      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {skeletons.map((item, index) => (
                           <div className="w-full" key={index}>
                             {item}
@@ -1472,7 +1506,7 @@ export function CollectionPage() {
                         Nenhum item adicionado.
                       </div>
                     ) : (
-                      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {items.map((item) => (
                           <ItemPatrimonio key={item.id} {...item.catalog} />
                         ))}

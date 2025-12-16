@@ -601,10 +601,16 @@ export function ListaFinalDesfazimento() {
   return (
     <div className="flex flex-col gap-8 p-8 ">
       {/* topo */}
-      <div className={isMobile ? "flex flex-col-reverse gap-4 justify-between items-center" : "flex justify-between items-center"}>
+      <div
+        className={
+          isMobile
+            ? "flex flex-col-reverse gap-4 justify-between items-center"
+            : "flex justify-between items-center"
+        }
+      >
         <div className="flex items-center gap-3">
           <DownloadPdfButton
-            filters={{ workflow_status: "DESFAZIMENTO" }}
+            filters={{ workflow_status: "DESFAZIMENTO", limit: "5" }}
             method="catalog"
             label="Baixar PDF"
           />
@@ -866,7 +872,7 @@ export function ListaFinalDesfazimento() {
             <ChevronRight size={16} />
           </Button>
         </div>
-      )}  
+      )}
 
       {/* ===== card único DESFAZIMENTO */}
       <Alert className="p-0">

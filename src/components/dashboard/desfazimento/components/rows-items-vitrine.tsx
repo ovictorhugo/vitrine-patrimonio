@@ -4,7 +4,13 @@ import { UserContext } from "../../../../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
 import { Button } from "../../../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 import { Skeleton } from "../../../ui/skeleton";
 import { useQuery } from "../../../authentication/signIn";
 import { ItemPatrimonio } from "./item-patrimonio";
@@ -29,7 +35,9 @@ export interface CatalogEntry {
     material: { material_name: string };
   };
 }
-export interface CatalogResponse { catalog_entries: CatalogEntry[]; }
+export interface CatalogResponse {
+  catalog_entries: CatalogEntry[];
+}
 
 interface Props {
   workflow: string;
@@ -38,7 +46,8 @@ interface Props {
   registerRemove?: (fn: (ids: string[]) => void) => void;
 }
 
-const first = (v: string | null) => (v ? v.split(";").filter(Boolean)[0] ?? "" : "");
+const first = (v: string | null) =>
+  v ? v.split(";").filter(Boolean)[0] ?? "" : "";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   if (val && val.trim().length > 0) sp.set(key, val);
@@ -47,9 +56,19 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
 
 type Pt = { x: number; y: number };
 const rectIntersects = (a: DOMRect, b: DOMRect) =>
-  !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  !(
+    a.right < b.left ||
+    a.left > b.right ||
+    a.bottom < b.top ||
+    a.top > b.bottom
+  );
 
-export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, registerRemove }: Props) {
+export function RowsItemsVitrine({
+  workflow,
+  selectedIds,
+  onChangeSelected,
+  registerRemove,
+}: Props) {
   const { urlGeral } = useContext(UserContext);
   const baseUrl = useMemo(() => sanitizeBaseUrl(urlGeral), [urlGeral]);
 
@@ -63,9 +82,15 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   const initialQ = queryUrl.get("q") || "";
   const [q, setQ] = useState(initialQ);
 
-  const [materialId, setMaterialId] = useState(first(queryUrl.get("material_ids")));
-  const [legalGuardianId, setLegalGuardianId] = useState(first(queryUrl.get("legal_guardian_ids")));
-  const [locationId, setLocationId] = useState(first(queryUrl.get("location_ids")));
+  const [materialId, setMaterialId] = useState(
+    first(queryUrl.get("material_ids"))
+  );
+  const [legalGuardianId, setLegalGuardianId] = useState(
+    first(queryUrl.get("legal_guardian_ids"))
+  );
+  const [locationId, setLocationId] = useState(
+    first(queryUrl.get("location_ids"))
+  );
   const [unitId, setUnitId] = useState(first(queryUrl.get("unit_ids")));
   const [agencyId, setAgencyId] = useState(first(queryUrl.get("agency_ids")));
   const [sectorId, setSectorId] = useState(first(queryUrl.get("sector_ids")));
@@ -80,7 +105,10 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
 
   const token = localStorage.getItem("jwt_token") || "";
   const baseHeaders: HeadersInit = useMemo(() => {
-    const h: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+    const h: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
     if (token) h.Authorization = `Bearer ${token}`;
     return h;
   }, [token]);
@@ -88,11 +116,19 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   const removeItemsById = (ids: string[]) => {
     if (!ids?.length) return;
     setItems((prev) => prev.filter((it) => !ids.includes(it.id)));
-    onChangeSelected(new Set(Array.from(selectedIds).filter((id) => !ids.includes(id))));
+    onChangeSelected(
+      new Set(Array.from(selectedIds).filter((id) => !ids.includes(id)))
+    );
   };
-  useEffect(() => { registerRemove?.(removeItemsById); }, [registerRemove]); // eslint-disable-line
+  useEffect(() => {
+    registerRemove?.(removeItemsById);
+  }, [registerRemove]); // eslint-disable-line
 
-  const handleNavigate = (newOffset: number, newLimit: number, doScroll = true) => {
+  const handleNavigate = (
+    newOffset: number,
+    newLimit: number,
+    doScroll = true
+  ) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", newOffset.toString());
     sp.set("limit", newLimit.toString());
@@ -105,15 +141,22 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     setParamOrDelete(sp, "agency_ids", agencyId);
     setParamOrDelete(sp, "sector_ids", sectorId);
     navigate({ pathname: location.pathname, search: sp.toString() });
-    if (doScroll && containerRef.current) containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (doScroll && containerRef.current)
+      containerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
   };
-  useEffect(() => { handleNavigate(offset, limit, true); /* eslint-disable-next-line */ }, [offset, limit]);
+  useEffect(() => {
+    handleNavigate(offset, limit, true); /* eslint-disable-next-line */
+  }, [offset, limit]);
 
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const qUrl = sp.get("q") ?? "";
     if (qUrl !== q) setQ(qUrl);
-    const setFirst = (setter: (v: string) => void, key: string) => setter(first(sp.get(key)));
+    const setFirst = (setter: (v: string) => void, key: string) =>
+      setter(first(sp.get(key)));
     setFirst(setMaterialId, "material_ids");
     setFirst(setLegalGuardianId, "legal_guardian_ids");
     setFirst(setLocationId, "location_ids");
@@ -135,25 +178,45 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
         if (workflow) url.searchParams.set("workflow_status", workflow);
         if (q) url.searchParams.set("q", q);
         if (materialId) url.searchParams.set("material_id", materialId);
-        if (legalGuardianId) url.searchParams.set("legal_guardian_id", legalGuardianId);
+        if (legalGuardianId)
+          url.searchParams.set("legal_guardian_id", legalGuardianId);
         if (locationId) url.searchParams.set("location_id", locationId);
         if (unitId) url.searchParams.set("unit_id", unitId);
         if (agencyId) url.searchParams.set("agency_id", agencyId);
         if (sectorId) url.searchParams.set("sector_id", sectorId);
         url.searchParams.set("offset", String(offset));
-        url.searchParams.set("only_uncollected", 'true');
+        url.searchParams.set("only_uncollected", "true");
         url.searchParams.set("limit", String(limit));
-        const res = await fetch(url.toString(), { method: "GET", signal: controller.signal, headers: baseHeaders });
+        const res = await fetch(url.toString(), {
+          method: "GET",
+          signal: controller.signal,
+          headers: baseHeaders,
+        });
         if (!res.ok) throw new Error(`Erro ao buscar catálogo (${res.status})`);
         const data: { catalog_entries: CatalogEntry[] } = await res.json();
-        setItems(Array.isArray(data.catalog_entries) ? data.catalog_entries : []);
-      setLoading(false)
+        setItems(
+          Array.isArray(data.catalog_entries) ? data.catalog_entries : []
+        );
+        setLoading(false);
       } catch {
         setItems([]);
-      } 
+      }
     })();
     return () => controller.abort();
-  }, [baseUrl, baseHeaders, workflow, q, materialId, legalGuardianId, locationId, unitId, agencyId, sectorId, offset, limit]);
+  }, [
+    baseUrl,
+    baseHeaders,
+    workflow,
+    q,
+    materialId,
+    legalGuardianId,
+    locationId,
+    unitId,
+    agencyId,
+    sectorId,
+    offset,
+    limit,
+  ]);
 
   const indexById = useMemo(() => {
     const m = new Map<string, number>();
@@ -179,16 +242,21 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
     onChangeSelected(next);
   };
 
-  const clearSelection = () => { 
-    onChangeSelected(new Set()); 
-    setAnchorIndex(null); 
+  const clearSelection = () => {
+    onChangeSelected(new Set());
+    setAnchorIndex(null);
   };
 
   // Lógica de seleção estilo Google Drive
   const [isBoxSelecting, setIsBoxSelecting] = useState(false);
   const [startPt, setStartPt] = useState<Pt | null>(null);
   const [currentPt, setCurrentPt] = useState<Pt | null>(null);
-  const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [selectionBox, setSelectionBox] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const baseSelectionRef = useRef<Set<string>>(new Set());
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const isDraggingRef = useRef(false);
@@ -196,7 +264,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   const mouseDownTimeRef = useRef<number>(0);
 
   const registerItemRef = (id: string) => (el: HTMLDivElement | null) => {
-    if (el) itemRefs.current.set(id, el); 
+    if (el) itemRefs.current.set(id, el);
     else itemRefs.current.delete(id);
   };
 
@@ -231,8 +299,10 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
 
     // Verificar se clicou no próprio grid (não em um item)
     const target = e.target as HTMLElement;
-    const clickedOnGrid = target === gridRef.current || target.closest('[data-droppable-id="CATALOG"]') === gridRef.current;
-    
+    const clickedOnGrid =
+      target === gridRef.current ||
+      target.closest('[data-droppable-id="CATALOG"]') === gridRef.current;
+
     if (!clickedOnGrid) return;
 
     const grid = gridRef.current;
@@ -339,7 +409,9 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
       if (!grid) return;
 
       const clickedInsideGrid = grid.contains(e.target as Node);
-      const clickedOnAlert = (e.target as HTMLElement).closest('[role="alert"]');
+      const clickedOnAlert = (e.target as HTMLElement).closest(
+        '[role="alert"]'
+      );
 
       // Limpar seleção se clicou fora do grid e não no alert de seleção
       if (!clickedInsideGrid && !clickedOnAlert && selectedIds.size > 0) {
@@ -356,7 +428,7 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
       // Ctrl/Cmd + A seleciona todos
       if ((e.ctrlKey || e.metaKey) && e.key === "a" && gridRef.current) {
         e.preventDefault();
-        const allIds = new Set(items.map(item => item.id));
+        const allIds = new Set(items.map((item) => item.id));
         onChangeSelected(allIds);
       }
     };
@@ -389,13 +461,26 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
 
-  const skeletons = useMemo(() => Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="w-full h-[200px] rounded-md aspect-square" />), []);
+  const skeletons = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, i) => (
+        <Skeleton
+          key={i}
+          className="w-full h-[200px] rounded-md aspect-square"
+        />
+      )),
+    []
+  );
 
   return (
     <div ref={containerRef}>
       {loading && (
-        <div className="grid  gap-4">
-          {skeletons.map((s, i) => <div key={i} className="w-full ">{s}</div>)}
+        <div className="grid gap-4">
+          {skeletons.map((s, i) => (
+            <div key={i} className="w-full ">
+              {s}
+            </div>
+          ))}
         </div>
       )}
 
@@ -403,54 +488,86 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
         <>
           {selectedIds.size > 0 && (
             <Alert className="flex items-center sticky top-0 z-10 mb-8 justify-between p-2 px-4 shadow-sm">
-              <span className="text-sm font-medium">{selectedIds.size} item(ns) selecionado(s)</span>
-              <Button variant="ghost" size="sm" onClick={clearSelection} className="px-3 h-9">
+              <span className="text-sm font-medium">
+                {selectedIds.size} item(ns) selecionado(s)
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                className="px-3 h-9"
+              >
                 <Trash size={16} className="mr-2" />
                 Limpar seleção
               </Button>
             </Alert>
           )}
 
-          <Droppable droppableId="CATALOG" type="CATALOG_ITEM" isDropDisabled
+          <Droppable
+            droppableId="CATALOG"
+            type="CATALOG_ITEM"
+            isDropDisabled
             renderClone={(provided, snapshot, rubric) => {
               const entry = items[rubric.source.index];
               return (
                 <Portal>
-                  <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
                     className="pointer-events-none"
-                    style={{ ...(provided.draggableProps.style || {}), zIndex: 9999 }}>
+                    style={{
+                      ...(provided.draggableProps.style || {}),
+                      zIndex: 9999,
+                    }}
+                  >
                     <div className="scale-[0.98] rounded-lg overflow-hidden shadow-2xl ">
                       <ItemPatrimonioRows {...(entry as any)} selected />
                     </div>
                   </div>
                 </Portal>
               );
-            }}>
+            }}
+          >
             {(provided) => (
               <div className="relative">
                 <div
-                  ref={(el) => { provided.innerRef(el); gridRef.current = el; }}
+                  ref={(el) => {
+                    provided.innerRef(el);
+                    gridRef.current = el;
+                  }}
                   {...provided.droppableProps}
-                  className={`grid  gap-4 ${isBoxSelecting ? "select-none cursor-crosshair" : ""}`}
+                  className={`grid  gap-4 ${
+                    isBoxSelecting ? "select-none cursor-crosshair" : ""
+                  }`}
                   onMouseDown={handleGridMouseDown}
                   onMouseMove={handleGridMouseMove}
                   onMouseUp={handleGridMouseUp}
-                  style={{ position: 'relative', minHeight: '200px' }}
+                  style={{ position: "relative", minHeight: "200px" }}
                 >
                   {items.map((item, index) => (
-                    <Draggable draggableId={item.id} index={index} key={item.id}>
+                    <Draggable
+                      draggableId={item.id}
+                      index={index}
+                      key={item.id}
+                    >
                       {(prov, snap) => (
                         <div
-                          ref={(el) => { prov.innerRef(el); registerItemRef(item.id)(el); }}
+                          ref={(el) => {
+                            prov.innerRef(el);
+                            registerItemRef(item.id)(el);
+                          }}
                           {...prov.draggableProps}
                           {...prov.dragHandleProps}
-                          className={snap.isDragging ? "opacity-70 scale-[0.98]" : ""}
+                          className={
+                            snap.isDragging ? "opacity-70 scale-[0.98]" : ""
+                          }
                           data-item-id={item.id}
                         >
-                          <ItemPatrimonioRows 
-                            {...(item as any)} 
-                            selected={isSelected(item.id)} 
-                            onItemClick={(e) => handleItemClick(e, item.id)} 
+                          <ItemPatrimonioRows
+                            {...(item as any)}
+                            selected={isSelected(item.id)}
+                            onItemClick={(e) => handleItemClick(e, item.id)}
                           />
                         </div>
                       )}
@@ -475,24 +592,51 @@ export function RowsItemsVitrine({ workflow, selectedIds, onChangeSelected, regi
             )}
           </Droppable>
 
-          {!items.length && <div className="pt-6 text-center text-muted-foreground">Nenhum item encontrado</div>}
+          {!items.length && (
+            <div className="pt-6 text-center text-muted-foreground">
+              Nenhum item encontrado
+            </div>
+          )}
         </>
       )}
 
       <div className="hidden md:flex md:justify-end mt-5 items-center gap-2">
         <span className="text-sm text-muted-foreground">Itens por página:</span>
-        <Select value={limit.toString()} onValueChange={(v) => { const nl = parseInt(v); setOffset(0); setLimit(nl); handleNavigate(0, nl); }}>
-          <SelectTrigger className="w-[100px]"><SelectValue placeholder="Itens" /></SelectTrigger>
-          <SelectContent>{[12, 24, 36, 48, 84, 162].map((val) => <SelectItem key={val} value={val.toString()}>{val}</SelectItem>)}</SelectContent>
+        <Select
+          value={limit.toString()}
+          onValueChange={(v) => {
+            const nl = parseInt(v);
+            setOffset(0);
+            setLimit(nl);
+            handleNavigate(0, nl);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Itens" />
+          </SelectTrigger>
+          <SelectContent>
+            {[12, 24, 36, 48, 84, 162].map((val) => (
+              <SelectItem key={val} value={val.toString()}>
+                {val}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
 
       <div className="w-full flex justify-center items-center gap-10 mt-8">
         <div className="flex gap-4">
-          <Button variant="outline" onClick={() => setOffset((p) => Math.max(0, p - limit))} disabled={isFirstPage}>
+          <Button
+            variant="outline"
+            onClick={() => setOffset((p) => Math.max(0, p - limit))}
+            disabled={isFirstPage}
+          >
             <ChevronLeft size={16} className="mr-2" /> Anterior
           </Button>
-          <Button onClick={() => !isLastPage && setOffset((p) => p + limit)} disabled={isLastPage}>
+          <Button
+            onClick={() => !isLastPage && setOffset((p) => p + limit)}
+            disabled={isLastPage}
+          >
             Próximo <ChevronRight size={16} className="ml-2" />
           </Button>
         </div>

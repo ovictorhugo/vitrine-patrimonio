@@ -1,5 +1,12 @@
 // src/pages/novo-item/steps/trocar-local/index.tsx
-import { AlertCircle, ArrowRight, Pencil, Check, ChevronsUpDown, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Pencil,
+  Check,
+  ChevronsUpDown,
+  X,
+} from "lucide-react";
 import React, {
   useCallback,
   useContext,
@@ -14,11 +21,7 @@ import { UserContext } from "../../../../context/context";
 import { Button } from "../../../ui/button";
 import { Input } from "../../../ui/input";
 import { Separator } from "../../../ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -28,27 +31,57 @@ import {
   CommandList,
 } from "../../../ui/command";
 import { cn } from "../../../../lib";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ===== Tipos ===== */
 type FlowMode = "vitrine" | "desfazimento";
 
-interface Agency { id: string; agency_name: string; agency_code: string; }
-interface Unit   { id: string; unit_name: string; unit_code: string; unit_siaf: string; agency_id: string; agency?: Agency; }
-interface Sector { id: string; sector_name: string; sector_code: string; unit_id: string; unit: Unit; }
-interface Location { id: string; location_name: string; location_code: string; sector_id: string; sector: Sector; }
+interface Agency {
+  id: string;
+  agency_name: string;
+  agency_code: string;
+}
+interface Unit {
+  id: string;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+  agency_id: string;
+  agency?: Agency;
+}
+interface Sector {
+  id: string;
+  sector_name: string;
+  sector_code: string;
+  unit_id: string;
+  unit: Unit;
+}
+interface Location {
+  id: string;
+  location_name: string;
+  location_code: string;
+  sector_id: string;
+  sector: Sector;
+}
 
 type TL = {
-  agency_id?: string; unit_id?: string; sector_id?: string; location_id?: string;
-  agency?: Agency | null; unit?: Unit | null; sector?: Sector | null; location?: Location | null;
+  agency_id?: string;
+  unit_id?: string;
+  sector_id?: string;
+  location_id?: string;
+  agency?: Agency | null;
+  unit?: Unit | null;
+  sector?: Sector | null;
+  location?: Location | null;
   isOpen?: boolean;
 };
 
 type TrocarLocalStepProps = {
   value: "trocar-local";
-  step:number
+  step: number;
   flowShort: FlowMode;
-  initialData?: TL;         // persistidos no pai
-  formSnapshot?: TL;        // apenas para inputs readonly
+  initialData?: TL; // persistidos no pai
+  formSnapshot?: TL; // apenas para inputs readonly
   isActive: boolean;
   onValidityChange: (valid: boolean) => void;
   onStateChange?: (state: TL & { isOpen?: boolean }) => void;
@@ -56,7 +89,8 @@ type TrocarLocalStepProps = {
 
 /* ===== Utils ===== */
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
-const hasValidId = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
+const hasValidId = (v: unknown): v is string =>
+  typeof v === "string" && v.trim().length > 0;
 
 /** Debounce simples */
 function useDebounced<T>(value: T, delay = 300) {
@@ -75,18 +109,21 @@ export function LocalStep({
   isActive,
   onValidityChange,
   onStateChange,
-  step
+  step,
 }: TrocarLocalStepProps) {
   const { urlGeral } = useContext(UserContext);
   const baseUrl = useMemo(() => sanitizeBaseUrl(urlGeral), [urlGeral]);
 
   // Modo edição: preferimos o valor persistido; se não existir, vitrine começa fechado e desfazimento aberto
-  const initialIsOpen = initialData?.isOpen ?? (flowShort !== "vitrine");
+  const initialIsOpen = initialData?.isOpen ?? flowShort !== "vitrine";
   const [isOpen, setIsOpen] = useState<boolean>(initialIsOpen);
 
   // Sincroniza quando o pai atualizar isOpen
   useEffect(() => {
-    if (typeof initialData?.isOpen === "boolean" && initialData.isOpen !== isOpen) {
+    if (
+      typeof initialData?.isOpen === "boolean" &&
+      initialData.isOpen !== isOpen
+    ) {
       setIsOpen(initialData.isOpen);
     }
   }, [initialData?.isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,7 +135,12 @@ export function LocalStep({
   const [locations, setLocations] = useState<Location[]>([]);
 
   // ===== Loading =====
-  const [loading, setLoading] = useState({ units: false, agencies: false, sectors: false, locations: false });
+  const [loading, setLoading] = useState({
+    units: false,
+    agencies: false,
+    sectors: false,
+    locations: false,
+  });
 
   // ===== Seleções =====
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -124,30 +166,53 @@ export function LocalStep({
   const locationQd = useDebounced(locationQ);
 
   // Objetos atuais (derivados das listas)
-  const selectedUnitObj = useMemo(() => units.find(u => u.id === selectedUnit) ?? null, [units, selectedUnit]);
-  const selectedAgencyObj = useMemo(() => agencies.find(a => a.id === selectedAgency) ?? null, [agencies, selectedAgency]);
-  const selectedSectorObj = useMemo(() => sectors.find(s => s.id === selectedSector) ?? null, [sectors, selectedSector]);
-  const selectedLocationObj = useMemo(() => locations.find(l => l.id === selectedLocation) ?? null, [locations, selectedLocation]);
+  const selectedUnitObj = useMemo(
+    () => units.find((u) => u.id === selectedUnit) ?? null,
+    [units, selectedUnit]
+  );
+  const selectedAgencyObj = useMemo(
+    () => agencies.find((a) => a.id === selectedAgency) ?? null,
+    [agencies, selectedAgency]
+  );
+  const selectedSectorObj = useMemo(
+    () => sectors.find((s) => s.id === selectedSector) ?? null,
+    [sectors, selectedSector]
+  );
+  const selectedLocationObj = useMemo(
+    () => locations.find((l) => l.id === selectedLocation) ?? null,
+    [locations, selectedLocation]
+  );
 
   // ===== Labels readonly do formulário (não mudam com select) =====
-  const { unit_label, agency_label, sector_label, location_label } = useMemo(() => {
-    const agency   = (formSnapshot as any)?.agency ?? null as Agency | null;
-    const unit     = (formSnapshot as any)?.unit ?? null as Unit | null;
-    const sector   = (formSnapshot as any)?.sector ?? null as Sector | null;
-    const location = (formSnapshot as any)?.location ?? null as Location | null;
+  const { unit_label, agency_label, sector_label, location_label } =
+    useMemo(() => {
+      const agency = (formSnapshot as any)?.agency ?? (null as Agency | null);
+      const unit = (formSnapshot as any)?.unit ?? (null as Unit | null);
+      const sector = (formSnapshot as any)?.sector ?? (null as Sector | null);
+      const location =
+        (formSnapshot as any)?.location ?? (null as Location | null);
 
-    const agency_id   = (formSnapshot as any)?.agency_id   ?? agency?.id   ?? unit?.agency?.id ?? (unit as any)?.agency_id ?? "";
-    const unit_id     = (formSnapshot as any)?.unit_id     ?? unit?.id     ?? "";
-    const sector_id   = (formSnapshot as any)?.sector_id   ?? sector?.id   ?? "";
-    const location_id = (formSnapshot as any)?.location_id ?? location?.id ?? "";
+      const agency_id =
+        (formSnapshot as any)?.agency_id ??
+        agency?.id ??
+        unit?.agency?.id ??
+        (unit as any)?.agency_id ??
+        "";
+      const unit_id = (formSnapshot as any)?.unit_id ?? unit?.id ?? "";
+      const sector_id = (formSnapshot as any)?.sector_id ?? sector?.id ?? "";
+      const location_id =
+        (formSnapshot as any)?.location_id ?? location?.id ?? "";
 
-    const agency_label   = agency?.agency_name     || (agency_id   ? `#${agency_id}`   : "");
-    const unit_label     = unit?.unit_name         || (unit_id     ? `#${unit_id}`     : "");
-    const sector_label   = sector?.sector_name     || (sector_id   ? `#${sector_id}`   : "");
-    const location_label = location?.location_name || (location_id ? `#${location_id}` : "");
+      const agency_label =
+        agency?.agency_name || (agency_id ? `#${agency_id}` : "");
+      const unit_label = unit?.unit_name || (unit_id ? `#${unit_id}` : "");
+      const sector_label =
+        sector?.sector_name || (sector_id ? `#${sector_id}` : "");
+      const location_label =
+        location?.location_name || (location_id ? `#${location_id}` : "");
 
-    return { unit_label, agency_label, sector_label, location_label };
-  }, [formSnapshot]);
+      return { unit_label, agency_label, sector_label, location_label };
+    }, [formSnapshot]);
 
   /* ====== Hidratação (quando abrir a aba com dados salvos) ====== */
   const applyingRef = useRef(false);
@@ -166,7 +231,12 @@ export function LocalStep({
     if (!initialData) return;
     if (appliedKeyRef.current === persistedKey) return;
 
-    const { agency_id = "", unit_id = "", sector_id = "", location_id = "" } = initialData;
+    const {
+      agency_id = "",
+      unit_id = "",
+      sector_id = "",
+      location_id = "",
+    } = initialData;
 
     applyingRef.current = true;
     if (!selectedUnit && unit_id) setSelectedUnit(unit_id);
@@ -176,7 +246,15 @@ export function LocalStep({
     applyingRef.current = false;
 
     appliedKeyRef.current = persistedKey;
-  }, [isActive, initialData, persistedKey, selectedUnit, selectedAgency, selectedSector, selectedLocation]);
+  }, [
+    isActive,
+    initialData,
+    persistedKey,
+    selectedUnit,
+    selectedAgency,
+    selectedSector,
+    selectedLocation,
+  ]);
 
   /* ====== Proteção contra fetch fora de ordem ====== */
   const unitReqIdRef = useRef(0);
@@ -186,108 +264,136 @@ export function LocalStep({
   const token = localStorage.getItem("jwt_token");
 
   /* ===== Fetchers (com ?q=) ===== */
-  const fetchUnits = useCallback(async (q?: string) => {
-    setLoading(p => ({ ...p, units: true }));
-    try {
-      const qs = q ? `?q=${encodeURIComponent(q)}` : "";
-      const res = await fetch(`${baseUrl}/units/${qs}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-      const json: { units: Unit[] } = await res.json();
-      const list = Array.isArray(json?.units) ? json.units.filter(u => hasValidId(u?.id)) : [];
-      setUnits(list);
-    } catch (e) {
-      console.error("Erro ao buscar unidades:", e);
-      setUnits([]);
-    } finally {
-      setLoading(p => ({ ...p, units: false }));
-    }
-  }, [baseUrl, token]);
-  
-  const fetchAgenciesByUnit = useCallback(async (unitId: string, q?: string) => {
-    if (!hasValidId(unitId)) return;
-    const myReq = ++unitReqIdRef.current; // versão desta chamada
-    setLoading(p => ({ ...p, agencies: true }));
-    try {
-      const params = new URLSearchParams({ unit_id: unitId });
-      if (q) params.set("q", q);
-      const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-      const json: { agencies: Agency[] } = await res.json();
-      if (unitReqIdRef.current !== myReq) return; // resposta antiga → ignora
-      const list = Array.isArray(json?.agencies) ? json.agencies.filter(a => hasValidId(a?.id)) : [];
-      setAgencies(list);
-    } catch (e) {
-      if (unitReqIdRef.current === myReq) console.error("Erro ao buscar organizações da unidade:", e);
-      if (unitReqIdRef.current === myReq) setAgencies([]);
-    } finally {
-      if (unitReqIdRef.current === myReq) setLoading(p => ({ ...p, agencies: false }));
-    }
-  }, [baseUrl, token]);
-  
-  const fetchSectorsByAgency = useCallback(async (agencyId: string, q?: string) => {
-    if (!hasValidId(agencyId)) return;
-    const myReq = ++agencyReqIdRef.current;
-    setLoading(p => ({ ...p, sectors: true }));
-    try {
-      const params = new URLSearchParams({ agency_id: agencyId });
-      if (q) params.set("q", q);
-      const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-      const json: { sectors: Sector[] } = await res.json();
-      if (agencyReqIdRef.current !== myReq) return;
-      const list = Array.isArray(json?.sectors) ? json.sectors.filter(s => hasValidId(s?.id)) : [];
-      setSectors(list);
-    } catch (e) {
-      if (agencyReqIdRef.current === myReq) console.error("Erro ao buscar setores:", e);
-      if (agencyReqIdRef.current === myReq) setSectors([]);
-    } finally {
-      if (agencyReqIdRef.current === myReq) setLoading(p => ({ ...p, sectors: false }));
-    }
-  }, [baseUrl, token]);
-  
-  const fetchLocationsBySector = useCallback(async (sectorId: string, q?: string) => {
-    if (!hasValidId(sectorId)) return;
-    const myReq = ++sectorReqIdRef.current;
-    setLoading(p => ({ ...p, locations: true }));
-    try {
-      const params = new URLSearchParams({ sector_id: sectorId });
-      if (q) params.set("q", q);
-      const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-      const json: { locations: Location[] } = await res.json();
-      if (sectorReqIdRef.current !== myReq) return;
-      const list = Array.isArray(json?.locations) ? json.locations.filter(l => hasValidId(l?.id)) : [];
-      setLocations(list);
-    } catch (e) {
-      if (sectorReqIdRef.current === myReq) console.error("Erro ao buscar localizações:", e);
-      if (sectorReqIdRef.current === myReq) setLocations([]);
-    } finally {
-      if (sectorReqIdRef.current === myReq) setLoading(p => ({ ...p, locations: false }));
-    }
-  }, [baseUrl, token]);
-  
+  const fetchUnits = useCallback(
+    async (q?: string) => {
+      setLoading((p) => ({ ...p, units: true }));
+      try {
+        const qs = q ? `?q=${encodeURIComponent(q)}` : "";
+        const res = await fetch(`${baseUrl}/units/${qs}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+        const json: { units: Unit[] } = await res.json();
+        const list = Array.isArray(json?.units)
+          ? json.units.filter((u) => hasValidId(u?.id))
+          : [];
+        setUnits(list);
+      } catch (e) {
+        console.error("Erro ao buscar unidades:", e);
+        setUnits([]);
+      } finally {
+        setLoading((p) => ({ ...p, units: false }));
+      }
+    },
+    [baseUrl, token]
+  );
+
+  const fetchAgenciesByUnit = useCallback(
+    async (unitId: string, q?: string) => {
+      if (!hasValidId(unitId)) return;
+      const myReq = ++unitReqIdRef.current; // versão desta chamada
+      setLoading((p) => ({ ...p, agencies: true }));
+      try {
+        const params = new URLSearchParams({ unit_id: unitId });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/agencies/?${params.toString()}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+        const json: { agencies: Agency[] } = await res.json();
+        if (unitReqIdRef.current !== myReq) return; // resposta antiga → ignora
+        const list = Array.isArray(json?.agencies)
+          ? json.agencies.filter((a) => hasValidId(a?.id))
+          : [];
+        setAgencies(list);
+      } catch (e) {
+        if (unitReqIdRef.current === myReq)
+          console.error("Erro ao buscar organizações da unidade:", e);
+        if (unitReqIdRef.current === myReq) setAgencies([]);
+      } finally {
+        if (unitReqIdRef.current === myReq)
+          setLoading((p) => ({ ...p, agencies: false }));
+      }
+    },
+    [baseUrl, token]
+  );
+
+  const fetchSectorsByAgency = useCallback(
+    async (agencyId: string, q?: string) => {
+      if (!hasValidId(agencyId)) return;
+      const myReq = ++agencyReqIdRef.current;
+      setLoading((p) => ({ ...p, sectors: true }));
+      try {
+        const params = new URLSearchParams({ agency_id: agencyId });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/sectors/?${params.toString()}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+        const json: { sectors: Sector[] } = await res.json();
+        if (agencyReqIdRef.current !== myReq) return;
+        const list = Array.isArray(json?.sectors)
+          ? json.sectors.filter((s) => hasValidId(s?.id))
+          : [];
+        setSectors(list);
+      } catch (e) {
+        if (agencyReqIdRef.current === myReq)
+          console.error("Erro ao buscar setores:", e);
+        if (agencyReqIdRef.current === myReq) setSectors([]);
+      } finally {
+        if (agencyReqIdRef.current === myReq)
+          setLoading((p) => ({ ...p, sectors: false }));
+      }
+    },
+    [baseUrl, token]
+  );
+
+  const fetchLocationsBySector = useCallback(
+    async (sectorId: string, q?: string) => {
+      if (!hasValidId(sectorId)) return;
+      const myReq = ++sectorReqIdRef.current;
+      setLoading((p) => ({ ...p, locations: true }));
+      try {
+        const params = new URLSearchParams({ sector_id: sectorId });
+        if (q) params.set("q", q);
+        const res = await fetch(`${baseUrl}/locations/?${params.toString()}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+        const json: { locations: Location[] } = await res.json();
+        if (sectorReqIdRef.current !== myReq) return;
+        const list = Array.isArray(json?.locations)
+          ? json.locations.filter((l) => hasValidId(l?.id))
+          : [];
+        setLocations(list);
+      } catch (e) {
+        if (sectorReqIdRef.current === myReq)
+          console.error("Erro ao buscar localizações:", e);
+        if (sectorReqIdRef.current === myReq) setLocations([]);
+      } finally {
+        if (sectorReqIdRef.current === myReq)
+          setLoading((p) => ({ ...p, locations: false }));
+      }
+    },
+    [baseUrl, token]
+  );
+
   // Montagem/Atualização: unidades conforme busca
-  useEffect(() => { fetchUnits(unitQd); }, [fetchUnits, unitQd]);
+  useEffect(() => {
+    fetchUnits(unitQd);
+  }, [fetchUnits, unitQd]);
 
   /* ===== Reset util ===== */
   const resetBelow = useCallback((level: "unit" | "agency" | "sector") => {
@@ -373,10 +479,14 @@ export function LocalStep({
 
   // Emissão para o pai
   const emitReadyRef = useRef(false);
-  useLayoutEffect(() => { emitReadyRef.current = true; }, []);
+  useLayoutEffect(() => {
+    emitReadyRef.current = true;
+  }, []);
   useEffect(() => {
     if (!emitReadyRef.current) return;
-    const isValid = Boolean(selectedUnit && selectedAgency && selectedSector && selectedLocation);
+    const isValid = Boolean(
+      selectedUnit && selectedAgency && selectedSector && selectedLocation
+    );
     onValidityChange(!isOpen || isValid);
     onStateChange?.({
       agency_id: selectedAgency || undefined,
@@ -390,9 +500,17 @@ export function LocalStep({
       isOpen,
     });
   }, [
-    selectedAgency, selectedUnit, selectedSector, selectedLocation,
-    selectedAgencyObj, selectedUnitObj, selectedSectorObj, selectedLocationObj,
-    onValidityChange, onStateChange, isOpen,
+    selectedAgency,
+    selectedUnit,
+    selectedSector,
+    selectedLocation,
+    selectedAgencyObj,
+    selectedUnitObj,
+    selectedSectorObj,
+    selectedLocationObj,
+    onValidityChange,
+    onStateChange,
+    isOpen,
   ]);
 
   const showResumoVitrine = flowShort === "vitrine";
@@ -400,7 +518,7 @@ export function LocalStep({
   // helpers de rótulo para evitar "vazios" em transições
   const unitButtonText = () => {
     if (selectedUnit) {
-      const name = units.find(u => u.id === selectedUnit)?.unit_name;
+      const name = units.find((u) => u.id === selectedUnit)?.unit_name;
       return name ?? "Selecione uma unidade";
     }
     return loading.units ? "Carregando..." : "Selecione uma unidade";
@@ -409,7 +527,7 @@ export function LocalStep({
   const agencyButtonText = () => {
     if (!selectedUnit) return "Selecione uma unidade primeiro";
     if (selectedAgency) {
-      const name = agencies.find(a => a.id === selectedAgency)?.agency_name;
+      const name = agencies.find((a) => a.id === selectedAgency)?.agency_name;
       return name ?? "Selecione uma organização";
     }
     return loading.agencies ? "Carregando..." : "Selecione uma organização";
@@ -418,7 +536,7 @@ export function LocalStep({
   const sectorButtonText = () => {
     if (!selectedAgency) return "Selecione uma organização";
     if (selectedSector) {
-      const name = sectors.find(s => s.id === selectedSector)?.sector_name;
+      const name = sectors.find((s) => s.id === selectedSector)?.sector_name;
       return name ?? "Selecione um setor";
     }
     return loading.sectors ? "Carregando..." : "Selecione um setor";
@@ -427,11 +545,15 @@ export function LocalStep({
   const locationButtonText = () => {
     if (!selectedSector) return "Selecione um setor primeiro";
     if (selectedLocation) {
-      const name = locations.find(l => l.id === selectedLocation)?.location_name;
+      const name = locations.find(
+        (l) => l.id === selectedLocation
+      )?.location_name;
       return name ?? "Selecione um local";
     }
     return loading.locations ? "Carregando..." : "Selecione um local";
   };
+
+  const isMobile = useIsMobile();
 
   /* ===== UI ===== */
   return (
@@ -441,7 +563,13 @@ export function LocalStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           {flowShort === "vitrine"
             ? "Caso o item não esteja  no local de guarda indicado abaixo, informe a localização atual."
             : "Qual a localização atual do bem?"}
@@ -454,9 +582,10 @@ export function LocalStep({
           <div>
             <p className="font-medium">Localização do patrimônio</p>
             <p className="text-gray-500 text-sm">
-              Informar o local de guarda atual do bem não altera imediatamente sua
-              localização ou seu responsável/guardião legal no SICPAT. Essa informação será utilizada apenas como orientação para
-              a Seção de Patrimônio localizar o item para conferência/avaliação.
+              Informar o local de guarda atual do bem não altera imediatamente
+              sua localização ou seu responsável/guardião legal no SICPAT. Essa
+              informação será utilizada apenas como orientação para a Seção de
+              Patrimônio localizar o item para conferência/avaliação.
             </p>
           </div>
         </div>
@@ -485,7 +614,7 @@ export function LocalStep({
             <Separator className="my-8" />
             <Button
               className="w-full mb-8"
-              onClick={() => setIsOpen(prev => !prev)}
+              onClick={() => setIsOpen((prev) => !prev)}
               variant="outline"
             >
               {isOpen ? <X size={16} /> : <Pencil size={16} />}
@@ -521,16 +650,28 @@ export function LocalStep({
                     />
                     <CommandList>
                       <CommandEmpty>
-                        {loading.units ? "Carregando..." : "Nenhuma unidade encontrada."}
+                        {loading.units
+                          ? "Carregando..."
+                          : "Nenhuma unidade encontrada."}
                       </CommandEmpty>
                       <CommandGroup>
-                        {units.map(u => (
+                        {units.map((u) => (
                           <CommandItem
                             key={u.id}
                             value={`${u.unit_name} ${u.unit_code} ${u.unit_siaf}`}
-                            onSelect={() => { handleUnitChange(u.id); setOpenUnit(false); }}
+                            onSelect={() => {
+                              handleUnitChange(u.id);
+                              setOpenUnit(false);
+                            }}
                           >
-                            <Check className={cn("mr-2 h-4 w-4", selectedUnit === u.id ? "opacity-100" : "opacity-0")} />
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedUnit === u.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
                             <div className="flex flex-col">
                               <span className="text-sm">{u.unit_name}</span>
                             </div>
@@ -571,16 +712,28 @@ export function LocalStep({
                     />
                     <CommandList>
                       <CommandEmpty>
-                        {loading.agencies ? "Carregando..." : "Nenhuma organização encontrado(a)."}
+                        {loading.agencies
+                          ? "Carregando..."
+                          : "Nenhuma organização encontrado(a)."}
                       </CommandEmpty>
                       <CommandGroup>
-                        {agencies.map(a => (
+                        {agencies.map((a) => (
                           <CommandItem
                             key={a.id}
                             value={`${a.agency_name} ${a.agency_code}`}
-                            onSelect={() => { handleAgencyChange(a.id); setOpenAgency(false); }}
+                            onSelect={() => {
+                              handleAgencyChange(a.id);
+                              setOpenAgency(false);
+                            }}
                           >
-                            <Check className={cn("mr-2 h-4 w-4", selectedAgency === a.id ? "opacity-100" : "opacity-0")} />
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedAgency === a.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
                             <div className="flex flex-col">
                               <span className="text-sm">{a.agency_name}</span>
                             </div>
@@ -615,21 +768,34 @@ export function LocalStep({
                       placeholder="Buscar setor (nome/código)..."
                       onValueChange={(v) => {
                         setSectorQ(v);
-                        if (selectedAgency) fetchSectorsByAgency(selectedAgency, v);
+                        if (selectedAgency)
+                          fetchSectorsByAgency(selectedAgency, v);
                       }}
                     />
                     <CommandList>
                       <CommandEmpty>
-                        {loading.sectors ? "Carregando..." : "Nenhum setor encontrado."}
+                        {loading.sectors
+                          ? "Carregando..."
+                          : "Nenhum setor encontrado."}
                       </CommandEmpty>
                       <CommandGroup>
-                        {sectors.map(s => (
+                        {sectors.map((s) => (
                           <CommandItem
                             key={s.id}
                             value={`${s.sector_name} ${s.sector_code}`}
-                            onSelect={() => { handleSectorChange(s.id); setOpenSector(false); }}
+                            onSelect={() => {
+                              handleSectorChange(s.id);
+                              setOpenSector(false);
+                            }}
                           >
-                            <Check className={cn("mr-2 h-4 w-4", selectedSector === s.id ? "opacity-100" : "opacity-0")} />
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedSector === s.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
                             <div className="flex flex-col">
                               <span className="text-sm">{s.sector_name}</span>
                             </div>
@@ -665,21 +831,34 @@ export function LocalStep({
                       placeholder="Buscar local (nome/código)..."
                       onValueChange={(v) => {
                         setLocationQ(v);
-                        if (selectedSector) fetchLocationsBySector(selectedSector, v);
+                        if (selectedSector)
+                          fetchLocationsBySector(selectedSector, v);
                       }}
                     />
                     <CommandList>
                       <CommandEmpty>
-                        {loading.locations ? "Carregando..." : "Nenhum local encontrado."}
+                        {loading.locations
+                          ? "Carregando..."
+                          : "Nenhum local encontrado."}
                       </CommandEmpty>
                       <CommandGroup>
-                        {locations.map(l => (
+                        {locations.map((l) => (
                           <CommandItem
                             key={l.id}
                             value={`${l.location_name} ${l.location_code}`}
-                            onSelect={() => { handleLocationChange(l.id); setOpenLocation(false); }}
+                            onSelect={() => {
+                              handleLocationChange(l.id);
+                              setOpenLocation(false);
+                            }}
                           >
-                            <Check className={cn("mr-2 h-4 w-4", selectedLocation === l.id ? "opacity-100" : "opacity-0")} />
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedLocation === l.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
                             <div className="flex flex-col">
                               <span className="text-sm">{l.location_name}</span>
                             </div>

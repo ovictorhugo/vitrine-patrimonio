@@ -43,6 +43,7 @@ import { toast } from "sonner";
 import { ArrowUUpLeft } from "phosphor-react";
 import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
 import { usePermissions } from "../../../permissions";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -126,8 +127,11 @@ export function PatrimonioItemCollection({
   const statusInfo = statusMap[bemStaTrimmed];
   const materialName = asset.material?.material_name || "Sem nome";
   const legalGuardianName = asset.legal_guardian?.legal_guardians_name || "";
-  const hasAtm =
-    !!(asset.atm_number && asset.atm_number !== "None" && asset.atm_number !== "");
+  const hasAtm = !!(
+    asset.atm_number &&
+    asset.atm_number !== "None" &&
+    asset.atm_number !== ""
+  );
 
   const buildImgUrl = (p: string) => {
     const cleanPath = p?.startsWith("/") ? p.slice(1) : p || "";
@@ -270,296 +274,599 @@ export function PatrimonioItemCollection({
     [collectionId, itemId, onDeleted, urlGeral]
   );
 
-  return (
-    <>
-      <div className="flex group cursor-pointer" onClick={handleOpen}>
-        {/* Barra colorida */}
-        <div
-          className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-            qualisColor[csvCodTrimmed] || "bg-neutral-300"
-          } min-h-full relative`}
-        />
+  const isMobile = useIsMobile();
 
-        {/* Card */}
-        <div className="w-full">
-          <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
-            {/* Coluna info */}
-            <div className="flex-1 min-w-0">
-              {/* HEADER */}
-              <div className="flex items-center gap-3 p-4 pb-0">
-                <div className="flex items-center gap-2 mb-4 min-w-0 w-full">
-                  <p className="font-semibold text-left whitespace-nowrap shrink-0">
-                    {asset.asset_code?.toString().trim()} -{" "}
-                    {asset.asset_check_digit}
-                  </p>
+  if (isMobile) {
+    return (
+      <>
+        <div className="flex group cursor-pointer" onClick={handleOpen}>
+          {/* Barra colorida */}
+          <div
+            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+              qualisColor[csvCodTrimmed] || "bg-neutral-300"
+            } min-h-full relative`}
+          />
 
-                  {hasAtm && (
-                    <div className="min-w-0 flex-1">
-                      <Badge
-                        variant="outline"
-                        className="truncate min-w-0"
-                        title={asset.atm_number || ""}
-                      >
-                        ATM: {asset.atm_number}
-                      </Badge>
+          {/* Card */}
+          <div>
+            <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
+              {/* Coluna info */}
+              <div className="">
+                <div className="w-[200px]">
+                  {/* HEADER */}
+                  <div className="flex items-center gap-3 p-4 pb-0">
+                    <div className="flex items-center gap-2 text-sm min-w-0 w-full">
+                      <p className="font-semibold text-left  whitespace-nowrap shrink-0">
+                        {asset.asset_code?.toString().trim()} -{" "}
+                        {asset.asset_check_digit}
+                      </p>
+
+                      {hasAtm && (
+                        <div className="min-w-0 flex-1">
+                          <Badge
+                            variant="outline"
+                            className="truncate min-w-0"
+                            title={asset.atm_number || ""}
+                          >
+                            ATM: {asset.atm_number}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                  {/* BODY */}
+                  <div className="flex flex-col p-2 pt-0 justify-between">
+                    <div className="min-w-0">
+                      <div className="text-base font-bold">{materialName}</div>
+                      <p className="text-left text-xs uppercase">
+                        {asset.asset_description || ""}
+                      </p>
 
-              {/* BODY */}
-              <div className="flex flex-col p-4 pt-0 justify-between">
-                <div className="min-w-0">
-                  <div className="text-lg mb-2 font-bold">{materialName}</div>
-                  <p className="text-left mb-4 uppercase">
-                    {asset.asset_description || ""}
-                  </p>
+                      <div className="flex flex-wrap gap-3 min-w-0">
+                        {!!csvCodTrimmed && (
+                          <div className="text-xs text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                            <div
+                              className={`w-4 h-4 rounded-md ${
+                                qualisColor[csvCodTrimmed] || "bg-neutral-300"
+                              }`}
+                            />
+                            {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                          </div>
+                        )}
 
-                  <div className="flex flex-wrap gap-3 min-w-0">
-                    {!!csvCodTrimmed && (
-                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                        <div
-                          className={`w-4 h-4 rounded-md ${
-                            qualisColor[csvCodTrimmed] || "bg-neutral-300"
-                          }`}
-                        />
-                        {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                        {statusInfo && (
+                          <div className="text-xs text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                            {statusInfo.icon}
+                            {statusInfo.text}
+                          </div>
+                        )}
+
+                        {!!legalGuardianName && (
+                          <div className="flex gap-1 items-center min-w-0">
+                            <Avatar className="rounded-md h-5 w-5 shrink-0">
+                              <AvatarImage
+                                className="rounded-md h-5 w-5"
+                                src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
+                                  legalGuardianName
+                                )}`}
+                              />
+                              <AvatarFallback className="flex items-center justify-center">
+                                <User size={10} />
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <p
+                              className="text-xs text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                              title={legalGuardianName}
+                            >
+                              {legalGuardianName}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-
-                    {statusInfo && (
-                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                        {statusInfo.icon}
-                        {statusInfo.text}
-                      </div>
-                    )}
-
-                    {!!legalGuardianName && (
-                      <div className="flex gap-1 items-center min-w-0">
-                        <Avatar className="rounded-md h-5 w-5 shrink-0">
-                          <AvatarImage
-                            className="rounded-md h-5 w-5"
-                            src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                              legalGuardianName
-                            )}`}
-                          />
-                          <AvatarFallback className="flex items-center justify-center">
-                            <User size={10} />
-                          </AvatarFallback>
-                        </Avatar>
-
-                        <p
-                          className="text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
-                          title={legalGuardianName}
-                        >
-                          {legalGuardianName}
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Coluna carrossel */}
-          <div className="p-4 w-full flex-1 max-w-[600px]">
-  <div className="w-full select-none">
-    <Carousel className="w-full flex gap-4 items-center">
-      {/* Prev/Next com stopPropagation */}
-      <div onClick={stop}>
-        <CarouselPrevious variant="outline" />
-      </div>
+              {/* Coluna carrossel */}
+              <div className="p-4 w-full flex-1">
+                <div className="w-full select-none">
+                  <Carousel className="w-full flex gap-2 items-center">
+                    {/* Prev/Next com stopPropagation */}
+                    <div onClick={stop}>
+                      <CarouselPrevious variant="outline" />
+                    </div>
 
-      <CarouselContent>
-        {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
-          <CarouselItem
-            key={url ?? index}
-            className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
-          >
-            {/* Wrapper com tamanho consistente */}
-            <div
-              className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
-              onClick={
-                url
-                  ? (e) => openImageDialog(e, url) // 🔥 abre o modal
-                  : stop                           // se não tiver imagem, só impede propagação
-              }
-            >
-              {url ? (
-                <LazyLoadImage
-                  src={url}
-                  alt={materialName}
-                  effect="blur"
-                  width="100%"
-                  height="100%"
-                  wrapperClassName="absolute inset-0 h-full w-full"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                  className="rounded-md"
-                  draggable={false}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-                  Sem imagens
+                    <CarouselContent>
+                      {(imageUrls.length ? imageUrls : [undefined]).map(
+                        (url, index) => (
+                          <CarouselItem
+                            key={url ?? index}
+                            className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
+                          >
+                            {/* Wrapper com tamanho consistente */}
+                            <div
+                              className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
+                              onClick={
+                                url
+                                  ? (e) => openImageDialog(e, url) // 🔥 abre o modal
+                                  : stop // se não tiver imagem, só impede propagação
+                              }
+                            >
+                              {url ? (
+                                <LazyLoadImage
+                                  src={url}
+                                  alt={materialName}
+                                  effect="blur"
+                                  width="100%"
+                                  height="100%"
+                                  wrapperClassName="absolute inset-0 h-full w-full"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                  className="rounded-md"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                                  Sem imagens
+                                </div>
+                              )}
+                            </div>
+                          </CarouselItem>
+                        )
+                      )}
+                    </CarouselContent>
+
+                    <div onClick={stop}>
+                      <CarouselNext variant="outline" />
+                    </div>
+                  </Carousel>
                 </div>
-              )}
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
+              </div>
+            </Alert>
 
-      <div onClick={stop}>
-        <CarouselNext variant="outline" />
-      </div>
-    </Carousel>
-  </div>
-</div>
-          </Alert>
-
-          {/* Barra de edição (status/comment + atualizar + deletar) */}
-          <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
-            <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
-              <p>Coleta:</p>
-
-              <ToggleGroup
-                type="single"
-                value={statusValue}
-                onValueChange={(v) =>
-                  v && setStatusValue(v as "true" | "false")
-                }
-                className="flex gap-2"
-                variant="outline"
-              >
-                <ToggleGroupItem
-                  onClick={stop}
-                  value="true"
-                  aria-label="OK"
-                  className="
+            {/* Barra de edição (status/comment + atualizar + deletar) */}
+            <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
+              <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
+                <div className="flex justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <p>Coleta:</p>
+                    <ToggleGroup
+                      type="single"
+                      value={statusValue}
+                      onValueChange={(v) =>
+                        v && setStatusValue(v as "true" | "false")
+                      }
+                      className="flex gap-2"
+                      variant="outline"
+                    >
+                      <ToggleGroupItem
+                        onClick={stop}
+                        value="true"
+                        aria-label="OK"
+                        className="
                     w-10 h-10 border
                     data-[state=on]:bg-green-700 data-[state=on]:text-white
                     dark:data-[state=on]:bg-green-700
                     hover:bg-muted/40 transition
                   "
-                >
-                  <Check size={16} />
-                </ToggleGroupItem>
+                      >
+                        <Check size={16} />
+                      </ToggleGroupItem>
 
-                <ToggleGroupItem
-                  onClick={stop}
-                  value="false"
-                  aria-label="Com problema"
-                  className="
+                      <ToggleGroupItem
+                        onClick={stop}
+                        value="false"
+                        aria-label="Com problema"
+                        className="
                     w-10 h-10 border
                     data-[state=on]:bg-red-600 data-[state=on]:text-white
                     dark:data-[state=on]:bg-red-700
                     hover:bg-muted/40 transition
                   "
-                >
-                  <X size={16} />
-                </ToggleGroupItem>
-              </ToggleGroup>
+                      >
+                        <X size={16} />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                  {hasColecoes && (
+                    <Button
+                      variant="destructive"
+                      onClick={(e) => {
+                        stop(e);
+                        setDeleteOpen(true);
+                      }}
+                      disabled={isLocked || deleting}
+                      size="icon"
+                    >
+                      {deleting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Trash size={16} />
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <Input
+                  placeholder="Observações"
+                  value={commentValue}
+                  onChange={(e) => setCommentValue(e.target.value)}
+                  className="min-w-[220px] flex-1"
+                  disabled={isLocked}
+                  onClick={stop}
+                />
 
-              <Input
-                placeholder="Observações"
-                value={commentValue}
-                onChange={(e) => setCommentValue(e.target.value)}
-                className="min-w-[220px] flex-1"
-                disabled={isLocked}
-                onClick={stop}
-              />
-
-              <Button
-                onClick={handleUpdate}
-                disabled={updating || isLocked}
-                variant="outline"
-              >
-                {updating ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <RefreshCcw size={16} />
-                )}
-                Atualizar
-              </Button>
-
-              {hasColecoes && (
                 <Button
-                  variant="destructive"
-                  onClick={(e) => {
-                    stop(e);
-                    setDeleteOpen(true);
-                  }}
-                  disabled={isLocked || deleting}
-                  size="icon"
+                  onClick={handleUpdate}
+                  disabled={updating || isLocked}
+                  variant="outline"
                 >
-                  {deleting ? (
+                  {updating ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    <Trash size={16} />
+                    <RefreshCcw size={16} />
                   )}
+                  Atualizar
                 </Button>
-              )}
-            </div>
-          </Alert>
-        </div>
-      </div>
-
-      {/* Dialog de imagem */}
-      <Dialog open={openImage} onOpenChange={setOpenImage}>
-        <DialogContent className="max-w-5xl p-0" onClick={stop}>
-          <div className="w-full">
-            <div className="relative w-full max-h-[80vh]">
-              {selectedImg ? (
-                <img
-                  src={selectedImg}
-                  alt="Imagem do patrimônio"
-                  className="mx-auto max-h-[75vh] w-auto object-contain"
-                  draggable={false}
-                />
-              ) : (
-                <div className="p-8 text-center text-sm text-gray-500">
-                  Nenhuma imagem selecionada
-                </div>
-              )}
-            </div>
+              </div>
+            </Alert>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
 
-      {/* Dialog de confirmação de DELETE */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent onClick={stop}>
-          <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Remover item da coleção
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              Tem certeza que deseja remover este item da coleção de
-              desfazimento? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
+        {/* Dialog de imagem */}
+        <Dialog open={openImage} onOpenChange={setOpenImage}>
+          <DialogContent className="max-w-5xl p-0" onClick={stop}>
+            <div className="w-full">
+              <div className="relative w-full max-h-[80vh]">
+                {selectedImg ? (
+                  <img
+                    src={selectedImg}
+                    alt="Imagem do patrimônio"
+                    className="mx-auto max-h-[75vh] w-auto object-contain"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-sm text-gray-500">
+                    Nenhuma imagem selecionada
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              <ArrowUUpLeft size={16} /> Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Trash size={16} />
-              )}
-              Remover
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+        {/* Dialog de confirmação de DELETE */}
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent onClick={stop}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                Remover item da coleção
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500">
+                Tem certeza que deseja remover este item da coleção de
+                desfazimento? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash size={16} />
+                )}
+                Remover
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  } else {
+    return (
+      <>
+        <div className="flex group cursor-pointer" onClick={handleOpen}>
+          {/* Barra colorida */}
+          <div
+            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+              qualisColor[csvCodTrimmed] || "bg-neutral-300"
+            } min-h-full relative`}
+          />
+
+          {/* Card */}
+          <div className="w-full">
+            <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
+              {/* Coluna info */}
+              <div className="flex-1 min-w-0">
+                {/* HEADER */}
+                <div className="flex items-center gap-3 p-4 pb-0">
+                  <div className="flex items-center gap-2 mb-4 min-w-0 w-full">
+                    <p className="font-semibold text-left whitespace-nowrap shrink-0">
+                      {asset.asset_code?.toString().trim()} -{" "}
+                      {asset.asset_check_digit}
+                    </p>
+
+                    {hasAtm && (
+                      <div className="min-w-0 flex-1">
+                        <Badge
+                          variant="outline"
+                          className="truncate min-w-0"
+                          title={asset.atm_number || ""}
+                        >
+                          ATM: {asset.atm_number}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* BODY */}
+                <div className="flex flex-col p-4 pt-0 justify-between">
+                  <div className="min-w-0">
+                    <div className="text-lg mb-2 font-bold">{materialName}</div>
+                    <p className="text-left mb-4 uppercase">
+                      {asset.asset_description || ""}
+                    </p>
+
+                    <div className="flex flex-wrap gap-3 min-w-0">
+                      {!!csvCodTrimmed && (
+                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                          <div
+                            className={`w-4 h-4 rounded-md ${
+                              qualisColor[csvCodTrimmed] || "bg-neutral-300"
+                            }`}
+                          />
+                          {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                        </div>
+                      )}
+
+                      {statusInfo && (
+                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                          {statusInfo.icon}
+                          {statusInfo.text}
+                        </div>
+                      )}
+
+                      {!!legalGuardianName && (
+                        <div className="flex gap-1 items-center min-w-0">
+                          <Avatar className="rounded-md h-5 w-5 shrink-0">
+                            <AvatarImage
+                              className="rounded-md h-5 w-5"
+                              src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
+                                legalGuardianName
+                              )}`}
+                            />
+                            <AvatarFallback className="flex items-center justify-center">
+                              <User size={10} />
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <p
+                            className="text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                            title={legalGuardianName}
+                          >
+                            {legalGuardianName}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna carrossel */}
+              <div className="p-4 w-full flex-1 max-w-[600px]">
+                <div className="w-full select-none">
+                  <Carousel className="w-full flex gap-4 items-center">
+                    {/* Prev/Next com stopPropagation */}
+                    <div onClick={stop}>
+                      <CarouselPrevious variant="outline" />
+                    </div>
+
+                    <CarouselContent>
+                      {(imageUrls.length ? imageUrls : [undefined]).map(
+                        (url, index) => (
+                          <CarouselItem
+                            key={url ?? index}
+                            className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
+                          >
+                            {/* Wrapper com tamanho consistente */}
+                            <div
+                              className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
+                              onClick={
+                                url
+                                  ? (e) => openImageDialog(e, url) // 🔥 abre o modal
+                                  : stop // se não tiver imagem, só impede propagação
+                              }
+                            >
+                              {url ? (
+                                <LazyLoadImage
+                                  src={url}
+                                  alt={materialName}
+                                  effect="blur"
+                                  width="100%"
+                                  height="100%"
+                                  wrapperClassName="absolute inset-0 h-full w-full"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                  className="rounded-md"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                                  Sem imagens
+                                </div>
+                              )}
+                            </div>
+                          </CarouselItem>
+                        )
+                      )}
+                    </CarouselContent>
+
+                    <div onClick={stop}>
+                      <CarouselNext variant="outline" />
+                    </div>
+                  </Carousel>
+                </div>
+              </div>
+            </Alert>
+
+            {/* Barra de edição (status/comment + atualizar + deletar) */}
+            <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
+              <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
+                <p>Coleta:</p>
+
+                <ToggleGroup
+                  type="single"
+                  value={statusValue}
+                  onValueChange={(v) =>
+                    v && setStatusValue(v as "true" | "false")
+                  }
+                  className="flex gap-2"
+                  variant="outline"
+                >
+                  <ToggleGroupItem
+                    onClick={stop}
+                    value="true"
+                    aria-label="OK"
+                    className="
+                    w-10 h-10 border
+                    data-[state=on]:bg-green-700 data-[state=on]:text-white
+                    dark:data-[state=on]:bg-green-700
+                    hover:bg-muted/40 transition
+                  "
+                  >
+                    <Check size={16} />
+                  </ToggleGroupItem>
+
+                  <ToggleGroupItem
+                    onClick={stop}
+                    value="false"
+                    aria-label="Com problema"
+                    className="
+                    w-10 h-10 border
+                    data-[state=on]:bg-red-600 data-[state=on]:text-white
+                    dark:data-[state=on]:bg-red-700
+                    hover:bg-muted/40 transition
+                  "
+                  >
+                    <X size={16} />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                <Input
+                  placeholder="Observações"
+                  value={commentValue}
+                  onChange={(e) => setCommentValue(e.target.value)}
+                  className="min-w-[220px] flex-1"
+                  disabled={isLocked}
+                  onClick={stop}
+                />
+
+                <Button
+                  onClick={handleUpdate}
+                  disabled={updating || isLocked}
+                  variant="outline"
+                >
+                  {updating ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <RefreshCcw size={16} />
+                  )}
+                  Atualizar
+                </Button>
+
+                {hasColecoes && (
+                  <Button
+                    variant="destructive"
+                    onClick={(e) => {
+                      stop(e);
+                      setDeleteOpen(true);
+                    }}
+                    disabled={isLocked || deleting}
+                    size="icon"
+                  >
+                    {deleting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash size={16} />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </Alert>
+          </div>
+        </div>
+
+        {/* Dialog de imagem */}
+        <Dialog open={openImage} onOpenChange={setOpenImage}>
+          <DialogContent className="max-w-5xl p-0" onClick={stop}>
+            <div className="w-full">
+              <div className="relative w-full max-h-[80vh]">
+                {selectedImg ? (
+                  <img
+                    src={selectedImg}
+                    alt="Imagem do patrimônio"
+                    className="mx-auto max-h-[75vh] w-auto object-contain"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-sm text-gray-500">
+                    Nenhuma imagem selecionada
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de confirmação de DELETE */}
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent onClick={stop}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                Remover item da coleção
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500">
+                Tem certeza que deseja remover este item da coleção de
+                desfazimento? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash size={16} />
+                )}
+                Remover
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 }

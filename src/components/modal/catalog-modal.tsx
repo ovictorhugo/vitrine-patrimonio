@@ -63,7 +63,6 @@ import {
   ArrowUUpLeft,
   CheckSquareOffset,
 } from "phosphor-react";
-import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   Accordion,
@@ -74,8 +73,6 @@ import {
 import { HeaderResultTypeHome } from "../header-result-type-home";
 
 import { useModal } from "../hooks/use-modal-store";
-import QRCode from "react-qr-code";
-import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
@@ -1242,18 +1239,18 @@ export function CatalogModal() {
 
       return (
         <main
-          className={`flex flex-1 flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg ${borderColorClass}`}
+          className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden ${borderColorClass}`}
         >
           {header}
-          <ScrollArea className="max-h-[70vh] border-solid">
-            <div className="px-8">
+          <ScrollArea className="border-solid flex-1 w-full">
+            <div className="px-4 pb-4">
               <div className="grid grid-cols-1">
                 <Carousel items={cards} />
 
-                <div className="flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8">
+                <div className="flex lg:flex-row flex-col-reverse gap-4">
                   <div className="flex w-full flex-col">
                     <div className="flex justify-between items-start">
-                      <div className="flex justify-between w-full">
+                      <div className="flex flex-col gap-2 justify-between w-full">
                         <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">
                           {titulo}
                         </h2>
@@ -1280,12 +1277,12 @@ export function CatalogModal() {
                       </div>
                     </div>
 
-                    <p className="mb-8 text-gray-500">
+                    <p className="mb-4 text-gray-500">
                       {asset?.asset_description || "Sem descrição."}
                     </p>
 
                     <Tabs defaultValue="visao_geral" value={value} className="">
-                      <div className="mb-8 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
+                      <div className="mb-4 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
                         <div className="relative grid grid-cols-1 w-full ">
                           <Button
                             variant="outline"
@@ -1367,7 +1364,7 @@ export function CatalogModal() {
                               />
                               <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
                                 <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-                                  <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
+                                  <p className="font-semibold flex gap-3 items-center text-left flex-1">
                                     {asset?.asset_code?.trim()} -{" "}
                                     {asset?.asset_check_digit}
                                     {!!asset?.atm_number &&
@@ -1736,7 +1733,7 @@ export function CatalogModal() {
                                                   </p>
 
                                                   {ev.detail?.justificativa && (
-                                                    <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
+                                                    <p className="text-sm text-justify dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
                                                       {ev.detail.justificativa}
                                                     </p>
                                                   )}
@@ -1869,7 +1866,9 @@ export function CatalogModal() {
   if (isMobile) {
     return (
       <Drawer open={isModalOpen} onOpenChange={onClose}>
-        <DrawerContent className="max-h-[70vh]">{content()}</DrawerContent>
+        <DrawerContent className="max-h-[80vh] flex flex-col">
+          {content()}
+        </DrawerContent>
       </Drawer>
     );
   } else {

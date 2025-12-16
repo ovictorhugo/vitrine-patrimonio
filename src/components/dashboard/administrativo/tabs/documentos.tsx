@@ -44,6 +44,7 @@ import { saveAs } from "file-saver";
 // ===== PDF.js =====
 import * as pdfjsLib from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.entry";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 // @ts-ignore
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -308,6 +309,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
     setPdfDialog({ open: false, file: null });
   }, []);
 
+  const isMobile = useIsMobile();
   /* ===================== RENDER ===================== */
 
   if (!loading && fileList.length === 0) {
@@ -330,7 +332,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
       ) : (
         <>
           {fileList.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
               {fileList.map((file) => {
                 const url = buildFileUrl(urlGeral, file.file_path);
                 const mime = file.content_type ?? "";
@@ -345,7 +347,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
                         size="icon"
                         variant="destructive"
                         onClick={() => handleDeleteFile(file)}
-                        className="gap-2 h-8 w-8 absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="gap-2 h-8 w-8 absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity overflow-hidden "
                       >
                         <Trash className="w-4 h-4" />
                       </Button>
@@ -374,7 +376,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
                       )}
                     </div>
 
-                    <div className="p-3 space-y-2">
+                    <div className="p-3 space-y-2 overflow-hidden">
                       <div
                         className="text-sm font-medium line-clamp-2"
                         title={file.file_name}
@@ -389,7 +391,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
 
                       <div className="flex items-center gap-2 pt-1">
                         <Button
-                          size="sm"
+                          size={isMobile ? "xs" : "sm"}
                           variant="default"
                           onClick={() => downloadFile(file)}
                           className="gap-2 w-full"
@@ -400,7 +402,7 @@ export function Documentos({ urlGeral, token }: DocumentoProps) {
 
                         {showPdf && (
                           <Button
-                            size="sm"
+                            size={isMobile ? "xs" : "sm"}
                             variant="outline"
                             onClick={() => handleOpenPdf(file)}
                             className="gap-2 w-full"

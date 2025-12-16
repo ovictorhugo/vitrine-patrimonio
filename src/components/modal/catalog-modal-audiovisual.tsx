@@ -794,7 +794,7 @@ export function AudiovisualModal() {
       let closestBarrier = Infinity;
 
       conflictingWorkflows.forEach((wf) => {
-        if (typeof(wf.inicio) === "number") return;
+        if (typeof wf.inicio === "number") return;
         const wfStart = new Date(wf.inicio.replace("Z", "")).getTime();
 
         // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
@@ -1018,7 +1018,7 @@ export function AudiovisualModal() {
 
     return (
       <main
-        className={`flex flex-1 flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg ${borderColorClass}`}
+        className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden ${borderColorClass}`}
       >
         <div className="flex items-center gap-4 p-8 pb-0">
           <Button
@@ -1825,7 +1825,9 @@ export function AudiovisualModal() {
   if (isMobile) {
     return (
       <Drawer open={isModalOpen} onOpenChange={onClose}>
-        <DrawerContent className="max-h-[70vh]">{content()}</DrawerContent>
+        <DrawerContent className="max-h-[80vh] flex flex-col">
+          {content()}
+        </DrawerContent>
       </Drawer>
     );
   } else {

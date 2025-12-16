@@ -19,6 +19,7 @@ type DownloadPdfButtonProps = {
   label?: string;
   method?: string;
   id?: string;
+  size?: "default" | "sm" | "xs" | "lg" | "icon" | null | undefined;
 };
 
 /**
@@ -30,6 +31,7 @@ export function DownloadPdfButton({
   label = "Baixar PDF",
   method = "catalog",
   id = "",
+  size = "sm",
 }: DownloadPdfButtonProps) {
   const { urlGeral } = useContext(UserContext);
 
@@ -84,7 +86,12 @@ export function DownloadPdfButton({
 
   return (
     <>
-      <Button onClick={fetchData} disabled={loading} variant="outline">
+      <Button
+        onClick={fetchData}
+        disabled={loading}
+        variant="outline"
+        size={size}
+      >
         {loading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (

@@ -6,18 +6,14 @@ import {
   ScanEye,
   Trash,
 } from "lucide-react";
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  forwardRef,
-} from "react";
+import React, { useEffect, useState, useCallback, forwardRef } from "react";
 import { Label } from "../../../ui/label";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { StepBaseProps } from "../emprestimo-audiovisual";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 type ArquivosLocal = {
   docs?: File[];
@@ -140,6 +136,8 @@ export const ArquivosStep = forwardRef<
     onValidityChange(true);
   }, [docsLocal, onValidityChange]);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -147,7 +145,13 @@ export const ArquivosStep = forwardRef<
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Enriqueça as informações do patrimônio
         </h1>
       </div>

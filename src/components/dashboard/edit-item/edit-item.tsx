@@ -1,5 +1,11 @@
 // src/pages/edit-item-vitrine/index.tsx
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent } from "../../ui/tabs";
@@ -27,6 +33,7 @@ import { FinalStep } from "../novo-item/steps/final";
 /* Aba de imagens (edição) */
 import { ImagemStepEdit } from "./steps/imagem";
 import { InformacoesAdicionaisStep } from "./steps/informacoes-adicionais";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 /* ===================== Tipos locais (DTO) ===================== */
 /** Renomeados para evitar colisão estrutural com tipos internos dos steps */
@@ -38,9 +45,9 @@ type StepKey =
   | "imagens"
   | "final";
 
-  export type ExistingFileDTO = {
+export type ExistingFileDTO = {
   id: string;
-  catalog_id?: string;   // opzional, se a API mandar
+  catalog_id?: string; // opzional, se a API mandar
   file_path: string;
   file_name: string;
   content_type: string;
@@ -278,8 +285,9 @@ export function EditItemVitrine() {
   const [active, setActive] = useState<StepKey>("formulario");
   const [valid, setValid] = useState<ValidMap>({});
   const [wizard, setWizard] = useState<WizardState>({});
-  const [catalogData, setCatalogData] =
-    useState<CatalogResponseDTO | null>(null);
+  const [catalogData, setCatalogData] = useState<CatalogResponseDTO | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -349,61 +357,53 @@ export function EditItemVitrine() {
     []
   );
 
- const onStateChangeFactory = useCallback(
-  (key: StepKey) => (st: unknown) => {
-    setWizardIfChanged((prev) => {
-      const cur = ((prev as any)[key] as Record<string, any>) || {};
-      const patch = st as Record<string, any>;
+  const onStateChangeFactory = useCallback(
+    (key: StepKey) => (st: unknown) => {
+      setWizardIfChanged((prev) => {
+        const cur = ((prev as any)[key] as Record<string, any>) || {};
+        const patch = st as Record<string, any>;
 
-      let changed = false;
-      const nextForKey: Record<string, any> = { ...cur };
+        let changed = false;
+        const nextForKey: Record<string, any> = { ...cur };
 
-      for (const [k, v] of Object.entries(patch)) {
-        if (v === undefined) {
-          if (k in nextForKey) {
-            delete nextForKey[k];
-            changed = true;
-          }
-        } else {
-          if (nextForKey[k] !== v) {
-            nextForKey[k] = v;
-            changed = true;
+        for (const [k, v] of Object.entries(patch)) {
+          if (v === undefined) {
+            if (k in nextForKey) {
+              delete nextForKey[k];
+              changed = true;
+            }
+          } else {
+            if (nextForKey[k] !== v) {
+              nextForKey[k] = v;
+              changed = true;
+            }
           }
         }
-      }
 
-      // ✅ se nada mudou, não cria novo objeto
-      if (!changed) return prev;
+        // ✅ se nada mudou, não cria novo objeto
+        if (!changed) return prev;
 
-      return { ...(prev as any), [key]: nextForKey } as WizardState;
-    });
-  },
-  [setWizardIfChanged]
-);
-
+        return { ...(prev as any), [key]: nextForKey } as WizardState;
+      });
+    },
+    [setWizardIfChanged]
+  );
 
   const onValidityChangeFactory = useCallback(
     (key: StepKey) => (v: boolean) =>
-      setValid((prev) =>
-        prev[key] === v ? prev : { ...prev, [key]: v }
-      ),
+      setValid((prev) => (prev[key] === v ? prev : { ...prev, [key]: v })),
     []
   );
 
   /* ==== navegação/progresso ==== */
-  const idx = useMemo(
-    () => STEPS.findIndex((s) => s.key === active),
-    [active]
-  );
+  const idx = useMemo(() => STEPS.findIndex((s) => s.key === active), [active]);
   const total = STEPS.length;
   const pct = ((idx + 1) / total) * 100;
 
   const canActivateIndex = useCallback(
     (targetIndex: number) =>
       targetIndex <= idx ||
-      STEPS.slice(0, targetIndex).every(
-        (s) => valid[s.key] === true
-      ),
+      STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true),
     [idx, STEPS, valid]
   );
 
@@ -416,10 +416,7 @@ export function EditItemVitrine() {
   }, [idx, STEPS]);
 
   const canFinish = useMemo(
-    () =>
-      STEPS.slice(0, total - 1).every(
-        (s) => valid[s.key] === true
-      ),
+    () => STEPS.slice(0, total - 1).every((s) => valid[s.key] === true),
     [STEPS, total, valid]
   );
 
@@ -442,14 +439,12 @@ export function EditItemVitrine() {
     setSaving(true);
     try {
       const assetId =
-        (wizard.formulario?.id as string) ||
-        (catalogData.asset?.id as string);
+        (wizard.formulario?.id as string) || (catalogData.asset?.id as string);
       const locationId = pickLocationIdForPut(wizard, catalogData);
       const situation = wizardSituationToApi(wizard.estado?.estado_previo);
       const conservation_status =
         wizard["informacoes-adicionais"]?.situacao || "";
-      const description =
-        wizard["informacoes-adicionais"]?.observacao || "";
+      const description = wizard["informacoes-adicionais"]?.observacao || "";
 
       if (!assetId) throw new Error("Asset ID ausente.");
       if (!locationId) throw new Error("Localização não definida.");
@@ -475,15 +470,11 @@ export function EditItemVitrine() {
 
       if (!resp.ok) {
         const txt = await resp.text().catch(() => "");
-        throw new Error(
-          `Falha ao atualizar catálogo (${resp.status}): ${txt}`
-        );
+        throw new Error(`Falha ao atualizar catálogo (${resp.status}): ${txt}`);
       }
 
       // 2) POST /catalog/{id}/workflow (com base no estado_previo)
-      const nextWorkflow = workflowFromEstado(
-        wizard.estado?.estado_previo
-      );
+      const nextWorkflow = workflowFromEstado(wizard.estado?.estado_previo);
       if (!nextWorkflow) {
         throw new Error(
           "Não foi possível inferir o workflow a partir do estado selecionado."
@@ -520,8 +511,7 @@ export function EditItemVitrine() {
       }
 
       toast("Item atualizado com sucesso!", {
-        description:
-          "As alterações e o workflow inicial foram registrados.",
+        description: "As alterações e o workflow inicial foram registrados.",
       });
       setActive("final");
       navigate(`/dashboard`);
@@ -648,21 +638,38 @@ export function EditItemVitrine() {
 
   const allWorkflows = [...WORKFLOWS.vitrine, ...WORKFLOWS.desfazimento];
 
-  const flowShort = catalogData?.asset?.is_official === true ? "vitrine" : "desfazimento";
+  const flowShort =
+    catalogData?.asset?.is_official === true ? "vitrine" : "desfazimento";
+
+  const isMobile = useIsMobile();
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
-          <div className="text-eng-blue mb-4 animate-pulse">
-            <LoaderCircle size={108} className="animate-spin" />
+    if (isMobile) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={54} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[400px] text-center">
+              {loadingMessage}
+            </p>
           </div>
-          <p className="font-medium text-lg max-w-[500px] text-center">
-            {loadingMessage}
-          </p>
         </div>
-      </div>
-    );
+      );
+    } else
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="w-full flex flex-col items-center justify-center h-full">
+            <div className="text-eng-blue mb-4 animate-pulse">
+              <LoaderCircle size={108} className="animate-spin" />
+            </div>
+            <p className="font-medium text-lg max-w-[500px] text-center">
+              {loadingMessage}
+            </p>
+          </div>
+        </div>
+      );
   }
 
   if (!catalogData && !loggedIn) {
@@ -693,10 +700,11 @@ export function EditItemVitrine() {
   }
 
   if (!workflowsPermitidos.includes(firstWorkflow)) {
-    const workflowInfo =
-      allWorkflows.find((wf) => wf.key === firstWorkflow) || {
-        name: "etapa desconhecida",
-      };
+    const workflowInfo = allWorkflows.find(
+      (wf) => wf.key === firstWorkflow
+    ) || {
+      name: "etapa desconhecida",
+    };
 
     return (
       <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
@@ -758,10 +766,7 @@ export function EditItemVitrine() {
               const targetIndex = STEPS.findIndex(
                 (s) => s.key === (v as StepKey)
               );
-              if (
-                targetIndex !== -1 &&
-                canActivateIndex(targetIndex)
-              )
+              if (targetIndex !== -1 && canActivateIndex(targetIndex))
                 setActive(v as StepKey);
             }}
             className="h-full"
@@ -772,9 +777,7 @@ export function EditItemVitrine() {
                 {s.key === "formulario" && (
                   <FormularioStep
                     value="formulario"
-                    step={
-                      STEPS.findIndex((st) => st.key === "formulario") + 1
-                    }
+                    step={STEPS.findIndex((st) => st.key === "formulario") + 1}
                     initialData={wizard.formulario}
                     onStateChange={onStateChangeFactory("formulario")}
                     onValidityChange={onValidityChangeFactory("formulario")}
@@ -790,9 +793,7 @@ export function EditItemVitrine() {
                     }
                     // SELECTs: usa catalog.location para os selects editáveis
                     initialData={
-                      deriveTLFromCatalogLocation(
-                        catalogData?.location
-                      ) as any
+                      deriveTLFromCatalogLocation(catalogData?.location) as any
                     }
                     // inputs apenas leitura: usa asset.location original
                     formSnapshot={
@@ -811,9 +812,7 @@ export function EditItemVitrine() {
                 {s.key === "estado" && (
                   <EstadoStep
                     value="estado"
-                    step={
-                      STEPS.findIndex((st) => st.key === "estado") + 1
-                    }
+                    step={STEPS.findIndex((st) => st.key === "estado") + 1}
                     estado_previo={wizard.estado?.estado_previo}
                     onStateChange={onStateChangeFactory("estado")}
                     onValidityChange={onValidityChangeFactory("estado")}
@@ -832,26 +831,26 @@ export function EditItemVitrine() {
                     flowShort="vitrine"
                     initialData={wizard["informacoes-adicionais"]}
                     estadoAtual={wizard.estado?.estado_previo}
-
                     // ✅ NOVO: usa draft do wizard primeiro; se não tiver, cai na API
                     existingFiles={
                       wizard["informacoes-adicionais"]?.serverFilesDraft ??
                       catalogData?.files ??
                       []
                     }
-
                     catalogId={catalogData?.id || ""}
-                    onStateChange={onStateChangeFactory("informacoes-adicionais")}
-                    onValidityChange={onValidityChangeFactory("informacoes-adicionais")}
+                    onStateChange={onStateChangeFactory(
+                      "informacoes-adicionais"
+                    )}
+                    onValidityChange={onValidityChangeFactory(
+                      "informacoes-adicionais"
+                    )}
                   />
                 )}
 
                 {/* IMAGENS */}
                 {s.key === "imagens" && (
                   <ImagemStepEdit
-                    step={
-                      STEPS.findIndex((st) => st.key === "imagens") + 1
-                    }
+                    step={STEPS.findIndex((st) => st.key === "imagens") + 1}
                     catalogId={catalogId}
                     urlGeral={urlGeral}
                     token={token}
@@ -888,9 +887,7 @@ export function EditItemVitrine() {
                   key={st.key}
                   className={cn(
                     "mr-2",
-                    valid[st.key]
-                      ? "text-emerald-600"
-                      : "text-amber-600"
+                    valid[st.key] ? "text-emerald-600" : "text-amber-600"
                   )}
                 >
                   ●

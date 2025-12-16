@@ -12,6 +12,7 @@ import React, {
 import { Label } from "../../../ui/label";
 import { UserContext } from "../../../../context/context";
 import { Input } from "../../../ui/input";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ===== Tipos ===== */
 type FlowMode = "vitrine" | "desfazimento";
@@ -531,6 +532,8 @@ export function TrocarLocalStep({
     return loading.locations ? "Carregando..." : "Selecione um local";
   };
 
+  const isMobile = useIsMobile();
+
   /* ===== UI ===== */
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -539,7 +542,13 @@ export function TrocarLocalStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Confirme a localização do bem no local de guarda indicado abaixo.
         </h1>
       </div>

@@ -9,6 +9,7 @@ import type { StepBaseProps } from "../emprestimo-audiovisual";
 import { useQuery } from "../../../modal/search-modal-patrimonio";
 import { UserContext } from "../../../../context/context";
 import { Switch } from "../../../ui/switch";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export interface PatrimoniosSelecionados {
   term: string;
@@ -22,31 +23,41 @@ type SearchItem =
 
 type AdvancedItem = {
   type: "advanced";
-  cod_label?: string;   // asset_code-asset_check_digit
-  display: string;      // rótulo mostrado no chip
-  id?: string;          // para de-dup
+  cod_label?: string; // asset_code-asset_check_digit
+  display: string; // rótulo mostrado no chip
+  id?: string; // para de-dup
 };
 
-const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> => i.type === "cod";
-const isAtm = (i: SearchItem): i is Extract<SearchItem, { type: "atm" }> => i.type === "atm";
+const isCod = (i: SearchItem): i is Extract<SearchItem, { type: "cod" }> =>
+  i.type === "cod";
+const isAtm = (i: SearchItem): i is Extract<SearchItem, { type: "atm" }> =>
+  i.type === "atm";
 
 export function PesquisaStep({
   value_item,
   onValidityChange,
   onStateChange,
   type,
-  step
+  step,
 }: StepBaseProps<"pesquisa">) {
-  const [itemType, setItemType] = useState<"cod" | "atm">((type as any) ?? "cod");
-  const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] =
-    useState<PatrimoniosSelecionados[]>(
-      value_item && type ? [{ term: String(value_item), type: String(type) as "cod" | "atm" }] : []
-    );
+  const [itemType, setItemType] = useState<"cod" | "atm">(
+    (type as any) ?? "cod"
+  );
+  const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<
+    PatrimoniosSelecionados[]
+  >(
+    value_item && type
+      ? [{ term: String(value_item), type: String(type) as "cod" | "atm" }]
+      : []
+  );
   const [input, setInput] = useState("");
 
   // ========= API base =========
   const { urlGeral, loggedIn } = useContext(UserContext);
-  const API_SEARCH_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/search`;
+  const API_SEARCH_BASE = `${String(urlGeral).replace(
+    /\/$/,
+    ""
+  )}/assets/search`;
   const API_ADV_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/?q=`;
 
   // ========= Controle de busca avançada =========
@@ -69,9 +80,19 @@ export function PesquisaStep({
   }
 
   const searchAssetIdentifier = (q: string) =>
-    fetchArrayByKey(`${API_SEARCH_BASE}/asset-identifier?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "asset_identifier");
+    fetchArrayByKey(
+      `${API_SEARCH_BASE}/asset-identifier?q=${encodeURIComponent(
+        q.replace(/-/g, "")
+      )}`,
+      "asset_identifier"
+    );
   const searchAtmNumber = (q: string) =>
-    fetchArrayByKey(`${API_SEARCH_BASE}/atm-number?q=${encodeURIComponent(q.replace(/-/g, ""))}`, "atm_number");
+    fetchArrayByKey(
+      `${API_SEARCH_BASE}/atm-number?q=${encodeURIComponent(
+        q.replace(/-/g, "")
+      )}`,
+      "atm_number"
+    );
 
   // ========= Busca avançada (GET /assets/q=) =========
   const searchAdvanced = async (q: string): Promise<AdvancedItem[]> => {
@@ -86,14 +107,23 @@ export function PesquisaStep({
 
       const items: AdvancedItem[] = assets.map((a) => {
         const asset_code = a?.asset_code ? String(a.asset_code).trim() : "";
-        const asset_check_digit = a?.asset_check_digit ? String(a.asset_check_digit).trim() : "";
+        const asset_check_digit = a?.asset_check_digit
+          ? String(a.asset_check_digit).trim()
+          : "";
         const atm_number = a?.atm_number ? String(a.atm_number).trim() : "";
-        const serial_number = a?.serial_number ? String(a.serial_number).trim() : "";
-        const asset_description = a?.asset_description ? String(a.asset_description).trim() : "";
+        const serial_number = a?.serial_number
+          ? String(a.serial_number).trim()
+          : "";
+        const asset_description = a?.asset_description
+          ? String(a.asset_description).trim()
+          : "";
         const brand = a?.item_brand ? String(a.item_brand).trim() : "";
         const model = a?.item_model ? String(a.item_model).trim() : "";
 
-        const cod_label = asset_code && asset_check_digit ? `${asset_code}-${asset_check_digit}` : undefined;
+        const cod_label =
+          asset_code && asset_check_digit
+            ? `${asset_code}-${asset_check_digit}`
+            : undefined;
 
         // Monta um label amigável (ajuste conforme preferir)
         const parts: string[] = [];
@@ -110,7 +140,10 @@ export function PesquisaStep({
           type: "advanced",
           cod_label,
           display,
-          id: a?.id ? String(a.id) : cod_label || `${atm_number}|${serial_number}|${asset_description}`
+          id: a?.id
+            ? String(a.id)
+            : cod_label ||
+              `${atm_number}|${serial_number}|${asset_description}`,
         };
       });
 
@@ -138,26 +171,30 @@ export function PesquisaStep({
   const [advancedResults, setAdvancedResults] = useState<AdvancedItem[]>([]);
 
   // Rehidrata quando o Wizard já tem valor salvo
-useEffect(() => {
-  if (!value_item || !type) return;
-  if (didHydrate.current) return;
-  setItemType(String(type) as "cod" | "atm");
-  setItensSelecionadosPopUp([{ term: String(value_item), type: String(type) as "cod" | "atm" }]);
-  didHydrate.current = true;
-}, [value_item, type]);
+  useEffect(() => {
+    if (!value_item || !type) return;
+    if (didHydrate.current) return;
+    setItemType(String(type) as "cod" | "atm");
+    setItensSelecionadosPopUp([
+      { term: String(value_item), type: String(type) as "cod" | "atm" },
+    ]);
+    didHydrate.current = true;
+  }, [value_item, type]);
 
-useEffect(() => {
-  const has = itemsSelecionadosPopUp.length > 0;
-  onValidityChange(has);
-  if (has) {
-    const { type, term } = itemsSelecionadosPopUp[0];
-    onStateChange?.({ type, value_item: term });
-  }
-}, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
-
+  useEffect(() => {
+    const has = itemsSelecionadosPopUp.length > 0;
+    onValidityChange(has);
+    if (has) {
+      const { type, term } = itemsSelecionadosPopUp[0];
+      onStateChange?.({ type, value_item: term });
+    }
+  }, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
 
   // ========= Busca por input =========
-  const runSearch = async (rawInput: string, forceTreatAsCodFormatter = false) => {
+  const runSearch = async (
+    rawInput: string,
+    forceTreatAsCodFormatter = false
+  ) => {
     const input = normalizeInput(rawInput).trim();
     if (input.replace(/-/g, "").length < 1) {
       setFilteredItems([]);
@@ -226,30 +263,31 @@ useEffect(() => {
   };
 
   // evita rehidratar várias vezes a partir das props
-const didHydrate = useRef(false);
+  const didHydrate = useRef(false);
 
+  const handleRemoveItem = (index: number) => {
+    setItensSelecionadosPopUp((prev) => {
+      const arr = prev.filter((_, i) => i !== index);
+      if (arr.length === 0) {
+        // limpa no pai também
+        onStateChange?.({
+          type: undefined as any,
+          value_item: undefined as any,
+        });
+        onValidityChange(false);
+      }
+      return arr;
+    });
+  };
 
-const handleRemoveItem = (index: number) => {
-  setItensSelecionadosPopUp(prev => {
-    const arr = prev.filter((_, i) => i !== index);
-    if (arr.length === 0) {
-      // limpa no pai também
-      onStateChange?.({ type: undefined as any, value_item: undefined as any });
-      onValidityChange(false);
+  useEffect(() => {
+    const has = itemsSelecionadosPopUp.length > 0;
+    onValidityChange(has);
+    if (has) {
+      const { type, term } = itemsSelecionadosPopUp[0];
+      onStateChange?.({ type, value_item: term });
     }
-    return arr;
-  });
-};
-
-useEffect(() => {
-  const has = itemsSelecionadosPopUp.length > 0;
-  onValidityChange(has);
-  if (has) {
-    const { type, term } = itemsSelecionadosPopUp[0];
-    onStateChange?.({ type, value_item: term });
-  }
-}, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
-
+  }, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
 
   // 🔗 Seleção no modo simples
   const handleSelectItemSimple = (it: SearchItem) => {
@@ -286,6 +324,8 @@ useEffect(() => {
     if (cod) setInput(cod);
   }, [cod]);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       <div className="flex gap-2">
@@ -293,7 +333,13 @@ useEffect(() => {
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
         </h1>
       </div>
@@ -344,7 +390,6 @@ useEffect(() => {
                   value={input}
                   autoFocus={true}
                   maxLength={20} // 👈 limite de 10 caracteres
-                 
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />
               )}
@@ -352,12 +397,12 @@ useEffect(() => {
           </div>
 
           <div className="w-fit flex gap-2 items-center">
-          {loggedIn && (
-            <>
-              <p className="text-xs font-medium">Busca avançada</p>
-            <Switch checked={advanced} onCheckedChange={setAdvanced} />
-            </>
-          )}
+            {loggedIn && (
+              <>
+                <p className="text-xs font-medium">Busca avançada</p>
+                <Switch checked={advanced} onCheckedChange={setAdvanced} />
+              </>
+            )}
             {itemsSelecionadosPopUp.length > 0 && (
               <Button
                 size={"icon"}
@@ -370,87 +415,98 @@ useEffect(() => {
           </div>
         </Alert>
 
-{filteredItems.length == 0 && (
-<p className="mt-8 text-xs font-medium text-gray-500">*Para códigos ATM que começam com "A", substituir por 19 ou 20</p>
-)}
-        
+        {filteredItems.length == 0 && (
+          <p className="mt-8 text-xs font-medium text-gray-500">
+            *Para códigos ATM que começam com "A", substituir por 19 ou 20
+          </p>
+        )}
 
         {/* Resultados */}
         {/* MODO AVANÇADO: uma única sessão */}
-        {advanced && input.trim().length >= 1 && advancedResults.length !== 0 && (
-          <div className="w-full mt-4">
-            <div className="flex flex-col gap-8">
-              <div>
-                <p className="uppercase font-medium text-xs mb-3">Busca avançada</p>
-                <div className="flex flex-wrap gap-3">
-                  {advancedResults.slice(0, 30).map((it, index) => (
-                    <div
-                      key={it.id ?? index}
-                      title={it.display}
-                      onClick={() => handleSelectItemAdvanced(it)}
-                      className={`flex gap-2 h-8 cursor-pointer transition-all
+        {advanced &&
+          input.trim().length >= 1 &&
+          advancedResults.length !== 0 && (
+            <div className="w-full mt-4">
+              <div className="flex flex-col gap-8">
+                <div>
+                  <p className="uppercase font-medium text-xs mb-3">
+                    Busca avançada
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {advancedResults.slice(0, 30).map((it, index) => (
+                      <div
+                        key={it.id ?? index}
+                        title={it.display}
+                        onClick={() => handleSelectItemAdvanced(it)}
+                        className={`flex gap-2 h-8 cursor-pointer transition-all
                                   bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800
                                   items-center p-2 px-3 rounded-md text-xs
                                   ${it.cod_label ? "" : "opacity-60"}`}
-                    >
-                      {it.display}
-                    </div>
-                  ))}
+                      >
+                        {it.display}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* MODO SIMPLES: duas sessões (cod/atm) */}
-        {!advanced && input.trim().length >= 1 && filteredItems.length !== 0 && (
-          <div className="w-full mt-4">
-            <div className="flex flex-col gap-8">
-              {filteredItems.some(isCod) && (
-                <div>
-                  <p className="uppercase font-medium text-xs mb-3">Identificador (código-dígito)</p>
-                  <div className="flex flex-wrap gap-3">
-                    {filteredItems
-                      .filter(isCod)
-                      .slice(0, 15)
-                      .map((props, index) => {
-                        const label = `${props.bem_cod}-${props.bem_dgv}`;
-                        return (
+        {!advanced &&
+          input.trim().length >= 1 &&
+          filteredItems.length !== 0 && (
+            <div className="w-full mt-4">
+              <div className="flex flex-col gap-8">
+                {filteredItems.some(isCod) && (
+                  <div>
+                    <p className="uppercase font-medium text-xs mb-3">
+                      Identificador (código-dígito)
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {filteredItems
+                        .filter(isCod)
+                        .slice(0, 15)
+                        .map((props, index) => {
+                          const label = `${props.bem_cod}-${props.bem_dgv}`;
+                          return (
+                            <div
+                              key={index}
+                              onClick={() => handleSelectItemSimple(props)}
+                              className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                            >
+                              {label}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {filteredItems.some(isAtm) && (
+                  <div>
+                    <p className="uppercase font-medium text-xs mb-3">
+                      Código ATM
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {filteredItems
+                        .filter(isAtm)
+                        .slice(0, 15)
+                        .map((props, index) => (
                           <div
                             key={index}
                             onClick={() => handleSelectItemSimple(props)}
                             className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
                           >
-                            {label}
+                            {props.bem_num_atm}
                           </div>
-                        );
-                      })}
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {filteredItems.some(isAtm) && (
-                <div>
-                  <p className="uppercase font-medium text-xs mb-3">Código ATM</p>
-                  <div className="flex flex-wrap gap-3">
-                    {filteredItems
-                      .filter(isAtm)
-                      .slice(0, 15)
-                      .map((props, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleSelectItemSimple(props)}
-                          className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-                        >
-                          {props.bem_num_atm}
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

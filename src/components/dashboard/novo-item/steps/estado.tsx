@@ -11,6 +11,7 @@ import { StepBaseProps } from "../novo-item";
 import { useEffect, useMemo, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Alert } from "../../../ui/alert";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 // Use o mesmo union do StepPropsMap["estado"].estado_previo
 type EstadoKind = "quebrado" | "ocioso" | "anti-economico" | "recuperavel";
@@ -84,6 +85,8 @@ export function EstadoStep({
 
   const [isOpen, setIsOpen] = useState(true);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
       {/* Cabeçalho */}
@@ -92,7 +95,13 @@ export function EstadoStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Indique qual a situação atual do item de acordo com as definições
           abaixo:
         </h1>

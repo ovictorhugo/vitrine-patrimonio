@@ -4,6 +4,7 @@ import { ArrowRight, Barcode, Plus } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Alert } from "../../../ui/alert";
 import { Separator } from "../../../ui/separator";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 type InicioProps = StepBaseProps<"inicio"> & {
   initialData?: { flowShort?: FlowMode }; // já vem do pai via stepProps.inicio
@@ -73,6 +74,7 @@ export function InicioStep({
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen(!isOpen);
+  const isMobile = useIsMobile();
 
   return (
     <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
@@ -81,7 +83,13 @@ export function InicioStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className="mb-16 text-4xl font-semibold max-w-[1000px]">
+        <h1
+          className={
+            isMobile
+              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+          }
+        >
           Vamos começar! O item possui plaqueta de identificação?
         </h1>
       </div>
@@ -143,7 +151,8 @@ export function InicioStep({
           <div>
             <p className="font-medium">Empréstimos de Itens Patrimoniados</p>
             <p className="text-gray-600 text-sm">
-              Este formulário deve ser utilizado para realizar empréstimos de bens.
+              Este formulário deve ser utilizado para realizar empréstimos de
+              bens.
             </p>
           </div>
         </div>
