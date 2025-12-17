@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Alert } from "../../../ui/alert";
 import { Patrimonio } from "../../novo-item/steps/formulario";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 /* ========== Tipos ========== */
 type Props = {
@@ -561,9 +562,16 @@ export function EtiquetaStepCB({
       console.error("Erro ao gerar PDF:", error);
     }
   };
+  const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -574,7 +582,7 @@ export function EtiquetaStepCB({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         {/* Seletor de tamanho (apenas controla o PDF; nada aparece no front) */}
         <div className="grid gap-2">
           <div className="flex gap-3">

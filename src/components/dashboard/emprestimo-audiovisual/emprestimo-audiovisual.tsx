@@ -1459,10 +1459,9 @@ export function EmprestimoAudiovisual() {
     };
   }, []);
 
+  const isMobile = useIsMobile();
   // Tela de LOADING (finalização)
   if (isFinishing) {
-    const isMobile = useIsMobile();
-
     if (isMobile) {
       return (
         <div className="flex justify-center items-center h-full">
@@ -1505,7 +1504,13 @@ export function EmprestimoAudiovisual() {
     const labelCode = getLabelCode(dataForLabel);
 
     return (
-      <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+      <div
+        className={
+          isMobile
+            ? "max-w-[936px] mx-auto flex flex-col justify-center"
+            : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+        }
+      >
         {/* Header com botão de Itens cadastrados */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex gap-2 items-center">
@@ -1645,7 +1650,13 @@ export function EmprestimoAudiovisual() {
 
       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
         <div className="w-full flex flex-col gap-8 h-full">
-          <div className="flex justify-between items-center">
+          <div
+            className={
+              isMobile
+                ? "flex flex-col justify-between gap-4"
+                : "flex justify-between items-center"
+            }
+          >
             <div className="flex gap-2">
               <Button
                 onClick={() => {
@@ -1758,21 +1769,31 @@ export function EmprestimoAudiovisual() {
             </Tabs>
 
             <div className="flex justify-between items-center h-fit">
-              <div>
-                {STEPS.slice(0, idx + 1).map((s) => (
-                  <span
-                    key={s.key}
-                    className={cn(
-                      "mr-2",
-                      valid[s.key] ? "text-emerald-600" : "text-amber-600"
-                    )}
-                  >
-                    ●
-                  </span>
-                ))}
-              </div>
+              {isMobile ? (
+                <></>
+              ) : (
+                <div>
+                  {STEPS.slice(0, idx + 1).map((s) => (
+                    <span
+                      key={s.key}
+                      className={cn(
+                        "mr-2",
+                        valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                      )}
+                    >
+                      ●
+                    </span>
+                  ))}
+                </div>
+              )}
 
-              <div className="flex items-center">
+              <div
+                className={
+                  isMobile
+                    ? "flex items-center w-full justify-end"
+                    : "flex items-center"
+                }
+              >
                 <Button
                   variant="outline"
                   size="lg"

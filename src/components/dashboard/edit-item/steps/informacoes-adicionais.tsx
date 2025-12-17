@@ -609,7 +609,13 @@ export const InformacoesAdicionaisStep = forwardRef<
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -626,7 +632,7 @@ export const InformacoesAdicionaisStep = forwardRef<
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         <div className="flex gap-2 mb-8">
           <AlertCircle size={24} />
           <div>
@@ -688,7 +694,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                     </div>
                     <AccordionContent className="p-0">
                       <div>
-                        <p className="text-gray-500 text-sm text-justify mb-4">
+                        <p
+                          className={
+                            isMobile
+                              ? "text-gray-500 text-xs text-justify mb-4"
+                              : "text-gray-500 text-sm text-justify mb-4"
+                          }
+                        >
                           Quando um bem permanente com menos de 10 anos de uso
                           encontra-se inoperante ou danificado, é necessário
                           apresentar elementos probatórios que justifiquem sua
@@ -703,7 +715,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                               técnico
                             </p>
                           </div>
-                          <p className="text-gray-500 text-sm text-justify">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-gray-500 text-xs text-justify"
+                                : "text-gray-500 text-sm text-justify"
+                            }
+                          >
                             Sempre que possível, o guardião deve obter um
                             orçamento detalhado...
                           </p>
@@ -717,7 +735,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                               fundamentada)
                             </p>
                           </div>
-                          <p className="text-gray-500 text-sm text-justify">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-gray-500 text-xs text-justify"
+                                : "text-gray-500 text-sm text-justify"
+                            }
+                          >
                             Caso não seja possível obter orçamento...
                           </p>
                         </Alert>
@@ -853,7 +877,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckCircle className="size-5 text-green-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Excelente estado
                           </p>
                           <p
@@ -870,7 +900,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckSquareOffset className="size-5 text-emerald-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Semi-novo
                           </p>
                           <p
@@ -887,7 +923,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <WrenchIcon className="size-5 text-orange-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Pequenos reparos
                           </p>
                           <p

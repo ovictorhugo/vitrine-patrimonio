@@ -47,6 +47,7 @@ import { PatrimonioItem } from "../busca-patrimonio/patrimonio-item";
 import { Asset } from "../dashboard/dashboard-page/tabs/patrimonios";
 import { ArrowUUpLeft } from "phosphor-react";
 import { UserContext } from "../../context/context";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 type StepKey = "pesquisa" | "formulario";
 type StepDef = { key: StepKey; label: string };
@@ -552,6 +553,8 @@ export function BuscaCatalogo() {
     URL.revokeObjectURL(url);
   }, [saved]);
 
+  const isMobile = useIsMobile();
+
   // ========================= RENDER =========================
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full ">
@@ -585,8 +588,6 @@ export function BuscaCatalogo() {
                 Buscar Catálogo
               </h1>
             </div>
-
-          
           </div>
 
           <div className="flex flex-col h-full w-full gap-8">

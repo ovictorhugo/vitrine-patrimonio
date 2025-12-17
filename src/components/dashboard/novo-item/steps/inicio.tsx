@@ -78,7 +78,13 @@ export function InicioStep({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -87,7 +93,7 @@ export function InicioStep({
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -95,7 +101,7 @@ export function InicioStep({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         <Alert
           className="mb-8 flex gap-2 flex-col cursor-pointer"
           onClick={toggleOpen}
@@ -106,7 +112,7 @@ export function InicioStep({
               <Barcode size={16} />
             </div>
             <p className="text-gray-500 text-sm">
-              Não sabe o que é uma plaqueta? Visualizar
+              Não sabe o que é uma plaqueta? Clique aqui
             </p>
           </div>
 

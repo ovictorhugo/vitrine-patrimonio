@@ -185,7 +185,6 @@ export const InformacoesAdicionaisStep = forwardRef<
     const modeloAtual = gerarTexto();
     const textoSalvo = (initialData?.observacao ?? "").trim();
     const orientacaoInicial = initialData?.orientacao ?? estadoAtual;
-    console.log(estadoAtual, orientacao);
 
     if (firstRunRef.current) {
       firstRunRef.current = false;
@@ -495,7 +494,7 @@ export const InformacoesAdicionaisStep = forwardRef<
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center ">
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -504,7 +503,7 @@ export const InformacoesAdicionaisStep = forwardRef<
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -512,7 +511,7 @@ export const InformacoesAdicionaisStep = forwardRef<
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         <div className="flex gap-2 mb-8">
           <AlertCircle size={24} />
           <div>
@@ -531,7 +530,9 @@ export const InformacoesAdicionaisStep = forwardRef<
             <div className="flex w-full gap-4">
               <div className="flex items-center justify-between w-full">
                 <div>
-                  <p className="font-medium">
+                  <p
+                    className={isMobile ? "font-medium text-sm" : "font-medium"}
+                  >
                     Tempo de Uso maior ou igual a 10 anos
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -546,7 +547,11 @@ export const InformacoesAdicionaisStep = forwardRef<
 
               <div className="flex items-center justify-between w-full">
                 <div>
-                  <p className="font-medium">Obsolescência Tecnológica</p>
+                  <p
+                    className={isMobile ? "font-medium text-sm" : "font-medium"}
+                  >
+                    Obsolescência Tecnológica
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Defasagem tecnológica/ausência de suporte (Lei nº
                     12.305/2010; Decreto nº 9.373/2018).
@@ -578,7 +583,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                     </div>
                     <AccordionContent className="p-0">
                       <div>
-                        <p className="text-gray-500 text-sm text-justify mb-4">
+                        <p
+                          className={
+                            isMobile
+                              ? "text-gray-500 text-xs text-justify mb-4"
+                              : "text-gray-500 text-sm text-justify mb-4"
+                          }
+                        >
                           Quando um bem permanente com menos de 10 anos de uso
                           encontra-se inoperante ou danificado, é necessário
                           apresentar elementos probatórios que justifiquem sua
@@ -604,7 +615,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                               técnico
                             </p>
                           </div>
-                          <p className="text-gray-500 text-sm text-justify">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-gray-500 text-xs text-justify"
+                                : "text-gray-500 text-sm text-justify"
+                            }
+                          >
                             Sempre que possível, o guardião deve obter um
                             orçamento detalhado, contendo descrição dos
                             serviços, peças e valores, que demonstre que o custo
@@ -623,7 +640,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                               fundamentada)
                             </p>
                           </div>
-                          <p className="text-gray-500 text-sm text-justify">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-gray-500 text-xs text-justify"
+                                : "text-gray-500 text-sm text-justify"
+                            }
+                          >
                             Caso não seja possível obter orçamento, o guardião
                             poderá emitir um Laudo Técnico Simplificado,
                             assinado e datado, descrevendo detalhadamente: O
@@ -732,7 +755,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckCircle className="size-5 text-green-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Excelente estado
                           </p>
                           <p
@@ -749,7 +778,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <CheckSquareOffset className="size-5 text-emerald-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Semi-novo
                           </p>
                           <p
@@ -766,7 +801,13 @@ export const InformacoesAdicionaisStep = forwardRef<
                       <div className="flex items-start gap-3 text-muted-foreground">
                         <WrenchIcon className="size-5 text-orange-500" />
                         <div className="grid gap-0.5">
-                          <p className="font-medium whitespace-nowrap">
+                          <p
+                            className={
+                              isMobile
+                                ? "font-medium whitespace-nowrap text-sm"
+                                : "font-medium whitespace-nowrap"
+                            }
+                          >
                             Pequenos reparos
                           </p>
                           <p
@@ -806,12 +847,22 @@ export const InformacoesAdicionaisStep = forwardRef<
               {justificativaEhModelo && (
                 <div>
                   <div className="flex gap-2 items-center mb-3">
-                    <AlertCircle size={24} />
-                    <p className="font-medium w-55">
+                    <AlertCircle size={isMobile ? 20 : 24} />
+                    <p
+                      className={
+                        isMobile
+                          ? "font-medium w-55 text-sm"
+                          : "font-medium w-55"
+                      }
+                    >
                       Justificativa personalizada, favor editar:
                     </p>
                   </div>
-                  <p className="text-s text-red-500">
+                  <p
+                    className={
+                      isMobile ? "text-xs text-red-500" : "text-s text-red-500"
+                    }
+                  >
                     Dica: Personalize a justificativa com uso, funcionamento,
                     defeitos, histórico de manutenção e ano/critério de
                     tombamento para prosseguir.
@@ -820,7 +871,7 @@ export const InformacoesAdicionaisStep = forwardRef<
               )}
               <Textarea
                 id="observacoes"
-                className="w-full"
+                className="w-full h-[160px]"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
               />

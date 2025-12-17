@@ -481,7 +481,13 @@ export function ImagemStep({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -490,7 +496,7 @@ export function ImagemStep({
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -498,9 +504,15 @@ export function ImagemStep({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         {/* Passos sugeridos */}
-        <div className="grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8">
+        <div
+          className={
+            isMobile
+              ? "grid md:grid-cols-2 grid-cols-1 gap-2 flex-col"
+              : "grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8"
+          }
+        >
           <div className="flex gap-2">
             <ImageDown size={24} />
             <div>
@@ -541,7 +553,13 @@ export function ImagemStep({
         {/* Grade 4 slots com drop */}
         <div className="flex gap-2 w-full mb-8">
           <div className="w-full">
-            <div className="grid grid-cols-2 md:grid-cols-4 w-full gap-2">
+            <div
+              className={
+                isMobile
+                  ? "grid grid-cols-2 md:grid-cols-4 w-full gap-4 p-8"
+                  : "grid grid-cols-2 md:grid-cols-4 w-full gap-2"
+              }
+            >
               {Array.from({ length: 4 }).map((_, index) => (
                 <ImageSlot
                   key={index}

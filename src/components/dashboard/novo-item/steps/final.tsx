@@ -29,7 +29,7 @@ export function FinalStep({
           <h1
             className={
               isMobile
-                ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+                ? "mb-8 text-2xl font-semibold max-w-[1000px]"
                 : "mb-16 text-4xl font-semibold max-w-[1000px]"
             }
           >
@@ -38,7 +38,7 @@ export function FinalStep({
           </h1>
         </div>
 
-        <div className="ml-8">
+        <div className={isMobile ? "" : "ml-8"}>
           <div className="flex gap-4 flex-col">
             <div className="flex gap-2">
               <Bell size={24} className="" />

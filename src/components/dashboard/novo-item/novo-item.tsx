@@ -1535,6 +1535,8 @@ export function NovoItem() {
     }
   }, [savedItems, selectedSize]);
 
+  const isMobile = useIsMobile();
+
   /* ===================== RENDER ===================== */
   const [loadingMessage, setLoadingMessage] = useState(
     "Estamos procurando todas as informações no nosso banco de dados, aguarde."
@@ -1581,8 +1583,6 @@ export function NovoItem() {
 
   // Tela de LOADING (finalização)
   if (isFinishing) {
-    const isMobile = useIsMobile();
-
     if (isMobile) {
       return (
         <div className="flex justify-center items-center h-full">
@@ -1625,26 +1625,36 @@ export function NovoItem() {
     const labelCode = getLabelCode(dataForLabel);
 
     return (
-      <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+      <div
+        className={
+          isMobile
+            ? "max-w-[936px] mx-auto flex flex-col justify-center"
+            : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+        }
+      >
         {/* Header com botão de Itens cadastrados */}
         <div className="flex justify-between items-center mb-6">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center pl-4">
             <div className="flex justify-between items-center h-fit mt-2 w-8">
               <p className="text-lg">
                 {STEPS.findIndex((s) => s.key === "final") + 1 || 0}
               </p>
               <ArrowRight size={16} />
             </div>
-            <h1 className="text-4xl font-semibold max-w-[1000px]">
+            <h1
+              className={
+                isMobile
+                  ? "text-2xl font-semibold max-w-[1000px]"
+                  : "text-4xl font-semibold max-w-[1000px]"
+              }
+            >
               Parabéns, cadastro concluído!
             </h1>
           </div>
-
-          <div className="flex items-center gap-2"></div>
         </div>
 
         {/* PREVIEW + AÇÕES */}
-        <div className="ml-8 grid gap-4">
+        <div className="ml-8 grid gap-4 justify-center">
           {/* Seletor de tamanho da plaqueta */}
           {canShowPlaqueta && (
             <ToggleGroup
@@ -1732,6 +1742,7 @@ export function NovoItem() {
                 if (savedOk) toast("Item salvo na lista de cadastrados.");
                 resetToNewForm();
               }}
+              className="max-w-[250px]"
             >
               <Plus size={16} />
               Cadastrar outro item
@@ -1765,7 +1776,13 @@ export function NovoItem() {
 
       <main className="flex flex-1 h-full lg:flex-row flex-col-reverse gap-8">
         <div className="w-full flex flex-col gap-8 h-full">
-          <div className="flex justify-between items-center">
+          <div
+            className={
+              isMobile
+                ? "flex flex-col justify-between gap-4"
+                : "flex justify-between items-center"
+            }
+          >
             <div className="flex gap-2">
               <Button
                 onClick={() => {
@@ -1924,21 +1941,31 @@ export function NovoItem() {
             </Tabs>
 
             <div className="flex justify-between items-center h-fit">
-              <div>
-                {STEPS.slice(0, idx + 1).map((s) => (
-                  <span
-                    key={s.key}
-                    className={cn(
-                      "mr-2",
-                      valid[s.key] ? "text-emerald-600" : "text-amber-600"
-                    )}
-                  >
-                    ●
-                  </span>
-                ))}
-              </div>
+              {isMobile ? (
+                <></>
+              ) : (
+                <div>
+                  {STEPS.slice(0, idx + 1).map((s) => (
+                    <span
+                      key={s.key}
+                      className={cn(
+                        "mr-2",
+                        valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                      )}
+                    >
+                      ●
+                    </span>
+                  ))}
+                </div>
+              )}
 
-              <div className="flex items-center">
+              <div
+                className={
+                  isMobile
+                    ? "flex items-center w-full justify-end"
+                    : "flex items-center"
+                }
+              >
                 <Button
                   variant="outline"
                   size="lg"

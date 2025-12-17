@@ -590,7 +590,8 @@ export function ItensVitrine() {
   }, [sectorId, fetchLocations, locationQd]);
 
   const [tab, setTab] = useState<BoardKind>("desfazimento");
-  const [showFilters, setShowFilters] = useState(true);
+  const isMobile = useIsMobile();
+  const [showFilters, setShowFilters] = useState(isMobile ? false : true);
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
@@ -1468,7 +1469,6 @@ export function ItensVitrine() {
   }, [handlePointerMoveWhileDrag]);
 
   const [isImage, setIsImage] = useState(false);
-  const isMobile = useIsMobile();
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -1483,90 +1483,141 @@ export function ItensVitrine() {
       <main className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex gap-2 items-center">
-            <Button
-              onClick={() => {
-                const path = location.pathname;
-                const hasQuery = location.search.length > 0;
-                if (hasQuery) navigate(path);
-                else {
-                  const seg = path.split("/").filter(Boolean);
-                  if (seg.length > 1) {
-                    seg.pop();
-                    navigate("/" + seg.join("/"));
-                  } else navigate("/");
-                }
-              }}
-              variant="outline"
-              size="icon"
-              className="h-7 w-7"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Voltar</span>
-            </Button>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Movimentação
-            </h1>
+          <div className="flex justify-between">
+            <div className="flex gap-2 items-center">
+              <Button
+                onClick={() => {
+                  const path = location.pathname;
+                  const hasQuery = location.search.length > 0;
+                  if (hasQuery) navigate(path);
+                  else {
+                    const seg = path.split("/").filter(Boolean);
+                    if (seg.length > 1) {
+                      seg.pop();
+                      navigate("/" + seg.join("/"));
+                    } else navigate("/");
+                  }
+                }}
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
+              <h1 className="text-xl font-semibold tracking-tight">
+                Movimentação
+              </h1>
+            </div>
           </div>
 
-          <div className="hidden gap-2 items-center xl:flex">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowFilters((s) => !s)}
-            >
-              <SlidersHorizontal size={16} />
-              {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-            </Button>
-
-            <div className="flex">
+          <div
+            className={
+              isMobile
+                ? "flex flex-col gap-5 items-center mt-4 mb-4 w-full"
+                : "flex gap-2 items-center mt-4"
+            }
+          >
+            <div className="flex gap-2 items-center">
               <Button
                 size="sm"
-                onClick={() => {
-                  setTab("vitrine");
-                  setExpandedColumn(null);
-                }}
-                variant={tab === "vitrine" ? "default" : "outline"}
-                className="rounded-r-none"
+                variant="outline"
+                onClick={() => setShowFilters((s) => !s)}
               >
-                <Store size={16} className="" />
-                Vitrine
+                <SlidersHorizontal size={16} />
+                {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
               </Button>
-              <Button
-                onClick={() => {
-                  setTab("desfazimento");
-                  setExpandedColumn(null);
-                }}
-                size="sm"
-                variant={tab !== "vitrine" ? "default" : "outline"}
-                className="rounded-l-none"
-              >
-                <Trash size={16} className="" />
-                Desfazimento
-              </Button>
-            </div>
-
-            <Separator orientation="vertical" className="h-8 mx-2" />
-            <DownloadPdfButton
-              filters={{
-                material_id: materialId || undefined,
-                agency_id: agencyId || undefined,
-                unit_id: unitId || undefined,
-                legal_guardian_id: guardianId || undefined,
-                sector_id: locationId || undefined,
-                location_id: sectorId || undefined,
-              }}
-              label="Baixar Tudo"
-              method="catalog"
-            />
-            {hasAnunciarItem && (
-              <Link to={"/dashboard/novo-item"}>
-                <Button size="sm">
-                  <Plus size={16} className="" />
-                  Anunciar item
+              <div className="flex">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setTab("vitrine");
+                    setExpandedColumn(null);
+                  }}
+                  variant={tab === "vitrine" ? "default" : "outline"}
+                  className="rounded-r-none"
+                >
+                  <Store size={16} className="" />
+                  Vitrine
                 </Button>
-              </Link>
+                <Button
+                  onClick={() => {
+                    setTab("desfazimento");
+                    setExpandedColumn(null);
+                  }}
+                  size="sm"
+                  variant={tab !== "vitrine" ? "default" : "outline"}
+                  className="rounded-l-none"
+                >
+                  <Trash size={16} className="" />
+                  Desfazimento
+                </Button>
+              </div>
+            </div>
+            {isMobile ? (
+              <></>
+            ) : (
+              <Separator orientation="vertical" className="h-8 mx-2" />
             )}
+            <div
+              className={isMobile ? "flex justify-center gap-4" : "flex gap-4"}
+            >
+              {hasAnunciarItem && !isMobile ? (
+                <Link to={"/dashboard/novo-item"}>
+                  <Button size="sm">
+                    <Plus size={16} className="" />
+                    Anunciar item
+                  </Button>
+                </Link>
+              ) : (
+                <></>
+              )}
+
+              {isMobile ? (
+                <>
+                  <DownloadPdfButton
+                    filters={{
+                      material_id: materialId || undefined,
+                      agency_id: agencyId || undefined,
+                      unit_id: unitId || undefined,
+                      legal_guardian_id: guardianId || undefined,
+                      sector_id: locationId || undefined,
+                      location_id: sectorId || undefined,
+                    }}
+                    label="Baixar Tudo"
+                    method="catalog"
+                  />
+                  {hasAnunciarItem ? (
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        navigate("/dashboard/novo-item", {
+                          replace: true,
+                        })
+                      }
+                    >
+                      <Plus size={16} className="" />
+                      Anunciar item
+                    </Button>
+                  ) : (
+                    <></>
+                  )}
+                </>
+              ) : (
+                <DownloadPdfButton
+                  filters={{
+                    material_id: materialId || undefined,
+                    agency_id: agencyId || undefined,
+                    unit_id: unitId || undefined,
+                    legal_guardian_id: guardianId || undefined,
+                    sector_id: locationId || undefined,
+                    location_id: sectorId || undefined,
+                  }}
+                  label="Baixar Tudo"
+                  method="catalog"
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -2261,7 +2312,7 @@ export function ItensVitrine() {
                     {isMobile ? (
                       <div className="w-full flex justify-start mb-5 pl-1">
                         <Button
-                          size={isMobile ? "xs" : "sm"}
+                          size="default"
                           onClick={() => setExpandedColumn(null)}
                           className="self-start"
                         >
@@ -2309,10 +2360,10 @@ export function ItensVitrine() {
                         }}
                         label="Baixar PDF"
                         method="catalog"
-                        size={isMobile ? "xs" : "sm"}
+                        size="default"
                       />
                       <Button
-                        size={isMobile ? "xs" : "sm"}
+                        size="default"
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >
@@ -2323,7 +2374,7 @@ export function ItensVitrine() {
                         <></>
                       ) : (
                         <Button
-                          size={isMobile ? "xs" : "sm"}
+                          size="default"
                           onClick={() => setExpandedColumn(null)}
                         >
                           <ChevronLeft size={16} />

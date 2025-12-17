@@ -16,6 +16,7 @@ import { useContext, useState } from "react";
 import { useModal } from "../hooks/use-modal-store";
 import { UserContext } from "../../context/context";
 import { Asset } from "../homepage/components/item-patrimonio";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -62,98 +63,230 @@ export function PatrimonioItem(props: any) {
     props.atm_number !== "None" &&
     props.atm_number !== ""
   );
+  const isMobile = useIsMobile();
 
-  return (
-    <div
-      className="flex group cursor-pointer"
-      onClick={(event) => {
-        event.stopPropagation();
-        onOpen("patrimonio", { ...props }); // envia o Asset direto para o modal
-      }}
-    >
+  if (isMobile) {
+    return (
       <div
-        className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-          qualisColor[csvCodTrimmed] || "bg-neutral-300"
-        } min-h-full relative`}
-      />
-      <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
-        {/* HEADER */}
-        <div className="flex items-center gap-3 p-4 pb-0">
-          {/* Código + dígito (sempre juntos e sem quebrar) */}
-          <div className="flex items-center gap-2 mb-4">
-            <p className="font-semibold text-left  whitespace-nowrap shrink-0">
-              {props.asset_code?.toString().trim()} - {props.asset_check_digit}
-            </p>
+        className="flex group cursor-pointer"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen("patrimonio", { ...props }); // envia o Asset direto para o modal
+        }}
+      >
+        <div
+          className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+            qualisColor[csvCodTrimmed] || "bg-neutral-300"
+          } min-h-full relative`}
+        />
+        <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
+          {/* HEADER */}
+          <div className="flex items-center gap-3 p-4 pb-0">
+            {/* Código + dígito (sempre juntos e sem quebrar) */}
+            <div
+              className={
+                isMobile
+                  ? "flex items-center gap-2 mb-2"
+                  : "flex items-center gap-2 mb-4"
+              }
+            >
+              <p
+                className={
+                  isMobile
+                    ? "font-semibold text-left text-sm whitespace-nowrap shrink-0"
+                    : "font-semibold text-left  whitespace-nowrap shrink-0"
+                }
+              >
+                {props.asset_code?.toString().trim()} -{" "}
+                {props.asset_check_digit}
+              </p>
 
-            {/* ATM ao lado, truncando automaticamente */}
-            {hasAtm && (
-              <div className="min-w-0 flex-1">
-                <Badge
-                  variant="outline"
-                  className="truncate min-w-0"
-                  title={props.atm_number || ""}
-                >
-                  ATM: {props.atm_number}
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* BODY */}
-        <div className="flex flex-col p-4 pt-0 justify-between">
-          <div className="min-w-0">
-            <div className="text-lg mb-2 font-bold">{materialName}</div>
-            <p className="text-left mb-4 uppercase">
-              {props.asset_description || ""}
-            </p>
-
-            <div className="flex flex-wrap gap-3 min-w-0">
-              {!!csvCodTrimmed && (
-                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                  <div
-                    className={`w-4 h-4 rounded-md ${
-                      qualisColor[csvCodTrimmed] || "bg-neutral-300"
-                    }`}
-                  />
-                  {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
-                </div>
-              )}
-
-              {status && (
-                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                  {status.icon}
-                  {status.text}
-                </div>
-              )}
-
-              {!!legalGuardianName && loggedIn && (
-                <div className="flex gap-1 items-center min-w-0">
-                  <Avatar className="rounded-md h-5 w-5 shrink-0">
-                    <AvatarImage
-                      className="rounded-md h-5 w-5"
-                      src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                        legalGuardianName
-                      )}`}
-                    />
-                    <AvatarFallback className="flex items-center justify-center">
-                      <User size={10} />
-                    </AvatarFallback>
-                  </Avatar>
-
-                  {/* Nome ocupa espaço natural, só trunca se não couber */}
-                  <p
-                    className="text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
-                    title={legalGuardianName}
+              {/* ATM ao lado, truncando automaticamente */}
+              {hasAtm && (
+                <div className="min-w-0 flex-1">
+                  <Badge
+                    variant="outline"
+                    className="truncate min-w-0"
+                    title={props.atm_number || ""}
                   >
-                    {legalGuardianName}
-                  </p>
+                    ATM: {props.atm_number}
+                  </Badge>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </Alert>
-    </div>
-  );
+
+          {/* BODY */}
+          <div className="flex flex-col p-4 pt-0 justify-between">
+            <div className="min-w-0">
+              <div
+                className={
+                  isMobile ? "text-base font-bold" : "text-lg mb-2 font-bold"
+                }
+              >
+                {materialName}
+              </div>
+              <p
+                className={
+                  isMobile
+                    ? "text-left mb-4 uppercase text-xs"
+                    : "text-left mb-4 uppercase"
+                }
+              >
+                {props.asset_description || ""}
+              </p>
+
+              <div className="flex flex-wrap gap-3 min-w-0">
+                {!!csvCodTrimmed && (
+                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                    <div
+                      className={`w-4 h-4 rounded-md ${
+                        qualisColor[csvCodTrimmed] || "bg-neutral-300"
+                      }`}
+                    />
+                    {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                  </div>
+                )}
+
+                {status && (
+                  <div
+                    className={
+                      isMobile
+                        ? "text-xs text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"
+                        : "text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"
+                    }
+                  >
+                    {status.icon}
+                    {status.text}
+                  </div>
+                )}
+
+                {!!legalGuardianName && loggedIn && (
+                  <div className="flex gap-1 items-center min-w-0">
+                    <Avatar className="rounded-md h-5 w-5 shrink-0">
+                      <AvatarImage
+                        className="rounded-md h-5 w-5"
+                        src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
+                          legalGuardianName
+                        )}`}
+                      />
+                      <AvatarFallback className="flex items-center justify-center">
+                        <User size={10} />
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Nome ocupa espaço natural, só trunca se não couber */}
+                    <p
+                      className={
+                        isMobile
+                          ? "text-xs text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                          : "text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                      }
+                      title={legalGuardianName}
+                    >
+                      {legalGuardianName}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Alert>
+      </div>
+    );
+  } else
+    return (
+      <div
+        className="flex group cursor-pointer"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen("patrimonio", { ...props }); // envia o Asset direto para o modal
+        }}
+      >
+        <div
+          className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+            qualisColor[csvCodTrimmed] || "bg-neutral-300"
+          } min-h-full relative`}
+        />
+        <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
+          {/* HEADER */}
+          <div className="flex items-center gap-3 p-4 pb-0">
+            {/* Código + dígito (sempre juntos e sem quebrar) */}
+            <div className="flex items-center gap-2 mb-4">
+              <p className="font-semibold text-left  whitespace-nowrap shrink-0">
+                {props.asset_code?.toString().trim()} -{" "}
+                {props.asset_check_digit}
+              </p>
+
+              {/* ATM ao lado, truncando automaticamente */}
+              {hasAtm && (
+                <div className="min-w-0 flex-1">
+                  <Badge
+                    variant="outline"
+                    className="truncate min-w-0"
+                    title={props.atm_number || ""}
+                  >
+                    ATM: {props.atm_number}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* BODY */}
+          <div className="flex flex-col p-4 pt-0 justify-between">
+            <div className="min-w-0">
+              <div className="text-lg mb-2 font-bold">{materialName}</div>
+              <p className="text-left mb-4 uppercase">
+                {props.asset_description || ""}
+              </p>
+
+              <div className="flex flex-wrap gap-3 min-w-0">
+                {!!csvCodTrimmed && (
+                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                    <div
+                      className={`w-4 h-4 rounded-md ${
+                        qualisColor[csvCodTrimmed] || "bg-neutral-300"
+                      }`}
+                    />
+                    {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                  </div>
+                )}
+
+                {status && (
+                  <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                    {status.icon}
+                    {status.text}
+                  </div>
+                )}
+
+                {!!legalGuardianName && loggedIn && (
+                  <div className="flex gap-1 items-center min-w-0">
+                    <Avatar className="rounded-md h-5 w-5 shrink-0">
+                      <AvatarImage
+                        className="rounded-md h-5 w-5"
+                        src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
+                          legalGuardianName
+                        )}`}
+                      />
+                      <AvatarFallback className="flex items-center justify-center">
+                        <User size={10} />
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Nome ocupa espaço natural, só trunca se não couber */}
+                    <p
+                      className="text-sm text-gray-500 dark:text-gray-300 font-normal flex-1 min-w-0 truncate"
+                      title={legalGuardianName}
+                    >
+                      {legalGuardianName}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Alert>
+      </div>
+    );
 }

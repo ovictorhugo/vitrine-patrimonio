@@ -1679,7 +1679,13 @@ export function ItemPage() {
                           <p className=" w-fit text-gray-500 mb-2">
                             Justificativa
                           </p>
-                          <p className="text-gray-500 text-sm text-justify">
+                          <p
+                            className={
+                              isMobile
+                                ? "text-gray-500 text-xs text-justify"
+                                : "text-gray-500 text-sm text-justify"
+                            }
+                          >
                             {justificationText}
                           </p>
                         </div>

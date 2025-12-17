@@ -567,8 +567,9 @@ export function Audiovisual() {
     if (sectorId) fetchLocations(sectorId, locationQd);
   }, [sectorId, fetchLocations, locationQd]);
 
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<BoardKind>("emprestimo");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(isMobile ? false : true);
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
@@ -1444,8 +1445,6 @@ export function Audiovisual() {
     };
   }, [handlePointerMoveWhileDrag]);
 
-  const isMobile = useIsMobile();
-
   const [isImage, setIsImage] = useState(false);
 
   return (
@@ -1458,36 +1457,53 @@ export function Audiovisual() {
         />
       </Helmet>
 
-      <main className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
+      <main className="flex flex-col gap-4 flex-1 min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex gap-2 items-center">
-            <Button
-              onClick={() => {
-                const path = location.pathname;
-                const hasQuery = location.search.length > 0;
-                if (hasQuery) navigate(path);
-                else {
-                  const seg = path.split("/").filter(Boolean);
-                  if (seg.length > 1) {
-                    seg.pop();
-                    navigate("/" + seg.join("/"));
-                  } else navigate("/");
+          <div className="flex gap-4 justify-between">
+            <div className="flex gap-2 items-center">
+              <Button
+                onClick={() => {
+                  const path = location.pathname;
+                  const hasQuery = location.search.length > 0;
+                  if (hasQuery) navigate(path);
+                  else {
+                    const seg = path.split("/").filter(Boolean);
+                    if (seg.length > 1) {
+                      seg.pop();
+                      navigate("/" + seg.join("/"));
+                    } else navigate("/");
+                  }
+                }}
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Button>
+              <h1 className="text-xl font-semibold tracking-tight">
+                Empréstimo Audiovisual
+              </h1>
+            </div>
+            {hasAnunciarItem && isMobile ? (
+              <Button
+                size="sm"
+                onClick={() =>
+                  navigate("/dashboard/emprestimo-audiovisual", {
+                    replace: true,
+                  })
                 }
-              }}
-              variant="outline"
-              size="icon"
-              className="h-7 w-7"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="sr-only">Voltar</span>
-            </Button>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Empréstimo Audiovisual
-            </h1>
+              >
+                <Plus size={16} className="" />
+                Anunciar item
+              </Button>
+            ) : (
+              <></>
+            )}
           </div>
 
-          <div className="hidden gap-2 items-center xl:flex">
+          <div className="flex gap-2 items-center mt-4">
             <Button
               size="sm"
               variant="outline"
@@ -1524,9 +1540,13 @@ export function Audiovisual() {
               </Button>
             </div>
 
-            <Separator orientation="vertical" className="h-8 mx-2" />
+            {isMobile ? (
+              <></>
+            ) : (
+              <Separator orientation="vertical" className="h-8 mx-2" />
+            )}
 
-            {hasAnunciarItem ? (
+            {hasAnunciarItem && !isMobile ? (
               <Button
                 size="sm"
                 onClick={() =>
@@ -2235,7 +2255,7 @@ export function Audiovisual() {
                     {isMobile ? (
                       <div className="w-full flex justify-start mb-5 pl-1">
                         <Button
-                          size={isMobile ? "xs" : "sm"}
+                          size="default"
                           onClick={() => setExpandedColumn(null)}
                           className="self-start"
                         >
@@ -2286,10 +2306,10 @@ export function Audiovisual() {
                         }}
                         label="Baixar PDF"
                         method="catalog"
-                        size={isMobile ? "xs" : "sm"}
+                        size="default"
                       />
                       <Button
-                        size={isMobile ? "xs" : "sm"}
+                        size="default"
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >
@@ -2300,7 +2320,7 @@ export function Audiovisual() {
                         <></>
                       ) : (
                         <Button
-                          size={isMobile ? "xs" : "sm"}
+                          size="default"
                           onClick={() => setExpandedColumn(null)}
                         >
                           <ChevronLeft size={16} />

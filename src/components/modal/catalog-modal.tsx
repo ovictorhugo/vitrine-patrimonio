@@ -1109,30 +1109,9 @@ export function CatalogModal() {
             </Button>
 
             <h1 className="flex-1 flex flex-wrap gap-2 items-center text-xl font-semibold tracking-tight">
-              Detalhes do item
-              <Badge variant="outline">
-                {asset?.asset_code}-{asset?.asset_check_digit}
-              </Badge>
-              {asset?.atm_number && asset?.atm_number !== "None" && (
-                <Badge variant="outline">ATM: {asset.atm_number}</Badge>
-              )}
-              {lastWorkflow && (
-                <Badge
-                  variant="outline"
-                  className="flex items-center gap-1"
-                  title={formatDateTimeBR(lastWorkflow.created_at)}
-                >
-                  {(() => {
-                    const Meta =
-                      WORKFLOW_STATUS_META[lastWorkflow.workflow_status];
-                    const IconCmp = Meta?.Icon ?? HelpCircle;
-                    return <IconCmp size={14} />;
-                  })()}
-                  {getStatusLabel(
-                    lastWorkflow.workflow_status as WorkflowStatus
-                  )}
-                </Badge>
-              )}
+              <p>
+                Detalhes do item {asset?.asset_code}-{asset?.asset_check_digit}
+              </p>
             </h1>
 
             <div className="hidden md:flex items-center gap-2">
@@ -1251,7 +1230,7 @@ export function CatalogModal() {
                   <div className="flex w-full flex-col">
                     <div className="flex justify-between items-start">
                       <div className="flex flex-col gap-2 justify-between w-full">
-                        <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">
+                        <h2 className="text-3xl font-semibold leading-none tracking-tight ">
                           {titulo}
                         </h2>
 
@@ -1277,7 +1256,7 @@ export function CatalogModal() {
                       </div>
                     </div>
 
-                    <p className="mb-4 text-gray-500">
+                    <p className="mb-4 mt-6 text-gray-500">
                       {asset?.asset_description || "Sem descrição."}
                     </p>
 
@@ -1649,7 +1628,13 @@ export function CatalogModal() {
                                   <p className=" w-fit text-gray-500 mb-2">
                                     Justificativa
                                   </p>
-                                  <p className="text-gray-500 text-sm text-justify">
+                                  <p
+                                    className={
+                                      isMobile
+                                        ? "text-gray-500 text-xs text-justify"
+                                        : "text-gray-500 text-sm text-justify"
+                                    }
+                                  >
                                     {justificationText}
                                   </p>
                                 </div>

@@ -410,16 +410,17 @@ function StatusAccordion({
   };
 
   const disableNav = loading || items.length === 0;
+  const isMobile = useIsMobile();
 
   return (
     <AccordionItem value={statusKey}>
-      <div className="flex gap-4 w-full justify-between items-center ">
+      <div className="flex ">
         <div className="w-full">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center mr-2">
               <HeaderResultTypeHome
                 title={title}
-                icon={<IconComp size={24} className="text-gray-400" />}
+                icon={<IconComp size={22} className="text-gray-400" />}
               />
               <Badge variant="outline">{loading ? "…" : effectiveTotal}</Badge>
             </div>
@@ -437,7 +438,7 @@ function StatusAccordion({
                 Baixar resultado
               </Button>
 
-              {isOpen && !expanded && items.length > 0 ? (
+              {isOpen && !expanded && !isMobile && items.length > 0 ? (
                 <Button
                   size="sm"
                   onClick={(e) => {

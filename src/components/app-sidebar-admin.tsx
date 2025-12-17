@@ -134,7 +134,7 @@ export function AppSidebarAdmin({
             },
 
             {
-              title: "Busca catalogo",
+              title: "Busca catálogo",
               url: "/buscar-catalogo",
               icon: PackageSearch,
             },

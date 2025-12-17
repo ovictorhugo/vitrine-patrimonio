@@ -575,7 +575,13 @@ export function ImagemStepEdit({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -592,7 +598,7 @@ export function ImagemStepEdit({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         {/* Passos sugeridos */}
         <div className="grid md:grid-cols-2 grid-cols-1 gap-8 flex-col mb-8">
           <div className="flex gap-2">

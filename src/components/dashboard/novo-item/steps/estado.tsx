@@ -88,7 +88,13 @@ export function EstadoStep({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       {/* Cabeçalho */}
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
@@ -98,7 +104,7 @@ export function EstadoStep({
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -108,7 +114,7 @@ export function EstadoStep({
       </div>
 
       {/* Descrição dinâmica */}
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         {isOpen && (
           <Alert className="mb-8 flex items-center gap-2">
             <div>
@@ -152,7 +158,11 @@ export function EstadoStep({
               setIsOpen(false);
             }
           }}
-          className="grid grid-cols-2 md:grid-cols-4 w-full gap-2"
+          className={
+            isMobile
+              ? "grid grid-cols-2 md:grid-cols-4 w-full gap-4 p-8"
+              : "grid grid-cols-2 md:grid-cols-4 w-full gap-2"
+          }
           variant="outline"
         >
           <ToggleGroupItem

@@ -25,7 +25,13 @@ export function InformacoesStep({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       {/* seletor do fluxo */}
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
@@ -35,7 +41,7 @@ export function InformacoesStep({
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -44,7 +50,7 @@ export function InformacoesStep({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         <div className="flex gap-4 flex-col">
           <div className="flex gap-2">
             <Barcode size={24} />

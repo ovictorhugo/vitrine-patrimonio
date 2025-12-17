@@ -1,12 +1,29 @@
 import { Alert } from "../../../ui/alert";
-import { Archive, HelpCircle, Hourglass, MoveRight, User, X, Check, Maximize2 } from "lucide-react";
+import {
+  Archive,
+  HelpCircle,
+  Hourglass,
+  MoveRight,
+  User,
+  X,
+  Check,
+  Maximize2,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "../../../ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../../ui/table";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Textarea } from "../../../ui/textarea";
 import { useContext, useState } from "react";
 import { UserContext } from "../../../../context/context";
- // ajuste o caminho se necessário
+// ajuste o caminho se necessário
 import { Input } from "../../../ui/input";
 import { Button } from "../../../ui/button";
 import { useModal } from "../../../hooks/use-modal-store";
@@ -40,14 +57,22 @@ const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
 type Props = {
   invId: string;
   asset: AssetDTO;
-  sel: string;                // "OC" | "QB" | "NE" | "SP" | ""
+  sel: string; // "OC" | "QB" | "NE" | "SP" | ""
   comm: string;
   isLocked: boolean;
   onStatusChange: (value: string) => void;
   onCommentChange: (value: string) => void;
 };
 
-export function PatrimonioItem({ invId, asset, sel, comm, isLocked, onStatusChange, onCommentChange }: Props) {
+export function PatrimonioItem({
+  invId,
+  asset,
+  sel,
+  comm,
+  isLocked,
+  onStatusChange,
+  onCommentChange,
+}: Props) {
   if (!asset) return null;
 
   const { urlGeral } = useContext(UserContext);
@@ -58,10 +83,14 @@ export function PatrimonioItem({ invId, asset, sel, comm, isLocked, onStatusChan
   const status = statusMap[bemStaTrimmed];
 
   const materialName = asset.material?.material_name || "Sem nome";
-  const hasAtm = !!(asset.atm_number && asset.atm_number !== "None" && asset.atm_number !== "");
+  const hasAtm = !!(
+    asset.atm_number &&
+    asset.atm_number !== "None" &&
+    asset.atm_number !== ""
+  );
   const csvText = csvCodToText[csvCodTrimmed] || csvCodTrimmed;
 
-  const {onOpen} = useModal()
+  const { onOpen } = useModal();
   return (
     <div className="flex group">
       <div
@@ -80,82 +109,104 @@ export function PatrimonioItem({ invId, asset, sel, comm, isLocked, onStatusChan
               <TableHead className="w-[140px]">TR</TableHead>
               <TableHead className="w-[140px]">Conservação</TableHead>
               <TableHead className="w-[140px]">Valor</TableHead>
-             
             </TableRow>
           </TableHeader>
 
           <TableBody>
             <TableRow>
               <TableCell className="font-medium whitespace-nowrap">
-                {asset.asset_code?.toString().trim()} - {asset.asset_check_digit}
+                {asset.asset_code?.toString().trim()} -{" "}
+                {asset.asset_check_digit}
               </TableCell>
 
-              <TableCell className="whitespace-nowrap">{hasAtm ? asset.atm_number : "—"}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {hasAtm ? asset.atm_number : "—"}
+              </TableCell>
 
               <TableCell className="">{materialName}</TableCell>
 
-              <TableCell className="">{asset.asset_description || "—"}</TableCell>
+              <TableCell className="">
+                {asset.asset_description || "—"}
+              </TableCell>
 
-              <TableCell className="whitespace-nowrap">{asset.accounting_entry_code || "—"}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {asset.accounting_entry_code || "—"}
+              </TableCell>
 
-              <TableCell className="whitespace-nowrap">{csvText || "—"}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {csvText || "—"}
+              </TableCell>
 
-              <TableCell className="whitespace-nowrap">R$ {asset.asset_value || "—"}</TableCell>
-
-          
+              <TableCell className="whitespace-nowrap">
+                R$ {asset.asset_value || "—"}
+              </TableCell>
             </TableRow>
           </TableBody>
 
           <TableFooter>
             <TableRow>
-                    <TableCell colSpan={7} >
-              <div className="flex gap-2 items-center h-full whitespace-nowrap">
+              <TableCell colSpan={7}>
+                <div className="flex gap-2 items-center h-full whitespace-nowrap">
                   <p>Condição:</p>
-                <ToggleGroup
-                  type="single"
-                  value={sel}
-                  onValueChange={(v) => v && onStatusChange(v)}
-                  disabled={isLocked}
-                  className="flex  gap-2"
-                  variant={'outline'}
-                >
-                  <ToggleGroupItem className="w-10 h-10" value="OC" aria-label="Ocioso">
-                    OC
-                  </ToggleGroupItem>
-                  <ToggleGroupItem className="w-10 h-10" value="QB" aria-label="Quebrado">
-                    QB
-                  </ToggleGroupItem>
-                  <ToggleGroupItem className="w-10 h-10" value="NE" aria-label="Não encontrado">
-                    NE
-                  </ToggleGroupItem>
-                  <ToggleGroupItem className="w-10 h-10" value="SP" aria-label="Sem plaqueta">
-                    SP
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                  <ToggleGroup
+                    type="single"
+                    value={sel}
+                    onValueChange={(v) => v && onStatusChange(v)}
+                    disabled={isLocked}
+                    className="flex  gap-2"
+                    variant={"outline"}
+                  >
+                    <ToggleGroupItem
+                      className="w-10 h-10"
+                      value="OC"
+                      aria-label="Ocioso"
+                    >
+                      OC
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      className="w-10 h-10"
+                      value="QB"
+                      aria-label="Quebrado"
+                    >
+                      QB
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      className="w-10 h-10"
+                      value="NE"
+                      aria-label="Não encontrado"
+                    >
+                      NE
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      className="w-10 h-10"
+                      value="SP"
+                      aria-label="Sem plaqueta"
+                    >
+                      SP
+                    </ToggleGroupItem>
+                  </ToggleGroup>
 
-                <Input
-              placeholder="Observações"
-                  value={comm}
-                  onChange={(e) => onCommentChange(e.target.value)}
-                  disabled={isLocked}
-                  className=""
-                />
+                  <Input
+                    placeholder="Observações"
+                    value={comm}
+                    onChange={(e) => onCommentChange(e.target.value)}
+                    disabled={isLocked}
+                    className=""
+                  />
 
                   <Button
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpen("patrimonio", { ...asset }); // envia o Asset direto para o modal
-          }}
-          variant="outline"
-          size="icon"
-          className=" text-sm h-10 w-10 min-w-10"
-        >
-          <Maximize2 size={16} />
-        </Button>
-              </div>
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpen("patrimonio", { ...asset }); // envia o Asset direto para o modal
+                    }}
+                    variant="outline"
+                    size="icon"
+                    className=" text-sm h-10 w-10 min-w-10"
+                  >
+                    <Maximize2 size={16} />
+                  </Button>
+                </div>
               </TableCell>
-
-             
             </TableRow>
           </TableFooter>
         </Table>

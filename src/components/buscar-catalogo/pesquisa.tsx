@@ -231,7 +231,13 @@ export function PesquisaStep({
   const isMobile = useIsMobile();
 
   return (
-    <div className="max-w-[936px] h-full mx-auto flex flex-col justify-center">
+    <div
+      className={
+        isMobile
+          ? "max-w-[936px] mt-[100px] h-full mx-auto flex flex-col"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+      }
+    >
       <div className="flex gap-2">
         <div className="flex justify-between items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
@@ -240,7 +246,7 @@ export function PesquisaStep({
         <h1
           className={
             isMobile
-              ? "mb-16 text-2xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
               : "mb-16 text-4xl font-semibold max-w-[1000px]"
           }
         >
@@ -248,7 +254,7 @@ export function PesquisaStep({
         </h1>
       </div>
 
-      <div className="ml-8">
+      <div className={isMobile ? "" : "ml-8"}>
         <Alert className="h-14 bg-white p-2 flex items-center gap-3 justify-between">
           <div className="flex items-center gap-2 w-full flex-1">
             <div className="w-10 min-w-10">

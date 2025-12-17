@@ -626,20 +626,30 @@ export function BuscaPatrimonio() {
             </Tabs>
 
             {!isLast && (
-              <div className="flex justify-between items-center h-fit">
-                <div>
-                  {STEPS.slice(0, idx + 1).map((s) => (
-                    <span
-                      key={s.key}
-                      className={cn(
-                        "mr-2",
-                        valid[s.key] ? "text-emerald-600" : "text-amber-600"
-                      )}
-                    >
-                      ●
-                    </span>
-                  ))}
-                </div>
+              <div
+                className={
+                  isMobile
+                    ? "flex items-center w-full justify-end"
+                    : "flex items-center"
+                }
+              >
+                {isMobile ? (
+                  <></>
+                ) : (
+                  <div>
+                    {STEPS.slice(0, idx + 1).map((s) => (
+                      <span
+                        key={s.key}
+                        className={cn(
+                          "mr-2",
+                          valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                        )}
+                      >
+                        ●
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
                   {/* Salvar/Remover atual */}
@@ -669,24 +679,34 @@ export function BuscaPatrimonio() {
 
             {isLast && (
               <div className="flex justify-between items-center h-fit">
-                <div>
-                  {STEPS.slice(0, idx + 1).map((s) => (
-                    <span
-                      key={s.key}
-                      className={cn(
-                        "mr-2",
-                        valid[s.key] ? "text-emerald-600" : "text-amber-600"
-                      )}
-                    >
-                      ●
-                    </span>
-                  ))}
-                </div>
+                {isMobile ? (
+                  <></>
+                ) : (
+                  <div>
+                    {STEPS.slice(0, idx + 1).map((s) => (
+                      <span
+                        key={s.key}
+                        className={cn(
+                          "mr-2",
+                          valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                        )}
+                      >
+                        ●
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-                <div className="flex items-center h-fit">
+                <div
+                  className={
+                    isMobile
+                      ? "flex items-center w-full justify-center"
+                      : "flex items-center"
+                  }
+                >
                   <Button
                     variant="outline"
-                    size={"lg"}
+                    size={isMobile ? "default" : "lg"}
                     className="rounded-r-none"
                     onClick={toggleSaveCurrent}
                     disabled={!canSaveCurrent && !isCurrentSaved}
@@ -706,7 +726,7 @@ export function BuscaPatrimonio() {
 
                   <div className="flex justify-end">
                     <Button
-                      size="lg"
+                      size={isMobile ? "default" : "lg"}
                       className="rounded-l-none"
                       onClick={resetAll}
                     >
@@ -737,9 +757,15 @@ export function BuscaPatrimonio() {
 
           {/* Cabeçalho com ações */}
           <div className="flex items-center justify-between ">
-            <Badge variant={"outline"} className="">
-              Total: {saved.length} itens
-            </Badge>
+            {isMobile ? (
+              <Badge variant={"outline"} className="">
+                {saved.length} itens
+              </Badge>
+            ) : (
+              <Badge variant={"outline"} className="">
+                Total: {saved.length} itens
+              </Badge>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
