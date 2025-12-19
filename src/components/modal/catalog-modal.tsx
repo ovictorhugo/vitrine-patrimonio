@@ -1225,7 +1225,6 @@ export function CatalogModal() {
             <div className="px-4 pb-4">
               <div className="grid grid-cols-1">
                 <Carousel items={cards} />
-
                 <div className="flex lg:flex-row flex-col-reverse gap-4">
                   <div className="flex w-full flex-col">
                     <div className="flex justify-between items-start">
@@ -1256,7 +1255,13 @@ export function CatalogModal() {
                       </div>
                     </div>
 
-                    <p className="mb-4 mt-6 text-gray-500">
+                    <p
+                      className={
+                        isMobile
+                          ? "mb-4 mt-6 text-gray-500 text-sm"
+                          : "mb-4 mt-6 text-gray-500"
+                      }
+                    >
                       {asset?.asset_description || "Sem descrição."}
                     </p>
 
@@ -1431,7 +1436,13 @@ export function CatalogModal() {
                                       </p>
                                       <Badge variant="outline">Situação</Badge>
                                     </div>
-                                    <p className="text-gray-500 text-sm">
+                                    <p
+                                      className={
+                                        isMobile
+                                          ? "text-gray-500 text-xs text-justify"
+                                          : "text-gray-500 text-sm text-justify"
+                                      }
+                                    >
                                       {info.texto}
                                     </p>
                                   </div>
@@ -1493,7 +1504,7 @@ export function CatalogModal() {
                                   <p className="text-xl font-medium">
                                     Justificativa
                                   </p>
-                                  <div className="text-sm text-gray-500 dark:text-gray-300">
+                                  <div className="text-sm text-justify text-gray-500 dark:text-gray-300">
                                     {catalog.description}
                                   </div>
                                 </>
@@ -1513,7 +1524,11 @@ export function CatalogModal() {
                                       {visibleParts.map((p, i) => (
                                         <div
                                           key={i}
-                                          className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                          className={
+                                            isMobile
+                                              ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                              : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                          }
                                         >
                                           {i > 0 && <ChevronRight size={14} />}{" "}
                                           {p}
@@ -1521,7 +1536,13 @@ export function CatalogModal() {
                                       ))}
                                     </div>
                                   ) : (
-                                    <span className="text-sm text-gray-500">
+                                    <span
+                                      className={
+                                        isMobile
+                                          ? "text-xs text-gray-500"
+                                          : "text-sm text-gray-500"
+                                      }
+                                    >
                                       Não definido.
                                     </span>
                                   )}
@@ -1539,7 +1560,11 @@ export function CatalogModal() {
                                         {visibleCatalogParts.map((p, i) => (
                                           <div
                                             key={i}
-                                            className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                            className={
+                                              isMobile
+                                                ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                                : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                            }
                                           >
                                             {i > 0 && (
                                               <ChevronRight size={14} />

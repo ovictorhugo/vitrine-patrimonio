@@ -571,24 +571,6 @@ export function Patrimonios({ type }: Props) {
                     title="Todos os itens"
                     icon={<Package size={24} className="text-gray-400" />}
                   />
-
-                  <div className="flex gap-3 mr-3 items-center h-full">
-                    <Button
-                      onClick={() => setTypeVisu("rows")}
-                      variant={typeVisu == "block" ? "ghost" : "outline"}
-                      size={"icon"}
-                    >
-                      <Rows size={16} className=" whitespace-nowrap" />
-                    </Button>
-
-                    <Button
-                      onClick={() => setTypeVisu("block")}
-                      variant={typeVisu == "block" ? "outline" : "ghost"}
-                      size={"icon"}
-                    >
-                      <SquaresFour size={16} className=" whitespace-nowrap" />
-                    </Button>
-                  </div>
                 </div>
 
                 <AccordionTrigger />

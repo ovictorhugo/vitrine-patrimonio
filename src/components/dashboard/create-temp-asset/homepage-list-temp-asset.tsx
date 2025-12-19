@@ -13,13 +13,7 @@ import {
 import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserContext } from "../../../context/context";
 import { Alert } from "../../ui/alert";
 import { SquaresFour, Rows } from "phosphor-react";
@@ -31,7 +25,13 @@ import {
 } from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
 import { useQuery } from "../../authentication/signIn";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
 import { Skeleton } from "../../ui/skeleton";
 import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
@@ -41,20 +41,26 @@ import { useModal } from "../../hooks/use-modal-store";
 import { FiltersSheetAssets } from "./filters-sheet-assets";
 import { Switch } from "../../ui/switch";
 import { Patrimonios } from "../dashboard-page/tabs/patrimonios";
-
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 export function HomepageListTempAsset() {
   const { urlGeral } = useContext(UserContext);
- const navigate = useNavigate();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
   return (
     <div className="flex flex-col h-full">
       <Helmet>
         <title>Busca avançada | Sistema Patrimônio</title>
-       
       </Helmet>
 
       <main className="flex flex-col ">
-        <div className="flex p-8 items-center justify-between">
+        <div
+          className={
+            isMobile
+              ? "flex flex-col p-8 items-left"
+              : "flex p-8 items-center justify-between"
+          }
+        >
           <div className="flex gap-2">
             <Button
               onClick={() => {
@@ -77,10 +83,12 @@ export function HomepageListTempAsset() {
               <span className="sr-only">Voltar</span>
             </Button>
 
-            <h1 className="text-xl font-semibold tracking-tight">Busca avançada</h1>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Busca avançada
+            </h1>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end mt-4">
             <Link to={"/dashboard/criar-patrimonio-temporario"}>
               <Button size={"sm"}>
                 <TimerReset size={16} />
@@ -90,28 +98,23 @@ export function HomepageListTempAsset() {
           </div>
         </div>
 
-           <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
-  <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-    Encontre bens patrimoniados de forma rápida e inteligente
-  </h3>
+        <div className="justify-center px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+          <h3 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+            Encontre bens patrimoniados de forma rápida e inteligente
+          </h3>
 
-  <div className="mt-2 text-center flex flex-wrap justify-center gap-3 text-sm text-gray-500 items-center">
-    <span className="text-muted-foreground max-w-[900px] text-center">
-      Utilize os filtros de busca para localizar bens cadastrados na plataforma, 
-      incluindo aqueles com plaquetas extraviadas ou registros provisórios. 
-      Simplifique o acompanhamento e mantenha o controle patrimonial atualizado.
-    </span>
-  </div>
-</div>
+          <div className="mt-2 text-center flex flex-wrap justify-center gap-3 text-sm text-gray-500 items-center">
+            <span className="text-muted-foreground max-w-[900px] text-center">
+              Utilize os filtros de busca para localizar bens cadastrados na
+              plataforma, incluindo aqueles com plaquetas extraviadas ou
+              registros provisórios. Simplifique o acompanhamento e mantenha o
+              controle patrimonial atualizado.
+            </span>
+          </div>
+        </div>
 
-
-
-
-<Patrimonios
-type="temp"
-
-/>
-       </main>
+        <Patrimonios type="temp" />
+      </main>
     </div>
   );
 }

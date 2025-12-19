@@ -420,7 +420,7 @@ function StatusAccordion({
             <div className="flex items-center mr-2">
               <HeaderResultTypeHome
                 title={title}
-                icon={<IconComp size={22} className="text-gray-400" />}
+                icon={<IconComp size={22} className="text-gray-400 min-w-4" />}
               />
               <Badge variant="outline">{loading ? "…" : effectiveTotal}</Badge>
             </div>
@@ -1693,16 +1693,16 @@ export function Anunciados(props: {
           <Button
             variant="outline"
             size="sm"
-            className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-              !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-            }`}
+            className={`absolute left-0 z-10 h-10 ${
+              isMobile ? "w-5" : "w-10"
+            } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
             onClick={scrollLeft}
             disabled={!canScrollLeft}
           >
             <ChevronLeft size={16} />
           </Button>
 
-          <div className="mx-12">
+          <div className={isMobile ? "mx-8" : "mx-12"}>
             <div
               ref={scrollAreaRef}
               className="overflow-x-auto scrollbar-hide"
@@ -1809,7 +1809,9 @@ export function Anunciados(props: {
           <Button
             variant="outline"
             size="sm"
-            className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+            className={`absolute right-0 z-10 h-10 ${
+              isMobile ? "w-5" : "w-10"
+            } p-0 rounded-md ${
               !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
             }`}
             onClick={scrollRight}

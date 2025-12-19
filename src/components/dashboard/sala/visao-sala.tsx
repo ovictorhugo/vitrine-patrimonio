@@ -416,7 +416,6 @@ export function VisaoSala() {
               <Undo2 size={16} /> Voltar
             </Button>
             <Link to={"/"}>
-              {" "}
               <Button>
                 <Home size={16} /> Página Inicial
               </Button>
@@ -476,11 +475,9 @@ export function VisaoSala() {
                 className={`w-full h-full rounded-md bg-black/25 pb-0 md:pb-0 p-4 md:p-8 flex-col flex justify-between `}
               >
                 <div
-                  className="
-                    flex flex-col items-center gap-4 justify-between
-
-                    md:flex-row
-                  "
+                  className={`flex gap-4 justify-between md:flex-row ${
+                    isMobile ? "pt-4" : ""
+                  }`}
                 >
                   <div className="flex gap-2">
                     <Button

@@ -1320,11 +1320,23 @@ export function ItemPage() {
         <div className="grid grid-cols-1">
           <Carousel items={cards} />
 
-          <div className="flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8">
+          <div
+            className={
+              isMobile
+                ? "flex flex-1 h-full lg:flex-row flex-col-reverse gap-8"
+                : "flex flex-1 mt-8 h-full lg:flex-row flex-col-reverse gap-8"
+            }
+          >
             {/* Coluna principal */}
             <Tabs defaultValue="visao_geral" value={value} className="w-full">
               <div className="flex justify-between items-start">
-                <div className="flex justify-between w-full">
+                <div
+                  className={
+                    isMobile
+                      ? "flex flex-col justify-between w-full"
+                      : "flex justify-between w-full"
+                  }
+                >
                   <h2 className="text-3xl font-semibold leading-none tracking-tight mb-2">
                     {titulo}
                   </h2>
@@ -1350,7 +1362,13 @@ export function ItemPage() {
                 </div>
               </div>
 
-              <p className="mb-8 text-gray-500">
+              <p
+                className={
+                  isMobile
+                    ? "mb-8 text-gray-500 text-sm mt-4"
+                    : "mb-8 text-gray-500"
+                }
+              >
                 {asset?.asset_description || "Sem descrição."}
               </p>
 
@@ -1520,7 +1538,13 @@ export function ItemPage() {
 
                               <Badge variant="outline">Situação</Badge>
                             </div>
-                            <p className="text-gray-500 text-sm">
+                            <p
+                              className={
+                                isMobile
+                                  ? "text-gray-500 text-xs text-justify"
+                                  : "text-gray-500 text-sm text-justify"
+                              }
+                            >
                               {info.texto}
                             </p>
                           </div>
@@ -1580,7 +1604,13 @@ export function ItemPage() {
                       {catalog.description && (
                         <>
                           <p className="text-xl font-medium">Justificativa</p>
-                          <div className="text-sm text-gray-500 dark:text-gray-300">
+                          <div
+                            className={
+                              isMobile
+                                ? "text-xs text-gray-500 dark:text-gray-300"
+                                : "text-sm text-gray-500 dark:text-gray-300"
+                            }
+                          >
                             {catalog.description}
                           </div>
                         </>
@@ -1759,7 +1789,13 @@ export function ItemPage() {
                                         </p>
 
                                         {ev.detail?.justificativa && (
-                                          <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
+                                          <p
+                                            className={
+                                              isMobile
+                                                ? "text-xs text-justify dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
+                                                : "text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
+                                            }
+                                          >
                                             {ev.detail.justificativa}
                                           </p>
                                         )}
@@ -1852,7 +1888,7 @@ export function ItemPage() {
             </Tabs>
 
             {/* Coluna lateral */}
-            <div className="lg:w-[420px] flex flex-col gap-8 lg:min-w-[420px] w-full">
+            <div className="lg:w-[420px] flex flex-col gap-8  lg:min-w-[420px] w-full">
               <ButtonTransference catalog={catalog} />
 
               <Link to={`/user?id=${catalog.user?.id}`} target="_blank">

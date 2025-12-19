@@ -15,7 +15,7 @@ interface ImageProps {
   alt?: string;
   // outras props que você desejar adicionar
 }
-import { cn } from "../../lib"
+import { cn } from "../../lib";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useOutsideClick } from "./use-outside-click";
@@ -32,7 +32,6 @@ type Card = {
   src: string;
   title: string;
   category: string;
-
 };
 
 export const CarouselContext = createContext<{
@@ -105,13 +104,13 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         >
           <div
             className={cn(
-              "absolute right-0   h-auto  w-[5%] overflow-hidden bg-gradient-to-l"
+              "absolute right-0 h-auto w-[5%] overflow-hidden bg-gradient-to-l"
             )}
           ></div>
 
           <div
             className={cn(
-              "flex flex-row justify-start gap-4 pl-4",
+              "flex flex-row justify-start gap-4",
               "w-full" // remove max-w-4xl if you want the carousel to span the full width of its container
             )}
           >
@@ -140,17 +139,17 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
           </div>
         </div>
         <div className="flex justify-end gap-2 absolute bottom-8 right-4 z-[1] ">
-        <Button
-          size={'icon'}
-          variant={'outline'}
+          <Button
+            size={"icon"}
+            variant={"outline"}
             onClick={scrollLeft}
             disabled={!canScrollLeft}
           >
             <ArrowLeft size={16} />
           </Button>
           <Button
-          size={'icon'}
-          variant={'outline'}
+            size={"icon"}
+            variant={"outline"}
             className="relative flex items-center justify-center disabled:opacity-50"
             onClick={scrollRight}
             disabled={!canScrollRight}
@@ -185,12 +184,12 @@ export const Card = ({
     >
       {/* Thumb / botão que abre o Dialog */}
       <DialogTrigger asChild>
-       <motion.button
-  type="button"
-  layoutId={layout ? `card-${card.title}-${index}` : undefined}
-  className="rounded-lg bg-gray-100 dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden relative group focus:outline-none "
-  aria-label={`Abrir imagem: ${card.title}`}
->
+        <motion.button
+          type="button"
+          layoutId={layout ? `card-${card.title}-${index}` : undefined}
+          className="rounded-lg bg-gray-100 dark:bg-neutral-900 h-[400px] w-[600px] md:h-[400px] md:w-[600px] overflow-hidden relative group focus:outline-none "
+          aria-label={`Abrir imagem: ${card.title}`}
+        >
           <div className="absolute z-[3] h-full top-0 inset-x-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
           <div className="relative p-4 z-[3]">
             {/* espaço para tags/título sobre a thumb, se quiser */}
@@ -212,18 +211,15 @@ export const Card = ({
         className="p-0  overflow-hidden w-auto "
       >
         {/* Botão de fechar flutuante */}
-     
-
-     
 
         {/* Área da imagem */}
         <div className="w-full max-h-[85vh] flex items-center justify-center ">
-    <img
-      src={card.src}
-      alt={card.title}
-      className="max-h-[85vh] max-w-full object-contain"
-    />
-  </div>
+          <img
+            src={card.src}
+            alt={card.title}
+            className="max-h-[85vh] max-w-full object-contain"
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -251,7 +247,6 @@ export const BlurImage = ({
       height={height}
       loading="lazy"
       decoding="async"
-    
       {...rest}
     />
   );

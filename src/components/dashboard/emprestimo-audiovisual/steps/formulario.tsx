@@ -394,7 +394,7 @@ export function FormularioStep({
     <div
       className={
         isMobile
-          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          ? "max-w-[936px] mt-8 mx-auto flex flex-col justify-center"
           : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
       }
     >
@@ -429,11 +429,13 @@ export function FormularioStep({
               />
               <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
                 <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-                  <p className={
+                  <p
+                    className={
                       isMobile
                         ? "font-semibold flex gap-3 items-center text-left flex-1"
                         : "font-semibold flex gap-3 items-center text-left mb-4 flex-1"
-                    }>
+                    }
+                  >
                     {data.asset_code?.trim()} - {data.asset_check_digit}
                     {!!data.atm_number && data.atm_number !== "None" && (
                       <Badge variant="outline">ATM: {data.atm_number}</Badge>
@@ -443,18 +445,22 @@ export function FormularioStep({
 
                 <div className="flex flex-col p-4 pt-0 justify-between">
                   <div>
-                    <div className={
+                    <div
+                      className={
                         isMobile
                           ? "text-base mb-2 font-bold"
                           : "text-lg mb-2 font-bold"
-                      }>
+                      }
+                    >
                       {data.material.material_name || "Sem nome"}
                     </div>
-                    <p className={
+                    <p
+                      className={
                         isMobile
                           ? "text-left mb-4 text-xs uppercase"
                           : "text-left mb-4 uppercase"
-                      }>
+                      }
+                    >
                       {data.asset_description}
                     </p>
 

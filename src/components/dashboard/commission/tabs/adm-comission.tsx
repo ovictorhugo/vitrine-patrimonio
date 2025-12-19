@@ -1866,7 +1866,7 @@ export function AdmComission() {
                       {isMobile ? (
                         <div className="w-full flex justify-start mb-5 pl-1">
                           <Button
-                            size={isMobile ? "xs" : "sm"}
+                            size="sm"
                             onClick={() => setExpandedColumn(null)}
                             className="self-start"
                           >
@@ -1904,14 +1904,14 @@ export function AdmComission() {
                       }
                     >
                       <Button
-                        size={isMobile ? "xs" : "sm"}
+                        size="sm"
                         variant="outline"
                         onClick={() => downloadXlsx(col.key, true)}
                       >
                         <Download size={16} /> Baixar visíveis
                       </Button>
                       <Button
-                        size={isMobile ? "xs" : "sm"}
+                        size="sm"
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >
@@ -1921,7 +1921,7 @@ export function AdmComission() {
                         <></>
                       ) : (
                         <Button
-                          size={isMobile ? "xs" : "sm"}
+                          size="sm"
                           onClick={() => setExpandedColumn(null)}
                         >
                           <ChevronLeft size={16} />

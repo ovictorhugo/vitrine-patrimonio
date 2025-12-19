@@ -530,7 +530,7 @@ export function BlockItemsVitrine(props: Props) {
   return (
     <div ref={containerRef}>
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2   md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {skeletons.map((item, index) => (
             <div className="w-full" key={index}>
               {item}

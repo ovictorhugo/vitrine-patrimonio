@@ -291,38 +291,42 @@ export function PatrimonioItemCollection({
           <div>
             <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
               {/* Coluna info */}
-              <div className="">
-                <div className="w-[200px]">
-                  {/* HEADER */}
-                  <div className="flex items-center gap-3 p-4 pb-0">
-                    <div className="flex items-center gap-2 text-sm min-w-0 w-full">
-                      <p className="font-semibold text-left  whitespace-nowrap shrink-0">
-                        {asset.asset_code?.toString().trim()} -{" "}
-                        {asset.asset_check_digit}
-                      </p>
 
-                      {hasAtm && (
-                        <div className="min-w-0 flex-1">
-                          <Badge
-                            variant="outline"
-                            className="truncate min-w-0"
-                            title={asset.atm_number || ""}
-                          >
-                            ATM: {asset.atm_number}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
+              <div className="w-full">
+                {/* HEADER */}
+                <div className="flex items-center gap-3 p-4 pb-0">
+                  <div className="flex items-center gap-2 text-sm min-w-0 w-full">
+                    <p className="font-semibold text-left  whitespace-nowrap shrink-0">
+                      {asset.asset_code?.toString().trim()}{" "}
+                      {asset.asset_check_digit
+                        ? `- ${asset.asset_check_digit}`
+                        : ""}
+                    </p>
+
+                    {/* ATM placeholder (ligue quando existir no payload) */}
+                    {false && (
+                      <div className="min-w-0 flex-1">
+                        <Badge
+                          variant="outline"
+                          className="truncate min-w-0"
+                          title={""}
+                        >
+                          ATM:
+                        </Badge>
+                      </div>
+                    )}
                   </div>
+                </div>
+                <div className="min-w-0">
                   {/* BODY */}
-                  <div className="flex flex-col p-2 pt-0 justify-between">
+                  <div className="flex flex-col p-4 pt-0 justify-between">
                     <div className="min-w-0">
                       <div className="text-base font-bold">{materialName}</div>
                       <p className="text-left text-xs uppercase">
                         {asset.asset_description || ""}
                       </p>
 
-                      <div className="flex flex-wrap gap-3 min-w-0">
+                      <div className="flex text-sm flex-wrap gap-1 min-w-0">
                         {!!csvCodTrimmed && (
                           <div className="text-xs text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                             <div
@@ -330,7 +334,10 @@ export function PatrimonioItemCollection({
                                 qualisColor[csvCodTrimmed] || "bg-neutral-300"
                               }`}
                             />
-                            {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                            <p>
+                              {" "}
+                              {csvCodToText[csvCodTrimmed] || csvCodTrimmed}
+                            </p>
                           </div>
                         )}
 
@@ -346,9 +353,7 @@ export function PatrimonioItemCollection({
                             <Avatar className="rounded-md h-5 w-5 shrink-0">
                               <AvatarImage
                                 className="rounded-md h-5 w-5"
-                                src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                                  legalGuardianName
-                                )}`}
+                                src={`${urlGeral}user/upload/${asset.legal_guardian?.id}/icon`}
                               />
                               <AvatarFallback className="flex items-center justify-center">
                                 <User size={10} />
@@ -367,12 +372,10 @@ export function PatrimonioItemCollection({
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Coluna carrossel */}
-              <div className="p-4 w-full flex-1">
-                <div className="w-full select-none">
-                  <Carousel className="w-full flex gap-2 items-center">
+                {/* Coluna carrossel */}
+                <div className="p-4">
+                  <Carousel className="flex gap-2 items-center">
                     {/* Prev/Next com stopPropagation */}
                     <div onClick={stop}>
                       <CarouselPrevious variant="outline" />
@@ -383,7 +386,7 @@ export function PatrimonioItemCollection({
                         (url, index) => (
                           <CarouselItem
                             key={url ?? index}
-                            className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
+                            className="w-full basis-1/2"
                           >
                             {/* Wrapper com tamanho consistente */}
                             <div

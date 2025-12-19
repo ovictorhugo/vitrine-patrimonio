@@ -2310,9 +2310,9 @@ export function ItensVitrine() {
                     }
                   >
                     {isMobile ? (
-                      <div className="w-full flex justify-start mb-5 pl-1">
+                      <div className="w-full flex justify-start mb-8 pl-1">
                         <Button
-                          size="default"
+                          size="sm"
                           onClick={() => setExpandedColumn(null)}
                           className="self-start"
                         >
@@ -2360,10 +2360,10 @@ export function ItensVitrine() {
                         }}
                         label="Baixar PDF"
                         method="catalog"
-                        size="default"
+                        size="sm"
                       />
                       <Button
-                        size="default"
+                        size="sm"
                         variant="outline"
                         onClick={() => downloadXlsx(col.key)}
                       >

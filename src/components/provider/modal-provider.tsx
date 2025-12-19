@@ -11,7 +11,6 @@ import { SearchModal } from "../modal/search-modal";
 
 import { SearchModalVitrine } from "../modal/search-modal-vitrine";
 
-
 import { SearchPatrimonio } from "../search/search-patrimonio";
 import { SearchModalPatrimonio } from "../modal/search-modal-patrimonio";
 import { PatrimonioModal } from "../modal/patrimonio-modal";
@@ -27,38 +26,36 @@ import SearchCodAtmModalExact from "../modal/search-modal-patrimonio-exact";
 const ModalContent = () => {
   const { type } = useModal();
   switch (type) {
-
-    case 'import-csv':
-      return <ImportCsv/>
-    case 'import-csv-morto':
-      return <ImportCsv/>
-    case 'adicionar-empenho':
-      return <AdicionarEmpenho/>
-    case 'search':
-      return <SearchModal/>
-    case 'search-vitrine':
-      return <SearchModalVitrine/>
-    case 'search-patrimonio':
-      return <SearchModalPatrimonio/>
-    case 'patrimonio':
-      return <PatrimonioModal/>
-    case 'search-cod-atm':
-      return <SearchCodAtmModal/>
-    case 'search-loc-nom':
-      return <SearchLocNomModal/>
-    case 'relatar-problema':
-      return <RelatarBug/>
-    case 'catalog-modal':
-      return <CatalogModal/>
-    case 'sign-in':
-      return <SignInModal/>
-    case 'search-patrimonio-exact':
-      return <SearchCodAtmModalExact/>
+    case "import-csv":
+      return <ImportCsv />;
+    case "import-csv-morto":
+      return <ImportCsv />;
+    case "adicionar-empenho":
+      return <AdicionarEmpenho />;
+    case "search":
+      return <SearchModal />;
+    case "search-vitrine":
+      return <SearchModalVitrine />;
+    case "search-patrimonio":
+      return <SearchModalPatrimonio />;
+    case "patrimonio":
+      return <PatrimonioModal />;
+    case "search-cod-atm":
+      return <SearchCodAtmModal />;
+    case "search-loc-nom":
+      return <SearchLocNomModal />;
+    case "relatar-problema":
+      return <RelatarBug />;
+    case "catalog-modal":
+      return <CatalogModal />;
+    case "sign-in":
+      return <SignInModal />;
+    case "search-patrimonio-exact":
+      return <SearchCodAtmModalExact />;
     default:
-      return null
+      return null;
   }
-
-}
+};
 
 export const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -71,5 +68,5 @@ export const ModalProvider = () => {
     return null;
   }
 
-  return <ModalContent/>
-}
+  return <ModalContent />;
+};

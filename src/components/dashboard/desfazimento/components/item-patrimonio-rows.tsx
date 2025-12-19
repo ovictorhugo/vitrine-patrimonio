@@ -145,7 +145,7 @@ export function ItemPatrimonioRows(props: Props) {
         />
 
         {/* Card */}
-        <div className="w-full">
+        <div>
           <Alert className="rounded-l-none items-center p-0 pb-3 flex w-full">
             <div className="w-full">
               {/* HEADER */}
@@ -237,7 +237,7 @@ export function ItemPatrimonioRows(props: Props) {
                       (url, index) => (
                         <CarouselItem
                           key={url ?? index}
-                          className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
+                          className="w-full basis-1/3"
                         >
                           <div
                             className="relative h-[150px] rounded-md overflow-hidden bg-muted flex items-center justify-center"

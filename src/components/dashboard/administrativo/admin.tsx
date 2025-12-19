@@ -307,11 +307,17 @@ export function Admin() {
             </h1>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div
+            className={
+              isMobile
+                ? "flex flex-col sm:flex-row gap-2 items-center justify-center w-fit mx-auto"
+                : "flex flex-row gap-2 w-full md-auto items-center justify-end"
+            }
+          >
             <Button
               onClick={() => navigate("/dashboard/criar-patrimonio-temporario")}
               size="sm"
-              className="w-full sm:w-auto" // Botão largura total no mobile
+              className="w-full sm:w-auto"
             >
               <TimerReset size={16} className="mr-2" />
               Adicionar patrimônio temporário

@@ -828,7 +828,7 @@ export const InformacoesAdicionaisStep = forwardRef<
           {/* Justificativa */}
           {isIdx7 ? (
             <Alert>
-              <div className="flex gap-2 ">
+              <div className="flex gap-2">
                 <BadgePercent size={24} />
                 <div>
                   <p className="font-medium">Mude a situação atual</p>
@@ -843,38 +843,48 @@ export const InformacoesAdicionaisStep = forwardRef<
               </div>
             </Alert>
           ) : (
-            <div className="grid gap-2 w-full ">
+            <div className="grid gap-2 w-full">
               {justificativaEhModelo && (
-                <div>
-                  <div className="flex gap-2 items-center mb-3">
-                    <AlertCircle size={isMobile ? 20 : 24} />
-                    <p
-                      className={
-                        isMobile
-                          ? "font-medium w-55 text-sm"
-                          : "font-medium w-55"
-                      }
-                    >
-                      Justificativa personalizada, favor editar:
-                    </p>
+                // MUDANÇA 1: Container com cor de fundo e borda para destacar o bloco
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r shadow-sm animate-shake-gentle">
+            
+                  <div className="flex gap-3 items-start">
+                    {/* Ícone com cor de destaque */}
+                    <AlertCircle
+                      className="text-amber-600 mt-0.5 shrink-0"
+                      size={24}
+                    />
+
+                    <div className="space-y-1">
+                      <p className="font-bold text-amber-800 text-sm">
+                        Atenção: Edição Obrigatória
+                      </p>
+                      <p className="text-sm text-amber-700 leading-relaxed">
+                        O texto abaixo é apenas um modelo.{" "}
+                        <span className="font-bold underline">
+                          Você deve apagar e reescrever
+                        </span>{" "}
+                        detalhando uso, defeitos e histórico de manutenção.
+                      </p>
+                    </div>
                   </div>
-                  <p
-                    className={
-                      isMobile ? "text-xs text-red-500" : "text-s text-red-500"
-                    }
-                  >
-                    Dica: Personalize a justificativa com uso, funcionamento,
-                    defeitos, histórico de manutenção e ano/critério de
-                    tombamento para prosseguir.
-                  </p>
                 </div>
               )}
+
               <Textarea
                 id="observacoes"
-                className="w-full h-[160px]"
+                // MUDANÇA 2: Alterar a borda do Textarea se for modelo para chamar atenção visual
+                className={`w-full h-[160px] transition-all duration-300 ${
+                  justificativaEhModelo
+                    ? "border-amber-500 ring-1 ring-amber-500 bg-amber-50/30 focus-visible:ring-amber-600"
+                    : ""
+                }`}
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
+                // Dica extra: Adicionar um placeholder se o usuário apagar tudo
+                placeholder="Descreva aqui os detalhes do patrimônio..."
               />
+
               <div className="">
                 <p className="text-xs text-muted-foreground">
                   <>

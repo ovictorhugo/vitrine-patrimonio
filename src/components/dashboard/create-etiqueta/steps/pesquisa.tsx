@@ -206,7 +206,7 @@ export function PesquisaStepCB({
     <div
       className={
         isMobile
-          ? "max-w-[936px] mx-auto flex flex-col justify-center"
+          ? "max-w-[936px] mt-8 mx-auto flex flex-col justify-center"
           : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
       }
     >

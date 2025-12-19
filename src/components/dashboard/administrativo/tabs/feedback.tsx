@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "../../../ui/select";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 interface Feedback {
   created_at: string;
@@ -267,6 +268,8 @@ export function Feedback() {
     }
   };
 
+  const isMobile = useIsMobile();
+
   // --------- FILTER ----------
   const normalize = (str: string) =>
     (str || "")
@@ -387,7 +390,13 @@ export function Feedback() {
 
                             <Separator className="my-4" />
                             <div>
-                              <p className="text-gray-500 text-sm">
+                              <p
+                                className={
+                                  isMobile
+                                    ? "text-gray-500 text-sm text-justify"
+                                    : "text-gray-500 text-sm"
+                                }
+                              >
                                 {f.description}
                               </p>
                             </div>
