@@ -1218,7 +1218,7 @@ export function CatalogModal() {
 
       return (
         <main
-          className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden ${borderColorClass}`}
+          className={`grid flex-col gap-4 md:gap-8 border-b-[12px] max-h-[80vh] rounded-b-lg overflow-hidden ${borderColorClass}`}
         >
           {header}
           <ScrollArea className="border-solid flex-1 w-full">

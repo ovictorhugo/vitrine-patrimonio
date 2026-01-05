@@ -60,10 +60,6 @@ import {
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { ArrowUUpLeft, CheckSquareOffset } from "phosphor-react";
-import { SymbolEEWhite } from "../svg/SymbolEEWhite";
-import { LogoVitrineWhite } from "../svg/LogoVitrineWhite";
-import { SymbolEE } from "../svg/SymbolEE";
-import { LogoVitrine } from "../svg/LogoVitrine";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {

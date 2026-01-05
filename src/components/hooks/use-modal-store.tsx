@@ -32,7 +32,8 @@ export type ModalType =
   | "filters-assets"
   | "catalog-modal"
   | "sign-in"
-  | 'search-patrimonio-exact'
+  | "search-patrimonio-exact"
+  | "transfer-modal";
 
 /** DTOs auxiliares */
 type UnitDTO = {
@@ -74,14 +75,63 @@ type MaterialDTO = {
   material_name: string;
   id: string;
 };
+export type TransferRequestDTO = {
+  id: string;
+  status: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string;
+    lattes_id: string;
+    orcid: string;
+    ramal: string;
+    photo_url: string;
+    background_url: string;
+    matricula: string;
+    verify: boolean;
+    institution_id: string;
+  };
+  location: {
+    legal_guardian_id: string;
+    sector_id: string;
+    location_name: string;
+    location_code: string;
+    id: string;
+    sector: {
+      agency_id: string;
+      sector_name: string;
+      sector_code: string;
+      id: string;
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: string;
+        id: string;
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: string;
+        };
+      };
+    };
+    legal_guardian: {
+      legal_guardians_code: string;
+      legal_guardians_name: string;
+      id: string;
+    };
+  };
+};
 
 /** Payload que trafega dentro do modal */
 export interface ModalData {
   id?: string;
   name?: string;
-catalog?:CatalogDTO
+  catalog?: CatalogDTO;
   workflow_status?: string;
-files?:Files
+  files?: Files;
   asset_code?: string;
   asset_check_digit?: string;
   atm_number?: string;
@@ -101,6 +151,7 @@ files?:Files
   legal_guardian?: LegalGuardianDTO;
   location?: LocationDTO;
   is_official?: boolean;
+  transfer_request?: TransferRequestDTO;
 }
 
 /** Factory para garantir um data SEM resíduos */

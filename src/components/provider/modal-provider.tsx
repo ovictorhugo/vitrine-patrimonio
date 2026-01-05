@@ -22,6 +22,7 @@ import { WorkflowModal } from "../modal/workflow-modal";
 import { CatalogModal } from "../modal/catalog-modal";
 import { SignInModal } from "../modal/sign-in-modal";
 import SearchCodAtmModalExact from "../modal/search-modal-patrimonio-exact";
+import TransferModal from "../modal/transfer-modal";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -48,6 +49,8 @@ const ModalContent = () => {
       return <RelatarBug />;
     case "catalog-modal":
       return <CatalogModal />;
+    case "transfer-modal":
+      return <TransferModal />;
     case "sign-in":
       return <SignInModal />;
     case "search-patrimonio-exact":

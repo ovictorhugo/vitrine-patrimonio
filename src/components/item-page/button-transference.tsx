@@ -215,7 +215,7 @@ export function ButtonTransference({ catalog }: Props) {
   return (
     <Alert>
       <div className="flex gap-4 flex-col p-0">
-        <CardHeader className={isMobile ?"p-2" : ""}>
+        <CardHeader className={isMobile ? "p-2" : ""}>
           <CardTitle>Solicitar transferência</CardTitle>
           <CardDescription>
             Escolha uma das salas sob sua responsabilidade para solicitar a
