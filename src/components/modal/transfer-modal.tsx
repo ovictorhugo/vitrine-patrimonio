@@ -42,6 +42,7 @@ import { CatalogResponseDTO } from "./catalog-modal";
 import { Alert } from "../ui/alert";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
+import { toast } from "sonner";
 
 export type TransferRequestDTO = {
   id: string;
@@ -157,6 +158,8 @@ export function TransferModal() {
   const isMobile = useIsMobile();
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "transfer-modal";
+  const { urlGeral } = useContext(UserContext);
+  const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
 
   const handleVoltar = () => onClose();
 
@@ -184,10 +187,23 @@ export function TransferModal() {
   const isAccepting = acceptingId === transfer_request.id;
   const alreadyAccepted = transfer_request.status === "ACCEPTABLE";
 
-  const handleAcceptTransfer = useCallback(async (tr: TransferRequestDTO) => {
+  async function handleAcceptTransfer(tr: TransferRequestDTO) {
     if (!tr?.id) return;
-    console.log("AAAAAAA");
-  }, []);
+
+    const res = await fetch(
+      `${urlGeral}catalog/transfer/${tr.id}?new_status=ACCEPTABLE`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Falha ao carregar items (HTTP ${res.status}).`);
+    } else {
+      toast.success("Transferência aceita com sucesso!");
+    }
+  }
 
   const content = () => {
     if (!catalog) {
