@@ -610,7 +610,7 @@ export function ListaFinalDesfazimento() {
       >
         <div className="flex items-center gap-3">
           <DownloadPdfButton
-            filters={{ workflow_status: "DESFAZIMENTO", limit: "5" }}
+            filters={{ workflow_status: "DESFAZIMENTO" }}
             method="catalog"
             label="Baixar PDF"
           />

@@ -6,55 +6,103 @@ import { useIsMobile } from "../../../../hooks/use-mobile";
 
 type UUID = string;
 
-type LegalGuardian = {
-  id: UUID;
-  legal_guardians_code: string;
-  legal_guardians_name: string;
-};
+interface Material { material_name: string; material_code: string; id: UUID; }
+interface LegalGuardian { legal_guardians_name: string; legal_guardians_code: string; id: UUID; }
 
-type User = {
+interface CatalogAsset {
+  asset_code: string;
+  asset_check_digit: string;
+  atm_number: string;
+  serial_number: string;
+  asset_status: string;
+  asset_value: string;
+  asset_description: string;
+  csv_code: string;
+  accounting_entry_code: string;
+  item_brand: string;
+  item_model: string;
+  group_type_code: string;
+  group_code: string;
+  expense_element_code: string;
+  subelement_code: string;
   id: UUID;
-  username: string;
-  email: string;
-  provider: string;
-  linkedin: string;
-  lattes_id: string;
-  orcid: string;
-  ramal: string;
-  photo_url: string;
-  background_url: string;
-  matricula: string;
-  verify: boolean;
-  institution_id: UUID;
-  roles: Array<{
+  material: Material;
+  legal_guardian: LegalGuardian;
+  location: {
+    legal_guardian_id: UUID;
+    sector_id: UUID;
+    location_name: string;
+    location_code: string;
     id: UUID;
-    name: string;
-    description: string;
-    permissions: Array<{
+    sector: {
+      agency_id: UUID;
+      sector_name: string;
+      sector_code: string;
       id: UUID;
-      name: string;
-      code: string;
-      description: string;
-    }>;
-  }>;
-  system_identity?: { id: UUID; legal_guardian?: LegalGuardian };
+      agency: {
+        agency_name: string;
+        agency_code: string;
+        unit_id: UUID;
+        id: UUID;
+        unit: { unit_name: string; unit_code: string; unit_siaf: string; id: UUID; };
+      };
+    };
+    legal_guardian: LegalGuardian;
+  };
+  is_official: boolean;
+}
+
+export type WorkflowHistoryItem = {
+  workflow_status: string;
+  detail?: Record<string, any>;
+  id: UUID;
+  user: {
+    id: UUID;
+    username: string;
+    email: string;
+    provider: string;
+    linkedin: string | null;
+    lattes_id: string | null;
+    orcid: string | null;
+    ramal: string | null;
+    photo_url: string | null;
+    background_url: string | null;
+    matricula: string | null;
+    verify: boolean;
+    institution_id: UUID;
+  };
+  catalog_id: UUID;
+  created_at: string;
 };
 
-export type TransferRequestItem = {
-  id: string;
+type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string; };
+
+export type CatalogEntry = {
+  situation: string;
+  conservation_status: string;
+  description: string;
+  id: UUID;
+  asset: CatalogAsset;
+  user: WorkflowHistoryItem["user"];
+  location: CatalogAsset["location"];
+  images: CatalogImage[];
+  workflow_history: WorkflowHistoryItem[];
+  created_at: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
-  user: User;
-  location: Location;
 };
+
+
+
 
 export function Transfers() {
   const { urlGeral, user } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
   const [loading, setLoading] = useState(true);
 
-  const [items, setItems] = useState<TransferRequestItem[]>([]);
+  const [items, setItems] = useState<CatalogEntry[]>([]);
 
   async function getCatalog() {
+    if (!user) return;
     const items = await fetch(
       `${urlGeral}catalog/?offset=0&limit=100&user_id=${user.id}`,
       {

@@ -43,6 +43,7 @@ import { Alert } from "../ui/alert";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
+import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 
 export type TransferRequestDTO = {
   id: string;
@@ -154,7 +155,15 @@ const chain = (loc?: LocationDTO | null) => {
   return parts;
 };
 
-export function TransferModal() {
+interface TransferModalProps {
+  catalog?: CatalogEntry;
+  transfer_request?: TransferRequestDTO;
+}
+
+export function TransferModal({ 
+  catalog: propCatalog, 
+  transfer_request: propTransferRequest 
+}: TransferModalProps) {
   const isMobile = useIsMobile();
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "transfer-modal";
@@ -163,7 +172,7 @@ export function TransferModal() {
 
   const handleVoltar = () => onClose();
 
-  const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+  const catalog = (data as any)?.catalog ?? (data as CatalogEntry | null);
   const transfer_request =
     (data as any)?.transfer_request ?? (data as TransferRequestDTO | null);
 

@@ -10,14 +10,6 @@ import {
   MapPin,
   Users,
   ChevronRight,
-  LoaderCircle,
-  CheckCircle,
-  Check,
-  HelpCircle,
-  Hourglass,
-  MoveRight,
-  X,
-  User,
 } from "lucide-react";
 
 import {
@@ -290,11 +282,6 @@ export function TransferCard({
                           {/* Wrapper com tamanho consistente */}
                           <div
                             className="relative w-full aspect-square rounded-md overflow-hidden bg-muted  max-h-[100px] items-center"
-                            onClick={
-                              url
-                                ? (e) => openImageDialog(e, url) // 🔥 abre o modal
-                                : stop // se não tiver imagem, só impede propagação
-                            }
                           >
                             {url ? (
                               <LazyLoadImage

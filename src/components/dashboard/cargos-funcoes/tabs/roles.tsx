@@ -127,6 +127,12 @@ export type RoleDTO = {
   permissions: PermissionDTO[];
 };
 
+export type RoleStatisticsDTO = {
+  id: string;
+  name: string;
+  user_count: number;
+};
+
 export type RolesResponse = {
   roles: RoleDTO[];
 };
@@ -185,6 +191,9 @@ export function Roles({
   // listagem de roles
   const [roles, setRoles] = useState<RoleDTO[]>([]);
   const [loadingList, setLoadingList] = useState(false);
+  const [rolesStatistics, setRolesStatistics] = useState<RoleStatisticsDTO[]>(
+    []
+  );
 
   // criar/excluir role
   const [creating, setCreating] = useState(false);
@@ -287,6 +296,27 @@ export function Roles({
   /* ============================
      API helpers
      ============================ */
+  const fetchRolesStatistics = useCallback(async () => {
+    try {
+      const res = await fetch(`${urlGeral}roles/statistics`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setRolesStatistics(data.roles);
+      }
+    } catch (e: any) {
+      toast("Erro ao carregar estatisticas", {
+        description: e?.message || String(e),
+      });
+      setRoles([]);
+    } finally {
+      setLoadingList(false);
+    }
+  }, [urlGeral]);
+
   const fetchRoles = useCallback(async () => {
     try {
       setLoadingList(true);
@@ -391,6 +421,11 @@ export function Roles({
     fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlGeral, offset, limit, pesquisaInput]);
+
+  useEffect(() => {
+    fetchRolesStatistics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlGeral]);
 
   // 🔹 Sempre que a lista de cargos mudar, buscar usuários por cargo
   useEffect(() => {
@@ -831,7 +866,7 @@ export function Roles({
             <CarouselPrevious />
           </div>
           <CarouselContent className="gap-4">
-            {roles.map((role) => (
+            {rolesStatistics.map((role) => (
               <CarouselItem
                 key={role.id}
                 className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
@@ -844,9 +879,7 @@ export function Roles({
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {membersCount(role.id)}
-                    </div>
+                    <div className="text-2xl font-bold">{role.user_count}</div>
                     <p className="text-xs text-muted-foreground">membros</p>
                   </CardContent>
                 </Alert>

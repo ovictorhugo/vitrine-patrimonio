@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Files } from "../homepage/components/documents-tab-catalog";
 import { CatalogEntriesResponse } from "../homepage/components/item-patrimonio";
 import { CatalogDTO } from "../dashboard/collection/collection-page";
+import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 
 /** Todos os tipos de modal usados no app */
 export type ModalType =

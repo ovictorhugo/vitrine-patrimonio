@@ -83,6 +83,7 @@ import { Catalog } from "../../homepage/components/catalog";
 import { useIsomorphicLayoutEffect } from "framer-motion";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
+import LoanCalendar from "./calendario";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -599,6 +600,7 @@ export function Audiovisual() {
   );
 
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
+  const [itemsFlat, setItemsFlat] = useState<CatalogEntry[]>([]);
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
@@ -727,6 +729,14 @@ export function Audiovisual() {
         const json: CatalogResponse & { total?: number } = await res.json();
         const newEntries = json?.catalog_entries ?? [];
 
+        setItemsFlat((prev) => {
+          const existingIds = new Set(prev.map((e) => e.id));
+          const uniqueNewEntries = newEntries.filter(
+            (e) => !existingIds.has(e.id)
+          );
+          return [...prev, ...uniqueNewEntries];
+        });
+
         // Atualiza total
         if (typeof json.total === "number") {
           setTotalByCol(
@@ -798,11 +808,11 @@ export function Audiovisual() {
             };
           });
 
-          setEntries((prev) => {
+          (prev) => {
             const existingIds = new Set(prev.map((e) => e.id));
             const filtered = disponivel.filter((e) => !existingIds.has(e.id));
             return [...prev, ...filtered];
-          });
+          };
 
           setBoard((prev) => {
             const currentList = prev["AUDIOVISUAL_EMPRESTIMO"] ?? [];
@@ -887,14 +897,19 @@ export function Audiovisual() {
     setEntries([]);
 
     try {
-      // 👉 Agora faz uma coluna de cada vez
-      for (const col of columns) {
+      // 1. Cria o array de promessas para todas as colunas
+      const promises = columns.map((col) => {
         const key = (col.key ?? "").trim();
-        if (!key) continue;
 
-        // espera terminar antes de ir pra próxima
-        await fetchColumnData(key, 0, false);
-      }
+        // Se não tiver chave, retorna promessa resolvida (pula sem erro)
+        if (!key) return Promise.resolve();
+
+        // Dispara a requisição imediatamente
+        return fetchColumnData(key, 0, false);
+      });
+
+      // 2. Aguarda todas terminarem (paralelismo)
+      await Promise.all(promises);
     } finally {
       setLoading(false);
     }
@@ -1502,7 +1517,6 @@ export function Audiovisual() {
               <></>
             )}
           </div>
-
           <div className="flex gap-2 items-center mt-4">
             <Button
               size="sm"
@@ -1564,863 +1578,899 @@ export function Audiovisual() {
           </div>
         </div>
 
-        {/* Filtros */}
-        {showFilters && !isMobile && (
-          <div className="flex gap-4 items-center">
-            <div className="relative grid grid-cols-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                }`}
-                onClick={scrollLeft}
-                disabled={!canScrollLeft}
-              >
-                <ChevronLeft size={16} />
-              </Button>
+        {tab === "emprestimo" ? (
+          <>
+            {/* Filtros */}
+            {showFilters && !isMobile && (
+              <div className="flex gap-4 items-center">
+                <div className="relative grid grid-cols-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                      !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                    }`}
+                    onClick={scrollLeft}
+                    disabled={!canScrollLeft}
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
 
-              <div className="mx-14">
-                <div
-                  ref={scrollAreaRef}
-                  className="overflow-x-auto scrollbar-hide"
-                  onScroll={checkScrollability}
-                >
-                  <div className="flex gap-3 items-center">
-                    <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                      <div>
-                        <MagnifyingGlass size={16} className="text-gray-500" />
-                      </div>
-                      <div className="relative w-full">
-                        <Input
-                          className="border-0 p-0 h-9 flex flex-1 w-full"
-                          value={q}
-                          onChange={(e) => setQ(e.target.value)}
-                          placeholder="Buscar por código, descrição, material, marca, modelo..."
-                        />
-                      </div>
-                    </Alert>
-
-                    <Combobox
-                      items={materialItems}
-                      value={materialId}
-                      onChange={(v) => setMaterialId(v)}
-                      onSearch={setMaterialQ}
-                      isLoading={loadingMaterials}
-                      placeholder="Material"
-                    />
-
-                    <Combobox
-                      items={guardianItems}
-                      value={guardianId}
-                      onChange={(v) => setGuardianId(v)}
-                      onSearch={setGuardianQ}
-                      isLoading={loadingGuardians}
-                      placeholder="Responsável"
-                    />
-
-                    <Separator className="h-8" orientation="vertical" />
-
-                    <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
-                      value={unitId}
-                      onChange={(v) => setUnitId(v)}
-                      onSearch={setUnitQ}
-                      isLoading={loadingUnits}
-                      placeholder="Unidade"
-                    />
-
-                    <Combobox
-                      items={(agencies ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
-                      value={agencyId}
-                      onChange={(v) => setAgencyId(v)}
-                      onSearch={setAgencyQ}
-                      isLoading={loadingAgencies}
-                      placeholder={"Organização"}
-                      disabled={!unitId}
-                    />
-
-                    <Combobox
-                      items={(sectors ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
-                      value={sectorId}
-                      onChange={(v) => setSectorId(v)}
-                      onSearch={setSectorQ}
-                      isLoading={loadingSectors}
-                      placeholder={"Setor"}
-                      disabled={!agencyId}
-                    />
-
-                    <Combobox
-                      items={(locations ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
-                      value={locationId}
-                      onChange={(v) => setLocationId(v)}
-                      onSearch={setLocationQ}
-                      isLoading={loadingLocations}
-                      placeholder="Local de guarda"
-                      disabled={!sectorId}
-                    />
-
-                    <Button variant="outline" size="sm" onClick={clearFilters}>
-                      <Trash size={16} />
-                      Limpar filtros
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
-                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                }`}
-                onClick={scrollRight}
-                disabled={!canScrollRight}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-
-            {hasCargosFuncoes && (
-              <RoleMembers
-                roleId={ROLE_COMISSAO_ID}
-                title="Comissão de desfazimento"
-              />
-            )}
-
-            {expandedColumn === null && (
-              <Button
-                onClick={() => setIsImage(!isImage)}
-                variant={"outline"}
-                size={"icon"}
-                className="h-8 min-w-8 "
-              >
-                {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
-              </Button>
-            )}
-          </div>
-        )}
-
-        {showFilters && isMobile && (
-          <div className="flex flex-col gap-4 items-center">
-            <div className="relative grid grid-cols-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute left-0 z-10 h-10 w-5 p-0 ${
-                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                }`}
-                onClick={scrollLeft}
-                disabled={!canScrollLeft}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-
-              <div className="mx-8">
-                <div
-                  ref={scrollAreaRef}
-                  className="overflow-x-auto scrollbar-hide"
-                  onScroll={checkScrollability}
-                >
-                  <div className="flex gap-3 items-center">
-                    <Alert className="w-auto min-w-[250px] py-0 h-10 rounded-md flex gap-3 items-center">
-                      <div>
-                        <MagnifyingGlass size={16} className="text-gray-500" />
-                      </div>
-                      <div className="relative w-full">
-                        <Input
-                          className="border-0 p-0 h-9 flex flex-1 w-full"
-                          value={q}
-                          onChange={(e) => setQ(e.target.value)}
-                          placeholder="Buscar por código, descrição, material, marca, modelo..."
-                        />
-                      </div>
-                    </Alert>
-
-                    <Combobox
-                      items={materialItems}
-                      value={materialId}
-                      onChange={(v) => setMaterialId(v)}
-                      onSearch={setMaterialQ}
-                      isLoading={loadingMaterials}
-                      placeholder="Material"
-                    />
-
-                    <Combobox
-                      items={guardianItems}
-                      value={guardianId}
-                      onChange={(v) => setGuardianId(v)}
-                      onSearch={setGuardianQ}
-                      isLoading={loadingGuardians}
-                      placeholder="Responsável"
-                    />
-
-                    <Separator className="h-8" orientation="vertical" />
-
-                    <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
-                      value={unitId}
-                      onChange={(v) => setUnitId(v)}
-                      onSearch={setUnitQ}
-                      isLoading={loadingUnits}
-                      placeholder="Unidade"
-                    />
-
-                    <Combobox
-                      items={(agencies ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
-                      value={agencyId}
-                      onChange={(v) => setAgencyId(v)}
-                      onSearch={setAgencyQ}
-                      isLoading={loadingAgencies}
-                      placeholder={"Organização"}
-                      disabled={!unitId}
-                    />
-
-                    <Combobox
-                      items={(sectors ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
-                      value={sectorId}
-                      onChange={(v) => setSectorId(v)}
-                      onSearch={setSectorQ}
-                      isLoading={loadingSectors}
-                      placeholder={"Setor"}
-                      disabled={!agencyId}
-                    />
-
-                    <Combobox
-                      items={(locations ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
-                      value={locationId}
-                      onChange={(v) => setLocationId(v)}
-                      onSearch={setLocationQ}
-                      isLoading={loadingLocations}
-                      placeholder="Local de guarda"
-                      disabled={!sectorId}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
-                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                }`}
-                onClick={scrollRight}
-                disabled={!canScrollRight}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              {hasCargosFuncoes && (
-                <RoleMembers
-                  roleId={ROLE_COMISSAO_ID}
-                  title="Comissão de desfazimento"
-                />
-              )}
-              {expandedColumn === null && (
-                <Button
-                  onClick={() => setIsImage(!isImage)}
-                  variant={"outline"}
-                  size={"icon"}
-                  className="h-9"
-                >
-                  {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <Trash size={16} />
-                Limpar filtros
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Board / Expandido */}
-        {expandedColumn === null ? (
-          <div
-            className={`relative flex-1 ${
-              showFilters
-                ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
-                : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
-            }`}
-          >
-            <div
-              ref={boardScrollRef}
-              className="h-full overflow-x-auto overflow-y-hidden pb-2"
-            >
-              <DragDropContext
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onDragUpdate={handleDragUpdate}
-              >
-                {isMobile ? (
-                  <div className="flex flex-col gap-4 w-full h-full overflow-y-auto pb-10">
-                    {columns.map((col) => {
-                      const items = board[col.key] ?? [];
-                      const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                        Icon: HelpCircle,
-                        colorClass: "text-zinc-500",
-                      };
-                      const { Icon } = meta;
-                      const totalForCol = statusCounts[col.key] ?? items.length;
-
-                      return (
-                        <Alert
-                          key={col.key}
-                          ref={(el) => (colRefs.current[col.key] = el)}
-                          className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Icon size={16} />
-                                <span
-                                  title={col.name}
-                                  className="font-semibold truncate"
-                                >
-                                  {col.name}
-                                </span>
-                              </div>
-                              <Badge variant="outline" className="shrink-0">
-                                {totalForCol}
-                              </Badge>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => setExpandedColumn(col.key)}
-                              title="Expandir coluna"
-                            >
-                              <Maximize2 className="h-4 w-4" />
-                            </Button>
+                  <div className="mx-14">
+                    <div
+                      ref={scrollAreaRef}
+                      className="overflow-x-auto scrollbar-hide"
+                      onScroll={checkScrollability}
+                    >
+                      <div className="flex gap-3 items-center">
+                        <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                          <div>
+                            <MagnifyingGlass
+                              size={16}
+                              className="text-gray-500"
+                            />
                           </div>
-
-                          <Separator className="mb-2" />
-
-                          <Droppable droppableId={col.key}>
-                            {(provided, snapshot) => (
-                              <div className="flex-1 min-h-0">
-                                {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className="flex flex-col min-h-0 w-full max-w-full relative h-full"
-                                >
-                                  <ScrollArea
-                                    className={`h-full relative flex ${
-                                      snapshot.isDraggingOver
-                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                        : ""
-                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                                  >
-                                    {(loading || loadingColumns[col.key]) &&
-                                    !items.length ? (
-                                      <>
-                                        <Skeleton className="aspect-square w-full rounded-md" />
-                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                      </>
-                                    ) : null}
-
-                                    {items.map((entry, idx) => (
-                                      <div
-                                        key={entry.id}
-                                        className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
-                                      >
-                                        <CardItemDropdown
-                                          entry={entry}
-                                          index={idx}
-                                          draggableId={entry.id} // ADICIONAR esta prop
-                                          isImage={isImage}
-                                          onPromptDelete={() =>
-                                            openDelete(entry.id)
-                                          }
-                                        />
-                                      </div>
-                                    ))}
-
-                                    {(() => {
-                                      const totalFromTotals =
-                                        totalByCol[col.key];
-                                      const totalFromStats =
-                                        statusCounts[col.key];
-
-                                      // 1) escolhe total confiável
-                                      let effectiveTotal: number | undefined;
-
-                                      if (
-                                        typeof totalFromTotals === "number" &&
-                                        totalFromTotals >= items.length
-                                      ) {
-                                        effectiveTotal = totalFromTotals;
-                                      } else if (
-                                        typeof totalFromStats === "number" &&
-                                        totalFromStats >= items.length
-                                      ) {
-                                        effectiveTotal = totalFromStats;
-                                      }
-
-                                      const loaded = items.length;
-
-                                      // 2) loading inicial (apenas skeleton)
-                                      const isInitialLoading =
-                                        (loading || loadingColumns[col.key]) &&
-                                        loaded === 0;
-
-                                      if (isInitialLoading) return null;
-
-                                      // 3) decide hasMore mantendo sua regra original
-                                      let hasMore = false;
-
-                                      if (effectiveTotal != null) {
-                                        hasMore = loaded < effectiveTotal;
-                                      } else if (!q.trim()) {
-                                        hasMore =
-                                          loaded > 0 &&
-                                          loaded % PAGE_SIZE === 0;
-                                      }
-
-                                      if (!hasMore) return null;
-
-                                      return (
-                                        <div className="pt-2">
-                                          <Button
-                                            variant="outline"
-                                            className="w-full"
-                                            onClick={() => showMoreCol(col.key)}
-                                            disabled={loadingColumns[col.key]}
-                                          >
-                                            {loadingColumns[col.key] ? (
-                                              <>
-                                                <Loader
-                                                  size={16}
-                                                  className="animate-spin"
-                                                />
-                                                Carregando...
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Plus size={16} />
-                                                Mostrar mais
-                                              </>
-                                            )}
-                                          </Button>
-                                        </div>
-                                      );
-                                    })()}
-
-                                    <ScrollBar orientation="vertical" />
-                                  </ScrollArea>
-                                </div>
-                              </div>
-                            )}
-                          </Droppable>
-                        </Alert>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex gap-4 min-w-[980px] h-full">
-                    {columns.map((col) => {
-                      const items = board[col.key] ?? [];
-                      const slice = items.slice(0, expandedVisible);
-                      const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                        Icon: HelpCircle,
-                        colorClass: "text-zinc-500",
-                      };
-                      const { Icon } = meta;
-
-                      // 👇 NOVO
-                      const totalForCol = statusCounts[col.key] ?? items.length;
-
-                      return (
-                        <Alert
-                          key={col.key}
-                          ref={(el) => (colRefs.current[col.key] = el)}
-                          className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Icon size={16} />
-                                <span
-                                  title={col.name}
-                                  className="font-semibold truncate"
-                                >
-                                  {col.name}
-                                </span>
-                              </div>
-                              <Badge variant="outline" className="shrink-0">
-                                {totalForCol}
-                              </Badge>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => setExpandedColumn(col.key)}
-                              title="Expandir coluna"
-                            >
-                              <Maximize2 className="h-4 w-4" />
-                            </Button>
+                          <div className="relative w-full">
+                            <Input
+                              className="border-0 p-0 h-9 flex flex-1 w-full"
+                              value={q}
+                              onChange={(e) => setQ(e.target.value)}
+                              placeholder="Buscar por código, descrição, material, marca, modelo..."
+                            />
                           </div>
-
-                          <Separator className="mb-2" />
-
-                          <Droppable droppableId={col.key}>
-                            {(provided, snapshot) => (
-                              <div className="flex-1 min-h-0">
-                                {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className="flex flex-col min-h-0 w-full max-w-full relative h-full"
-                                >
-                                  <ScrollArea
-                                    className={`h-full relative flex ${
-                                      snapshot.isDraggingOver
-                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                        : ""
-                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                                  >
-                                    {(loading || loadingColumns[col.key]) &&
-                                    !items.length ? (
-                                      <>
-                                        <Skeleton className="aspect-square w-full rounded-md" />
-                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                        <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                      </>
-                                    ) : null}
-
-                                    {items.map((entry, idx) => (
-                                      <div
-                                        key={entry.id}
-                                        className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
-                                      >
-                                        <CardItemDropdown
-                                          entry={entry}
-                                          index={idx}
-                                          draggableId={entry.id} // ADICIONAR esta prop
-                                          isImage={isImage}
-                                          onPromptDelete={() =>
-                                            openDelete(entry.id)
-                                          }
-                                        />
-                                      </div>
-                                    ))}
-
-                                    {(() => {
-                                      const totalFromTotals =
-                                        totalByCol[col.key];
-                                      const totalFromStats =
-                                        statusCounts[col.key];
-
-                                      // 1) escolhe total confiável
-                                      let effectiveTotal: number | undefined;
-
-                                      if (
-                                        typeof totalFromTotals === "number" &&
-                                        totalFromTotals >= items.length
-                                      ) {
-                                        effectiveTotal = totalFromTotals;
-                                      } else if (
-                                        typeof totalFromStats === "number" &&
-                                        totalFromStats >= items.length
-                                      ) {
-                                        effectiveTotal = totalFromStats;
-                                      }
-
-                                      const loaded = items.length;
-
-                                      // 2) loading inicial (apenas skeleton)
-                                      const isInitialLoading =
-                                        (loading || loadingColumns[col.key]) &&
-                                        loaded === 0;
-
-                                      if (isInitialLoading) return null;
-
-                                      // 3) decide hasMore mantendo sua regra original
-                                      let hasMore = false;
-
-                                      if (effectiveTotal != null) {
-                                        hasMore = loaded < effectiveTotal;
-                                      } else if (!q.trim()) {
-                                        hasMore =
-                                          loaded > 0 &&
-                                          loaded % PAGE_SIZE === 0;
-                                      }
-
-                                      if (!hasMore) return null;
-
-                                      return (
-                                        <div className="pt-2">
-                                          <Button
-                                            variant="outline"
-                                            className="w-full"
-                                            onClick={() => showMoreCol(col.key)}
-                                            disabled={loadingColumns[col.key]}
-                                          >
-                                            {loadingColumns[col.key] ? (
-                                              <>
-                                                <Loader
-                                                  size={16}
-                                                  className="animate-spin"
-                                                />
-                                                Carregando...
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Plus size={16} />
-                                                Mostrar mais
-                                              </>
-                                            )}
-                                          </Button>
-                                        </div>
-                                      );
-                                    })()}
-
-                                    <ScrollBar orientation="vertical" />
-                                  </ScrollArea>
-                                </div>
-                              </div>
-                            )}
-                          </Droppable>
                         </Alert>
-                      );
-                    })}
+
+                        <Combobox
+                          items={materialItems}
+                          value={materialId}
+                          onChange={(v) => setMaterialId(v)}
+                          onSearch={setMaterialQ}
+                          isLoading={loadingMaterials}
+                          placeholder="Material"
+                        />
+
+                        <Combobox
+                          items={guardianItems}
+                          value={guardianId}
+                          onChange={(v) => setGuardianId(v)}
+                          onSearch={setGuardianQ}
+                          isLoading={loadingGuardians}
+                          placeholder="Responsável"
+                        />
+
+                        <Separator className="h-8" orientation="vertical" />
+
+                        <Combobox
+                          items={(units ?? []).map((u) => ({
+                            id: u.id,
+                            code: u.unit_code,
+                            label: u.unit_name || u.unit_code,
+                          }))}
+                          value={unitId}
+                          onChange={(v) => setUnitId(v)}
+                          onSearch={setUnitQ}
+                          isLoading={loadingUnits}
+                          placeholder="Unidade"
+                        />
+
+                        <Combobox
+                          items={(agencies ?? []).map((a) => ({
+                            id: a.id,
+                            code: a.agency_code,
+                            label: a.agency_name || a.agency_code,
+                          }))}
+                          value={agencyId}
+                          onChange={(v) => setAgencyId(v)}
+                          onSearch={setAgencyQ}
+                          isLoading={loadingAgencies}
+                          placeholder={"Organização"}
+                          disabled={!unitId}
+                        />
+
+                        <Combobox
+                          items={(sectors ?? []).map((s) => ({
+                            id: s.id,
+                            code: s.sector_code,
+                            label: s.sector_name || s.sector_code,
+                          }))}
+                          value={sectorId}
+                          onChange={(v) => setSectorId(v)}
+                          onSearch={setSectorQ}
+                          isLoading={loadingSectors}
+                          placeholder={"Setor"}
+                          disabled={!agencyId}
+                        />
+
+                        <Combobox
+                          items={(locations ?? []).map((l) => ({
+                            id: l.id,
+                            code: l.location_code,
+                            label: l.location_name || l.location_code,
+                          }))}
+                          value={locationId}
+                          onChange={(v) => setLocationId(v)}
+                          onSearch={setLocationQ}
+                          isLoading={loadingLocations}
+                          placeholder="Local de guarda"
+                          disabled={!sectorId}
+                        />
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={clearFilters}
+                        >
+                          <Trash size={16} />
+                          Limpar filtros
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                      !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                    }`}
+                    onClick={scrollRight}
+                    disabled={!canScrollRight}
+                  >
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+
+                {hasCargosFuncoes && (
+                  <RoleMembers
+                    roleId={ROLE_COMISSAO_ID}
+                    title="Comissão de desfazimento"
+                  />
                 )}
-              </DragDropContext>
-            </div>
-          </div>
-        ) : (
-          <div className="m-0">
-            {columns.map((col) => {
-              if (expandedColumn !== col.key) return null;
 
-              const items = board[col.key] ?? [];
-              const slice = items.slice(0, expandedVisible);
-              const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                Icon: HelpCircle,
-                colorClass: "text-zinc-500",
-              };
-              const { Icon } = meta;
+                {expandedColumn === null && (
+                  <Button
+                    onClick={() => setIsImage(!isImage)}
+                    variant={"outline"}
+                    size={"icon"}
+                    className="h-8 min-w-8 "
+                  >
+                    {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
+                  </Button>
+                )}
+              </div>
+            )}
 
-              // 👇 NOVO
-              const totalForCol = statusCounts[col.key] ?? items.length;
+            {showFilters && isMobile && (
+              <div className="flex flex-col gap-4 items-center">
+                <div className="relative grid grid-cols-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+                      !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                    }`}
+                    onClick={scrollLeft}
+                    disabled={!canScrollLeft}
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
 
-              return (
-                <div key={col.key}>
-                  <div
-                    className={
-                      isMobile
-                        ? "flex flex-col items-center justify-between mb-4 mt-6"
-                        : "flex items-center justify-between mb-4"
-                    }
+                  <div className="mx-8">
+                    <div
+                      ref={scrollAreaRef}
+                      className="overflow-x-auto scrollbar-hide"
+                      onScroll={checkScrollability}
+                    >
+                      <div className="flex gap-3 items-center">
+                        <Alert className="w-auto min-w-[250px] py-0 h-10 rounded-md flex gap-3 items-center">
+                          <div>
+                            <MagnifyingGlass
+                              size={16}
+                              className="text-gray-500"
+                            />
+                          </div>
+                          <div className="relative w-full">
+                            <Input
+                              className="border-0 p-0 h-9 flex flex-1 w-full"
+                              value={q}
+                              onChange={(e) => setQ(e.target.value)}
+                              placeholder="Buscar por código, descrição, material, marca, modelo..."
+                            />
+                          </div>
+                        </Alert>
+
+                        <Combobox
+                          items={materialItems}
+                          value={materialId}
+                          onChange={(v) => setMaterialId(v)}
+                          onSearch={setMaterialQ}
+                          isLoading={loadingMaterials}
+                          placeholder="Material"
+                        />
+
+                        <Combobox
+                          items={guardianItems}
+                          value={guardianId}
+                          onChange={(v) => setGuardianId(v)}
+                          onSearch={setGuardianQ}
+                          isLoading={loadingGuardians}
+                          placeholder="Responsável"
+                        />
+
+                        <Separator className="h-8" orientation="vertical" />
+
+                        <Combobox
+                          items={(units ?? []).map((u) => ({
+                            id: u.id,
+                            code: u.unit_code,
+                            label: u.unit_name || u.unit_code,
+                          }))}
+                          value={unitId}
+                          onChange={(v) => setUnitId(v)}
+                          onSearch={setUnitQ}
+                          isLoading={loadingUnits}
+                          placeholder="Unidade"
+                        />
+
+                        <Combobox
+                          items={(agencies ?? []).map((a) => ({
+                            id: a.id,
+                            code: a.agency_code,
+                            label: a.agency_name || a.agency_code,
+                          }))}
+                          value={agencyId}
+                          onChange={(v) => setAgencyId(v)}
+                          onSearch={setAgencyQ}
+                          isLoading={loadingAgencies}
+                          placeholder={"Organização"}
+                          disabled={!unitId}
+                        />
+
+                        <Combobox
+                          items={(sectors ?? []).map((s) => ({
+                            id: s.id,
+                            code: s.sector_code,
+                            label: s.sector_name || s.sector_code,
+                          }))}
+                          value={sectorId}
+                          onChange={(v) => setSectorId(v)}
+                          onSearch={setSectorQ}
+                          isLoading={loadingSectors}
+                          placeholder={"Setor"}
+                          disabled={!agencyId}
+                        />
+
+                        <Combobox
+                          items={(locations ?? []).map((l) => ({
+                            id: l.id,
+                            code: l.location_code,
+                            label: l.location_name || l.location_code,
+                          }))}
+                          value={locationId}
+                          onChange={(v) => setLocationId(v)}
+                          onSearch={setLocationQ}
+                          isLoading={loadingLocations}
+                          placeholder="Local de guarda"
+                          disabled={!sectorId}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+                      !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                    }`}
+                    onClick={scrollRight}
+                    disabled={!canScrollRight}
+                  >
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+                <div className="flex gap-3">
+                  {hasCargosFuncoes && (
+                    <RoleMembers
+                      roleId={ROLE_COMISSAO_ID}
+                      title="Comissão de desfazimento"
+                    />
+                  )}
+                  {expandedColumn === null && (
+                    <Button
+                      onClick={() => setIsImage(!isImage)}
+                      variant={"outline"}
+                      size={"icon"}
+                      className="h-9"
+                    >
+                      {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <Trash size={16} />
+                    Limpar filtros
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Board / Expandido */}
+            {expandedColumn === null ? (
+              <div
+                className={`relative flex-1 ${
+                  showFilters
+                    ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
+                    : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
+                }`}
+              >
+                <div
+                  ref={boardScrollRef}
+                  className="h-full overflow-x-auto overflow-y-hidden pb-2"
+                >
+                  <DragDropContext
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDragUpdate={handleDragUpdate}
                   >
                     {isMobile ? (
-                      <div className="w-full flex justify-start mb-8 pl-1">
-                        <Button
-                          size="sm"
-                          onClick={() => setExpandedColumn(null)}
-                          className="self-start"
-                        >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
-                        </Button>
+                      <div className="flex flex-col gap-4 w-full h-full overflow-y-auto pb-10">
+                        {columns.map((col) => {
+                          const items = board[col.key] ?? [];
+                          const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                            Icon: HelpCircle,
+                            colorClass: "text-zinc-500",
+                          };
+                          const { Icon } = meta;
+                          const totalForCol =
+                            statusCounts[col.key] ?? items.length;
+
+                          return (
+                            <Alert
+                              key={col.key}
+                              ref={(el) => (colRefs.current[col.key] = el)}
+                              className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Icon size={16} />
+                                    <span
+                                      title={col.name}
+                                      className="font-semibold truncate"
+                                    >
+                                      {col.name}
+                                    </span>
+                                  </div>
+                                  <Badge variant="outline" className="shrink-0">
+                                    {totalForCol}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0"
+                                  onClick={() => setExpandedColumn(col.key)}
+                                  title="Expandir coluna"
+                                >
+                                  <Maximize2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              <Separator className="mb-2" />
+
+                              <Droppable droppableId={col.key}>
+                                {(provided, snapshot) => (
+                                  <div className="flex-1 min-h-0">
+                                    {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                    >
+                                      <ScrollArea
+                                        className={`h-full relative flex ${
+                                          snapshot.isDraggingOver
+                                            ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                            : ""
+                                        } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                      >
+                                        {(loading || loadingColumns[col.key]) &&
+                                        !items.length ? (
+                                          <>
+                                            <Skeleton className="aspect-square w-full rounded-md" />
+                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                          </>
+                                        ) : null}
+
+                                        {items.map((entry, idx) => (
+                                          <div
+                                            key={entry.id}
+                                            className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
+                                          >
+                                            <CardItemDropdown
+                                              entry={entry}
+                                              index={idx}
+                                              draggableId={entry.id} // ADICIONAR esta prop
+                                              isImage={isImage}
+                                              onPromptDelete={() =>
+                                                openDelete(entry.id)
+                                              }
+                                            />
+                                          </div>
+                                        ))}
+
+                                        {(() => {
+                                          const totalFromTotals =
+                                            totalByCol[col.key];
+                                          const totalFromStats =
+                                            statusCounts[col.key];
+
+                                          // 1) escolhe total confiável
+                                          let effectiveTotal:
+                                            | number
+                                            | undefined;
+
+                                          if (
+                                            typeof totalFromTotals ===
+                                              "number" &&
+                                            totalFromTotals >= items.length
+                                          ) {
+                                            effectiveTotal = totalFromTotals;
+                                          } else if (
+                                            typeof totalFromStats ===
+                                              "number" &&
+                                            totalFromStats >= items.length
+                                          ) {
+                                            effectiveTotal = totalFromStats;
+                                          }
+
+                                          const loaded = items.length;
+
+                                          // 2) loading inicial (apenas skeleton)
+                                          const isInitialLoading =
+                                            (loading ||
+                                              loadingColumns[col.key]) &&
+                                            loaded === 0;
+
+                                          if (isInitialLoading) return null;
+
+                                          // 3) decide hasMore mantendo sua regra original
+                                          let hasMore = false;
+
+                                          if (effectiveTotal != null) {
+                                            hasMore = loaded < effectiveTotal;
+                                          } else if (!q.trim()) {
+                                            hasMore =
+                                              loaded > 0 &&
+                                              loaded % PAGE_SIZE === 0;
+                                          }
+
+                                          if (!hasMore) return null;
+
+                                          return (
+                                            <div className="pt-2">
+                                              <Button
+                                                variant="outline"
+                                                className="w-full"
+                                                onClick={() =>
+                                                  showMoreCol(col.key)
+                                                }
+                                                disabled={
+                                                  loadingColumns[col.key]
+                                                }
+                                              >
+                                                {loadingColumns[col.key] ? (
+                                                  <>
+                                                    <Loader
+                                                      size={16}
+                                                      className="animate-spin"
+                                                    />
+                                                    Carregando...
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Plus size={16} />
+                                                    Mostrar mais
+                                                  </>
+                                                )}
+                                              </Button>
+                                            </div>
+                                          );
+                                        })()}
+
+                                        <ScrollBar orientation="vertical" />
+                                      </ScrollArea>
+                                    </div>
+                                  </div>
+                                )}
+                              </Droppable>
+                            </Alert>
+                          );
+                        })}
                       </div>
                     ) : (
-                      <></>
+                      <div className="flex gap-4 min-w-[980px] h-full">
+                        {columns.map((col) => {
+                          const items = board[col.key] ?? [];
+                          const slice = items.slice(0, expandedVisible);
+                          const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                            Icon: HelpCircle,
+                            colorClass: "text-zinc-500",
+                          };
+                          const { Icon } = meta;
+
+                          const totalForCol =
+                            statusCounts[col.key] ?? items.length;
+                          return (
+                            <Alert
+                              key={col.key}
+                              ref={(el) => (colRefs.current[col.key] = el)}
+                              className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Icon size={16} />
+                                    <span
+                                      title={col.name}
+                                      className="font-semibold truncate"
+                                    >
+                                      {col.name}
+                                    </span>
+                                  </div>
+                                  <Badge variant="outline" className="shrink-0">
+                                    {totalForCol}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0"
+                                  onClick={() => setExpandedColumn(col.key)}
+                                  title="Expandir coluna"
+                                >
+                                  <Maximize2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              <Separator className="mb-2" />
+
+                              <Droppable droppableId={col.key}>
+                                {(provided, snapshot) => (
+                                  <div className="flex-1 min-h-0">
+                                    {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                    >
+                                      <ScrollArea
+                                        className={`h-full relative flex ${
+                                          snapshot.isDraggingOver
+                                            ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                            : ""
+                                        } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                      >
+                                        {(loading || loadingColumns[col.key]) &&
+                                        !items.length ? (
+                                          <>
+                                            <Skeleton className="aspect-square w-full rounded-md" />
+                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                          </>
+                                        ) : null}
+
+                                        {items.map((entry, idx) => (
+                                          <div
+                                            key={entry.id}
+                                            className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
+                                          >
+                                            <CardItemDropdown
+                                              entry={entry}
+                                              index={idx}
+                                              draggableId={entry.id} // ADICIONAR esta prop
+                                              isImage={isImage}
+                                              onPromptDelete={() =>
+                                                openDelete(entry.id)
+                                              }
+                                            />
+                                          </div>
+                                        ))}
+
+                                        {(() => {
+                                          const totalFromTotals =
+                                            totalByCol[col.key];
+                                          const totalFromStats =
+                                            statusCounts[col.key];
+
+                                          // 1) escolhe total confiável
+                                          let effectiveTotal:
+                                            | number
+                                            | undefined;
+
+                                          if (
+                                            typeof totalFromTotals ===
+                                              "number" &&
+                                            totalFromTotals >= items.length
+                                          ) {
+                                            effectiveTotal = totalFromTotals;
+                                          } else if (
+                                            typeof totalFromStats ===
+                                              "number" &&
+                                            totalFromStats >= items.length
+                                          ) {
+                                            effectiveTotal = totalFromStats;
+                                          }
+
+                                          const loaded = items.length;
+
+                                          // 2) loading inicial (apenas skeleton)
+                                          const isInitialLoading =
+                                            (loading ||
+                                              loadingColumns[col.key]) &&
+                                            loaded === 0;
+
+                                          if (isInitialLoading) return null;
+
+                                          // 3) decide hasMore mantendo sua regra original
+                                          let hasMore = false;
+
+                                          if (effectiveTotal != null) {
+                                            hasMore = loaded < effectiveTotal;
+                                          } else if (!q.trim()) {
+                                            hasMore =
+                                              loaded > 0 &&
+                                              loaded % PAGE_SIZE === 0;
+                                          }
+
+                                          if (!hasMore) return null;
+
+                                          return (
+                                            <div className="pt-2">
+                                              <Button
+                                                variant="outline"
+                                                className="w-full"
+                                                onClick={() =>
+                                                  showMoreCol(col.key)
+                                                }
+                                                disabled={
+                                                  loadingColumns[col.key]
+                                                }
+                                              >
+                                                {loadingColumns[col.key] ? (
+                                                  <>
+                                                    <Loader
+                                                      size={16}
+                                                      className="animate-spin"
+                                                    />
+                                                    Carregando...
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Plus size={16} />
+                                                    Mostrar mais
+                                                  </>
+                                                )}
+                                              </Button>
+                                            </div>
+                                          );
+                                        })()}
+
+                                        <ScrollBar orientation="vertical" />
+                                      </ScrollArea>
+                                    </div>
+                                  </div>
+                                )}
+                              </Droppable>
+                            </Alert>
+                          );
+                        })}
+                      </div>
                     )}
-                    <div className="flex items-center gap-1 mr-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon size={16} />
-                        <h2
+                  </DragDropContext>
+                </div>
+              </div>
+            ) : (
+              <div className="m-0">
+                {columns.map((col) => {
+                  if (expandedColumn !== col.key) return null;
+
+                  const items = board[col.key] ?? [];
+                  const slice = items.slice(0, expandedVisible);
+                  const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                    Icon: HelpCircle,
+                    colorClass: "text-zinc-500",
+                  };
+                  const { Icon } = meta;
+
+                  // 👇 NOVO
+                  const totalForCol = statusCounts[col.key] ?? items.length;
+
+                  return (
+                    <div key={col.key}>
+                      <div
+                        className={
+                          isMobile
+                            ? "flex flex-col items-center justify-between mb-4 mt-6"
+                            : "flex items-center justify-between mb-4"
+                        }
+                      >
+                        {isMobile ? (
+                          <div className="w-full flex justify-start mb-8 pl-1">
+                            <Button
+                              size="sm"
+                              onClick={() => setExpandedColumn(null)}
+                              className="self-start"
+                            >
+                              <ChevronLeft size={16} />
+                              Voltar ao quadro
+                            </Button>
+                          </div>
+                        ) : (
+                          <></>
+                        )}
+                        <div className="flex items-center gap-1 mr-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Icon size={16} />
+                            <h2
+                              className={
+                                isMobile
+                                  ? "text-base text-center font-semibold"
+                                  : "text-lg font-semibold"
+                              }
+                            >
+                              {col.name}
+                            </h2>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              isMobile ? "w-6 items-center hidden" : ""
+                            }
+                          >
+                            {totalForCol}
+                          </Badge>
+                        </div>
+
+                        <div
                           className={
                             isMobile
-                              ? "text-base text-center font-semibold"
-                              : "text-lg font-semibold"
+                              ? "flex flex-row-reverse  gap-3 mt-4 "
+                              : "flex gap-3"
                           }
                         >
-                          {col.name}
-                        </h2>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={isMobile ? "w-6 items-center hidden" : ""}
-                      >
-                        {totalForCol}
-                      </Badge>
-                    </div>
-
-                    <div
-                      className={
-                        isMobile
-                          ? "flex flex-row-reverse  gap-3 mt-4 "
-                          : "flex gap-3"
-                      }
-                    >
-                      <DownloadPdfButton
-                        filters={{
-                          material_id: materialId || undefined,
-                          agency_id: agencyId || undefined,
-                          unit_id: unitId || undefined,
-                          legal_guardian_id: guardianId || undefined,
-                          sector_id: locationId || undefined,
-                          location_id: sectorId || undefined,
-                          workflow_status: expandedColumn,
-                        }}
-                        label="Baixar PDF"
-                        method="catalog"
-                        size="sm"
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => downloadXlsx(col.key)}
-                      >
-                        <Download size={16} />
-                        Baixar csv
-                      </Button>
-                      {isMobile ? (
-                        <></>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => setExpandedColumn(null)}
-                        >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {(loading || loadingColumns[col.key]) && !items.length ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                      <Skeleton className="aspect-square w-full rounded-md" />
-
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                    </div>
-                  ) : null}
-
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                    {slice.map((item) => (
-                      <ItemPatrimonio
-                        key={item.id}
-                        {...item}
-                        onPromptDelete={() => openDelete(item.id)}
-                      />
-                    ))}
-                  </div>
-
-                  {(() => {
-                    const totalFromTotals = totalByCol[col.key];
-                    const totalFromStats = statusCounts[col.key];
-
-                    // Tenta usar algum total "confiável"
-                    let effectiveTotal: number | undefined;
-                    if (
-                      typeof totalFromTotals === "number" &&
-                      totalFromTotals >= items.length
-                    ) {
-                      effectiveTotal = totalFromTotals;
-                    } else if (
-                      typeof totalFromStats === "number" &&
-                      totalFromStats >= items.length
-                    ) {
-                      effectiveTotal = totalFromStats;
-                    }
-
-                    const loaded = items.length;
-                    const visible = slice.length;
-
-                    let hasMore = false;
-
-                    // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
-                    if (loaded > visible) {
-                      hasMore = true;
-                    }
-                    // 2) Temos um total confiável vindo da API: compara direto
-                    else if (effectiveTotal != null) {
-                      hasMore = loaded < effectiveTotal;
-                    }
-                    // 3) Fallback: não sabemos o total, mas
-                    //    - não tem filtro de texto
-                    //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
-                    else if (!q.trim()) {
-                      hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
-                    }
-
-                    if (!hasMore) return null;
-
-                    return hasMore ? (
-                      <div className="flex justify-center mt-8">
-                        <Button
-                          onClick={showMoreExpanded}
-                          disabled={loadingColumns[col.key]}
-                        >
-                          {loadingColumns[col.key] ? (
-                            <>
-                              <Loader size={16} className="animate-spin" />
-                              Carregando...
-                            </>
+                          <DownloadPdfButton
+                            filters={{
+                              material_id: materialId || undefined,
+                              agency_id: agencyId || undefined,
+                              unit_id: unitId || undefined,
+                              legal_guardian_id: guardianId || undefined,
+                              sector_id: locationId || undefined,
+                              location_id: sectorId || undefined,
+                              workflow_status: expandedColumn,
+                            }}
+                            label="Baixar PDF"
+                            method="catalog"
+                            size="sm"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => downloadXlsx(col.key)}
+                          >
+                            <Download size={16} />
+                            Baixar csv
+                          </Button>
+                          {isMobile ? (
+                            <></>
                           ) : (
-                            <>
-                              <Plus size={16} />
-                              Mostrar mais
-                            </>
+                            <Button
+                              size="sm"
+                              onClick={() => setExpandedColumn(null)}
+                            >
+                              <ChevronLeft size={16} />
+                              Voltar ao quadro
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       </div>
-                    ) : null;
-                  })()}
-                </div>
-              );
-            })}
-          </div>
+
+                      {(loading || loadingColumns[col.key]) && !items.length ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                          <Skeleton className="aspect-square w-full rounded-md" />
+
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                          <Skeleton className="aspect-square w-full rounded-md" />
+                        </div>
+                      ) : null}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                        {slice.map((item) => (
+                          <ItemPatrimonio
+                            key={item.id}
+                            {...item}
+                            onPromptDelete={() => openDelete(item.id)}
+                          />
+                        ))}
+                      </div>
+
+                      {(() => {
+                        const totalFromTotals = totalByCol[col.key];
+                        const totalFromStats = statusCounts[col.key];
+
+                        // Tenta usar algum total "confiável"
+                        let effectiveTotal: number | undefined;
+                        if (
+                          typeof totalFromTotals === "number" &&
+                          totalFromTotals >= items.length
+                        ) {
+                          effectiveTotal = totalFromTotals;
+                        } else if (
+                          typeof totalFromStats === "number" &&
+                          totalFromStats >= items.length
+                        ) {
+                          effectiveTotal = totalFromStats;
+                        }
+
+                        const loaded = items.length;
+                        const visible = slice.length;
+
+                        let hasMore = false;
+
+                        // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
+                        if (loaded > visible) {
+                          hasMore = true;
+                        }
+                        // 2) Temos um total confiável vindo da API: compara direto
+                        else if (effectiveTotal != null) {
+                          hasMore = loaded < effectiveTotal;
+                        }
+                        // 3) Fallback: não sabemos o total, mas
+                        //    - não tem filtro de texto
+                        //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
+                        else if (!q.trim()) {
+                          hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
+                        }
+
+                        if (!hasMore) return null;
+
+                        return hasMore ? (
+                          <div className="flex justify-center mt-8">
+                            <Button
+                              onClick={showMoreExpanded}
+                              disabled={loadingColumns[col.key]}
+                            >
+                              {loadingColumns[col.key] ? (
+                                <>
+                                  <Loader size={16} className="animate-spin" />
+                                  Carregando...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus size={16} />
+                                  Mostrar mais
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : (
+          <LoanCalendar products={itemsFlat} />
         )}
       </main>
 

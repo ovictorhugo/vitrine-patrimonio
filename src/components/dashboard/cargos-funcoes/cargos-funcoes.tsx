@@ -49,11 +49,6 @@ export function CargosFuncoes() {
     }
   };
 
-  const scrollLeftBtn = () =>
-    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
-  const scrollRightBtn = () =>
-    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
-
   useEffect(() => {
     checkScrollability();
     const handleResize = () => checkScrollability();

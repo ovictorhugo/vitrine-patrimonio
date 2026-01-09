@@ -863,28 +863,33 @@ export function ItensVitrine() {
   );
 
   // Fetch inicial: busca todas as colunas
-  const fetchAllColumns = useCallback(async () => {
-    setLoading(true);
-    setBoard({});
-    setEntries([]);
+const fetchAllColumns = useCallback(async () => {
+  setLoading(true);
+  setBoard({});
+  setEntries([]);
 
-    try {
-      // 👉 Agora faz uma coluna de cada vez
-      for (const col of columns) {
-        const key = (col.key ?? "").trim();
-        if (!key) continue;
+  try {
 
-        // espera terminar antes de ir pra próxima
-        await fetchColumnData(key, 0, false);
-      }
+    // 1. Criamos um array de Promessas (requests iniciados simultaneamente)
+    const promises = columns.map((col) => {
+      const key = (col.key ?? "").trim();
+      // Se não tiver chave, retornamos uma promessa vazia resolvida para não quebrar o Promise.all
+      if (!key) return Promise.resolve();
+      // Dispara a requisição e retorna a promessa dela
+      return fetchColumnData(key, 0, false);
+    });
 
-      // opcional: depois que todas as colunas carregarem,
-      // atualiza as estatísticas já com o board pronto
-      await fetchStatusCounts();
-    } finally {
-      setLoading(false);
-    }
-  }, [columns, fetchColumnData, fetchStatusCounts]);
+    await Promise.all(promises);
+
+    await fetchStatusCounts();
+    
+  } catch (error) {
+    console.error("Erro no carregamento inicial:", error);
+    // Opcional: toast.error("Erro ao carregar o quadro");
+  } finally {
+    setLoading(false);
+  }
+}, [columns, fetchColumnData, fetchStatusCounts]);
 
   useEffect(() => {
     setExpandedColumn(null);

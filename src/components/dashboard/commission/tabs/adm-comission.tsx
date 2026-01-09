@@ -881,8 +881,10 @@ export function AdmComission() {
   );
 
   // Fetch inicial/geral: colunas (sequencial) + stats
-  const fetchAllColumns = useCallback(async () => {
+const fetchAllColumns = useCallback(async () => {
     setLoading(true);
+    
+    // Reseta todos os estados de controle antes de iniciar
     setBoard({});
     setEntries([]);
     setOffsetByCol({});
@@ -890,10 +892,17 @@ export function AdmComission() {
     setHasMoreByCol({});
 
     try {
-      // Faz uma coluna de cada vez, na ordem
-      for (const col of columns) {
-        await fetchColumnData(col.key, 0, false);
-      }
+      // Cria as requisições em paralelo
+      const promises = columns.map((col) => {
+        // Pequena validação de segurança caso col.key seja nulo/undefined
+        if (!col.key) return Promise.resolve();
+
+        return fetchColumnData(col.key, 0, false);
+      });
+
+      // Aguarda todas as colunas responderem
+      await Promise.all(promises);
+      
     } finally {
       setLoading(false);
     }
