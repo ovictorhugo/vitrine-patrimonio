@@ -52,8 +52,8 @@ export function DownloadPdfButton({
   const fetchData = useCallback(async () => {
     if (!baseUrl || !filters) return;
     try {
-      setLoading(true); //${urlGeral}
-      let baseUrl = `http://localhost:5055/v2/api/${method}/pdf/`;
+      setLoading(true);
+      let baseUrl = `${urlGeral}/${method}/pdf/`;
       let downloadUrl = buildUrl(baseUrl, filters);
       if (method === "collections") {
         baseUrl = `${urlGeral}/${method}/${filters.collection_id}/items/pdf`;
