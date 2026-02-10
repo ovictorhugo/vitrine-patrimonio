@@ -52,15 +52,13 @@ interface WorkflowDetail {
 interface WorkflowItem {
   id: string;
   workflow_status: string;
-  detail: WorkflowDetail | null;
+  detail?: WorkflowDetail;
   user: UserData;
   created_at: string;
 }
 
-// O Produto (CatalogEntry)
 export interface CatalogEntry {
   id: string;
-  // Ajuste o caminho do nome conforme seu objeto real (ex: asset.material.material_name)
   asset: {
     material: {
       material_name: string;
@@ -69,7 +67,6 @@ export interface CatalogEntry {
   workflow_history: WorkflowItem[];
 }
 
-// Evento interno do calendário (Normalizado)
 interface CalendarEvent {
   eventId: string;
   productId: string;
@@ -84,9 +81,9 @@ interface CalendarEvent {
 
 // --- Componente ---
 export default function GlobalLoanCalendar({
-  products,
+  rentedItems,
 }: {
-  products: CatalogEntry[];
+  rentedItems: CatalogEntry[];
 }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -94,10 +91,8 @@ export default function GlobalLoanCalendar({
 
   // 1. Processamento: Achatar todos os históricos em uma única lista de eventos
   const allEvents: CalendarEvent[] = useMemo(() => {
-    console.log(products);
-    if (!products) return [];
-    console.log(products);
-    return products.flatMap((product) => {
+    if (!rentedItems) return [];
+    return rentedItems.flatMap((product) => {
       // Para cada produto, pega o histórico
       return (product.workflow_history || [])
         .filter(
@@ -115,7 +110,7 @@ export default function GlobalLoanCalendar({
           observation: historyItem.detail?.observation,
         }));
     });
-  }, [products]);
+  }, [rentedItems]);
 
   // 2. Geração dos dias do calendário
   const daysInMonth = useMemo(() => {

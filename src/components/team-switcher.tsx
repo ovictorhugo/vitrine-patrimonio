@@ -28,10 +28,13 @@ type Team = {
 
 export function TeamSwitcher({ teams }: { teams: Team[] }) {
   const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState<Team | undefined>(teams?.[0]);
-  const { setPermission, urlGeral, setRole, role, loggedIn } = React.useContext(UserContext);
+  const [activeTeam, setActiveTeam] = React.useState<Team | undefined>(
+    teams?.[0],
+  );
+  const { setPermission, urlGeral, setRole, role, loggedIn } =
+    React.useContext(UserContext);
   const { theme } = useTheme();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // carrega role inicial do localStorage, se existir
   React.useEffect(() => {
@@ -46,7 +49,8 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
     }
   }, [teams, setRole]);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
   const fetchDataPerm = async (team: Team) => {
     // VISITANTE / MODO PADRÃO
@@ -77,7 +81,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
         },
       });
 
-      navigate('/')
+      navigate("/");
 
       const data = await response.json();
       if (data) {
@@ -87,7 +91,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
         setActiveTeam(team);
         localStorage.setItem("permission", JSON.stringify(data));
         localStorage.setItem("role", JSON.stringify(team.name));
-        
+
         toast("Você alternou as permissões", {
           description: `Acessando como ${team.name}`,
           action: { label: "Fechar", onClick: () => {} },
@@ -105,8 +109,14 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={!loggedIn && teams.length === 0}>
-            <SidebarMenuButton size="lg" className="data-[state=open]:text-sidebar-accent-foreground">
+          <DropdownMenuTrigger
+            asChild
+            disabled={!loggedIn && teams.length === 0}
+          >
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:text-sidebar-accent-foreground"
+            >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-eng-dark-blue text-sidebar-primary-foreground">
                 <div className="h-4">
                   <SymbolEEWhite />
@@ -157,11 +167,11 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
               onClick={() => {
                 // Modo padrão (sem cargo/permissão)
                 fetchDataPerm({ name: "Visitante", id: "", plan: "Usuário" });
-                 toast("Você alternou as permissões", {
-          description: `Acessando como Modo padrão`,
-          action: { label: "Fechar", onClick: () => {} },
-        });
-         navigate('/')
+                toast("Você alternou as permissões", {
+                  description: `Acessando como Modo padrão`,
+                  action: { label: "Fechar", onClick: () => {} },
+                });
+                navigate("/");
               }}
               className="gap-2 p-2"
             >

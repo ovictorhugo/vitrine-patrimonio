@@ -500,7 +500,7 @@ export function CatalogModal() {
         title: img.id || `${index}-${img.file_path}`,
         src: buildImgUrl(img.file_path),
       })),
-    [catalog?.images, buildImgUrl]
+    [catalog?.images, buildImgUrl],
   );
 
   const cards = useMemo(
@@ -508,7 +508,7 @@ export function CatalogModal() {
       images.map((card, index) => (
         <Card key={card.src} card={card} index={index} layout={true} />
       )),
-    [images]
+    [images],
   );
 
   /**
@@ -522,7 +522,7 @@ export function CatalogModal() {
     const hist = catalog?.workflow_history ?? [];
     return [...hist].sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [catalog?.workflow_history]);
 
@@ -536,7 +536,7 @@ export function CatalogModal() {
     const hist = catalog?.workflow_history ?? [];
 
     const hasAudiovisual = hist.some((ev) =>
-      ev.workflow_status?.startsWith("AUDIOVISUAL")
+      ev.workflow_status?.startsWith("AUDIOVISUAL"),
     );
     setIsAudiovisual(hasAudiovisual); // Assumindo que você tem um state para isso
 
@@ -571,7 +571,7 @@ export function CatalogModal() {
           throw new Error(
             `Falha ao aceitar transferência (${res.status}): ${
               text || "Erro desconhecido"
-            }`
+            }`,
           );
         }
 
@@ -580,13 +580,35 @@ export function CatalogModal() {
           prev.map((t) => ({
             ...t,
             status: t.id === tr.id ? "ACCEPTABLE" : "DECLINED",
-          }))
+          })),
         );
 
         toast("Transferência aceita", {
           description:
-            "Esta solicitação foi marcada como ACCEPTABLE. As demais foram marcadas como DECLINED.",
+            "Esta solicitação foi marcada como ACEITA. As demais foram marcadas como RECUSADAS.",
         });
+
+        const createPDF = await fetch(`${urlGeral}transfers/pdf`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            owner: catalog?.user.id,
+            new_guardian: tr.user.id,
+            catalog_id: catalog?.id,
+            location_id: tr.location.id,
+          }),
+        });
+
+        if (!createPDF.ok) {
+          throw new Error(
+            `Falha ao carregar items (HTTP ${createPDF.status}).`,
+          );
+        } else {
+          toast.success("Documento de transferência criado com sucesso!");
+        }
       } catch (e: any) {
         toast("Erro ao aceitar transferência", {
           description: e?.message || "Tente novamente.",
@@ -595,7 +617,7 @@ export function CatalogModal() {
         setAcceptingId(null);
       }
     },
-    [token, urlGeral]
+    [token, urlGeral],
   );
 
   const handleBack = () => onClose(); // no modal, voltar = fechar
@@ -622,7 +644,7 @@ export function CatalogModal() {
       toast("Item excluído com sucesso.");
       try {
         window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } })
+          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
         );
       } catch {}
       onClose();
@@ -662,6 +684,13 @@ export function CatalogModal() {
     OC: "bg-blue-500",
     RE: "bg-purple-500",
   };
+  const qualisColorBorder: Record<string, string> = {
+    BM: "border-green-500",
+    AE: "border-red-500",
+    IR: "border-yellow-500",
+    OC: "border-blue-500",
+    RE: "border-purple-500",
+  };
 
   const csvCodToText: Record<string, string> = {
     BM: "Bom",
@@ -690,7 +719,9 @@ export function CatalogModal() {
 
   const colorClassStr =
     qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300";
-  const borderColorClass = colorClassStr.replace("bg-", "border-");
+  const borderColorClass =
+    qualisColorBorder[csvCodTrimmed as keyof typeof qualisColorBorder] ||
+    "border-zinc-300";
 
   const getStatusLabel = (status: WorkflowStatus) =>
     WORKFLOW_STATUS_LABELS[status] ?? status;
@@ -856,16 +887,16 @@ export function CatalogModal() {
 
   function findFirstWorkflowByStatuses(
     list: any,
-    statuses: string[]
+    statuses: string[],
   ): WorkflowEvent | undefined {
     if (!list?.length) return undefined;
     return list.find((ev: WorkflowEvent) =>
-      statuses.includes(ev.workflow_status)
+      statuses.includes(ev.workflow_status),
     );
   }
 
   function getDetail(
-    ev?: WorkflowEvent | null
+    ev?: WorkflowEvent | null,
   ): Record<string, any> | undefined {
     if (!ev) return undefined;
     return (ev as any).detail ?? undefined;
@@ -878,7 +909,7 @@ export function CatalogModal() {
   }
 
   function pickUserFromEvent(
-    ev?: WorkflowEvent | null
+    ev?: WorkflowEvent | null,
   ): { id?: string; username?: string } | undefined {
     const u = (ev as any)?.user;
     if (u && (u.id || u.username)) {
@@ -897,7 +928,7 @@ export function CatalogModal() {
 
     const firstCommission = findFirstWorkflowByStatuses(
       catalog?.workflow_history,
-      ["REVIEW_REQUESTED_COMISSION"]
+      ["REVIEW_REQUESTED_COMISSION"],
     );
     const commissionDetail = getDetail(firstCommission);
     const reviewerFromDetail = commissionDetail?.reviewers?.[0];
@@ -981,13 +1012,12 @@ export function CatalogModal() {
 
   const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
   const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
-    currentStatusFromServer === "ACERVO_HISTORICO"
+    currentStatusFromServer === "ACERVO_HISTORICO",
   );
 
   useEffect(() => {
-    console.log();
     setIsAcervoHistoricoLocal(
-      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
+      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO",
     );
   }, [lastWorkflow?.workflow_status, catalog?.id]);
 
@@ -1019,13 +1049,13 @@ export function CatalogModal() {
         throw new Error(
           `Falha ao alterar workflow (${res.status}): ${
             text || "Erro desconhecido"
-          }`
+          }`,
         );
       }
 
       return await res.json().catch(() => null);
     },
-    [catalog?.id, token, urlGeral]
+    [catalog?.id, token, urlGeral],
   );
 
   const [addingAcervo, setAddingAcervo] = useState(false);
@@ -1199,8 +1229,8 @@ export function CatalogModal() {
                       {addingAcervo
                         ? "Atualizando..."
                         : isAcervoHistoricoLocal
-                        ? "Enviar para Avaliação de Desfazimento"
-                        : "Adicionar ao Acervo Histórico"}
+                          ? "Enviar para Avaliação de Desfazimento"
+                          : "Adicionar ao Acervo Histórico"}
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -1218,7 +1248,7 @@ export function CatalogModal() {
 
       return (
         <main
-          className={`grid flex-col gap-4 md:gap-8 border-b-[12px] max-h-[80vh] rounded-b-lg overflow-hidden ${borderColorClass}`}
+          className={`grid flex-col gap-4 md:gap-8 border-b-[12px] ${borderColorClass} max-h-[80vh] rounded-b-lg overflow-hidden `}
         >
           {header}
           <ScrollArea className="border-solid flex-1 w-full">
@@ -1312,7 +1342,7 @@ export function CatalogModal() {
                                           {label}
                                         </Button>
                                       </div>
-                                    )
+                                    ),
                                 )}
                               </div>
                             </div>
@@ -1738,7 +1768,7 @@ export function CatalogModal() {
                                                 <div className="flex-1">
                                                   <p className="text-lg font-medium">
                                                     {getStatusLabel(
-                                                      ev.workflow_status
+                                                      ev.workflow_status,
                                                     )}
                                                   </p>
 
@@ -1773,14 +1803,14 @@ export function CatalogModal() {
                                                     <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                                                       <Calendar size={16} />
                                                       {formatDateTimeBR(
-                                                        ev.created_at
+                                                        ev.created_at,
                                                       )}
                                                     </div>
                                                   </div>
                                                 </div>
                                               </div>
                                             );
-                                          }
+                                          },
                                         )
                                       )}
                                     </div>

@@ -219,7 +219,7 @@ export function Notification() {
 
   // wizard (passo atual)
   const [wizardStep, setWizardStep] = useState<"conteudo" | "destinatarios">(
-    "conteudo"
+    "conteudo",
   );
 
   // público-alvo
@@ -232,8 +232,8 @@ export function Notification() {
 
   const filteredUsers = allUsers.filter((u) =>
     [u.username, u.email].some((f) =>
-      f?.toLowerCase().includes(userSearch.toLowerCase())
-    )
+      f?.toLowerCase().includes(userSearch.toLowerCase()),
+    ),
   );
 
   // exclusão
@@ -252,7 +252,7 @@ export function Notification() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== navegação & paginação por querystring =====
@@ -271,14 +271,14 @@ export function Notification() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -294,15 +294,15 @@ export function Notification() {
       setLoadingList(true);
       const res = await fetch(
         `${urlGeral}notifications/sent?offset=${encodeURIComponent(
-          offset
+          offset,
         )}&limit=${encodeURIComponent(limit)}`,
-        { method: "GET", headers: authHeaders }
+        { method: "GET", headers: authHeaders },
       );
 
       if (!res.ok) {
         throw new Error(
           (await res.text().catch(() => "")) ||
-            `Falha ao carregar notificações (HTTP ${res.status}).`
+            `Falha ao carregar notificações (HTTP ${res.status}).`,
         );
       }
 
@@ -332,7 +332,7 @@ export function Notification() {
       if (!res.ok)
         throw new Error(
           (await res.text().catch(() => "")) ||
-            `Falha ao carregar usuários (HTTP ${res.status}).`
+            `Falha ao carregar usuários (HTTP ${res.status}).`,
         );
       const data: UsersResponse = await res.json();
       setAllUsers(Array.isArray(data?.users) ? data.users : []);
@@ -367,7 +367,7 @@ export function Notification() {
     setSelectedUsers((prev) =>
       prev.some((s) => s.id === u.id)
         ? prev.filter((s) => s.id !== u.id)
-        : [...prev, u]
+        : [...prev, u],
     );
   const removeSelected = (id: string) =>
     setSelectedUsers((prev) => prev.filter((s) => s.id !== id));
@@ -417,7 +417,7 @@ export function Notification() {
       if (!res.ok)
         throw new Error(
           (await res.text().catch(() => "")) ||
-            `Falha ao enviar notificação (HTTP ${res.status}).`
+            `Falha ao enviar notificação (HTTP ${res.status}).`,
         );
 
       toast("Notificação enviada com sucesso!", {
@@ -465,7 +465,7 @@ export function Notification() {
       if (!res.ok)
         throw new Error(
           (await res.text().catch(() => "")) ||
-            `Falha ao excluir notificação (HTTP ${res.status}).`
+            `Falha ao excluir notificação (HTTP ${res.status}).`,
         );
 
       toast("Notificação excluída", {
@@ -488,8 +488,6 @@ export function Notification() {
 
   const [isOpen, setIsOpen] = useState(false);
   const baseUrl = `${urlGeral}notifications`;
-
-  console.log(notification);
 
   return (
     <div className="p-8 gap-8 flex flex-col">

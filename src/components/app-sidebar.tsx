@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   BarChartBig,
@@ -24,38 +24,36 @@ import {
   SquareTerminal,
   UserPlus,
   Wrench,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "./nav-main"
-import { NavProjects } from "./nav-projects"
-import { NavUser } from "./nav-user"
+import { NavMain } from "./nav-main";
+import { NavProjects } from "./nav-projects";
+import { NavUser } from "./nav-user";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "./ui/sidebar"
-import { UserContext } from "../context/context"
-import { useContext} from "react";
-import { AccountSwitcher } from "./navigation/user-list"
-import { DotsThree } from "phosphor-react"
-import { useModal } from "./hooks/use-modal-store"
+} from "./ui/sidebar";
+import { UserContext } from "../context/context";
+import { useContext } from "react";
+import { AccountSwitcher } from "./navigation/user-list";
+import { DotsThree } from "phosphor-react";
+import { useModal } from "./hooks/use-modal-store";
 // This is sample data.
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
- const {urlGeral, user,  loggedIn} = useContext(UserContext)
- const {onOpen} = useModal()
+  const { urlGeral, user, loggedIn } = useContext(UserContext);
+  const { onOpen } = useModal();
   const data = {
     user: {
-      name: user?.username || '',
-      email: user?.email || '',
-      avatar: user?.photo_url || '',
+      name: user?.username || "",
+      email: user?.email || "",
+      avatar: user?.photo_url || "",
     },
-   
-    navMain: [
-   
 
+    navMain: [
       {
         title: "Outros",
         url: "/",
@@ -65,13 +63,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: "Feedback",
             icon: Bug,
-            onClick: () => onOpen('relatar-problema'), // Chama a função onOpen() ao clicar
-        },
+            onClick: () => onOpen("relatar-problema"), // Chama a função onOpen() ao clicar
+          },
         ],
       },
-   
-      
-     
     ],
     projects: [
       {
@@ -84,26 +79,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/buscar-patrimonio",
         icon: SearchCheck,
       },
-      
     ],
-  }
-  
+  };
+
   return (
-    <Sidebar  collapsible='icon' className="border-0" {...props}>
+    <Sidebar collapsible="icon" className="border-0" {...props}>
       <SidebarHeader>
-        <AccountSwitcher/>
+        <AccountSwitcher />
       </SidebarHeader>
-      <SidebarContent >
-      <NavProjects projects={data.projects} />
+      <SidebarContent>
+        <NavProjects projects={data.projects} />
         <NavMain items={data.navMain} />
-      
       </SidebarContent>
-      <SidebarFooter>
-        {loggedIn && (
-          <NavUser user={data.user} />
-        )}
-      </SidebarFooter>
+      <SidebarFooter>{loggedIn && <NavUser user={data.user} />}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

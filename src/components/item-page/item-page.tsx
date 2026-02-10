@@ -370,9 +370,6 @@ export function ItemPage() {
       if (!r.ok) throw new Error(`Erro ${r.status}`);
       const data: CatalogResponseDTO = await r.json();
 
-      console.log(`${urlGeral}catalog/${catalogId}`);
-      console.log(data);
-
       setCatalog(data);
     } catch (e: any) {
       toast("Erro ao carregar", {
@@ -400,7 +397,7 @@ export function ItemPage() {
       images.map((card, index) => (
         <Card key={card.src} card={card} index={index} layout={true} />
       )),
-    [images]
+    [images],
   );
 
   const handleBack = () => navigate(-1);
@@ -440,42 +437,42 @@ export function ItemPage() {
   };
 
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
 
   useEffect(() => {
     let timeouts: NodeJS.Timeout[] = [];
 
     setLoadingMessage(
-      "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+      "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Estamos quase lá, continue aguardando...");
-      }, 5000)
+      }, 5000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Só mais um pouco...");
-      }, 10000)
+      }, 10000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Está demorando mais que o normal... estamos tentando encontrar tudo."
+          "Está demorando mais que o normal... estamos tentando encontrar tudo.",
         );
-      }, 15000)
+      }, 15000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco",
         );
-      }, 15000)
+      }, 15000),
     );
 
     return () => {
@@ -739,7 +736,7 @@ export function ItemPage() {
     if (!hist.length) return null;
     // pega o mais recente por created_at
     return hist.reduce((a, b) =>
-      new Date(a.created_at) > new Date(b.created_at) ? a : b
+      new Date(a.created_at) > new Date(b.created_at) ? a : b,
     );
   }, [catalog?.workflow_history]);
 
@@ -754,8 +751,6 @@ export function ItemPage() {
   // Agora você pode acessar com segurança
   const firstStatus = lastWorkflow?.workflow_status;
 
-  console.log(" firstStatus", firstStatus);
-  // Exemplos de uso:
   const workflowReview =
     firstStatus === "REVIEW_REQUESTED_DESFAZIMENTO" ||
     firstStatus === "REVIEW_REQUESTED_VITRINE" ||
@@ -907,7 +902,7 @@ export function ItemPage() {
   // === Util: achar o primeiro evento com um dos status
   function findFirstWorkflowByStatuses(
     list: any,
-    statuses: string[]
+    statuses: string[],
   ): WorkflowEvent | undefined {
     if (!list?.length) return undefined;
     return list.find((ev) => statuses.includes(ev.workflow_status));
@@ -915,7 +910,7 @@ export function ItemPage() {
 
   // === Util: acessar detail (sempre "detail", conforme alinhado)
   function getDetail(
-    ev?: WorkflowEvent | null
+    ev?: WorkflowEvent | null,
   ): Record<string, any> | undefined {
     if (!ev) return undefined;
     return (ev as any).detail ?? undefined;
@@ -930,7 +925,7 @@ export function ItemPage() {
 
   // === Util: normalizar um "user" de event.user
   function pickUserFromEvent(
-    ev?: WorkflowEvent | null
+    ev?: WorkflowEvent | null,
   ): { id?: string; username?: string } | undefined {
     const u = (ev as any)?.user;
     if (u && (u.id || u.username)) {
@@ -954,7 +949,7 @@ export function ItemPage() {
     // Comissão: pega do primeiro REVIEW_REQUESTED_COMISSION
     const firstCommission = findFirstWorkflowByStatuses(
       catalog?.workflow_history,
-      ["REVIEW_REQUESTED_COMISSION"]
+      ["REVIEW_REQUESTED_COMISSION"],
     );
     const commissionDetail = getDetail(firstCommission);
     const reviewerFromDetail = commissionDetail?.reviewers?.[0];
@@ -1047,13 +1042,13 @@ export function ItemPage() {
   // ====== Acervo Histórico / Toggle ======
   const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
   const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
-    currentStatusFromServer === "ACERVO_HISTORICO"
+    currentStatusFromServer === "ACERVO_HISTORICO",
   );
 
   // sincroniza quando abrir outro item/modal
   useEffect(() => {
     setIsAcervoHistoricoLocal(
-      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
+      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO",
     );
   }, [lastWorkflow?.workflow_status, catalog?.id]);
 
@@ -1085,13 +1080,13 @@ export function ItemPage() {
         throw new Error(
           `Falha ao alterar workflow (${res.status}): ${
             text || "Erro desconhecido"
-          }`
+          }`,
         );
       }
 
       return await res.json().catch(() => null);
     },
-    [catalog?.id, token, urlGeral]
+    [catalog?.id, token, urlGeral],
   );
 
   const [addingAcervo, setAddingAcervo] = useState(false);
@@ -1297,8 +1292,8 @@ export function ItemPage() {
                   {addingAcervo
                     ? "Atualizando..."
                     : isAcervoHistoricoLocal
-                    ? "Enviar para Avaliação de Desfazimento"
-                    : "Adicionar ao Acervo Histórico"}
+                      ? "Enviar para Avaliação de Desfazimento"
+                      : "Adicionar ao Acervo Histórico"}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -1414,7 +1409,7 @@ export function ItemPage() {
                                   {label}
                                 </Button>
                               </div>
-                            )
+                            ),
                         )}
                       </div>
                     </div>

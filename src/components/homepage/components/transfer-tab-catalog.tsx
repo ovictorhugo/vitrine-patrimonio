@@ -1,5 +1,11 @@
 // src/components/catalog/TransferTabCatalog.tsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useContext,
+} from "react";
 import { Alert } from "../../ui/alert";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
@@ -14,14 +20,35 @@ import {
   LoaderCircle,
   CheckCircle,
 } from "lucide-react";
+import { UserContext } from "../../../context/context";
 
 /* ===== Tipos mínimos para funcionar isolado ===== */
 type UUID = string;
 
-type UnitDTO = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
-type AgencyDTO = { id: UUID; agency_name: string; agency_code: string; unit?: UnitDTO | null };
-type SectorDTO = { id: UUID; sector_name: string; sector_code: string; agency?: AgencyDTO | null; unit?: UnitDTO | null };
-type LegalGuardianDTO = { id: UUID; legal_guardians_code: string; legal_guardians_name: string };
+type UnitDTO = {
+  id: UUID;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+};
+type AgencyDTO = {
+  id: UUID;
+  agency_name: string;
+  agency_code: string;
+  unit?: UnitDTO | null;
+};
+type SectorDTO = {
+  id: UUID;
+  sector_name: string;
+  sector_code: string;
+  agency?: AgencyDTO | null;
+  unit?: UnitDTO | null;
+};
+type LegalGuardianDTO = {
+  id: UUID;
+  legal_guardians_code: string;
+  legal_guardians_name: string;
+};
 type LocationDTO = {
   id: UUID;
   location_name: string;
@@ -29,7 +56,12 @@ type LocationDTO = {
   sector?: SectorDTO | null;
   legal_guardian?: LegalGuardianDTO | null;
 };
-type UserDTO = { id: UUID; username?: string; email?: string; photo_url?: string | null };
+type UserDTO = {
+  id: UUID;
+  username?: string;
+  email?: string;
+  photo_url?: string | null;
+};
 
 export type TransferRequestDTO = {
   id: string;
@@ -90,6 +122,7 @@ type WorkflowEvent = {
 
 export type CatalogResponseDTO = {
   id: UUID;
+  user: UserDTO;
   workflow_history?: WorkflowEvent[];
 };
 
@@ -129,10 +162,17 @@ export interface TransferTabCatalogProps {
 }
 
 /* ===== Componente ===== */
-export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChange }: TransferTabCatalogProps) {
+export function TransferTabCatalog({
+  catalog,
+  urlGeral,
+  token: tokenProp,
+  onChange,
+}: TransferTabCatalogProps) {
   const token =
     tokenProp ??
-    (typeof window !== "undefined" ? localStorage.getItem("jwt_token") ?? "" : "");
+    (typeof window !== "undefined"
+      ? (localStorage.getItem("jwt_token") ?? "")
+      : "");
 
   // Extrai transferências apenas dos eventos com status "VITRINE"
   const initialTransfers = useMemo<TransferRequestDTO[]>(() => {
@@ -142,8 +182,11 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
       .flatMap((ev) => ev.transfer_requests ?? []);
   }, [catalog?.workflow_history]);
 
-  const [transfers, setTransfers] = useState<TransferRequestDTO[]>(initialTransfers);
+  const [transfers, setTransfers] =
+    useState<TransferRequestDTO[]>(initialTransfers);
   const [acceptingId, setAcceptingId] = useState<UUID | null>(null);
+
+  const { user } = useContext(UserContext);
 
   // Rehidrata se o catálogo mudar
   useEffect(() => {
@@ -165,7 +208,7 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
         if (!res.ok) {
           const text = await res.text().catch(() => "");
           throw new Error(
-            `Falha ao aceitar transferência (${res.status}): ${text || "Erro desconhecido"}`
+            `Falha ao aceitar transferência (${res.status}): ${text || "Erro desconhecido"}`,
           );
         }
 
@@ -174,7 +217,7 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
           prev.map((t) => ({
             ...t,
             status: t.id === tr.id ? "ACCEPTABLE" : "DECLINED",
-          }))
+          })),
         );
 
         // Notifica o pai se quiser sincronizar (ex.: revalidar catálogo)
@@ -184,6 +227,28 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
           description:
             "Esta solicitação foi marcada como ACEITA. As demais foram marcadas como RECUSADAS.",
         });
+
+        const createPDF = await fetch(`${urlGeral}transfers/pdf`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            owner: catalog?.user.id,
+            new_guardian: tr.user.id,
+            catalog_id: catalog?.id,
+            location_id: tr.location.id,
+          }),
+        });
+
+        if (!createPDF.ok) {
+          throw new Error(
+            `Falha ao carregar items (HTTP ${createPDF.status}).`,
+          );
+        } else {
+          toast.success("Documento de transferência criado com sucesso!");
+        }
       } catch (e: any) {
         toast("Erro ao aceitar transferência", {
           description: e?.message || "Tente novamente.",
@@ -192,7 +257,7 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
         setAcceptingId(null);
       }
     },
-    [onChange, token, urlGeral]
+    [onChange, token, urlGeral],
   );
 
   return (
@@ -200,7 +265,9 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
       {(!transfers || transfers.length === 0) && (
         <Alert className="flex items-center justify-between">
           <div>
-            <p className="font-medium">Nenhuma transferência registrada em “VITRINE”.</p>
+            <p className="font-medium">
+              Nenhuma transferência registrada em “VITRINE”.
+            </p>
             <p className="text-sm text-muted-foreground">
               Quando houver pedidos, eles aparecem aqui.
             </p>
@@ -216,6 +283,8 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
         const cadeia = chain(tr.location);
         const isAccepting = acceptingId === tr.id;
         const alreadyAccepted = tr.status === "ACCEPTABLE";
+        const isDeclined = tr.status === "DECLINED";
+        const isOwner = user?.id === catalog?.user?.id;
 
         return (
           <div key={tr.id} className="flex">
@@ -231,25 +300,29 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
                 <div className="flex gap-2 items-center">
                   <Badge className={`text-white ${color}`}>{statusText}</Badge>
 
-                  <Button
-                    variant={alreadyAccepted ? "outline" : "default"}
-                    size="sm"
-                    onClick={() => handleAcceptTransfer(tr)}
-                    disabled={isAccepting || alreadyAccepted}
-                    className="gap-2"
-                  >
-                    {isAccepting ? (
-                      <>
-                        <LoaderCircle className="animate-spin size-4" />
-                        Processando…
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="size-4" />
-                        Escolher esta transferência
-                      </>
-                    )}
-                  </Button>
+                  {!isDeclined && (
+                    <Button
+                      variant={alreadyAccepted ? "outline" : "default"}
+                      size="sm"
+                      onClick={() => handleAcceptTransfer(tr)}
+                      disabled={isAccepting || alreadyAccepted || !isOwner}
+                      className="gap-2"
+                    >
+                      {isAccepting ? (
+                        <>
+                          <LoaderCircle className="animate-spin size-4" />
+                          Processando…
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="size-4" />
+                          {alreadyAccepted
+                            ? "Aceita"
+                            : "Escolher esta transferência"}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -260,7 +333,9 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
                   <Users className="size-4" />
                   <p className="text-sm text-muted-foreground">
                     Solicitante:{" "}
-                    <span className="text-foreground font-medium">{requesterName}</span>
+                    <span className="text-foreground font-medium">
+                      {requesterName}
+                    </span>
                   </p>
                 </div>
 
@@ -280,7 +355,9 @@ export function TransferTabCatalog({ catalog, urlGeral, token: tokenProp, onChan
                       ))}
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">Local não informado</span>
+                    <span className="text-sm text-muted-foreground">
+                      Local não informado
+                    </span>
                   )}
                 </div>
               </div>

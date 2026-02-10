@@ -84,7 +84,7 @@ export function ItensListVitrine(props: Props) {
           setIsLoading(false);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
     fetchData();
@@ -111,7 +111,6 @@ export function ItensListVitrine(props: Props) {
     RE: "Recuperável",
   };
 
-  //console.log(total)
   const [count, setCount] = useState(12);
 
   const search = props.search;

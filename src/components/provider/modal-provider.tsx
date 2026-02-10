@@ -1,28 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { ImportCsv } from "../modal/import-csv";
-
 import { AdicionarEmpenho } from "../modal/adicionar-empenho";
-
 import { useModal } from "../hooks/use-modal-store";
 import { SearchModal } from "../modal/search-modal";
-
 import { SearchModalVitrine } from "../modal/search-modal-vitrine";
-
-import { SearchPatrimonio } from "../search/search-patrimonio";
 import { SearchModalPatrimonio } from "../modal/search-modal-patrimonio";
 import { PatrimonioModal } from "../modal/patrimonio-modal";
-
 import { SearchCodAtmModal } from "../modal/search-modal-cod-atm";
 import { SearchLocNomModal } from "../modal/search-modal-loc-nom";
 import { RelatarBug } from "../modal/relatar-bug";
-import { WorkflowModal } from "../modal/workflow-modal";
 import { CatalogModal } from "../modal/catalog-modal";
 import { SignInModal } from "../modal/sign-in-modal";
 import SearchCodAtmModalExact from "../modal/search-modal-patrimonio-exact";
 import TransferModal from "../modal/transfer-modal";
+import DocumentModal from "../modal/document_modal";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -51,6 +44,8 @@ const ModalContent = () => {
       return <CatalogModal />;
     case "transfer-modal":
       return <TransferModal />;
+    case "document-signers":
+      return <DocumentModal />;
     case "sign-in":
       return <SignInModal />;
     case "search-patrimonio-exact":

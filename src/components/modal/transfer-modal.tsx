@@ -1,12 +1,5 @@
 // src/components/modals/catalog-modal.tsx
-import {
-  useContext,
-  useMemo,
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-} from "react";
+import { useContext, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent } from "../ui/dialog";
@@ -31,12 +24,7 @@ import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
 import { ScrollArea } from "../ui/scroll-area";
 import { LikeButton } from "../item-page/like-button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { CatalogResponseDTO } from "./catalog-modal";
 import { Alert } from "../ui/alert";
@@ -160,37 +148,30 @@ interface TransferModalProps {
   transfer_request?: TransferRequestDTO;
 }
 
-export function TransferModal({ 
-  catalog: propCatalog, 
-  transfer_request: propTransferRequest 
+export function TransferModal({
+  catalog: propCatalog,
+  transfer_request: propTransferRequest,
 }: TransferModalProps) {
   const isMobile = useIsMobile();
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "transfer-modal";
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, user } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token") ?? "", []);
 
   const handleVoltar = () => onClose();
 
   const catalog = (data as any)?.catalog ?? (data as CatalogEntry | null);
-  const transfer_request =
-    (data as any)?.transfer_request ?? (data as TransferRequestDTO | null);
+  const transfer_request = (data as any)?.transfer_request ?? (data as TransferRequestDTO | null);
 
   const [acceptingId, setAcceptingId] = useState<UUID | boolean>(false);
 
   const asset = catalog?.asset;
   const titulo =
-    asset?.material?.material_name ||
-    asset?.item_model ||
-    asset?.item_brand ||
-    "Item sem nome";
+    asset?.material?.material_name || asset?.item_model || asset?.item_brand || "Item sem nome";
 
   const requesterName =
-    transfer_request.user?.username ||
-    transfer_request.user?.email?.split("@")[0] ||
-    "Usuário";
-  const statusText =
-    TRANSFER_STATUS_LABEL[transfer_request.status] ?? transfer_request.status;
+    transfer_request.user?.username || transfer_request.user?.email?.split("@")[0] || "Usuário";
+  const statusText = TRANSFER_STATUS_LABEL[transfer_request.status] ?? transfer_request.status;
   const color = TRANSFER_STATUS_COLOR[transfer_request.status] ?? "bg-zinc-500";
   const cadeia = chain(transfer_request.location);
   const isAccepting = acceptingId === transfer_request.id;
@@ -199,18 +180,32 @@ export function TransferModal({
   async function handleAcceptTransfer(tr: TransferRequestDTO) {
     if (!tr?.id) return;
 
-    const res = await fetch(
-      `${urlGeral}catalog/transfer/${tr.id}?new_status=ACCEPTABLE`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await fetch(`${urlGeral}catalog/transfer/${tr.id}?new_status=ACCEPTABLE`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (!res.ok) {
       throw new Error(`Falha ao carregar items (HTTP ${res.status}).`);
     } else {
       toast.success("Transferência aceita com sucesso!");
+    }
+
+    const createPDF = await fetch(`${urlGeral}transfer/pdf`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        owner: user?.id,
+        new_guardian: transfer_request.user.id,
+        catalog_id: catalog.id,
+        location_id: transfer_request.location.id,
+      }),
+    });
+
+    if (!createPDF.ok) {
+      throw new Error(`Falha ao carregar items (HTTP ${res.status}).`);
+    } else {
+      toast.success("Documento de transferência criado com sucesso!");
     }
   }
 
@@ -218,9 +213,7 @@ export function TransferModal({
     if (!catalog) {
       return (
         <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-8">
-          <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">
-            (⊙_⊙)
-          </p>
+          <p className="text-9xl text-[#719CB8] font-bold mb-16 animate-pulse">(⊙_⊙)</p>
           <h1 className="text-center text-2xl md:text-4xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1]">
             Não foi possível acessar as <br /> informações deste item.
           </h1>
@@ -241,12 +234,7 @@ export function TransferModal({
     const header = (
       <>
         <div className="flex items-center gap-4 p-8 pb-0">
-          <Button
-            onClick={handleVoltar}
-            variant="outline"
-            size="icon"
-            className="h-7 w-7"
-          >
+          <Button onClick={handleVoltar} variant="outline" size="icon" className="h-7 w-7">
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
@@ -293,9 +281,7 @@ export function TransferModal({
 
                   <p
                     className={
-                      isMobile
-                        ? "mb-4 mt-6 text-gray-500 text-sm"
-                        : "mb-4 mt-6 text-gray-500"
+                      isMobile ? "mb-4 mt-6 text-gray-500 text-sm" : "mb-4 mt-6 text-gray-500"
                     }
                   >
                     {asset?.asset_description || "Sem descrição."}
@@ -310,9 +296,7 @@ export function TransferModal({
                 <div className="flex items-center gap-2">
                   <Archive className="size-6" />
                   <p className="font-medium">Pedido de Transferência</p>
-                  <Badge variant="outline">
-                    #{transfer_request.id.slice(0, 8)}
-                  </Badge>
+                  <Badge variant="outline">#{transfer_request.id.slice(0, 8)}</Badge>
                 </div>
 
                 <div className="flex gap-2 items-center">
@@ -327,9 +311,7 @@ export function TransferModal({
                   <Users className="size-4" />
                   <p className="text-md  text-muted-foreground">
                     Solicitante:{" "}
-                    <span className="text-foreground font-medium">
-                      {requesterName}
-                    </span>
+                    <span className="text-foreground font-medium">{requesterName}</span>
                   </p>
                 </div>
 
@@ -349,9 +331,7 @@ export function TransferModal({
                       ))}
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Local não informado
-                    </span>
+                    <span className="text-sm text-muted-foreground">Local não informado</span>
                   )}
                 </div>
               </div>
@@ -386,9 +366,7 @@ export function TransferModal({
   if (isMobile) {
     return (
       <Drawer open={isModalOpen} onOpenChange={onClose}>
-        <DrawerContent className="max-h-[80vh] flex flex-col">
-          {content()}
-        </DrawerContent>
+        <DrawerContent className="max-h-[80vh] flex flex-col">{content()}</DrawerContent>
       </Drawer>
     );
   } else {

@@ -28,6 +28,8 @@ import {
   PackageCheck,
   PackageSearch,
   ArrowRightToLine,
+  FileSignature,
+  FileCheck,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -74,7 +76,7 @@ export function AppSidebarAdmin({
   // true quando permission já foi preenchido (mesmo que vazio)
   const permissionsLoaded = useMemo(
     () => permission !== undefined && permission !== null,
-    [permission]
+    [permission],
   );
 
   const isDefaultRole = !String(role ?? "").trim();
@@ -132,11 +134,15 @@ export function AppSidebarAdmin({
               url: "/buscar-patrimonio",
               icon: SearchCheck,
             },
-
             {
               title: "Busca catálogo",
               url: "/buscar-catalogo",
               icon: PackageSearch,
+            },
+            {
+              title: "Validar PDF",
+              url: "/validar-pdf",
+              icon: FileCheck,
             },
             ...(hasBuscaAvancada
               ? [

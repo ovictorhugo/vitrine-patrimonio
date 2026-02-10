@@ -16,13 +16,13 @@ export interface UserDTO {
   username: string;
   email: string;
   provider: string;
-  linkedin: string;
-  lattes_id: string;
-  orcid: string;
-  ramal: string;
-  photo_url: string;
-  background_url: string;
-  matricula: string;
+  linkedin: string | null;
+  lattes_id: string | null;
+  orcid: string | null;
+  ramal: string | null;
+  photo_url: string | null;
+  background_url: string | null;
+  matricula: string | null;
   verify: boolean;
   institution_id: UUID;
 }
@@ -121,7 +121,7 @@ export interface WorkflowTransferRequestDTO {
 export interface WorkflowHistoryDTO {
   id: UUID;
   workflow_status: string; // considere criar um union se tiver a enum
-  detail: Record<string, unknown>;
+  detail?: Record<string, any>;
   user: UserDTO;
   transfer_requests: WorkflowTransferRequestDTO[];
   catalog_id: UUID;

@@ -106,7 +106,7 @@ export function ButtonTransference({ catalog }: Props) {
     if (hist.length === 0) return undefined;
     // Pega o evento mais recente por created_at (seguro mesmo se a API não vier ordenada)
     const latest = hist.reduce((acc, cur) =>
-      new Date(cur.created_at) > new Date(acc.created_at) ? cur : acc
+      new Date(cur.created_at) > new Date(acc.created_at) ? cur : acc,
     );
     return latest.workflow_status;
   }, [catalog?.workflow_history]);
@@ -120,7 +120,7 @@ export function ButtonTransference({ catalog }: Props) {
         setLoadingLoc(true);
         setErrorLoc(null);
         const token = localStorage.getItem("jwt_token");
-        const res = await fetch(`${urlGeral}/locations/my`, {
+        const res = await fetch(`${urlGeral}locations/my`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export function ButtonTransference({ catalog }: Props) {
 
   const selectedLoc = useMemo(
     () => locations.find((l) => l.id === locationId) || null,
-    [locations, locationId]
+    [locations, locationId],
   );
 
   const handleSubmit = async () => {
@@ -171,7 +171,7 @@ export function ButtonTransference({ catalog }: Props) {
       setSending(true);
 
       const payload = { location_id: locationId };
-      const urlProgram = `${urlGeral}/catalog/${catalog?.id}/transfer`;
+      const urlProgram = `${urlGeral}catalog/${catalog?.id}/transfer`;
       const token = localStorage.getItem("jwt_token");
 
       const response = await fetch(urlProgram, {
@@ -199,7 +199,7 @@ export function ButtonTransference({ catalog }: Props) {
         });
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast("Erro ao processar requisição", {
         description: "Verifique sua conexão e tente novamente.",
         action: { label: "Fechar", onClick: () => {} },
@@ -228,19 +228,19 @@ export function ButtonTransference({ catalog }: Props) {
           <div className="grid gap-3 w-full">
             <Label htmlFor="loc_nom">Minhas salas</Label>
 
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={true}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 z-[9999]"
                   disabled={!loggedIn && !canTransfer} // <<< DESABILITA QUANDO NÃO ESTÁ EM VITRINE
                 >
                   <span className="truncate">
                     {loadingLoc ? (
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 z-[9999]">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Carregando locais...
                       </span>
@@ -248,11 +248,11 @@ export function ButtonTransference({ catalog }: Props) {
                       selectedLoc?.location_name || "Selecione um local"
                     )}
                   </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
+                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0 z-[9999]" />
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[9999]">
                 <Command>
                   <CommandInput placeholder="Buscar por sala, setor, unidade..." />
                   <CommandList>
@@ -266,6 +266,7 @@ export function ButtonTransference({ catalog }: Props) {
                             const trail = getTrail(loc);
                             return (
                               <CommandItem
+                                className="z-[9999]"
                                 key={loc.id}
                                 value={`${loc.location_name} ${trail}`}
                                 onSelect={() => {
@@ -277,17 +278,17 @@ export function ButtonTransference({ catalog }: Props) {
                                   setOpen(false);
                                 }}
                               >
-                                <div className="flex items-start gap-2 w-full">
+                                <div className="flex items-start gap-2 w-full z-[9999]">
                                   <Check
                                     className={cn(
-                                      "h-4 w-4 mt-0.5",
+                                      "h-4 w-4 mt-0.5 z-[9999]",
                                       locationId === loc.id
                                         ? "opacity-100"
-                                        : "opacity-0"
+                                        : "opacity-0",
                                     )}
                                   />
-                                  <div className="flex flex-col">
-                                    <span className="font-medium leading-tight">
+                                  <div className="flex flex-col z-[9999]">
+                                    <span className="font-medium leading-tight z-[9999]">
                                       {loc.location_name}
                                     </span>
                                   </div>

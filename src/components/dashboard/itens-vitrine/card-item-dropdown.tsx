@@ -75,6 +75,10 @@ export type WorkflowHistoryItem = {
   };
   catalog_id: UUID;
   created_at: string;
+
+
+
+  
 };
 
 type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string; };

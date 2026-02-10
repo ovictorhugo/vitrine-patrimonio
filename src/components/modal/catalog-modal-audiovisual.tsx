@@ -394,13 +394,13 @@ export function AudiovisualModal() {
       images.map((card, index) => (
         <Card key={card.src} card={card} index={index} layout={true} />
       )),
-    [images]
+    [images],
   );
   const historySortedDesc = useMemo(() => {
     const hist = catalog?.workflow_history ?? [];
     return [...hist].sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [catalog?.workflow_history]);
 
@@ -457,7 +457,7 @@ export function AudiovisualModal() {
           setLoading((p) => ({ ...p, guardians: false }));
       }
     },
-    [urlGeral]
+    [urlGeral],
   );
 
   // carregar inicialmente
@@ -490,7 +490,7 @@ export function AudiovisualModal() {
       toast("Item excluído com sucesso.");
       try {
         window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } })
+          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
         );
       } catch {}
       onClose();
@@ -704,7 +704,7 @@ export function AudiovisualModal() {
           0,
           0,
           0,
-          0
+          0,
         );
         const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
         if (hora >= inicioTimestamp && hora <= fimTimestamp) {
@@ -715,7 +715,7 @@ export function AudiovisualModal() {
         }
         return acc;
       },
-      []
+      [],
     );
 
     try {
@@ -735,17 +735,17 @@ export function AudiovisualModal() {
     // CASO 1: Início e Fim no mesmo dia
     if (dateFromClean.getTime() === dateToClean.getTime()) {
       const nonConflict = hours.filter(
-        (v) => v > hourFrom && beginHours.includes(v)
+        (v) => v > hourFrom && beginHours.includes(v),
       );
 
       const firstConflict =
         hours.find(
-          (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v)
+          (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v),
         ) || 23;
       setEndHours(
         hours.filter(
-          (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict
-        )
+          (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict,
+        ),
       );
     }
     // CASO 2: Dias diferentes
@@ -761,7 +761,7 @@ export function AudiovisualModal() {
             0,
             0,
             0,
-            0
+            0,
           );
           const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
 
@@ -774,7 +774,7 @@ export function AudiovisualModal() {
           }
           return acc;
         },
-        []
+        [],
       );
 
       const availableTimes = beginHours.filter((n) => n > hourFrom).length;
@@ -858,7 +858,7 @@ export function AudiovisualModal() {
 
     if (timestampTo <= timestampFrom) {
       toast.error(
-        "Horário inválido! A hora final deve ser maior que a inicial."
+        "Horário inválido! A hora final deve ser maior que a inicial.",
       );
       return;
     }
@@ -904,12 +904,12 @@ export function AudiovisualModal() {
 
   const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
   const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
-    currentStatusFromServer === "ACERVO_HISTORICO"
+    currentStatusFromServer === "ACERVO_HISTORICO",
   );
 
   useEffect(() => {
     setIsAcervoHistoricoLocal(
-      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO"
+      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO",
     );
   }, [lastWorkflow?.workflow_status, catalog?.id]);
 
@@ -941,13 +941,13 @@ export function AudiovisualModal() {
         throw new Error(
           `Falha ao alterar workflow (${res.status}): ${
             text || "Erro desconhecido"
-          }`
+          }`,
         );
       }
 
       return await res.json().catch(() => null);
     },
-    [catalog?.id, token, urlGeral]
+    [catalog?.id, token, urlGeral],
   );
 
   const [addingAcervo, setAddingAcervo] = useState(false);
@@ -1081,8 +1081,8 @@ export function AudiovisualModal() {
                     {addingAcervo
                       ? "Atualizando..."
                       : isAcervoHistoricoLocal
-                      ? "Enviar para Avaliação de Desfazimento"
-                      : "Adicionar ao Acervo Histórico"}
+                        ? "Enviar para Avaliação de Desfazimento"
+                        : "Adicionar ao Acervo Histórico"}
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -1304,10 +1304,10 @@ export function AudiovisualModal() {
                                       <div
                                         key={i}
                                         className={
-                                            isMobile
-                                              ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                              : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                          }
+                                          isMobile
+                                            ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                            : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                        }
                                       >
                                         {i > 0 && <ChevronRight size={14} />}{" "}
                                         {p}
@@ -1315,11 +1315,13 @@ export function AudiovisualModal() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <span className={
-                                        isMobile
-                                          ? "text-xs text-gray-500"
-                                          : "text-sm text-gray-500"
-                                      }>
+                                  <span
+                                    className={
+                                      isMobile
+                                        ? "text-xs text-gray-500"
+                                        : "text-sm text-gray-500"
+                                    }
+                                  >
                                     Não definido.
                                   </span>
                                 )}
@@ -1453,7 +1455,7 @@ export function AudiovisualModal() {
                                             <div className="flex-1">
                                               <p className="text-lg font-medium">
                                                 {getStatusLabel(
-                                                  ev.workflow_status
+                                                  ev.workflow_status,
                                                 )}
                                               </p>
 
@@ -1486,7 +1488,7 @@ export function AudiovisualModal() {
                                                 <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                                                   <CalendarIcon size={16} />
                                                   {formatDateTimeBR(
-                                                    ev.created_at
+                                                    ev.created_at,
                                                   )}
                                                 </div>
                                               </div>
@@ -1528,11 +1530,11 @@ export function AudiovisualModal() {
                                     >
                                       {selectedGuardianId
                                         ? legalGuardians.find(
-                                            (g) => g.id === selectedGuardianId
+                                            (g) => g.id === selectedGuardianId,
                                           )?.legal_guardians_name
                                         : loading.guardians
-                                        ? "Carregando..."
-                                        : "Selecione o responsável"}
+                                          ? "Carregando..."
+                                          : "Selecione o responsável"}
                                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                   </PopoverTrigger>
@@ -1562,8 +1564,8 @@ export function AudiovisualModal() {
                                               a.legal_guardians_name.localeCompare(
                                                 b.legal_guardians_name,
                                                 "pt-BR",
-                                                { sensitivity: "base" }
-                                              )
+                                                { sensitivity: "base" },
+                                              ),
                                             )
                                             .map((g) => (
                                               <CommandItem
@@ -1579,7 +1581,7 @@ export function AudiovisualModal() {
                                                     "mr-2 h-4 w-4",
                                                     selectedGuardianId === g.id
                                                       ? "opacity-100"
-                                                      : "opacity-0"
+                                                      : "opacity-0",
                                                   )}
                                                 />
                                                 <div className="flex flex-col">
@@ -1622,7 +1624,7 @@ export function AudiovisualModal() {
                                                   day: "2-digit",
                                                   month: "short",
                                                   year: "numeric",
-                                                }
+                                                },
                                               )
                                             : "Select date"}
                                           <ChevronDownIcon />
@@ -1698,7 +1700,7 @@ export function AudiovisualModal() {
                                                   day: "2-digit",
                                                   month: "short",
                                                   year: "numeric",
-                                                }
+                                                },
                                               )
                                             : "Select date"}
                                           <ChevronDownIcon />

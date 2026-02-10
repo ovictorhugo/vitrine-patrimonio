@@ -5,12 +5,7 @@ import { Badge } from "../../../ui/badge";
 import { Button } from "../../../ui/button";
 import { Separator } from "../../../ui/separator";
 import { toast } from "sonner";
-import {
-  Archive,
-  MapPin,
-  Users,
-  ChevronRight,
-} from "lucide-react";
+import { Archive, MapPin, Users, ChevronRight } from "lucide-react";
 
 import {
   Carousel,
@@ -168,22 +163,16 @@ const TRANSFER_STATUS_COLOR: Record<string, string> = {
   DECLINED: "bg-red-600",
 };
 
-
 /* ===== Props ===== */
 export interface TransferCardProps {
   catalog: CatalogEntry;
   urlGeral: string;
   token?: string;
-  /** Opcional: permita o pai sincronizar o catálogo (ex.: refetch) */
   onChange?: (next: Partial<CatalogResponseDTO>) => void;
 }
 
 /* ===== Componente ===== */
-export function TransferCard({
-  catalog,
-  urlGeral,
-  onChange,
-}: TransferCardProps) {
+export function TransferCard({ catalog, urlGeral, onChange }: TransferCardProps) {
   const { onOpen } = useModal();
 
   // Extrai transferências apenas dos eventos com status "VITRINE"
@@ -194,15 +183,11 @@ export function TransferCard({
       .flatMap((ev) => ev.detail?.transfer_requests ?? []);
   }, [catalog?.workflow_history]);
 
-  const [transfers, setTransfers] =
-    useState<TransferRequestDTO[]>(initialTransfers);
+  const [transfers, setTransfers] = useState<TransferRequestDTO[]>(initialTransfers);
 
   useEffect(() => {
     setTransfers(initialTransfers);
   }, [initialTransfers]);
-
-  const [openModal, setOpenModal] = useState(false);
-  const [tr_selected, setTRSelected] = useState<TransferRequestDTO>();
 
   const buildImgUrl = (p: string) => {
     const cleanPath = p?.startsWith("/") ? p.slice(1) : p || "";
@@ -211,7 +196,7 @@ export function TransferCard({
 
   const imageUrls = useMemo(
     () => (catalog.images || []).map((img) => buildImgUrl(img.file_path)),
-    [catalog.images, urlGeral]
+    [catalog.images, urlGeral],
   );
 
   const asset = catalog.asset;
@@ -221,7 +206,6 @@ export function TransferCard({
   const isMobile = useIsMobile();
 
   const handleOpen = (transfer_request: TransferRequestDTO) => {
-    console.log(transfer_request);
     onOpen("transfer-modal", { ...catalog, transfer_request });
   };
 
@@ -238,17 +222,11 @@ export function TransferCard({
                   <div className="flex items-center gap-2 text-sm min-w-0 w-full">
                     <p className="font-semibold text-left  whitespace-nowrap shrink-0">
                       {asset.asset_code?.toString().trim()}{" "}
-                      {asset.asset_check_digit
-                        ? `- ${asset.asset_check_digit}`
-                        : ""}
+                      {asset.asset_check_digit ? `- ${asset.asset_check_digit}` : ""}
                     </p>
                     {false && (
                       <div className="min-w-0 flex-1">
-                        <Badge
-                          variant="outline"
-                          className="truncate min-w-0"
-                          title={""}
-                        >
+                        <Badge variant="outline" className="truncate min-w-0" title={""}>
                           ATM:
                         </Badge>
                       </div>
@@ -258,9 +236,7 @@ export function TransferCard({
                 <div className="flex flex-col p-4 pt-0 justify-between">
                   <div className="min-w-0">
                     <div className="text-base font-bold">{materialName}</div>
-                    <p className="text-left text-xs uppercase">
-                      {asset.asset_description || ""}
-                    </p>
+                    <p className="text-left text-xs uppercase">{asset.asset_description || ""}</p>
                   </div>
                 </div>
               </div>
@@ -273,41 +249,34 @@ export function TransferCard({
                   </div>
 
                   <CarouselContent>
-                    {(imageUrls.length ? imageUrls : [undefined]).map(
-                      (url, index) => (
-                        <CarouselItem
-                          key={url ?? index}
-                          className="w-full basis-1/2"
-                        >
-                          {/* Wrapper com tamanho consistente */}
-                          <div
-                            className="relative w-full aspect-square rounded-md overflow-hidden bg-muted  max-h-[100px] items-center"
-                          >
-                            {url ? (
-                              <LazyLoadImage
-                                src={url}
-                                alt={materialName}
-                                effect="blur"
-                                width="100%"
-                                height="100%"
-                                wrapperClassName="absolute inset-0 h-full w-full"
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                                className="rounded-md"
-                                draggable={false}
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-                                Sem imagens
-                              </div>
-                            )}
-                          </div>
-                        </CarouselItem>
-                      )
-                    )}
+                    {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
+                      <CarouselItem key={url ?? index} className="w-full basis-1/2">
+                        {/* Wrapper com tamanho consistente */}
+                        <div className="relative w-full aspect-square rounded-md overflow-hidden bg-muted  max-h-[100px] items-center">
+                          {url ? (
+                            <LazyLoadImage
+                              src={url}
+                              alt={materialName}
+                              effect="blur"
+                              width="100%"
+                              height="100%"
+                              wrapperClassName="absolute inset-0 h-full w-full"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                              className="rounded-md"
+                              draggable={false}
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                              Sem imagens
+                            </div>
+                          )}
+                        </div>
+                      </CarouselItem>
+                    ))}
                   </CarouselContent>
 
                   <div onClick={stop}>
@@ -324,76 +293,58 @@ export function TransferCard({
               <AccordionContent>
                 {transfers?.map((tr) => {
                   const requesterName =
-                    tr.user?.username ||
-                    tr.user?.email?.split("@")[0] ||
-                    "Usuário";
-                  const statusText =
-                    TRANSFER_STATUS_LABEL[tr.status] ?? tr.status;
-                  const color =
-                    TRANSFER_STATUS_COLOR[tr.status] ?? "bg-zinc-500";
+                    tr.user?.username || tr.user?.email?.split("@")[0] || "Usuário";
+                  const statusText = TRANSFER_STATUS_LABEL[tr.status] ?? tr.status;
+                  const color = TRANSFER_STATUS_COLOR[tr.status] ?? "bg-zinc-500";
                   const cadeia = chain(tr.location);
 
-                  if (openModal) {
-                    return (
-                      <TransferModal
-                        catalog={catalog}
-                        transfer_request={tr_selected}
-                      />
-                    );
-                  } else
-                    return (
-                      <>
-                        <Separator className="my-3" />
+                  return (
+                    <>
+                      <Separator className="my-3" />
+                      <div
+                        className=" px-8 pb-4 transition delay-150 duration-300 ease-in-out  hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded"
+                        onClick={() => handleOpen(tr)}
+                      >
                         <div
-                          className=" px-8 pb-4 transition delay-150 duration-300 ease-in-out  hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded"
-                          onClick={() => handleOpen(tr)}
+                          key={tr.id}
+                          className="flex flex-wrap items-start justify-between gap-3 py-4"
                         >
-                          <div
-                            key={tr.id}
-                            className="flex flex-wrap items-start justify-between gap-3 py-4"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Users className="size-4" />
-                              <p className="text-muted-foreground">
-                                Solicitante:{" "}
-                                <span className="text-foreground font-medium">
-                                  {requesterName}
-                                </span>
-                              </p>
-                              <Badge className={`text-white ${color}`}>
-                                {statusText}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          <div className="grid gap-3">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <MapPin className="size-4" />
-                              <p className="text-sm font-semibold uppercase">
-                                Destino:
-                              </p>
-                              {cadeia.length ? (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {cadeia.map((p, i) => (
-                                    <div
-                                      key={i}
-                                      className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                    >
-                                      {i > 0 && <ChevronRight size={14} />}
-                                      {p}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">
-                                  Local não informado
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <Users className="size-4" />
+                            <p className="text-muted-foreground">
+                              Solicitante:{" "}
+                              <span className="text-foreground font-medium">{requesterName}</span>
+                            </p>
+                            <Badge className={`text-white ${color}`}>{statusText}</Badge>
                           </div>
                         </div>
-                      </>
-                    );
+
+                        <div className="grid gap-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <MapPin className="size-4" />
+                            <p className="text-sm font-semibold uppercase">Destino:</p>
+                            {cadeia.length ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {cadeia.map((p, i) => (
+                                  <div
+                                    key={i}
+                                    className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                  >
+                                    {i > 0 && <ChevronRight size={14} />}
+                                    {p}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                Local não informado
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
                 })}
               </AccordionContent>
             </AccordionItem>

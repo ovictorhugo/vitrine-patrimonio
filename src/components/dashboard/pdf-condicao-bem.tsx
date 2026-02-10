@@ -89,7 +89,7 @@ const DownloadButton = () => {
           setTotal(data);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
     fetchData();
@@ -113,7 +113,7 @@ const DownloadButton = () => {
           setPatrimonio(data);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
     fetchData();

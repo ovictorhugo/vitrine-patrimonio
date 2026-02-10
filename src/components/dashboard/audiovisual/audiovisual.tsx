@@ -79,8 +79,6 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
 import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
-import { Catalog } from "../../homepage/components/catalog";
-import { useIsomorphicLayoutEffect } from "framer-motion";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import LoanCalendar from "./calendario";
@@ -179,12 +177,15 @@ type ReviewerRef = {
   username: string;
 };
 
+interface WorkflowDetail {
+  inicio?: string;
+  fim?: string;
+  observation?: string;
+}
+
 type WorkflowHistoryItem = {
   workflow_status: string;
-  detail?: {
-    reviewers?: ReviewerRef[] | string[];
-    [key: string]: any;
-  };
+  detail?: WorkflowDetail;
   id: UUID;
   user: {
     id: UUID;
@@ -486,7 +487,7 @@ export function Audiovisual() {
         setLoadingAgencies(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchSectors = useCallback(
@@ -513,7 +514,7 @@ export function Audiovisual() {
         setLoadingSectors(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchLocations = useCallback(
@@ -540,7 +541,7 @@ export function Audiovisual() {
         setLoadingLocations(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   // Cascata
@@ -590,13 +591,13 @@ export function Audiovisual() {
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   const columns = useMemo(
     () => WORKFLOWS[tab].map((c) => ({ ...c, key: (c.key ?? "").trim() })),
-    [tab]
+    [tab],
   );
 
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -621,7 +622,7 @@ export function Audiovisual() {
     CatalogEntry[]
   > | null>(null);
   const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(
-    null
+    null,
   );
 
   // Paginação - agora com offset por coluna
@@ -732,7 +733,7 @@ export function Audiovisual() {
         setItemsFlat((prev) => {
           const existingIds = new Set(prev.map((e) => e.id));
           const uniqueNewEntries = newEntries.filter(
-            (e) => !existingIds.has(e.id)
+            (e) => !existingIds.has(e.id),
           );
           return [...prev, ...uniqueNewEntries];
         });
@@ -741,10 +742,10 @@ export function Audiovisual() {
         if (typeof json.total === "number") {
           setTotalByCol(
             (prev) =>
-              ({ ...prev, [workflowStatus as string]: json.total } as Record<
+              ({ ...prev, [workflowStatus as string]: json.total }) as Record<
                 string,
                 number
-              >)
+              >,
           );
         }
 
@@ -761,17 +762,24 @@ export function Audiovisual() {
           }>(
             (acc, entry) => {
               const emprestimos = entry.workflow_history.filter(
-                (h) => h.workflow_status === "AUDIOVISUAL_EMPRESTIMO"
+                (h) => h.workflow_status === "AUDIOVISUAL_EMPRESTIMO",
               );
 
               const seraEmprestado =
                 (emprestimos.length > 0 &&
                   emprestimos.every((h) => {
+                    // 1. Se não tiver 'detail', retorna false (considera inválido para a lógica)
                     if (!h.detail) return false;
-                    const dataInicio = new Date(h.detail.inicio);
+
+                    // 2. CORREÇÃO: Fallback para 'created_at'
+                    // Se h.detail.inicio for undefined, usa h.created_at (que é obrigatório na interface)
+                    const dataReferencia = h.detail.inicio ?? h.created_at;
+
+                    const dataInicio = new Date(dataReferencia);
+
                     return dataInicio < today;
                   })) ||
-                emprestimos.length == 0;
+                emprestimos.length === 0;
               // ------------------------------------
 
               if (seraEmprestado) {
@@ -782,7 +790,7 @@ export function Audiovisual() {
 
               return acc;
             },
-            { disponivel: [], emprestimo: [] }
+            { disponivel: [], emprestimo: [] },
           );
 
           // Agora você pode acessar os dois arrays separadamente:
@@ -796,7 +804,7 @@ export function Audiovisual() {
 
             // 2. Filtra os novos itens, mantendo apenas os que NÃO tem ID na lista atual
             const uniqueNewEntries = disponivel.filter(
-              (e) => !existingIds.has(e.id)
+              (e) => !existingIds.has(e.id),
             );
 
             return {
@@ -822,7 +830,7 @@ export function Audiovisual() {
 
             // 2. Filtra os novos itens, mantendo apenas os que NÃO tem ID na lista atual
             const uniqueNewEntries = emprestimo.filter(
-              (e) => !existingIds.has(e.id)
+              (e) => !existingIds.has(e.id),
             );
 
             return {
@@ -863,7 +871,7 @@ export function Audiovisual() {
             }));
             setEntries((prev) => {
               const otherCols = prev.filter(
-                (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
+                (e) => lastWorkflow(e)?.workflow_status !== workflowStatus,
               );
               return [...otherCols, ...newEntries];
             });
@@ -887,7 +895,7 @@ export function Audiovisual() {
       locationId,
       PAGE_SIZE,
       debouncedQ,
-    ]
+    ],
   );
 
   // Fetch inicial: busca todas as colunas
@@ -939,7 +947,7 @@ export function Audiovisual() {
     else params.delete("q");
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace: true }
+      { replace: true },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -955,7 +963,7 @@ export function Audiovisual() {
   const postWorkflowChange = async (
     entry: CatalogEntry | undefined,
     toKey: string | undefined,
-    detailsExtra: Record<string, any>
+    detailsExtra: Record<string, any>,
   ) => {
     if (!entry || !toKey) return false;
     try {
@@ -1107,7 +1115,7 @@ export function Audiovisual() {
 
     // ✅ atualização otimista SEM depender de índice
     const newFromBoard = (board[fromKey] ?? []).filter(
-      (x) => x.id !== entry.id
+      (x) => x.id !== entry.id,
     );
     const newToBoard = [
       optimisticEntry,
@@ -1171,7 +1179,7 @@ export function Audiovisual() {
     const ok = await postWorkflowChange(
       moveTarget.entry,
       moveTarget.toKey,
-      extra
+      extra,
     );
     setPosting(false);
 
@@ -1389,7 +1397,7 @@ export function Audiovisual() {
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
-        handler as any
+        handler as any,
       );
   }, []);
 
@@ -2470,7 +2478,7 @@ export function Audiovisual() {
             )}
           </>
         ) : (
-          <LoanCalendar products={itemsFlat} />
+          <LoanCalendar rentedItems={itemsFlat} />
         )}
       </main>
 
@@ -2522,7 +2530,7 @@ export function Audiovisual() {
                         onValueChange={(val) => {
                           setSelectedPreset(val);
                           const preset = JUSTIFICATIVAS_DESFAZIMENTO.find(
-                            (p) => p.id === val
+                            (p) => p.id === val,
                           );
                           if (preset && moveTarget.entry) {
                             setJustificativa(preset.build(moveTarget.entry));

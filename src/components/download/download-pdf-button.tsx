@@ -35,15 +35,9 @@ export function DownloadPdfButton({
 }: DownloadPdfButtonProps) {
   const { urlGeral } = useContext(UserContext);
 
-  const baseUrl = useMemo(
-    () => ensureTrailingSlash(urlGeral || ""),
-    [urlGeral]
-  );
+  const baseUrl = useMemo(() => ensureTrailingSlash(urlGeral || ""), [urlGeral]);
   const token = useMemo(
-    () =>
-      typeof window !== "undefined"
-        ? localStorage.getItem("jwt_token") || ""
-        : "",
+    () => (typeof window !== "undefined" ? localStorage.getItem("jwt_token") || "" : ""),
     []
   );
 
@@ -85,12 +79,7 @@ export function DownloadPdfButton({
 
   return (
     <>
-      <Button
-        onClick={fetchData}
-        disabled={loading}
-        variant="outline"
-        size={size}
-      >
+      <Button onClick={fetchData} disabled={loading} variant="outline" size={size}>
         {loading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (

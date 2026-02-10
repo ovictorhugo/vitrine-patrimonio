@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { Files } from "../homepage/components/documents-tab-catalog";
-import { CatalogEntriesResponse } from "../homepage/components/item-patrimonio";
 import { CatalogDTO } from "../dashboard/collection/collection-page";
-import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 
 /** Todos os tipos de modal usados no app */
 export type ModalType =
@@ -34,7 +32,8 @@ export type ModalType =
   | "catalog-modal"
   | "sign-in"
   | "search-patrimonio-exact"
-  | "transfer-modal";
+  | "transfer-modal"
+  | "document-signers";
 
 /** DTOs auxiliares */
 type UnitDTO = {
@@ -126,6 +125,22 @@ export type TransferRequestDTO = {
   };
 };
 
+export type SignerData = {
+  user: string;
+  document: string;
+  isSigned: Boolean;
+  signedAt: Date;
+  token: string;
+};
+
+export type DocumentData = {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  catalog: CatalogDTO;
+  file_path: string;
+  signers: SignerData[];
+};
+
 /** Payload que trafega dentro do modal */
 export interface ModalData {
   id?: string;
@@ -153,6 +168,7 @@ export interface ModalData {
   location?: LocationDTO;
   is_official?: boolean;
   transfer_request?: TransferRequestDTO;
+  document_data?: DocumentData;
 }
 
 /** Factory para garantir um data SEM resíduos */
@@ -240,6 +256,6 @@ export const useModal = create<ModalStore>((set) => ({
             isOpen: false,
             type: null,
             data: getInitialData(),
-          }
+          },
     ),
 }));

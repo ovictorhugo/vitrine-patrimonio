@@ -50,8 +50,6 @@ export function HomeInicial() {
         });
 
         const data: MaterialsResponse = await response.json();
-        //console.log("URL:", urlPalavrasChaves);
-        //console.log("DATA:", data);
 
         if (data && Array.isArray(data.materials)) {
           setWords(data);
@@ -112,7 +110,7 @@ export function HomeInicial() {
 
   const baseUrl = useMemo(
     () => (urlGeral || "").replace(/\/+$/, ""),
-    [urlGeral]
+    [urlGeral],
   );
 
   const authHeaders: HeadersInit = useMemo(() => {
@@ -222,8 +220,6 @@ export function HomeInicial() {
               bens patrimoniais
             </strong>
           </h1>
-
-          <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
           <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
             <Search />

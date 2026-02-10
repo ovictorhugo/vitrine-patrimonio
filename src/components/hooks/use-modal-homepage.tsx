@@ -1,7 +1,32 @@
 import { create } from "zustand";
 
-export type ModalType = "initial-home" | "authentication-home" | "payment-home" | 'doacao' | 'escolher-assinatura' | 'atualizar-cadastro' | 'pagamento'| 'verificar-situacao-fumpista' | 'criar-conta-fumpista' | 'login-fumpista' | 'nao-encontrado' | 'cartao' | 'pix' | 'boleto'| 'criar-conta-donation' |'login-donation' | 'busca-patrimonio' | 'dashboard' | 'join-sala' | 'item-page' | 'informacoes' | 'emprestimo-audiovisual'|  'pedir-emprestimo-audiovisual'| 'buscar-catalogo'
-
+export type ModalType =
+  | "initial-home"
+  | "authentication-home"
+  | "payment-home"
+  | "doacao"
+  | "escolher-assinatura"
+  | "atualizar-cadastro"
+  | "pagamento"
+  | "verificar-situacao-fumpista"
+  | "criar-conta-fumpista"
+  | "login-fumpista"
+  | "nao-encontrado"
+  | "cartao"
+  | "pix"
+  | "boleto"
+  | "criar-conta-donation"
+  | "login-donation"
+  | "busca-patrimonio"
+  | "dashboard"
+  | "join-sala"
+  | "item-page"
+  | "informacoes"
+  | "emprestimo-audiovisual"
+  | "pedir-emprestimo-audiovisual"
+  | "buscar-catalogo"
+  | "assinar-transferência"
+  | "validar-pdf";
 
 interface ModalStore {
   type: ModalType | null;
@@ -10,10 +35,10 @@ interface ModalStore {
   onClose: () => void;
 }
 
-export const useModalHomepage = create<ModalStore>((set:any) => ({
+export const useModalHomepage = create<ModalStore>((set: any) => ({
   type: null,
   data: {},
   isOpen: false,
-  onOpen: (type: any) => set({ isOpen: true, type}),
-  onClose: () => set({ type: null, isOpen: false })
+  onOpen: (type: any) => set({ isOpen: true, type }),
+  onClose: () => set({ type: null, isOpen: false }),
 }));

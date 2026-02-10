@@ -886,7 +886,6 @@ export function EmprestimoAudiovisual() {
   const isLast = idx === total - 1;
 
   const canGoNext = useMemo(() => {
-    //console.log(wizard);
     const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
     return upto && idx < total - 1;
   }, [idx, total, valid, STEPS, wizard]);
@@ -1233,8 +1232,6 @@ export function EmprestimoAudiovisual() {
         );
       }
 
-      //console.log(catalogId, assetId, createCatalog, upAudioVis);
-      // sucesso 🎉
       setCreatedAssetId(assetId || null);
       setCreatedCatalogId(catalogId || null);
       setFinished(true);

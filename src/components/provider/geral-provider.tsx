@@ -10,7 +10,8 @@ import { ItemPage } from "../item-page/item-page";
 import { Informacoes } from "../info/informacoes";
 import { PedirEmprestimoAudiovisual } from "../pedir-emprestimo-audiovisual/pedir-emprestimo-audiovisual";
 import { BuscaCatalogo } from "../buscar-catalogo/buscar-catalogo";
-
+import { AssinarTransferencia } from "../assinar-transferencia/assinar-transferencia";
+import { ValidarPDF } from "../validar-pdf/validar-pdf";
 
 const ModalContent = () => {
   const { type } = useModalHomepage();
@@ -22,12 +23,16 @@ const ModalContent = () => {
       return <BuscaPatrimonio />;
     case "buscar-catalogo":
       return <BuscaCatalogo />;
-    case 'item-page':
-      return <ItemPage/>
-    case 'informacoes':
-      return <Informacoes/>
-    case 'pedir-emprestimo-audiovisual':
-      return <PedirEmprestimoAudiovisual/>
+    case "item-page":
+      return <ItemPage />;
+    case "informacoes":
+      return <Informacoes />;
+    case "assinar-transferência":
+      return <AssinarTransferencia />;
+    case "validar-pdf":
+      return <ValidarPDF />;
+    case "pedir-emprestimo-audiovisual":
+      return <PedirEmprestimoAudiovisual />;
     default:
       return null;
   }

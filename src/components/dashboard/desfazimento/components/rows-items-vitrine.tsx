@@ -174,7 +174,7 @@ export function RowsItemsVitrine({
     (async () => {
       try {
         setLoading(true);
-        const url = new URL(`${baseUrl}/catalog/`);
+        const url = new URL(`${baseUrl}catalog/`);
         if (workflow) url.searchParams.set("workflow_status", workflow);
         if (q) url.searchParams.set("q", q);
         if (materialId) url.searchParams.set("material_id", materialId);

@@ -76,7 +76,7 @@ export function Salas() {
         setLoadingLoc(true);
         setErrorLoc(null);
         const token = localStorage.getItem("jwt_token");
-        const res = await fetch(`${urlGeral}/locations/my`, {
+        const res = await fetch(`${urlGeral}locations/my`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
