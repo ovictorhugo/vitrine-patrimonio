@@ -143,6 +143,7 @@ export type SignerData = {
   document: UUID;
   isSigned: boolean;
   signedAt: Date;
+  token: string;
 };
 
 export type DocumentData = {

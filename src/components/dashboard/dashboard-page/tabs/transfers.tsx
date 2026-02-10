@@ -76,6 +76,7 @@ export type SignerEntry = {
   document: UUID;
   isSigned: boolean;
   signedAt: Date;
+  token: string;
 };
 
 export type DocumentEntry = {
@@ -92,7 +93,7 @@ export function Transfers() {
   const [loading, setLoading] = useState(true);
 
   const [items, setItems] = useState<CatalogDTO[]>([]);
-  const [itemsDone, setItemsDone] = useState<CatalogDTO[]>([]);
+  const [itemsDone, setItemsDone] = useState<DocumentEntry[]>([]);
   const [documents, setDocuments] = useState<DocumentEntry[]>([]);
 
   async function getCatalog() {
