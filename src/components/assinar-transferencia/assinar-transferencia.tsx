@@ -155,13 +155,30 @@ export function AssinarTransferencia() {
     if (urlToken) {
       tokenToSign = urlToken;
     } else {
-      const signer = document.signers.find((s: any) => s.user.id === user?.id);
-      if (!signer) {
-        toast.error("Usuário assinante não encontrado neste documento.");
+      const myNamedSlot = document.signers.find(
+        (s: any) => s.user?.id === user?.id && !s.isSigned,
+      );
+
+      const openGenericSlot = document.signers.find(
+        (s: any) => s.user === null && !s.isSigned,
+      );
+
+      // 2. Prioridade: Slot nominal (específico para este usuário)
+      if (myNamedSlot) {
+        tokenToSign = myNamedSlot.token;
+      }
+      // 3. Prioridade: Slot genérico (Chefia/Não identificado)
+      else if (openGenericSlot) {
+        tokenToSign = openGenericSlot.token;
+      }
+      // 4. Nenhum slot disponível
+      else {
+        toast.error(
+          "Não há assinaturas pendentes disponíveis para você neste documento.",
+        );
         setLoading(false);
         return;
       }
-      tokenToSign = signer.token;
     }
 
     try {
@@ -175,25 +192,24 @@ export function AssinarTransferencia() {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         if (errData.status === "already_signed") {
-          toast.info("Você já assinou este documento.");
+          toast.info("Esta assinatura já foi processada.");
         } else {
           toast.error("Não foi possível assinar o PDF.");
         }
       } else {
         toast.success("Assinatura realizada com sucesso!");
 
-        // Opcional: Atualizar estado local para refletir a assinatura na hora
-        // Mas seguindo o padrão pedido, redirecionamos.
+        // Pequeno delay para o usuário ver o toast antes de sair
         setTimeout(() => {
           navigate("/dashboard");
         }, 2000);
       }
     } catch (error) {
+      console.error(error);
       toast.error("Erro de conexão ao assinar.");
     } finally {
-      // Nota: Se redirecionar, o loading pode ficar true para evitar cliques duplos
-      // Se der erro, voltamos para false
-      // setLoading(false);
+      // Se der erro, tira o loading. Se der sucesso, o navigate acontece.
+      // Manter loading true no sucesso evita clique duplo.
     }
   }
 
@@ -337,6 +353,18 @@ export function AssinarTransferencia() {
       </div>
     );
   }
+
+  // Verifica se existe algum slot nominal pendente para este usuário
+  const pendingNamedSlot = document?.signers?.some(
+    (s: any) => s.user?.id === user?.id && !s.isSigned,
+  );
+
+  // Verifica se existe algum slot genérico (sem usuário) pendente
+  const pendingGenericSlot = document?.signers?.some(
+    (s: any) => s.user === null && !s.isSigned,
+  );
+
+  const canSign = loggedIn && (pendingNamedSlot || pendingGenericSlot);
 
   // --- PREPARAÇÃO DE VARIÁVEIS VISUAIS ---
   const csvCodTrimmed = (catalog.asset.csv_code || "").trim();
@@ -598,9 +626,22 @@ export function AssinarTransferencia() {
           className={
             isMobile
               ? "flex items-center w-full"
-              : "flex w-full justify-end pt-8 pr-8 gap-4"
+              : "flex w-full justify-end pt-8 pr-8 gap-4 items-center"
           }
         >
+          {/* Mensagem: Precisa estar logado */}
+          {!loggedIn && (
+            <div className="animate-shake-gentle text-red-600 font-medium text-sm">
+              Você precisa estar logado para assinar!
+            </div>
+          )}
+
+          {loggedIn && !canSign && !allSigned && (
+            <div className="text-zinc-500 font-medium text-sm">
+              Você não possui pendências neste documento.
+            </div>
+          )}
+
           <Button variant="outline" size="lg" onClick={() => handleDownload()}>
             {loading ? (
               <LoaderCircle size={16} className="animate-spin" />
@@ -609,16 +650,18 @@ export function AssinarTransferencia() {
             )}
             Baixar documento
           </Button>
+
           <Button
             variant="outline"
             size="lg"
-            className="rounded mr-8"
-            disabled={isUserSigned}
+            className="rounded mr-8 gap-2"
+            disabled={!canSign || loading}
             onClick={() => {
               handleSignAction();
             }}
           >
-            <FileSignature size={16} /> Assinar
+            <FileSignature size={16} />
+            Assinar
           </Button>
         </div>
       </main>
