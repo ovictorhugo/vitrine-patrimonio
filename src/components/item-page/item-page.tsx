@@ -95,6 +95,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { useIsMobile } from "../../hooks/use-mobile";
+import AudiovisualTab from "./emprestimo";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -796,6 +797,7 @@ export function ItemPage() {
       icon: Users,
       condition: !hasCatalogo,
     },
+    { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
   ];
 
   // Componente principal
@@ -1875,6 +1877,10 @@ export function ItemPage() {
                   catalog={catalog}
                   roleId={import.meta.env.VITE_ID_COMISSAO_PERMANENTE}
                 />
+              </TabsContent>
+
+              <TabsContent value="emprestimo">
+                <AudiovisualTab catalog={catalog} />
               </TabsContent>
             </Tabs>
 
