@@ -234,7 +234,7 @@ export function AllSalas() {
 
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace: true }
+      { replace: true },
     );
   };
 
@@ -408,7 +408,6 @@ export function AllSalas() {
           offset,
           limit,
         });
-
         const res = await fetch(`${urlGeral}locations/?${params.toString()}`, {
           signal: controller.signal,
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -456,7 +455,7 @@ export function AllSalas() {
         code: m.material_code,
         label: m.material_name || m.material_code,
       })),
-    [materials]
+    [materials],
   );
 
   const guardianItems: ComboboxItem[] = useMemo(
@@ -466,7 +465,7 @@ export function AllSalas() {
         code: g.legal_guardians_code,
         label: g.legal_guardians_name || g.legal_guardians_code,
       })),
-    [guardians]
+    [guardians],
   );
 
   /* =========================

@@ -140,7 +140,7 @@ export function PatrimonioItemCollection({
 
   // =========== estado local de edição ===========
   const [statusValue, setStatusValue] = useState<"true" | "false">(
-    sel === "true" ? "true" : "false"
+    sel === "true" ? "true" : "false",
   );
   const [commentValue, setCommentValue] = useState<string>(comm ?? "");
 
@@ -165,7 +165,7 @@ export function PatrimonioItemCollection({
   // urls das imagens
   const imageUrls = useMemo(
     () => (entry.images || []).map((img) => buildImgUrl(img.file_path)),
-    [entry.images, urlGeral]
+    [entry.images, urlGeral],
   );
 
   // =========== PUT atualizar ===========
@@ -195,7 +195,7 @@ export function PatrimonioItemCollection({
         };
 
         const url = `${urlGeral}collections/${encodeURIComponent(
-          collectionId
+          collectionId,
         )}/items/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "PUT",
@@ -220,7 +220,7 @@ export function PatrimonioItemCollection({
         setUpdating(false);
       }
     },
-    [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral]
+    [collectionId, itemId, statusValue, commentValue, onUpdated, urlGeral],
   );
 
   // =========== DELETE item da coleção ===========
@@ -246,7 +246,7 @@ export function PatrimonioItemCollection({
         };
 
         const url = `${urlGeral}collections/${encodeURIComponent(
-          collectionId
+          collectionId,
         )}/items/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "DELETE",
@@ -271,7 +271,7 @@ export function PatrimonioItemCollection({
         setDeleting(false);
       }
     },
-    [collectionId, itemId, onDeleted, urlGeral]
+    [collectionId, itemId, onDeleted, urlGeral],
   );
 
   const isMobile = useIsMobile();
@@ -420,7 +420,7 @@ export function PatrimonioItemCollection({
                               )}
                             </div>
                           </CarouselItem>
-                        )
+                        ),
                       )}
                     </CarouselContent>
 
@@ -647,7 +647,7 @@ export function PatrimonioItemCollection({
                             <AvatarImage
                               className="rounded-md h-5 w-5"
                               src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                                legalGuardianName
+                                legalGuardianName,
                               )}`}
                             />
                             <AvatarFallback className="flex items-center justify-center">
@@ -716,7 +716,7 @@ export function PatrimonioItemCollection({
                               )}
                             </div>
                           </CarouselItem>
-                        )
+                        ),
                       )}
                     </CarouselContent>
 
