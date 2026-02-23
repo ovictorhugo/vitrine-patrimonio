@@ -370,7 +370,7 @@ export function AudiovisualModal() {
   const { onClose, isOpen, type: typeModal, data } = useModal();
   const isModalOpen = isOpen && typeModal === "catalog-modal";
 
-  const { urlGeral, loggedIn } = useContext(UserContext);
+  const { urlGeral, loggedIn, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
   const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
@@ -660,7 +660,7 @@ export function AudiovisualModal() {
     const workflows = json?.workflow_history.filter((item) => {
       const statusValido = item.workflow_status === "AUDIOVISUAL_EMPRESTIMO";
       return statusValido;
-    });
+    }); 
 
     setWorkflows(workflows);
   }
@@ -879,6 +879,7 @@ export function AudiovisualModal() {
           fim: timestampTo,
           legal_guardian: guardian,
           observation: observation,
+          user: user?.id,
         },
       }),
     });
@@ -1771,7 +1772,7 @@ export function AudiovisualModal() {
                             </div>
                           </div>
                         </>
-                        <div className="flex m-auto mt-8 items-center justify-end">
+                        <div className="flex m-auto my-8 items-center justify-end">
                           <Button size="sm" onClick={submit}>
                             Solicitar empréstimo
                             <Package2 size={16} className="" />

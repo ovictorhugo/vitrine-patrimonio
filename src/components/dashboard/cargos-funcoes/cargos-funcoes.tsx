@@ -151,7 +151,7 @@ export function CargosFuncoes() {
                                   {label}
                                 </Button>
                               </div>
-                            )
+                            ),
                         )}
                       </div>
                     </div>
@@ -218,7 +218,7 @@ export function CargosFuncoes() {
                                         {label}
                                       </Button>
                                     </div>
-                                  )
+                                  ),
                               )}
                             </div>
                           </div>

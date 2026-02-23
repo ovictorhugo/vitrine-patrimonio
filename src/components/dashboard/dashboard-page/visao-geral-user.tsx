@@ -74,11 +74,11 @@ export function VisaoGeralUser() {
   type UploadFolder = "profile" | "background";
 
   const [urlBackground, setUrlBackground] = useState(
-    `${urlGeral}user/upload/${user?.id}/cover`
+    `${urlGeral}user/upload/${user?.id}/cover`,
   );
 
   const [urlPerfil, setUrlPerfil] = useState(
-    `${urlGeral}user/upload/${user?.id}/icon`
+    `${urlGeral}user/upload/${user?.id}/icon`,
   );
 
   useEffect(() => {
