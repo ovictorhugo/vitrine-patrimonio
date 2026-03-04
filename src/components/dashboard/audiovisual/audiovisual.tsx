@@ -6,7 +6,6 @@ import {
   Plus,
   Trash,
   SlidersHorizontal,
-  Download,
   ChevronRight,
   LucideIcon,
   HelpCircle,
@@ -21,15 +20,8 @@ import {
   CalendarCheck,
   Wrench,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
 import { Button } from "../../ui/button";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/context";
 import React, {
   useCallback,
@@ -58,18 +50,10 @@ import {
   CommandSeparator,
 } from "../../ui/command";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
-import { Textarea } from "../../ui/textarea";
 import { Badge } from "../../ui/badge";
 import { Separator } from "../../ui/separator";
 import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
-import {
-  DragDropContext,
-  DragUpdate,
-  Droppable,
-  DropResult,
-} from "@hello-pangea/dnd";
 import { Alert } from "../../ui/alert";
 import { ArrowUUpLeft, EyeClosed, MagnifyingGlass } from "phosphor-react";
 import { CardItemDropdown } from "./card-item-dropdown";
@@ -77,11 +61,10 @@ import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
 import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
-import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
-import { handleDownloadXlsx } from "./handle-download";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import LoanCalendar from "./calendario";
+import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -264,40 +247,12 @@ export const WORKFLOW_STATUS_META: Record<
   AUDIOVISUAL_QUEBRADO: { Icon: Wrench, colorClass: "text-indigo-500" },
 };
 
-/* ========================= Regras por coluna ========================= */
-type ColumnRule = {
-  requireJustification?: boolean;
-  extraFields?: Array<{
-    name: string;
-    label: string;
-    type: "text" | "textarea";
-    placeholder?: string;
-    required?: boolean;
-  }>;
-};
-
-const COLUMN_RULES: Record<string, ColumnRule> = {
-  REVIEW_REQUESTED_VITRINE: { requireJustification: false },
-  ADJUSTMENT_VITRINE: { requireJustification: true },
-  VITRINE: { requireJustification: false },
-  AGUARDANDO_TRANSFERENCIA: { requireJustification: true },
-  TRANSFERIDOS: { requireJustification: true },
-  REVIEW_REQUESTED_DESFAZIMENTO: { requireJustification: false },
-  ADJUSTMENT_DESFAZIMENTO: { requireJustification: true },
-  REVIEW_REQUESTED_COMISSION: { requireJustification: true },
-  REJEITADOS_COMISSAO: { requireJustification: true },
-  DESFAZIMENTO: { requireJustification: true },
-};
-
 /* ========================= Utils de board ========================= */
 const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
   const hist = entry.workflow_history ?? [];
   if (!hist.length) return undefined;
   return hist[0];
 };
-
-const codeFrom = (e: CatalogEntry) =>
-  [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
 
 /* ========================= Combobox ========================= */
 export type ComboboxItem = { id: UUID; code?: string; label: string };
@@ -605,17 +560,6 @@ export function Audiovisual() {
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-  // Modal de mudança de coluna
-  const [moveModalOpen, setMoveModalOpen] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<{
-    entry?: CatalogEntry;
-    fromKey?: string;
-    toKey?: string;
-  }>({});
-  const [justificativa, setJustificativa] = useState("");
-  const [extraValues, setExtraValues] = useState<Record<string, string>>({});
-  const [posting, setPosting] = useState(false);
-
   // Snapshots
   const [snapshotBoard, setSnapshotBoard] = useState<Record<
     string,
@@ -630,9 +574,6 @@ export function Audiovisual() {
   const PAGE_SIZE = 24;
   const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
-
-  const rulesFor = (colKey?: string): ColumnRule =>
-    !colKey ? {} : COLUMN_RULES[colKey] || {};
 
   const showMoreCol = (key: string) => {
     const k = (key ?? "").trim();
@@ -960,37 +901,6 @@ export function Audiovisual() {
     debouncedQ,
   ]);
 
-  const postWorkflowChange = async (
-    entry: CatalogEntry | undefined,
-    toKey: string | undefined,
-    detailsExtra: Record<string, any>,
-  ) => {
-    if (!entry || !toKey) return false;
-    try {
-      const payload = {
-        workflow_status: (toKey ?? "").trim(),
-        detail: {
-          justificativa: justificativa || undefined,
-          ...detailsExtra,
-        },
-      };
-      const res = await fetch(`${urlGeral}catalog/${entry.id}/workflow`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error();
-      toast.success("Mudança realizada com sucesso.");
-      return true;
-    } catch {
-      toast.error("Não foi possível mover o item.");
-      return false;
-    }
-  };
-
   const boardScrollRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
   const rafIdRef = useRef<number | null>(null);
@@ -1033,204 +943,7 @@ export function Audiovisual() {
     rafIdRef.current = requestAnimationFrame(autoScrollTick);
   }, []);
 
-  const handlePointerMoveWhileDrag = useCallback((ev: PointerEvent) => {
-    pointerXRef.current = ev.clientX;
-    if (rafIdRef.current == null && draggingRef.current) {
-      rafIdRef.current = requestAnimationFrame(autoScrollTick);
-    }
-  }, []);
-
-  const handleDragStart = useCallback(() => {
-    draggingRef.current = true;
-    document.addEventListener("pointermove", handlePointerMoveWhileDrag);
-    stopAutoScrollLoop();
-    rafIdRef.current = requestAnimationFrame(autoScrollTick);
-  }, [handlePointerMoveWhileDrag, autoScrollTick]);
-
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  const handleDragUpdate = useCallback((update: DragUpdate) => {
-    const destId = update.destination?.droppableId?.trim();
-    if (!destId) return;
-    const el = colRefs.current[destId];
-    if (!el) return;
-
-    // Calcular a posição da coluna relativa ao container de scroll
-    const container = boardScrollRef.current;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const colRect = el.getBoundingClientRect();
-
-    // Se a coluna está fora da viewport, fazer scroll
-    const isLeftOutside = colRect.left < containerRect.left;
-    const isRightOutside = colRect.right > containerRect.right;
-
-    if (isLeftOutside || isRightOutside) {
-      const scrollLeft = container.scrollLeft;
-      const colOffsetLeft = el.offsetLeft;
-      const targetScroll =
-        colOffsetLeft - containerRect.width / 2 + colRect.width / 2;
-
-      container.scrollTo({
-        left: targetScroll,
-        behavior: "smooth",
-      });
-    }
-  }, []);
-
-  const handleDragEndDrop = async (result: DropResult) => {
-    const { source, destination, draggableId } = result;
-    if (!destination) return;
-
-    const fromKey = (source.droppableId ?? "").trim();
-    const toKey = (destination.droppableId ?? "").trim();
-    if (fromKey === toKey) return;
-
-    // ✅ Sempre ache o item pelo draggableId NA LISTA RENDERIZADA
-    const fromVisibleList = board[fromKey] ?? [];
-    const entry = fromVisibleList.find((e) => e.id === draggableId);
-
-    if (!entry) return;
-
-    const needs = rulesFor(toKey);
-
-    // snapshots para rollback
-    const prevBoard = JSON.parse(JSON.stringify(board));
-    const prevEntries = [...entries];
-
-    const optimisticHistory: WorkflowHistoryItem = {
-      id: crypto.randomUUID(),
-      catalog_id: entry.id,
-      user: entry.user,
-      workflow_status: toKey,
-      detail: {},
-      created_at: new Date().toISOString(),
-    };
-
-    const optimisticEntry: CatalogEntry = {
-      ...entry,
-      workflow_history: [optimisticHistory, ...(entry.workflow_history ?? [])],
-    };
-
-    // ✅ atualização otimista SEM depender de índice
-    const newFromBoard = (board[fromKey] ?? []).filter(
-      (x) => x.id !== entry.id,
-    );
-    const newToBoard = [
-      optimisticEntry,
-      ...(board[toKey] ?? []).filter((x) => x.id !== entry.id),
-    ];
-
-    setBoard((old) => ({
-      ...old,
-      [fromKey]: newFromBoard,
-      [toKey]: newToBoard,
-    }));
-
-    setEntries((old) => {
-      const filtered = old.filter((it) => it.id !== entry.id);
-      return [...filtered, optimisticEntry];
-    });
-
-    // modal de justificativa?
-    if (needs.requireJustification || needs.extraFields?.length) {
-      setSnapshotBoard(prevBoard);
-      setSnapshotEntries(prevEntries);
-      setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
-      setMoveModalOpen(true);
-      return;
-    }
-
-    // contadores otimistas
-    adjustCountsOnMove(fromKey, toKey);
-
-    // POST assíncrono
-    postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
-      if (!ok) {
-        setBoard(prevBoard);
-        setEntries(prevEntries);
-        adjustCountsOnMove(toKey, fromKey); // rollback contadores
-      }
-    });
-  };
-
-  const handleDragEnd = (result: DropResult) => {
-    draggingRef.current = false;
-    document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
-    stopAutoScrollLoop();
-    void handleDragEndDrop(result);
-  };
-
-  const closingActionRef = useRef<"confirm" | "cancel" | null>(null);
-
-  const handleConfirmMove = async () => {
-    if (!moveTarget.entry || !moveTarget.fromKey || !moveTarget.toKey) return;
-
-    const needs = rulesFor(moveTarget.toKey);
-    const extra: Record<string, any> = {};
-    for (const f of needs.extraFields ?? [])
-      extra[f.name] = extraValues[f.name] ?? "";
-
-    const prevBoard = snapshotBoard ?? board;
-    const prevEntries = snapshotEntries ?? entries;
-
-    setPosting(true);
-    const ok = await postWorkflowChange(
-      moveTarget.entry,
-      moveTarget.toKey,
-      extra,
-    );
-    setPosting(false);
-
-    if (!ok) {
-      setBoard(prevBoard);
-      setEntries(prevEntries);
-      closingActionRef.current = "cancel";
-      setMoveModalOpen(false);
-      return;
-    }
-
-    // ✅ deu certo: atualiza estatísticas
-    adjustCountsOnMove(moveTarget.fromKey, moveTarget.toKey);
-
-    closingActionRef.current = "confirm";
-    setSnapshotBoard(null);
-    setSnapshotEntries(null);
-    setMoveModalOpen(false);
-    setMoveTarget({});
-    setJustificativa("");
-    setExtraValues({});
-    setSelectedPreset("");
-  };
-
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      const reason = closingActionRef.current;
-      closingActionRef.current = null;
-
-      if (reason !== "confirm" && snapshotBoard && snapshotEntries) {
-        setBoard(snapshotBoard);
-        setEntries(snapshotEntries);
-      }
-
-      setMoveModalOpen(false);
-      setMoveTarget({});
-      setJustificativa("");
-      setExtraValues({});
-      setSnapshotBoard(null);
-      setSnapshotEntries(null);
-      setSelectedPreset("");
-    } else {
-      setMoveModalOpen(true);
-    }
-  };
-
-  const handleCancelMove = () => {
-    closingActionRef.current = "cancel";
-    setMoveModalOpen(false);
-    handleModalOpenChange(false);
-  };
 
   const clearFilters = () => {
     setMaterialId(null);
@@ -1273,77 +986,7 @@ export function Audiovisual() {
     if (expandedColumn !== null) resetExpandedPagination();
   }, [expandedColumn]);
 
-  const adjustCountsOnMove = useCallback((fromKey?: string, toKey?: string) => {
-    if (!fromKey && !toKey) return;
-
-    // Atualiza statusCounts (badge)
-    setStatusCounts((prev) => {
-      const next = { ...prev };
-      if (fromKey) {
-        const current = next[fromKey] ?? 0;
-        next[fromKey] = Math.max(current - 1, 0);
-      }
-      if (toKey) {
-        const current = next[toKey] ?? 0;
-        next[toKey] = current + 1;
-      }
-      return next;
-    });
-
-    // Atualiza totalByCol (usado pelo Mostrar mais)
-    setTotalByCol((prev) => {
-      const next = { ...prev };
-      if (fromKey) {
-        const current = next[fromKey] ?? 0;
-        next[fromKey] = Math.max(current - 1, 0);
-      }
-      if (toKey) {
-        const current = next[toKey] ?? 0;
-        next[toKey] = current + 1;
-      }
-      return next;
-    });
-  }, []);
-
   const { hasAnunciarItem, hasCargosFuncoes } = usePermissions();
-
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const openDelete = (catalogId: string) => {
-    setDeleteTargetId(catalogId);
-    setIsDeleteOpen(true);
-  };
-
-  const closeDelete = () => {
-    setIsDeleteOpen(false);
-    setDeleteTargetId(null);
-  };
-
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTargetId) return;
-    try {
-      setDeleting(true);
-      const r = await fetch(`${urlGeral}catalog/${deleteTargetId}`, {
-        method: "DELETE",
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      if (!r.ok) {
-        const t = await r.text().catch(() => "");
-        throw new Error(`Falha ao excluir (${r.status}): ${t}`);
-      }
-      setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
-      toast("Item excluído com sucesso.");
-      closeDelete();
-    } catch (e: any) {
-      toast("Erro ao excluir", {
-        description: e?.message || "Tente novamente.",
-      });
-    } finally {
-      setDeleting(false);
-    }
-  }, [deleteTargetId, urlGeral, token]);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -1425,48 +1068,6 @@ export function Audiovisual() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
-
-  const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
-    let itemsToExport: CatalogEntry[] = [];
-    if (colKey) {
-      const all = board[colKey] ?? [];
-      const isExpanded = expandedColumn === colKey;
-      itemsToExport =
-        onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
-    } else {
-      itemsToExport = entries;
-    }
-
-    if (!Array.isArray(itemsToExport)) {
-      console.error("downloadXlsx: itemsToExport não é array", itemsToExport);
-      toast.error("Nada para exportar.");
-      return;
-    }
-
-    await handleDownloadXlsx({
-      items: itemsToExport,
-      urlBase: urlGeral,
-      sheetName: "Itens",
-      filename:
-        `itens_${
-          (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
-          "todos"
-        }${onlyVisible ? "_visiveis" : ""}`
-          .replace(/\s+/g, "_")
-          .toLowerCase() + ".xlsx",
-    });
-  };
-
-  useEffect(() => {
-    return () => {
-      document.removeEventListener("pointermove", handlePointerMoveWhileDrag);
-      draggingRef.current = false;
-      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    };
-  }, [handlePointerMoveWhileDrag]);
 
   const [isImage, setIsImage] = useState(false);
 
@@ -1915,368 +1516,294 @@ export function Audiovisual() {
                   ref={boardScrollRef}
                   className="h-full overflow-x-auto overflow-y-hidden pb-2"
                 >
-                  <DragDropContext
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragUpdate={handleDragUpdate}
-                  >
-                    {isMobile ? (
-                      <div className="flex flex-col gap-4 w-full h-full overflow-y-auto pb-10">
-                        {columns.map((col) => {
-                          const items = board[col.key] ?? [];
-                          const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                            Icon: HelpCircle,
-                            colorClass: "text-zinc-500",
-                          };
-                          const { Icon } = meta;
-                          const totalForCol =
-                            statusCounts[col.key] ?? items.length;
+                  {isMobile ? (
+                    <div className="flex flex-col gap-4 w-full h-full overflow-y-auto pb-10">
+                      {columns.map((col) => {
+                        const items = board[col.key] ?? [];
+                        const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                          Icon: HelpCircle,
+                          colorClass: "text-zinc-500",
+                        };
+                        const { Icon } = meta;
+                        const totalForCol =
+                          statusCounts[col.key] ?? items.length;
 
-                          return (
-                            <Alert
-                              key={col.key}
-                              ref={(el) => (colRefs.current[col.key] = el)}
-                              className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                        return (
+                          <Alert
+                            key={col.key}
+                            ref={(el) => (colRefs.current[col.key] = el)}
+                            className="h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <Icon size={16} />
-                                    <span
-                                      title={col.name}
-                                      className="font-semibold truncate"
-                                    >
-                                      {col.name}
-                                    </span>
-                                  </div>
-                                  <Badge variant="outline" className="shrink-0">
-                                    {totalForCol}
-                                  </Badge>
+                                  <Icon size={16} />
+                                  <span
+                                    title={col.name}
+                                    className="font-semibold truncate"
+                                  >
+                                    {col.name}
+                                  </span>
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0"
-                                  onClick={() => setExpandedColumn(col.key)}
-                                  title="Expandir coluna"
-                                >
-                                  <Maximize2 className="h-4 w-4" />
-                                </Button>
+                                <Badge variant="outline" className="shrink-0">
+                                  {totalForCol}
+                                </Badge>
                               </div>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => setExpandedColumn(col.key)}
+                                title="Expandir coluna"
+                              >
+                                <Maximize2 className="h-4 w-4" />
+                              </Button>
+                            </div>
 
-                              <Separator className="mb-2" />
+                            <Separator className="mb-2" />
 
-                              <Droppable droppableId={col.key}>
-                                {(provided, snapshot) => (
-                                  <div className="flex-1 min-h-0">
-                                    {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                            <div className="flex-1 min-h-0">
+                              <div className="flex flex-col min-h-0 w-full max-w-full relative h-full">
+                                <ScrollArea className="h-full relative flex [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0">
+                                  {(loading || loadingColumns[col.key]) &&
+                                  !items.length ? (
+                                    <>
+                                      <Skeleton className="aspect-square w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                    </>
+                                  ) : null}
+
+                                  {items.map((entry, idx) => (
                                     <div
-                                      ref={provided.innerRef}
-                                      {...provided.droppableProps}
-                                      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                      key={entry.id}
+                                      className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
                                     >
-                                      <ScrollArea
-                                        className={`h-full relative flex ${
-                                          snapshot.isDraggingOver
-                                            ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                            : ""
-                                        } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                                      >
-                                        {(loading || loadingColumns[col.key]) &&
-                                        !items.length ? (
-                                          <>
-                                            <Skeleton className="aspect-square w-full rounded-md" />
-                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                          </>
-                                        ) : null}
-
-                                        {items.map((entry, idx) => (
-                                          <div
-                                            key={entry.id}
-                                            className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
-                                          >
-                                            <CardItemDropdown
-                                              entry={entry}
-                                              index={idx}
-                                              draggableId={entry.id} // ADICIONAR esta prop
-                                              isImage={isImage}
-                                              onPromptDelete={() =>
-                                                openDelete(entry.id)
-                                              }
-                                            />
-                                          </div>
-                                        ))}
-
-                                        {(() => {
-                                          const totalFromTotals =
-                                            totalByCol[col.key];
-                                          const totalFromStats =
-                                            statusCounts[col.key];
-
-                                          // 1) escolhe total confiável
-                                          let effectiveTotal:
-                                            | number
-                                            | undefined;
-
-                                          if (
-                                            typeof totalFromTotals ===
-                                              "number" &&
-                                            totalFromTotals >= items.length
-                                          ) {
-                                            effectiveTotal = totalFromTotals;
-                                          } else if (
-                                            typeof totalFromStats ===
-                                              "number" &&
-                                            totalFromStats >= items.length
-                                          ) {
-                                            effectiveTotal = totalFromStats;
-                                          }
-
-                                          const loaded = items.length;
-
-                                          // 2) loading inicial (apenas skeleton)
-                                          const isInitialLoading =
-                                            (loading ||
-                                              loadingColumns[col.key]) &&
-                                            loaded === 0;
-
-                                          if (isInitialLoading) return null;
-
-                                          // 3) decide hasMore mantendo sua regra original
-                                          let hasMore = false;
-
-                                          if (effectiveTotal != null) {
-                                            hasMore = loaded < effectiveTotal;
-                                          } else if (!q.trim()) {
-                                            hasMore =
-                                              loaded > 0 &&
-                                              loaded % PAGE_SIZE === 0;
-                                          }
-
-                                          if (!hasMore) return null;
-
-                                          return (
-                                            <div className="pt-2">
-                                              <Button
-                                                variant="outline"
-                                                className="w-full"
-                                                onClick={() =>
-                                                  showMoreCol(col.key)
-                                                }
-                                                disabled={
-                                                  loadingColumns[col.key]
-                                                }
-                                              >
-                                                {loadingColumns[col.key] ? (
-                                                  <>
-                                                    <Loader
-                                                      size={16}
-                                                      className="animate-spin"
-                                                    />
-                                                    Carregando...
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <Plus size={16} />
-                                                    Mostrar mais
-                                                  </>
-                                                )}
-                                              </Button>
-                                            </div>
-                                          );
-                                        })()}
-
-                                        <ScrollBar orientation="vertical" />
-                                      </ScrollArea>
+                                      {/* Chamada direta do componente de UI, sem o wrapper de Draggable */}
+                                      <ItemPatrimonioKanban
+                                        {...entry}
+                                        isImage={isImage}
+                                      />
                                     </div>
-                                  </div>
-                                )}
-                              </Droppable>
-                            </Alert>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex gap-4 min-w-[980px] h-full">
-                        {columns.map((col) => {
-                          const items = board[col.key] ?? [];
-                          const slice = items.slice(0, expandedVisible);
-                          const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                            Icon: HelpCircle,
-                            colorClass: "text-zinc-500",
-                          };
-                          const { Icon } = meta;
+                                  ))}
 
-                          const totalForCol =
-                            statusCounts[col.key] ?? items.length;
-                          return (
-                            <Alert
-                              key={col.key}
-                              ref={(el) => (colRefs.current[col.key] = el)}
-                              className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                                  {(() => {
+                                    const totalFromTotals = totalByCol[col.key];
+                                    const totalFromStats =
+                                      statusCounts[col.key];
+
+                                    let effectiveTotal: number | undefined;
+
+                                    if (
+                                      typeof totalFromTotals === "number" &&
+                                      totalFromTotals >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromTotals;
+                                    } else if (
+                                      typeof totalFromStats === "number" &&
+                                      totalFromStats >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromStats;
+                                    }
+
+                                    const loaded = items.length;
+                                    const isInitialLoading =
+                                      (loading || loadingColumns[col.key]) &&
+                                      loaded === 0;
+
+                                    if (isInitialLoading) return null;
+
+                                    let hasMore = false;
+
+                                    if (effectiveTotal != null) {
+                                      hasMore = loaded < effectiveTotal;
+                                    } else if (!q.trim()) {
+                                      hasMore =
+                                        loaded > 0 && loaded % PAGE_SIZE === 0;
+                                    }
+
+                                    if (!hasMore) return null;
+
+                                    return (
+                                      <div className="pt-2">
+                                        <Button
+                                          variant="outline"
+                                          className="w-full"
+                                          onClick={() => showMoreCol(col.key)}
+                                          disabled={loadingColumns[col.key]}
+                                        >
+                                          {loadingColumns[col.key] ? (
+                                            <>
+                                              <Loader
+                                                size={16}
+                                                className="animate-spin"
+                                              />
+                                              Carregando...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Plus size={16} />
+                                              Mostrar mais
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    );
+                                  })()}
+
+                                  <ScrollBar orientation="vertical" />
+                                </ScrollArea>
+                              </div>
+                            </div>
+                          </Alert>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex gap-4 min-w-[980px] h-full">
+                      {columns.map((col) => {
+                        const items = board[col.key] ?? [];
+                        const slice = items.slice(0, expandedVisible);
+                        const meta = WORKFLOW_STATUS_META[col.key] ?? {
+                          Icon: HelpCircle,
+                          colorClass: "text-zinc-500",
+                        };
+                        const { Icon } = meta;
+
+                        const totalForCol =
+                          statusCounts[col.key] ?? items.length;
+                        return (
+                          <Alert
+                            key={col.key}
+                            ref={(el) => (colRefs.current[col.key] = el)}
+                            className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <Icon size={16} />
-                                    <span
-                                      title={col.name}
-                                      className="font-semibold truncate"
-                                    >
-                                      {col.name}
-                                    </span>
-                                  </div>
-                                  <Badge variant="outline" className="shrink-0">
-                                    {totalForCol}
-                                  </Badge>
+                                  <Icon size={16} />
+                                  <span
+                                    title={col.name}
+                                    className="font-semibold truncate"
+                                  >
+                                    {col.name}
+                                  </span>
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0"
-                                  onClick={() => setExpandedColumn(col.key)}
-                                  title="Expandir coluna"
-                                >
-                                  <Maximize2 className="h-4 w-4" />
-                                </Button>
+                                <Badge variant="outline" className="shrink-0">
+                                  {totalForCol}
+                                </Badge>
                               </div>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => setExpandedColumn(col.key)}
+                                title="Expandir coluna"
+                              >
+                                <Maximize2 className="h-4 w-4" />
+                              </Button>
+                            </div>
 
-                              <Separator className="mb-2" />
+                            <Separator className="mb-2" />
 
-                              <Droppable droppableId={col.key}>
-                                {(provided, snapshot) => (
-                                  <div className="flex-1 min-h-0">
-                                    {/* DROPPABLE ROOT fora de ancestral scrollável vertical */}
+                            <div className="flex-1 min-h-0">
+                              {/* Removido o Droppable e a div de referência do DnD */}
+                              <div className="flex flex-col min-h-0 w-full max-w-full relative h-full">
+                                <ScrollArea className="h-full relative flex [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0">
+                                  {(loading || loadingColumns[col.key]) &&
+                                  !items.length ? (
+                                    <>
+                                      <Skeleton className="aspect-square w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                      <Skeleton className="aspect-square mt-2 w-full rounded-md" />
+                                    </>
+                                  ) : null}
+
+                                  {items.map((entry, idx) => (
                                     <div
-                                      ref={provided.innerRef}
-                                      {...provided.droppableProps}
-                                      className="flex flex-col min-h-0 w-full max-w-full relative h-full"
+                                      key={entry.id}
+                                      className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
                                     >
-                                      <ScrollArea
-                                        className={`h-full relative flex ${
-                                          snapshot.isDraggingOver
-                                            ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                            : ""
-                                        } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
-                                      >
-                                        {(loading || loadingColumns[col.key]) &&
-                                        !items.length ? (
-                                          <>
-                                            <Skeleton className="aspect-square w-full rounded-md" />
-                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                            <Skeleton className="aspect-square mt-2 w-full rounded-md" />
-                                          </>
-                                        ) : null}
-
-                                        {items.map((entry, idx) => (
-                                          <div
-                                            key={entry.id}
-                                            className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
-                                          >
-                                            <CardItemDropdown
-                                              entry={entry}
-                                              index={idx}
-                                              draggableId={entry.id} // ADICIONAR esta prop
-                                              isImage={isImage}
-                                              onPromptDelete={() =>
-                                                openDelete(entry.id)
-                                              }
-                                            />
-                                          </div>
-                                        ))}
-
-                                        {(() => {
-                                          const totalFromTotals =
-                                            totalByCol[col.key];
-                                          const totalFromStats =
-                                            statusCounts[col.key];
-
-                                          // 1) escolhe total confiável
-                                          let effectiveTotal:
-                                            | number
-                                            | undefined;
-
-                                          if (
-                                            typeof totalFromTotals ===
-                                              "number" &&
-                                            totalFromTotals >= items.length
-                                          ) {
-                                            effectiveTotal = totalFromTotals;
-                                          } else if (
-                                            typeof totalFromStats ===
-                                              "number" &&
-                                            totalFromStats >= items.length
-                                          ) {
-                                            effectiveTotal = totalFromStats;
-                                          }
-
-                                          const loaded = items.length;
-
-                                          // 2) loading inicial (apenas skeleton)
-                                          const isInitialLoading =
-                                            (loading ||
-                                              loadingColumns[col.key]) &&
-                                            loaded === 0;
-
-                                          if (isInitialLoading) return null;
-
-                                          // 3) decide hasMore mantendo sua regra original
-                                          let hasMore = false;
-
-                                          if (effectiveTotal != null) {
-                                            hasMore = loaded < effectiveTotal;
-                                          } else if (!q.trim()) {
-                                            hasMore =
-                                              loaded > 0 &&
-                                              loaded % PAGE_SIZE === 0;
-                                          }
-
-                                          if (!hasMore) return null;
-
-                                          return (
-                                            <div className="pt-2">
-                                              <Button
-                                                variant="outline"
-                                                className="w-full"
-                                                onClick={() =>
-                                                  showMoreCol(col.key)
-                                                }
-                                                disabled={
-                                                  loadingColumns[col.key]
-                                                }
-                                              >
-                                                {loadingColumns[col.key] ? (
-                                                  <>
-                                                    <Loader
-                                                      size={16}
-                                                      className="animate-spin"
-                                                    />
-                                                    Carregando...
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <Plus size={16} />
-                                                    Mostrar mais
-                                                  </>
-                                                )}
-                                              </Button>
-                                            </div>
-                                          );
-                                        })()}
-
-                                        <ScrollBar orientation="vertical" />
-                                      </ScrollArea>
+                                      <CardItemDropdown
+                                        entry={entry}
+                                        index={idx}
+                                        isImage={isImage}
+                                      />
                                     </div>
-                                  </div>
-                                )}
-                              </Droppable>
-                            </Alert>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </DragDropContext>
+                                  ))}
+
+                                  {(() => {
+                                    const totalFromTotals = totalByCol[col.key];
+                                    const totalFromStats =
+                                      statusCounts[col.key];
+
+                                    let effectiveTotal: number | undefined;
+
+                                    if (
+                                      typeof totalFromTotals === "number" &&
+                                      totalFromTotals >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromTotals;
+                                    } else if (
+                                      typeof totalFromStats === "number" &&
+                                      totalFromStats >= items.length
+                                    ) {
+                                      effectiveTotal = totalFromStats;
+                                    }
+
+                                    const loaded = items.length;
+                                    const isInitialLoading =
+                                      (loading || loadingColumns[col.key]) &&
+                                      loaded === 0;
+
+                                    if (isInitialLoading) return null;
+
+                                    let hasMore = false;
+                                    if (effectiveTotal != null) {
+                                      hasMore = loaded < effectiveTotal;
+                                    } else if (!q.trim()) {
+                                      hasMore =
+                                        loaded > 0 && loaded % PAGE_SIZE === 0;
+                                    }
+
+                                    if (!hasMore) return null;
+
+                                    return (
+                                      <div className="pt-2">
+                                        <Button
+                                          variant="outline"
+                                          className="w-full"
+                                          onClick={() => showMoreCol(col.key)}
+                                          disabled={loadingColumns[col.key]}
+                                        >
+                                          {loadingColumns[col.key] ? (
+                                            <>
+                                              <Loader
+                                                size={16}
+                                                className="animate-spin"
+                                              />
+                                              Carregando...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Plus size={16} />
+                                              Mostrar mais
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    );
+                                  })()}
+
+                                  <ScrollBar orientation="vertical" />
+                                </ScrollArea>
+                              </div>
+                            </div>
+                          </Alert>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -2362,14 +1889,6 @@ export function Audiovisual() {
                             method="catalog"
                             size="sm"
                           />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => downloadXlsx(col.key)}
-                          >
-                            <Download size={16} />
-                            Baixar csv
-                          </Button>
                           {isMobile ? (
                             <></>
                           ) : (
@@ -2402,11 +1921,7 @@ export function Audiovisual() {
 
                       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {slice.map((item) => (
-                          <ItemPatrimonio
-                            key={item.id}
-                            {...item}
-                            onPromptDelete={() => openDelete(item.id)}
-                          />
+                          <ItemPatrimonio key={item.id} {...item} />
                         ))}
                       </div>
 
@@ -2481,181 +1996,6 @@ export function Audiovisual() {
           <LoanCalendar rentedItems={itemsFlat} />
         )}
       </main>
-
-      {/* Modal de mudança de workflow */}
-      <Dialog open={moveModalOpen} onOpenChange={handleModalOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Confirmar Audiovisual
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              Você está movendo o item{" "}
-              <strong>
-                {moveTarget.entry?.asset?.material.material_name ??
-                  moveTarget.entry?.id}{" "}
-                (
-                {`${moveTarget.entry?.asset?.asset_code}-${moveTarget.entry?.asset?.asset_check_digit}`}
-                )
-              </strong>{" "}
-              de:{" "}
-              <strong>
-                {columns.find((c) => c.key === moveTarget.fromKey)?.name ??
-                  moveTarget.fromKey}
-              </strong>{" "}
-              para:{" "}
-              <strong>
-                {columns.find((c) => c.key === moveTarget.toKey)?.name ??
-                  moveTarget.toKey}
-              </strong>
-            </DialogDescription>
-          </DialogHeader>
-
-          <Separator className="my-4" />
-
-          <div className="space-y-4">
-            {(() => {
-              const needs = rulesFor(moveTarget.toKey);
-              if (!needs.requireJustification) return null;
-
-              const isDesfazimento = moveTarget.toKey === "DESFAZIMENTO";
-
-              return (
-                <div className="grid gap-3">
-                  {isDesfazimento && (
-                    <div className="grid gap-2">
-                      <Label>Modelos de justificativa (opcional)</Label>
-                      <Select
-                        value={selectedPreset}
-                        onValueChange={(val) => {
-                          setSelectedPreset(val);
-                          const preset = JUSTIFICATIVAS_DESFAZIMENTO.find(
-                            (p) => p.id === val,
-                          );
-                          if (preset && moveTarget.entry) {
-                            setJustificativa(preset.build(moveTarget.entry));
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione um modelo para preencher a justificativa..." />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          className="z-[99999]"
-                          align="start"
-                          side="bottom"
-                          sideOffset={6}
-                        >
-                          {JUSTIFICATIVAS_DESFAZIMENTO.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="just">Justificativa</Label>
-                    <Textarea
-                      id="just"
-                      value={justificativa}
-                      onChange={(e) => setJustificativa(e.target.value)}
-                      placeholder={
-                        isDesfazimento
-                          ? "Você pode escolher um modelo acima para pré-preencher e depois ajustar aqui…"
-                          : ""
-                      }
-                    />
-                  </div>
-                </div>
-              );
-            })()}
-
-            {(rulesFor(moveTarget.toKey)?.extraFields ?? []).map((f) => (
-              <div className="grid gap-2" key={f.name}>
-                <Label htmlFor={f.name}>{f.label}</Label>
-                {f.type === "textarea" ? (
-                  <Textarea
-                    id={f.name}
-                    value={extraValues[f.name] ?? ""}
-                    onChange={(e) =>
-                      setExtraValues((s) => ({
-                        ...s,
-                        [f.name]: e.target.value,
-                      }))
-                    }
-                  />
-                ) : (
-                  <Input
-                    id={f.name}
-                    placeholder={f.placeholder}
-                    value={extraValues[f.name] ?? ""}
-                    onChange={(e) =>
-                      setExtraValues((s) => ({
-                        ...s,
-                        [f.name]: e.target.value,
-                      }))
-                    }
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={handleCancelMove}>
-              <X size={16} />
-              Cancelar
-            </Button>
-            <Button disabled={posting} onClick={handleConfirmMove}>
-              {posting ? (
-                <>
-                  <Loader size={16} />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Check size={16} />
-                  Confirmar
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog: Excluir */}
-      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Deletar item do catálogo
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500 ">
-              Esta ação é irreversível. Ao deletar, todas as informações deste
-              item no catálogo serão perdidas.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="">
-            <Button variant="ghost" onClick={closeDelete}>
-              <ArrowUUpLeft size={16} />
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={deleting}
-            >
-              <Trash size={16} />
-              {deleting ? "Deletando…" : "Deletar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

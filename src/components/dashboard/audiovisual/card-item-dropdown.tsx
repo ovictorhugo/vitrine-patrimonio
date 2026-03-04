@@ -1,14 +1,20 @@
-// src/pages/vitrine/card-item-dropdown.tsx
-import { Draggable } from "@hello-pangea/dnd";
 import { useContext } from "react";
 import { UserContext } from "../../../context/context";
-import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
+import { ItemPatrimonioKanban } from "./item-patrimonio-kanban";
 
-/* ===== Tipos (compatíveis com a página) ===== */
+/* ===== Tipos (mantidos para compatibilidade) ===== */
 type UUID = string;
 
-interface Material { material_name: string; material_code: string; id: UUID; }
-interface LegalGuardian { legal_guardians_name: string; legal_guardians_code: string; id: UUID; }
+interface Material {
+  material_name: string;
+  material_code: string;
+  id: UUID;
+}
+interface LegalGuardian {
+  legal_guardians_name: string;
+  legal_guardians_code: string;
+  id: UUID;
+}
 
 interface CatalogAsset {
   asset_code: string;
@@ -45,7 +51,12 @@ interface CatalogAsset {
         agency_code: string;
         unit_id: UUID;
         id: UUID;
-        unit: { unit_name: string; unit_code: string; unit_siaf: string; id: UUID; };
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: UUID;
+        };
       };
     };
     legal_guardian: LegalGuardian;
@@ -76,7 +87,7 @@ export type WorkflowHistoryItem = {
   created_at: string;
 };
 
-type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string; };
+type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string };
 
 export type CatalogEntry = {
   situation: string;
@@ -91,26 +102,24 @@ export type CatalogEntry = {
   created_at: string;
 };
 
-/** Ações que vêm do pai (todas opcionais) */
 type ParentActions = {
   isFavorite?: boolean;
   onToggleFavorite?: (patrimonioId: string) => void;
   handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
   viewCount?: number;
-  onPromptDelete?: () => void; // abre diálogo de deletar no pai
-  onPromptMove?: () => void;   // abre diálogo de movimentar no pai
+  onPromptDelete?: () => void;
+  onPromptMove?: () => void;
 };
 
 type Props = ParentActions & {
   entry: CatalogEntry;
   index: number;
-  isImage: boolean
-  draggableId: string
+  isImage: boolean;
+  draggableId?: string; // Tornada opcional
 };
 
 export function CardItemDropdown({
   entry,
-  index,
   isFavorite,
   onToggleFavorite,
   handlePutItem,
@@ -118,37 +127,22 @@ export function CardItemDropdown({
   onPromptDelete,
   onPromptMove,
   isImage,
-  draggableId
 }: Props) {
-  // (se precisar de algo do contexto)
   useContext(UserContext);
 
   return (
-   <Draggable draggableId={draggableId} index={index}>
-    {(prov, snap) => (
-      <div
-        ref={prov.innerRef}
-        {...prov.draggableProps}
-        {...prov.dragHandleProps}
-        className={`${snap.isDragging ? "" : ""}`}
-        style={{
-          ...prov.draggableProps.style,
-          pointerEvents: snap.isDragging ? 'none' : 'auto',
-        }}
-      >
-        <ItemPatrimonioKanban
-          key={entry.id}
-          {...entry}
-          isFavorite={isFavorite}
-          onToggleFavorite={onToggleFavorite}
-          handlePutItem={handlePutItem}
-          viewCount={viewCount}
-          onPromptDelete={onPromptDelete}
-          onPromptMove={onPromptMove}
-          isImage={isImage}
-        />
-      </div>
-    )}
-  </Draggable>
+    <div className="w-full">
+      <ItemPatrimonioKanban
+        key={entry.id}
+        {...entry}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
+        handlePutItem={handlePutItem}
+        viewCount={viewCount}
+        onPromptDelete={onPromptDelete}
+        onPromptMove={onPromptMove}
+        isImage={isImage}
+      />
+    </div>
   );
 }

@@ -96,6 +96,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { useIsMobile } from "../../hooks/use-mobile";
 import AudiovisualTab from "./emprestimo";
+import { isUint8Array } from "util/types";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -771,7 +772,11 @@ export function ItemPage() {
     setTransfers(list);
   }, [catalog?.workflow_history]);
 
-  const tabs = [
+  const isAudiovisual = catalog?.workflow_history.some(
+    (ev) => ev.workflow_status === "AUDIOVISUAL_ANUNCIADO",
+  );
+
+  let tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "documentos", label: "Documentos", icon: FileIcon },
     {
@@ -799,6 +804,12 @@ export function ItemPage() {
     },
     { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
   ];
+
+  if (isAudiovisual)
+    tabs = [
+      { id: "visao_geral", label: "Visão Geral", icon: Home },
+      { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
+    ];
 
   // Componente principal
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -883,7 +894,6 @@ export function ItemPage() {
     "REJEITADOS_COMISSAO",
     "DESFAZIMENTO",
     "DESCARTADOS",
-    // novos (vitrine/desfazimento)
     "REVIEW_REQUESTED_VITRINE",
     "ADJUSTMENT_VITRINE",
     "REVIEW_REQUESTED_DESFAZIMENTO",
@@ -894,7 +904,6 @@ export function ItemPage() {
     "REJEITADOS_COMISSAO",
     "DESFAZIMENTO",
     "DESCARTADOS",
-    // novos (vitrine/desfazimento)
     "REVIEW_REQUESTED_VITRINE",
     "ADJUSTMENT_VITRINE",
     "REVIEW_REQUESTED_DESFAZIMENTO",

@@ -288,6 +288,22 @@ type LegalGuardian = {
   legal_guardians_code: string;
 };
 
+type UserDTO = {
+  id: string;
+  username: string;
+  email: string;
+  provider: string;
+  linkedin: string;
+  lattes_id: string;
+  orcid: string;
+  ramal: string;
+  photo_url: string;
+  background_url: string;
+  matricula: string;
+  verify: boolean;
+  institution_id: string;
+};
+
 const formatDateTimeBR = (iso?: string) => {
   if (!iso) return "";
   try {
@@ -308,7 +324,7 @@ interface AudiovisualTabProps {
 export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
   const isMobile = useIsMobile();
 
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
   const images = useMemo(() => {
@@ -333,63 +349,22 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     [images],
   );
 
-  /* ================= Legal Guardian ================ */
-
-  const guardianReqIdRef = useRef(0);
-  const [openGuardian, setOpenGuardian] = useState(false);
-  // termos de busca
-  const [guardianQ, setGuardianQ] = useState("");
-  const guardianQd = useDebounced(guardianQ, 300);
-  // loading
-  const [loading, setLoading] = useState({
-    guardians: false,
-  });
-
   const [observation, setObservation] = useState<string>("");
-  const [legalGuardians, setLegalGuardians] = useState<LegalGuardian[]>([]);
-  const [selectedGuardianId, setLegalGuardianId] = useState("");
 
-  function useDebounced<T>(value: T, delay = 300) {
-    const [debounced, setDebounced] = useState(value);
-    useEffect(() => {
-      const id = setTimeout(() => setDebounced(value), delay);
-      return () => clearTimeout(id);
-    }, [value, delay]);
-    return debounced;
-  }
+  const [inputUser, setInputUser] = useState("");
+  const [users, setUsers] = useState<UserDTO[]>([]);
 
-  const fetchLegalGuardians = useCallback(
-    async (q?: string) => {
-      const reqId = ++guardianReqIdRef.current;
-      setLoading((p) => ({ ...p, guardians: true }));
-      try {
-        const params = q ? `?q=${encodeURIComponent(q)}` : "";
-        const res = await fetch(`${urlGeral}legal-guardians/${params}`, {
-          headers: { Accept: "application/json" },
-        });
-        const json: { legal_guardians: LegalGuardian[] } = await res.json();
-        if (guardianReqIdRef.current !== reqId) return; // resposta antiga
-        setLegalGuardians(json.legal_guardians);
-      } catch (e) {
-        if (guardianReqIdRef.current === reqId) setLegalGuardians([]);
-        console.error("Erro ao buscar responsáveis:", e);
-      } finally {
-        if (guardianReqIdRef.current === reqId)
-          setLoading((p) => ({ ...p, guardians: false }));
-      }
-    },
-    [urlGeral],
-  );
+  // Estados para o Combobox de Usuários
+  const [openUser, setOpenUser] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // carregar inicialmente
-  useEffect(() => {
-    fetchLegalGuardians(guardianQd);
-  }, [fetchLegalGuardians, guardianQd]);
+  // Encontra o usuário completo baseado no ID selecionado
+  const selectedUser = users.find((u) => u.id === selectedUserId);
 
-  const handleGuardianSelect = (id: string) => {
-    const g = legalGuardians.find((x) => x.id === id);
-    setLegalGuardianId(g?.id || "");
-  };
+  // Formata o nome para exibição (fallback para a primeira parte do email se não tiver username)
+  const displaySelectedUser = selectedUser
+    ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
+    : "Selecione o guardião temporário...";
 
   const asset = catalog?.asset;
   const titulo =
@@ -470,19 +445,23 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     getWorkflows();
   }, []);
 
-  function getAvailableHours(dateFrom, workflow) {
+function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
     const year = dateFrom.getFullYear();
     const month = dateFrom.getMonth();
     const day = dateFrom.getDate();
 
     return hours.filter((hour) => {
-      const timeToCheck = new Date(year, month, day, hour, 0, 0, 0).getTime();
+      // Criamos o timestamp do slot de hora atual (ex: 14:00:00 até 14:59:59)
+      const slotStart = new Date(year, month, day, hour, 0, 0, 0).getTime();
+      const slotEnd = new Date(year, month, day, hour, 59, 59, 999).getTime();
 
       const hasConflict = workflow.some((item) => {
         try {
-          const start = new Date(item.inicio.replace("Z", "")).getTime();
-          const end = new Date(item.fim.replace("Z", "")).getTime();
-          return timeToCheck >= start && timeToCheck < end;
+          const start = new Date(item.inicio).getTime();
+          const end = new Date(item.fim).getTime();
+          
+          // Há conflito se o slot de hora intersecta o intervalo do workflow
+          return slotStart < end && slotEnd > start;
         } catch {
           return false;
         }
@@ -596,7 +575,7 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
 
       conflictingWorkflows.forEach((wf) => {
         if (typeof wf.inicio === "number") return;
-        const wfStart = new Date(wf.inicio.replace("Z", "")).getTime();
+        const wfStart = new Date(wf.inicio).getTime();
 
         // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
         if (wfStart >= startMs) {
@@ -648,6 +627,24 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     return newDate;
   };
 
+  async function fetchUsers() {
+    try {
+      const res = await fetch(`${urlGeral}users/?limit=2000`, {
+        headers: { Accept: "application/json" },
+      });
+      const json: { users: UserDTO[] } = await res.json();
+      console.log(json.users);
+      setUsers(json.users);
+    } catch (e) {
+      console.error("Erro ao buscar usuários:", e);
+    }
+  }
+
+  // carregar inicialmente
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   async function submit() {
     if (!dateFrom || !dateTo) {
       console.error("Datas não selecionadas");
@@ -664,8 +661,6 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       return;
     }
 
-    const guardian = legalGuardians.find((g) => g.id === selectedGuardianId);
-
     const res = await fetch(`${urlGeral}catalog/${catalog?.id}/workflow`, {
       method: "POST",
       headers: {
@@ -676,10 +671,11 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       body: JSON.stringify({
         workflow_status: "AUDIOVISUAL_EMPRESTIMO",
         detail: {
-          inicio: timestampFrom,
-          fim: timestampTo,
-          legal_guardian: guardian,
-          observation: observation,
+          start_at: timestampFrom,
+          end_at: timestampTo,
+          temporary_guardian_id: selectedUser?.username,
+          is_maintenance:false,
+          lend_detail: observation,
         },
       }),
     });
@@ -706,84 +702,77 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
         <div className="grid grid-cols-1">
           <div className="grid gap-3 w-full pb-4">
             <Label>Responsável</Label>
-
             <div className="flex-1">
               <Popover
-                modal={false}
-                open={openGuardian}
+                modal={true}
+                open={openUser}
                 onOpenChange={(val) => {
-                  setOpenGuardian(val);
+                  setOpenUser(val);
                 }}
               >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
-                    aria-expanded={openGuardian}
+                    aria-expanded={openUser}
                     className="w-full justify-between"
                   >
-                    {selectedGuardianId
-                      ? legalGuardians.find((g) => g.id === selectedGuardianId)
-                          ?.legal_guardians_name
-                      : loading.guardians
-                        ? "Carregando..."
-                        : "Selecione o responsável"}
+                    {displaySelectedUser}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-[320px] p-0 z-[9999] pointer-events-auto"
+                  className="p-0 w-[var(--radix-popover-trigger-width)] z-[99]"
                   align="start"
-                  sideOffset={6}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onOpenAutoFocus={(e) => e.preventDefault()}
                 >
                   <Command>
                     <CommandInput
-                      placeholder="Buscar responsável (nome ou código)..."
-                      onValueChange={(v) => {
-                        setGuardianQ(v);
-                        fetchLegalGuardians(v);
-                      }}
+                      placeholder="Buscar por nome ou email..."
+                      autoFocus
                     />
                     <CommandList>
-                      <CommandEmpty>
-                        {loading.guardians
-                          ? "Carregando..."
-                          : "Nenhum responsável encontrado."}
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {legalGuardians
-                          .slice()
-                          .sort((a, b) =>
-                            a.legal_guardians_name.localeCompare(
-                              b.legal_guardians_name,
-                              "pt-BR",
-                              { sensitivity: "base" },
-                            ),
-                          )
-                          .map((g) => (
+                      {users.length === 0 ? (
+                        <CommandEmpty>Carregando usuários...</CommandEmpty>
+                      ) : (
+                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      )}
+
+                      <CommandGroup className="max-h-60 overflow-y-auto">
+                        {users.map((user) => {
+                          const userName =
+                            user.username ||
+                            user.email?.split("@")[0] ||
+                            "Usuário";
+
+                          return (
                             <CommandItem
-                              key={g.id}
-                              value={`${g.legal_guardians_name} ${g.legal_guardians_code}`}
+                              key={user.id}
+                              value={`${userName} ${user.email}`}
                               onSelect={() => {
-                                handleGuardianSelect(g.id);
-                                setOpenGuardian(false);
+                                setSelectedUserId(user.id);
+                                setOpenUser(false);
                               }}
+                              className="cursor-pointer flex items-center gap-2"
                             >
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedGuardianId === g.id
+                                  "h-4 w-4 flex-shrink-0",
+                                  selectedUserId === user.id
                                     ? "opacity-100"
                                     : "opacity-0",
                                 )}
                               />
                               <div className="flex flex-col">
-                                <span className="text-sm">
-                                  {g.legal_guardians_name}
+                                <span>{userName}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {user.email}
                                 </span>
                               </div>
                             </CommandItem>
-                          ))}
+                          );
+                        })}
                       </CommandGroup>
                     </CommandList>
                   </Command>
