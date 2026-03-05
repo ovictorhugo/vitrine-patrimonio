@@ -95,7 +95,6 @@ import {
 } from "../homepage/components/documents-tab-catalog";
 import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
 import { DownloadPdfButton } from "../download/download-pdf-button";
-import { AudiovisualModal } from "./catalog-modal-audiovisual";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -1900,7 +1899,7 @@ export function CatalogModal() {
           </Dialog>
         </main>
       );
-    } else return <AudiovisualModal />;
+    }
   };
 
   if (isMobile) {

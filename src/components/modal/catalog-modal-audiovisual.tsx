@@ -38,19 +38,12 @@ import {
   MoveRight,
   XIcon,
   User,
-  LucideIcon,
-  Workflow,
   ArrowRightLeft,
-  Wrench,
-  BookmarkPlus,
-  CalendarCheck,
-  BookMarked,
-  LucideAlarmClockOff,
-  ChevronsUpDown,
-  Check,
   CalendarIcon,
   ChevronDownIcon,
   Package2,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft } from "phosphor-react";
@@ -63,19 +56,11 @@ import {
   CommandList,
 } from "../ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../ui/accordion";
-import { HeaderResultTypeHome } from "../header-result-type-home";
 import { useModal } from "../hooks/use-modal-store";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
 import { ScrollArea } from "../ui/scroll-area";
-import { LikeButton } from "../item-page/like-button";
 import {
   Tooltip,
   TooltipContent,
@@ -83,8 +68,6 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
-import { usePermissions } from "../permissions";
-import { Files } from "../homepage/components/documents-tab-catalog";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -96,53 +79,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { getDefaultAutoSelectFamily } from "net";
+import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 
-/* ===================== Tipos DTO (mesmos da página) ===================== */
-interface UnitDTO {
-  id: string;
-  unit_name: string;
-  unit_code: string;
-  unit_siaf: string;
+/* ===================== Tipos DTO ===================== */
+export type UUID = string;
+
+export interface UserDTO {
+  id: UUID;
+  username: string;
+  email: string;
+  provider?: string;
+  linkedin?: string | null;
+  lattes_id?: string | null;
+  orcid?: string | null;
+  ramal?: string | null;
+  photo_url?: string | null;
+  background_url?: string | null;
+  matricula?: string | null;
+  verify?: boolean;
+  institution_id?: UUID;
 }
-interface AgencyDTO {
-  id: string;
-  agency_name: string;
-  agency_code: string;
-  unit_id?: string;
-  unit?: UnitDTO;
-}
-interface SectorDTO {
-  id: string;
-  sector_name: string;
-  sector_code: string;
-  agency_id?: string;
-  agency?: AgencyDTO;
-  unit_id?: string;
-  unit?: UnitDTO;
-}
-interface LocationDTO {
-  id: string;
-  location_name: string;
-  location_code: string;
-  sector_id?: string;
-  sector?: SectorDTO;
-  legal_guardian_id?: string;
-  legal_guardian?: LegalGuardianDTO;
-  location_inventories?: LocationInventoryDTO[];
-}
-interface MaterialDTO {
-  id: string;
-  material_code: string;
-  material_name: string;
-}
-interface LegalGuardianDTO {
-  id: string;
+
+export interface LegalGuardianDTO {
+  id: UUID;
   legal_guardians_code: string;
   legal_guardians_name: string;
 }
-interface AssetDTO {
-  id: string;
+
+export interface MaterialDTO {
+  id: UUID;
+  material_code: string;
+  material_name: string;
+}
+
+export interface LocationDTO {
+  id: UUID;
+  location_name: string;
+  location_code: string;
+  sector?: {
+    id: UUID;
+    sector_name: string;
+    sector_code: string;
+    agency?: {
+      id: UUID;
+      agency_name: string;
+      agency_code: string;
+      unit?: {
+        id: UUID;
+        unit_name: string;
+        unit_code: string;
+      };
+    };
+  };
+  legal_guardian?: LegalGuardianDTO;
+}
+
+export interface AssetDTO {
+  id: UUID;
   asset_code: string;
   asset_check_digit: string;
   atm_number: string;
@@ -151,233 +144,64 @@ interface AssetDTO {
   asset_value: string;
   asset_description: string;
   csv_code: string;
-  accounting_entry_code: string;
-  item_brand: string;
-  item_model: string;
-  group_type_code: string;
-  group_code: string;
-  expense_element_code: string;
-  subelement_code: string;
-  is_official?: boolean;
   material?: MaterialDTO | null;
   legal_guardian?: LegalGuardianDTO | null;
   location?: LocationDTO | null;
 }
-interface CatalogImageDTO {
-  id: string;
-  catalog_id: string;
+
+export interface CatalogImageDTO {
+  id: UUID;
+  catalog_id: UUID;
   file_path: string;
 }
 
-type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
-
-type UserDTO = {
-  id: string;
-  username: string;
-  email: string;
-  provider: string;
-  linkedin: string;
-  lattes_id: string;
-  orcid: string;
-  ramal: string;
-  photo_url: string;
-  background_url: string;
-  matricula: string;
-  verify: boolean;
-  institution_id: string;
-};
-
-// ===== Inventário em Local =====
-interface InventoryDTO {
-  key: string;
-  avaliable: boolean;
-  id: string;
-  created_by: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-}
-interface LocationInventoryDTO {
-  id: string;
-  assets: string[];
-  inventory: InventoryDTO;
-  filled: boolean;
-}
-
-// ===== Transferência =====
-interface TransferRequestDTO {
-  id: string;
-  status: "PENDING" | "DECLINED" | "ACCEPTABLE" | string;
-  user: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-  location: LocationDTO;
-}
-
-type WorkflowStatus =
-  | "STARTED"
-  | "VALIDATION_VITRINE"
-  | "VALIDATION_UNDOING"
-  | "VALIDATION_REJECTED"
-  | "VALIDATION_APPROVED"
-  | "PUBLISHED"
-  | "ARCHIVED"
-  | string;
-
-export type WorkflowEvent = {
-  id: string;
-  detail?: Record<string, any>;
-  workflow_status: string;
-  created_at: string; // ISO
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string;
-  } | null;
-  transfer_requests?: TransferRequestDTO[];
-};
-
 export interface CatalogResponseDTO {
-  id: string;
+  id: UUID;
   created_at: string;
-  situation: ApiSituation;
+  situation: string;
   conservation_status: string;
   description: string;
   asset: AssetDTO;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-  } | null;
+  user?: UserDTO | null;
   location?: LocationDTO | null;
   images: CatalogImageDTO[];
-  files: Files | Files[] | null | undefined;
-  workflow_history?: WorkflowEvent[];
-  transfer_requests: TransferRequest[];
+  workflow_history?: any[];
 }
 
 export interface LoanDTO {
-  id: string;
-  loanable_item_id: string;
-  requester_id: string;
-  temporary_guardian_id: string;
-
-  start_at: string; // ISO Date String
+  id: UUID;
+  loanable_item_id: UUID;
+  requester_id: UUID | null;
+  temporary_guardian_id: UUID;
+  start_at: string;
   end_at: string | null;
   returned_at: string | null;
-
-  lend_detail: string | null;
-  returned_detail: string | null;
-  rejection_reason: string | null;
-
   is_confirmed: boolean;
   is_executed: boolean;
   is_returned: boolean;
   is_maintenance: boolean;
-
-  // Objetos relacionados (Conforme o selectinload do Backend)
-  loanable_item?: LoanableItemDTO;
+  lend_detail: string | null;
+  rejection_reason: string | null;
   requester?: UserDTO;
   temporary_guardian?: UserDTO;
-
-  // Mixin de Auditoria (se você costuma expor no DTO)
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface LoanableItemDTO {
-  id: string;
-  catalog_id: string;
-  legal_guardian_id: string;
+  id: UUID;
+  catalog_id: UUID;
+  legal_guardian_id: UUID;
   owner_notes: string | null;
-  catalog?: CatalogResponseDTO; // Aqui entra a interface que você me passou
+  catalog: CatalogResponseDTO;
   legal_guardian?: UserDTO;
-  loans?: LoanDTO[];
+  loans: LoanDTO[];
 }
 
-export type TransferRequest = {
-  id: string;
-  status: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string;
-    lattes_id: string;
-    orcid: string;
-    ramal: string;
-    photo_url: string;
-    background_url: string;
-    matricula: string;
-    verify: boolean;
-    institution_id: string;
-  };
-  location: {
-    legal_guardian_id: string;
-    sector_id: string;
-    location_name: string;
-    location_code: string;
-    id: string;
-    sector: {
-      agency_id: string;
-      sector_name: string;
-      sector_code: string;
-      id: string;
-      agency: {
-        agency_name: string;
-        agency_code: string;
-        unit_id: string;
-        id: string;
-        unit: {
-          unit_name: string;
-          unit_code: string;
-          unit_siaf: string;
-          id: string;
-        };
-      };
-    };
-    legal_guardian: {
-      legal_guardians_code: string;
-      legal_guardians_name: string;
-      id: string;
-    };
-  };
-};
-
-type LegalGuardian = {
-  id: string;
-  legal_guardians_name: string;
-  legal_guardians_code: string;
-};
-
-/* ===================== Utils ===================== */
-
-const WORKFLOW_STATUS_META: Record<
-  string,
-  { Icon: LucideIcon; colorClass: string }
-> = {
-  AUDIOVISUAL_ANUNCIADO: { Icon: BookMarked, colorClass: "text-amber-500" },
-  AUDIOVISUAL_EMPRESTIMO: { Icon: CalendarCheck, colorClass: "text-blue-500" },
-  AUDIOVISUAL_ATRASADO: {
-    Icon: LucideAlarmClockOff,
-    colorClass: "text-green-600",
-  },
-  AUDIOVISUAL_QUEBRADO: { Icon: Wrench, colorClass: "text-indigo-500" },
-};
-
+/* ===================== Utils e Constantes ===================== */
 const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   AUDIOVISUAL_ANUNCIADO: "Item disponível para empréstimo",
   AUDIOVISUAL_EMPRESTIMO: "Item emprestado",
   AUDIOVISUAL_ATRASADO: "Item em estado de atraso",
   AUDIOVISUAL_QUEBRADO: "Item foi quebrado",
-
   STARTED: "Iniciado",
   REVIEW_REQUESTED_VITRINE: "Avaliação S. Patrimônio - Vitrine",
   ADJUSTMENT_VITRINE: "Ajustes - Vitrine",
@@ -397,7 +221,7 @@ const chain = (loc?: LocationDTO | null) => {
   if (!loc || !loc.sector) return [];
   const s = loc.sector;
   const a = s.agency;
-  const u = a?.unit ?? s.unit;
+  const u = a?.unit;
   const parts: string[] = [];
   if (u) parts.push(`${u.unit_code} - ${u.unit_name}`);
   if (a) parts.push(`${a.agency_code} - ${a.agency_name}`);
@@ -420,6 +244,7 @@ const formatDateTimeBR = (iso?: string) => {
   }
 };
 
+/* ===================== Componente Principal ===================== */
 export function AudiovisualModal() {
   const isMobile = useIsMobile();
   const { onClose, isOpen, type: typeModal, data } = useModal();
@@ -428,25 +253,23 @@ export function AudiovisualModal() {
   const { urlGeral, loggedIn, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
-  console.log(data)
-
-  const loan = (data as any) ?? (data as LoanDTO | null);
-  const catalog = loan as CatalogResponseDTO;
+  // CORREÇÃO AQUI: Cast duplo para extrair o objeto perfeitamente
+  const loanItem = data as unknown as LoanableItemDTO | null;
+  const catalog = loanItem?.catalog;
 
   const images = useMemo(() => {
     return (catalog?.images ?? []).slice(0, 4).map((img, index) => {
-      // Lógica do buildImgUrl movida para cá
       const p = img.file_path;
       const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
       const fullUrl = `${urlGeral}${cleanPath}`;
-
       return {
         category: "",
         title: img.id || `${index}-${img.file_path}`,
         src: fullUrl,
       };
     });
-  }, [catalog?.images, urlGeral]); // Adicionei urlGeral nas dependências
+  }, [catalog?.images, urlGeral]);
+
   const cards = useMemo(
     () =>
       images.map((card, index) => (
@@ -454,40 +277,20 @@ export function AudiovisualModal() {
       )),
     [images],
   );
-  const historySortedDesc = useMemo(() => {
-    const hist = catalog?.workflow_history ?? [];
-    return [...hist].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-  }, [catalog?.workflow_history]);
 
-  const handleBack = () => onClose(); // no modal, voltar = fechar
+  const handleBack = () => onClose();
   const handleVoltar = () => onClose();
 
   const [observation, setObservation] = useState<string>("");
   const [users, setUsers] = useState<UserDTO[]>([]);
 
-  // Estados para o Combobox de Usuários
   const [openUser, setOpenUser] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // Encontra o usuário completo baseado no ID selecionado
   const selectedUser = users.find((u) => u.id === selectedUserId);
-
-  // Formata o nome para exibição (fallback para a primeira parte do email se não tiver username)
   const displaySelectedUser = selectedUser
     ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
     : "Selecione o guardião temporário...";
-
-  function useDebounced<T>(value: T, delay = 300) {
-    const [debounced, setDebounced] = useState(value);
-    useEffect(() => {
-      const id = setTimeout(() => setDebounced(value), delay);
-      return () => clearTimeout(id);
-    }, [value, delay]);
-    return debounced;
-  }
 
   async function fetchUsers() {
     try {
@@ -501,14 +304,12 @@ export function AudiovisualModal() {
     }
   }
 
-  // carregar inicialmente
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isModalOpen) fetchUsers();
+  }, [isModalOpen]);
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
   const closeDelete = () => setIsDeleteOpen(false);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -519,16 +320,11 @@ export function AudiovisualModal() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) {
-        const t = await r.text().catch(() => "");
-        throw new Error(`Falha ao excluir (${r.status}): ${t}`);
-      }
+      if (!r.ok) throw new Error("Falha ao excluir");
       toast("Item excluído com sucesso.");
-      try {
-        window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
-        );
-      } catch {}
+      window.dispatchEvent(
+        new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
+      );
       onClose();
     } catch (e: any) {
       toast("Erro ao excluir", {
@@ -541,11 +337,7 @@ export function AudiovisualModal() {
   }, [catalog, onClose, token, urlGeral]);
 
   const asset = catalog?.asset;
-  const titulo =
-    asset?.material?.material_name ||
-    asset?.item_model ||
-    asset?.item_brand ||
-    "Item sem nome";
+  const titulo = asset?.material?.material_name || "Item sem nome";
 
   const locCatalogoParts = chain(catalog?.location) ?? [];
   const visibleCatalogParts = !loggedIn
@@ -565,7 +357,6 @@ export function AudiovisualModal() {
     OC: "bg-blue-500",
     RE: "bg-purple-500",
   };
-
   const csvCodToText: Record<string, string> = {
     BM: "Bom",
     AE: "Anti-Econômico",
@@ -576,7 +367,7 @@ export function AudiovisualModal() {
 
   const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
-    NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any },
+    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
     TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
     MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
@@ -586,40 +377,15 @@ export function AudiovisualModal() {
   const csvCodTrimmed = (asset?.csv_code || "").trim();
   const bemStaTrimmed = (asset?.asset_status || "").trim();
   const status = statusMap[bemStaTrimmed];
-
-  const colorClassStr =
-    qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300";
+  const colorClassStr = qualisColor[csvCodTrimmed] || "bg-zinc-300";
   const borderColorClass = colorClassStr.replace("bg-", "border-");
-
-  const getStatusLabel = (status: WorkflowStatus) =>
-    WORKFLOW_STATUS_LABELS[status] ?? status;
-
-  const calculateDifference = (createdAt: string) => {
-    const createdDate = new Date(createdAt);
-    const currentDate = new Date();
-    const timeDiff = Math.abs(currentDate.getTime() - createdDate.getTime());
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const months = Math.floor(daysDiff / 30);
-    const days = daysDiff % 30;
-
-    let bgColor = "";
-    if (months < 3) bgColor = "bg-green-700";
-    else if (months < 6) bgColor = "bg-yellow-500";
-    else bgColor = "bg-red-500";
-
-    return { months, days, bgColor };
-  };
-
-  const diff = catalog?.created_at
-    ? calculateDifference(catalog.created_at)
-    : null;
 
   const tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
+    { id: "calendario", label: "Calendário", icon: CalendarIcon },
   ];
 
-  // Componente principal
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -632,51 +398,38 @@ export function AudiovisualModal() {
     }
   };
 
-  const scrollLeft = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollBy({ left: -200, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollBy({ left: 200, behavior: "smooth" });
-    }
-  };
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
 
   useEffect(() => {
     checkScrollability();
-    const handleResize = () => checkScrollability();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("resize", checkScrollability);
+    return () => window.removeEventListener("resize", checkScrollability);
   }, []);
 
   const [tabOpen, setTabOpen] = useState("visao_geral");
 
-  interface WorkflowDetail {
-    inicio: number | string; // Aceita timestamp ou string ISO
-    fim: number | string;
-    [key: string]: any; // Outros campos do detail
-  }
+  // Adaptação dos Empréstimos para manter sua lógica de Datas inalterada
+  const workflows = useMemo(() => {
+    if (!loanItem?.loans) return [];
+    return loanItem.loans
+      .filter(
+        (l) => !l.is_returned && !l.rejection_reason && l.start_at && l.end_at,
+      )
+      .map((l) => ({
+        workflow_status: "AUDIOVISUAL_EMPRESTIMO",
+        detail: {
+          inicio: l.start_at,
+          fim: l.end_at,
+        },
+      }));
+  }, [loanItem?.loans]);
 
-  interface WorkflowItem {
-    workflow_status: string;
-    detail: WorkflowDetail;
-    [key: string]: any; // Outros campos do workflow
-  }
-
-  interface WorkflowOutput {
-    inicio: string | number;
-    fim: string | number;
-  }
-
-  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
-
-  // DATAS
-
+  // =============== LÓGICA DE DATAS (Inalterada) ===============
   const [openFrom, setOpenFrom] = useState(false);
   const [openTo, setOpenTo] = useState(false);
-
   const [dateFrom, setDateFrom] = useState<Date>(new Date());
   const [dateTo, setDateTo] = useState<Date>(new Date());
   const [hourFrom, setHourFrom] = useState<number>(11);
@@ -686,13 +439,12 @@ export function AudiovisualModal() {
   const [beginHours, setBeginHours] = useState<number[]>(hours);
   const [endHours, setEndHours] = useState<number[]>(hours);
 
-  function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
+  function getAvailableHours(dateFrom: Date, workflow: any[]) {
     const year = dateFrom.getFullYear();
     const month = dateFrom.getMonth();
     const day = dateFrom.getDate();
 
     return hours.filter((hour) => {
-      // Criamos o timestamp do slot de hora atual (ex: 14:00:00 até 14:59:59)
       const slotStart = new Date(year, month, day, hour, 0, 0, 0).getTime();
       const slotEnd = new Date(year, month, day, hour, 59, 59, 999).getTime();
 
@@ -700,14 +452,11 @@ export function AudiovisualModal() {
         try {
           const start = new Date(item.inicio).getTime();
           const end = new Date(item.fim).getTime();
-
-          // Há conflito se o slot de hora intersecta o intervalo do workflow
           return slotStart < end && slotEnd > start;
         } catch {
           return false;
         }
       });
-
       return !hasConflict;
     });
   }
@@ -717,48 +466,29 @@ export function AudiovisualModal() {
     dateFromClean.setHours(0, 0, 0, 0);
     const hora = dateFromClean.getTime();
 
-    const conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-      (acc, item) => {
-        if (!item.detail?.inicio || !item.detail?.fim) return acc;
+    const conflictingWorkflows = workflows.reduce<any[]>((acc, item) => {
+      if (!item.detail?.inicio || !item.detail?.fim) return acc;
+      const inicioTimestamp = new Date(item.detail.inicio).setHours(0, 0, 0, 0);
+      const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+      if (hora >= inicioTimestamp && hora <= fimTimestamp) {
+        acc.push({ inicio: item.detail.inicio, fim: item.detail.fim });
+      }
+      return acc;
+    }, []);
 
-        const inicioTimestamp = new Date(item.detail.inicio).setHours(
-          0,
-          0,
-          0,
-          0,
-        );
-        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-        if (hora >= inicioTimestamp && hora <= fimTimestamp) {
-          acc.push({
-            inicio: item.detail.inicio,
-            fim: item.detail.fim,
-          });
-        }
-        return acc;
-      },
-      [],
-    );
-
-    try {
-      setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
-    } catch (e) {
-      toast.error("Sem data, tente novamente");
-    }
+    setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
   }, [dateFrom, workflows]);
 
   useEffect(() => {
     const dateFromClean = new Date(dateFrom);
     dateFromClean.setHours(0, 0, 0, 0);
-
     const dateToClean = new Date(dateTo);
     dateToClean.setHours(0, 0, 0, 0);
 
-    // CASO 1: Início e Fim no mesmo dia
     if (dateFromClean.getTime() === dateToClean.getTime()) {
       const nonConflict = hours.filter(
         (v) => v > hourFrom && beginHours.includes(v),
       );
-
       const firstConflict =
         hours.find(
           (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v),
@@ -768,35 +498,23 @@ export function AudiovisualModal() {
           (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict,
         ),
       );
-    }
-    // CASO 2: Dias diferentes
-    else {
+    } else {
       if (!dateFrom || !dateTo) return;
-
       const hora = dateFromClean.getTime();
-      let conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-        (acc, item) => {
-          if (!item.detail?.inicio || !item.detail?.fim) return acc;
-
-          const inicioTimestamp = new Date(item.detail.inicio).setHours(
-            0,
-            0,
-            0,
-            0,
-          );
-          const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-
-          // Pega tudo que começa depois de hoje OU termina depois de hoje
-          if (hora < inicioTimestamp || hora < fimTimestamp) {
-            acc.push({
-              inicio: item.detail.inicio,
-              fim: item.detail.fim,
-            });
-          }
-          return acc;
-        },
-        [],
-      );
+      let conflictingWorkflows = workflows.reduce<any[]>((acc, item) => {
+        if (!item.detail?.inicio || !item.detail?.fim) return acc;
+        const inicioTimestamp = new Date(item.detail.inicio).setHours(
+          0,
+          0,
+          0,
+          0,
+        );
+        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+        if (hora < inicioTimestamp || hora < fimTimestamp) {
+          acc.push({ inicio: item.detail.inicio, fim: item.detail.fim });
+        }
+        return acc;
+      }, []);
 
       const availableTimes = beginHours.filter((n) => n > hourFrom).length;
       const totalTimes = hours.filter((n) => n > hourFrom).length;
@@ -810,50 +528,29 @@ export function AudiovisualModal() {
 
       dateFromClean.setHours(hourFrom, 0, 0, 0);
       const startMs = dateFromClean.getTime();
-
-      // Encontramos o timestamp do PRIMEIRO conflito real que acontece a partir do horário de início
       let closestBarrier = Infinity;
 
       conflictingWorkflows.forEach((wf) => {
         if (typeof wf.inicio === "number") return;
         const wfStart = new Date(wf.inicio.replace("Z", "")).getTime();
-
-        // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
-        if (wfStart >= startMs) {
-          // Se ainda não temos barreira, ou se essa é anterior à atual...
-          if (closestBarrier === Infinity || wfStart < closestBarrier) {
-            closestBarrier = wfStart;
-          }
+        if (
+          wfStart >= startMs &&
+          (closestBarrier === Infinity || wfStart < closestBarrier)
+        ) {
+          closestBarrier = wfStart;
         }
       });
 
-      // --- DEFINIR AS HORAS FINAIS ---
-
-      if (closestBarrier) {
+      if (closestBarrier !== Infinity) {
         const barrierDate = new Date(closestBarrier);
         const barrierDayClean = new Date(closestBarrier).setHours(0, 0, 0, 0);
         const targetDayMs = dateToClean.getTime();
 
-        // Cenário A: O bloqueio acontece ANTES de chegar no dia final selecionado.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 12. Dia 15 fica inacessível.
-        if (barrierDayClean < targetDayMs) {
-          setEndHours([]);
-        }
-        // Cenário B: O bloqueio é EXATAMENTE no dia final.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 15 às 14:00.
-        // Liberamos as horas do dia 15 apenas até as 14:00.
-        else if (barrierDayClean === targetDayMs) {
-          const limitHour = barrierDate.getHours();
-          // Só mostra horas menores ou iguais ao início do bloqueio
-          setEndHours(hours.filter((h) => h <= limitHour));
-        }
-        // Cenário C: O bloqueio é num dia DEPOIS do dia final.
-        // Ex: Início dia 10, Fim dia 12. Bloqueio dia 20.
-        else {
-          setEndHours(hours);
-        }
+        if (barrierDayClean < targetDayMs) setEndHours([]);
+        else if (barrierDayClean === targetDayMs)
+          setEndHours(hours.filter((h) => h <= barrierDate.getHours()));
+        else setEndHours(hours);
       } else {
-        // Sem conflitos futuros, dia liberado
         setEndHours(hours);
       }
     }
@@ -861,19 +558,12 @@ export function AudiovisualModal() {
 
   const mergeDateAndTime = (date: Date, time: number): Date => {
     const newDate = new Date(date);
-    newDate.setHours(time);
-    newDate.setMinutes(0);
-    newDate.setSeconds(0);
-    newDate.setMilliseconds(0);
+    newDate.setHours(time, 0, 0, 0);
     return newDate;
   };
 
   async function submit() {
-    if (!dateFrom || !dateTo) {
-      console.error("Datas não selecionadas");
-      return;
-    }
-
+    if (!dateFrom || !dateTo) return;
     const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
     const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
@@ -884,7 +574,6 @@ export function AudiovisualModal() {
       return;
     }
 
-    console.log(loan);
     const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
@@ -893,32 +582,27 @@ export function AudiovisualModal() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        loanable_item_id: loan.loanable_item_id, // Usando o ID da tabela loanable_items
+        loanable_item_id: loanItem?.id, // ID CORRETO VINDO DO LOANABLE ITEM
         start_at: timestampFrom,
         end_at: timestampTo,
         requester_id: user?.id,
-        temporary_guardian_id: selectedUser?.id, // Veja o aviso abaixo sobre este campo
+        temporary_guardian_id: selectedUserId,
         is_maintenance: false,
         lend_detail: observation,
       }),
     });
 
     if (!res.ok) {
-      // Tenta ler detalhes do erro (ex.: 422 com 'detail')
       let message = "Erro ao solicitar empréstimo";
       try {
         const err = await res.json();
-        // O FastAPI geralmente retorna os erros de validação em um array dentro de 'detail'
         if (err?.detail) {
           message = Array.isArray(err.detail)
             ? err.detail[0]?.msg || JSON.stringify(err.detail)
             : err.detail;
         }
-        toast.error(message);
-      } catch {
-        toast.error(message);
-      }
-      throw new Error(message);
+      } catch {}
+      toast.error(message);
     } else {
       toast.success("Solicitação de empréstimo realizada com sucesso!");
       setTimeout(() => {
@@ -928,6 +612,7 @@ export function AudiovisualModal() {
     }
   }
 
+  // =============== Render JSX ===============
   const content = () => {
     if (!catalog) {
       return (
@@ -1009,7 +694,6 @@ export function AudiovisualModal() {
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
                         <CalendarIcon size={16} />
                         {formatDateTimeBR(catalog.created_at)}
-                        
                       </div>
                     </div>
                   </div>
@@ -1274,8 +958,6 @@ export function AudiovisualModal() {
                             </Alert>
                           </Link>
                         )}
-
-                       
                       </div>
                     </TabsContent>
                     {/* ===== Empréstimo ===== */}
@@ -1300,7 +982,7 @@ export function AudiovisualModal() {
                                       className={cn(
                                         "w-full justify-between font-normal z-[99]",
                                         !selectedUserId &&
-                                          "text-muted-foreground", // Deixa o placeholder cinza
+                                          "text-muted-foreground",
                                       )}
                                     >
                                       <span className="truncate">
@@ -1342,7 +1024,6 @@ export function AudiovisualModal() {
                                             return (
                                               <CommandItem
                                                 key={user.id}
-                                                // O Command usa este "value" para fazer a filtragem por baixo dos panos!
                                                 value={`${userName} ${user.email}`}
                                                 onSelect={() => {
                                                   setSelectedUserId(user.id);
@@ -1350,7 +1031,6 @@ export function AudiovisualModal() {
                                                 }}
                                                 className="cursor-pointer flex items-center gap-2"
                                               >
-                                                {/* Ícone de check para mostrar quem está selecionado */}
                                                 <Check
                                                   className={cn(
                                                     "h-4 w-4 flex-shrink-0",
@@ -1554,6 +1234,13 @@ export function AudiovisualModal() {
                             <Package2 size={16} className="" />
                           </Button>
                         </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* ===== Calendário ===== */}
+                    <TabsContent value="calendario">
+                      <div>
+                        <ItemLoanCalendar item={loanItem} />
                       </div>
                     </TabsContent>
                   </Tabs>

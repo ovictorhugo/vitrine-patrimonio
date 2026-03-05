@@ -251,7 +251,7 @@ export function Audiovisual() {
     fetchColumns().finally(() => setLoading(false));
   }, [fetchColumns]);
 
-  console.log(board);
+  //console.log(board);
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -449,7 +449,7 @@ export function Audiovisual() {
                                     className="min-w-0 mb-2 w-full max-w-full overflow-hidden"
                                   >
                                     <AudiovisualKanban
-                                      {...entry.catalog}
+                                      {...entry}
                                       isImage={false}
                                     />
                                   </div>
@@ -591,7 +591,7 @@ export function Audiovisual() {
             )}
           </>
         ) : (
-          <LoanCalendar rentedItems={board} />
+          <LoanCalendar board={board} />
         )}
       </main>
     </div>

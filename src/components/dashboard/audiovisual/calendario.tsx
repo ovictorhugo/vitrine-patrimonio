@@ -85,7 +85,7 @@ export default function GlobalLoanCalendar({
           // Determina o Status e as Cores do Evento
           let statusStr = "EMPRESTADO";
           let colorClass =
-            "bg-blue-50 text-blue-700 border-blue-500 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700";
+            "bg-eng-blue/10 border-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
           let badgeClass =
             "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
 

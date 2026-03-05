@@ -12,12 +12,14 @@ import { LikeButton } from "../../homepage/components/like-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useModal } from "../../hooks/use-modal-store";
-import { CatalogEntry } from "../itens-vitrine/card-item-dropdown";
 import { usePermissions } from "../../permissions";
 import { useNavigate } from "react-router-dom";
 
-type Props = CatalogEntry & {
-  isImage?: boolean; // Mantido como opcional para não quebrar o arquivo pai
+// Importe a interface correta do local onde ela está declarada (ajuste o caminho se necessário)
+import { LoanableItemDTO } from "./audiovisual";
+
+type Props = LoanableItemDTO & {
+  isImage?: boolean;
   isFavorite?: boolean;
   onToggleFavorite?: (patrimonioId: string) => void;
   handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
@@ -33,14 +35,17 @@ export function AudiovisualKanban(props: Props) {
   const { hasCatalogo } = usePermissions();
   const navigate = useNavigate();
 
-  const materialNome =
-    props.asset?.material?.material_name ??
-    props.asset?.asset_description ??
-    "Item";
-  const assetCode = props.asset?.asset_code ?? "";
-  const assetDgv = props.asset?.asset_check_digit ?? "";
+  // Acesso direto ao catálogo que está dentro do LoanableItemDTO
+  const catalog = props.catalog;
 
-  const firstStatus = props.workflow_history?.[0]?.workflow_status ?? "";
+  const materialNome =
+    catalog?.asset?.material?.material_name ??
+    catalog?.asset?.asset_description ??
+    "Item";
+  const assetCode = catalog?.asset?.asset_code ?? "";
+  const assetDgv = catalog?.asset?.asset_check_digit ?? "";
+
+  const firstStatus = catalog?.workflow_history?.[0]?.workflow_status ?? "";
   const workflowReview = [
     "REVIEW_REQUESTED_DESFAZIMENTO",
     "REVIEW_REQUESTED_VITRINE",
@@ -48,15 +53,22 @@ export function AudiovisualKanban(props: Props) {
     "ADJUSTMENT_DESFAZIMENTO",
     "REJEITADOS_COMISSAO",
   ].includes(firstStatus);
-  const workflowAnunciados = firstStatus === "VITRINE";
 
-  const firstImg = props.images?.[0];
+  // Condição para mostrar botão de curtir (ajuste se a sua lógica de workflow for diferente)
+  const workflowAnunciados =
+    firstStatus.includes("VITRINE") || firstStatus.includes("ANUNCIADO");
+
+  const firstImg = catalog?.images?.[0];
   let firstImgSrc = "";
   let firstImgSrcSet = "";
   let firstImgPlaceholder = "";
 
   if (firstImg) {
-    const original = `${urlGeral}${firstImg.file_path?.startsWith("/") ? firstImg.file_path.slice(1) : firstImg.file_path}`;
+    const cleanPath = firstImg.file_path?.startsWith("/")
+      ? firstImg.file_path.slice(1)
+      : firstImg.file_path;
+    const original = `${urlGeral}${cleanPath}`;
+
     const baseForSet = props.thumbOnly
       ? `${original}${original.includes("?") ? "&" : "?"}format=jpeg`
       : original;
@@ -71,7 +83,7 @@ export function AudiovisualKanban(props: Props) {
     firstImgPlaceholder = `${baseForSet}${baseForSet.includes("?") ? "&" : "?"}w=24&q=10`;
   }
 
-  // Apenas um clique limpo e direto para abrir o modal
+  // Passa as props (agora sendo a raiz LoanableItemDTO) para o modal
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onOpen("audiovisual-modal", { ...props });
@@ -84,14 +96,15 @@ export function AudiovisualKanban(props: Props) {
     >
       {/* Botões de Ação (Aparecem no hover) */}
       <div className="absolute top-3 right-3 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        {(props.user.id === user?.id || hasCatalogo) &&
+        {(catalog?.user?.id === user?.id || hasCatalogo) &&
           workflowReview &&
           props.onPromptDelete && (
             <>
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/dashboard/editar-item?id=${props.id}`);
+                  // Navega para edição usando o id do catálogo
+                  navigate(`/dashboard/editar-item?id=${catalog?.id}`);
                 }}
                 size="icon"
                 variant="outline"
@@ -112,13 +125,14 @@ export function AudiovisualKanban(props: Props) {
               </Button>
             </>
           )}
-        {loggedIn && workflowAnunciados && (
+        {loggedIn && workflowAnunciados && catalog?.id && (
           <div onClick={(e) => e.stopPropagation()}>
-            <LikeButton id={props.id} />
+            <LikeButton id={catalog.id} />
           </div>
         )}
       </div>
 
+      {/* Área da Imagem */}
       {firstImg && (
         <div className="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:max-h-[640px] group-hover:opacity-100 rounded-t-lg">
           <Carousel className="w-full flex items-center">
@@ -153,27 +167,29 @@ export function AudiovisualKanban(props: Props) {
               {assetDgv ? `-${assetDgv}` : ""}
             </p>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Avatar
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(`/user?id=${props.user.id}`, "_blank");
-                  }}
-                  className="h-6 w-6 rounded-md shrink-0 hover:ring-2 hover:ring-primary transition-all"
-                >
-                  <AvatarImage
-                    src={`${urlGeral}user/upload/${props.user.id}/icon`}
-                  />
-                  <AvatarFallback>
-                    <UserIcon size={12} />
-                  </AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{props.user.username}</p>
-              </TooltipContent>
-            </Tooltip>
+            {catalog?.user && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`/user?id=${catalog.user?.id}`, "_blank");
+                    }}
+                    className="h-6 w-6 rounded-md shrink-0 hover:ring-2 hover:ring-primary transition-all"
+                  >
+                    <AvatarImage
+                      src={`${urlGeral}user/upload/${catalog.user.id}/icon`}
+                    />
+                    <AvatarFallback>
+                      <UserIcon size={12} />
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{catalog.user.username}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
       </Alert>
