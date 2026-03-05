@@ -84,7 +84,6 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
 import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
-import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import { useIsMobile } from "../../../hooks/use-mobile";
 
@@ -2291,194 +2290,112 @@ const fetchAllColumns = useCallback(async () => {
           </div>
         ) : (
           <div className="m-0">
-            {columns.map((col) => {
-              if (expandedColumn !== col.key) return null;
+            {(() => {
+  if (!expandedColumn) return null;
 
-              const items = board[col.key] ?? [];
-              const slice = items.slice(0, expandedVisible);
-              const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                Icon: HelpCircle,
-                colorClass: "text-zinc-500",
-              };
-              const { Icon } = meta;
+  const items = board[expandedColumn] || [];
+  const slice = items.slice(0, expandedVisible);
+  const totalForCol = items.length;
 
-              // 👇 NOVO
-              const totalForCol = statusCounts[col.key] ?? items.length;
+  // Reutilizando a função de mapeamento de meta-dados
+  const getColumnMeta = (name: string) => {
+    switch (name) {
+      case "Disponível": return { Icon: BookMarked, colorClass: "text-green-600" };
+      case "Pedido": return { Icon: Calendar, colorClass: "text-blue-400" };
+      case "Emprestado": return { Icon: CalendarCheck, colorClass: "text-blue-600" };
+      case "Atrasado": return { Icon: LucideAlarmClockOff, colorClass: "text-red-500" };
+      case "Manutenção": return { Icon: Wrench, colorClass: "text-amber-500" };
+      default: return { Icon: HelpCircle, colorClass: "text-zinc-500" };
+    }
+  };
 
-              return (
-                <div key={col.key}>
-                  <div
-                    className={
-                      isMobile
-                        ? "flex flex-col items-center justify-between mb-4 mt-6"
-                        : "flex items-center justify-between mb-4"
-                    }
-                  >
-                    {isMobile ? (
-                      <div className="w-full flex justify-start mb-8 pl-1">
-                        <Button
-                          size="sm"
-                          onClick={() => setExpandedColumn(null)}
-                          className="self-start"
-                        >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
-                        </Button>
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                    <div className="flex items-center gap-1 mr-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon size={16} />
-                        <h2
-                          className={
-                            isMobile
-                              ? "text-base text-center font-semibold"
-                              : "text-lg font-semibold"
-                          }
-                        >
-                          {col.name}
-                        </h2>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={isMobile ? "w-6 items-center hidden" : ""}
-                      >
-                        {totalForCol}
-                      </Badge>
-                    </div>
-                    <div
-                      className={
-                        isMobile ? "flex flex-row  gap-3 mt-4 " : "flex gap-3"
-                      }
-                    >
-                      <DownloadPdfButton
-                        filters={{
-                          material_id: materialId || undefined,
-                          agency_id: agencyId || undefined,
-                          unit_id: unitId || undefined,
-                          legal_guardian_id: guardianId || undefined,
-                          sector_id: locationId || undefined,
-                          location_id: sectorId || undefined,
-                          workflow_status: expandedColumn,
-                        }}
-                        label="Baixar PDF"
-                        method="catalog"
-                        size="sm"
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => downloadXlsx(col.key)}
-                      >
-                        <Download size={16} />
-                        Baixar csv
-                      </Button>
-                      {isMobile ? (
-                        <></>
-                      ) : (
-                        <Button
-                          size="default"
-                          onClick={() => setExpandedColumn(null)}
-                        >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+  const { Icon, colorClass } = getColumnMeta(expandedColumn);
 
-                  {(loading || loadingColumns[col.key]) && !items.length ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                      <Skeleton className="aspect-square w-full rounded-md" />
+  return (
+    <div key={expandedColumn} className="m-0">
+      {/* Cabeçalho Expandido */}
+      <div className={isMobile ? "flex flex-col items-center justify-between mb-4 mt-6" : "flex items-center justify-between mb-4"}>
+        
+        {isMobile && (
+          <div className="w-full flex justify-start mb-8 pl-1">
+            <Button size="sm" onClick={() => setExpandedColumn(null)} className="self-start">
+              <ChevronLeft size={16} className="mr-1" /> Voltar ao quadro
+            </Button>
+          </div>
+        )}
 
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                    </div>
-                  ) : null}
+        <div className="flex items-center gap-1 mr-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Icon size={16} className={colorClass} />
+            <h2 className={isMobile ? "text-base text-center font-semibold" : "text-lg font-semibold"}>
+              {expandedColumn}
+            </h2>
+          </div>
+          <Badge variant="outline" className={isMobile ? "w-6 items-center hidden" : ""}>
+            {totalForCol}
+          </Badge>
+        </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                    {slice.map((item) => (
-                      <ItemPatrimonio
-                        key={item.id}
-                        {...item}
-                        onPromptDelete={() => openDelete(item.id)}
-                      />
-                    ))}
-                  </div>
+        {/* Ações / Botões */}
+        <div className={isMobile ? "flex flex-row gap-3 mt-4" : "flex gap-3"}>
+          <DownloadPdfButton
+            filters={{
+              material_id: materialId || undefined,
+              agency_id: agencyId || undefined,
+              unit_id: unitId || undefined,
+              legal_guardian_id: guardianId || undefined,
+              sector_id: locationId || undefined,
+              location_id: sectorId || undefined,
+              workflow_status: expandedColumn,
+            }}
+            label="Baixar PDF"
+            method="catalog"
+            size="sm"
+          />
+          
+          <Button size="sm" variant="outline" onClick={() => downloadXlsx?.(expandedColumn)}>
+            <Download size={16} className="mr-2" /> Baixar csv
+          </Button>
 
-                  {(() => {
-                    const totalFromTotals = totalByCol[col.key];
-                    const totalFromStats = statusCounts[col.key];
+          {!isMobile && (
+            <Button size="default" onClick={() => setExpandedColumn(null)}>
+              <ChevronLeft size={16} className="mr-1" /> Voltar ao quadro
+            </Button>
+          )}
+        </div>
+      </div>
 
-                    // Tenta usar algum total "confiável"
-                    let effectiveTotal: number | undefined;
-                    if (
-                      typeof totalFromTotals === "number" &&
-                      totalFromTotals >= items.length
-                    ) {
-                      effectiveTotal = totalFromTotals;
-                    } else if (
-                      typeof totalFromStats === "number" &&
-                      totalFromStats >= items.length
-                    ) {
-                      effectiveTotal = totalFromStats;
-                    }
+      {/* Esqueletos de Carregamento */}
+      {loading && !items.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-square w-full rounded-md" />
+          ))}
+        </div>
+      ) : null}
 
-                    const loaded = items.length;
-                    const visible = slice.length;
+      {/* Grid de Itens */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        {slice.map((item) => (
+          <ItemPatrimonio
+            key={item.id}
+            {...item.catalog} // Passando os dados do catálogo extraídos do LoanableItem
+            onPromptDelete={() => openDelete(item.id)}
+          />
+        ))}
+      </div>
 
-                    let hasMore = false;
-
-                    // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
-                    if (loaded > visible) {
-                      hasMore = true;
-                    }
-                    // 2) Temos um total confiável vindo da API: compara direto
-                    else if (effectiveTotal != null) {
-                      hasMore = loaded < effectiveTotal;
-                    }
-                    // 3) Fallback: não sabemos o total, mas
-                    //    - não tem filtro de texto
-                    //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
-                    else if (!q.trim()) {
-                      hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
-                    }
-
-                    if (!hasMore) return null;
-
-                    return hasMore ? (
-                      <div className="flex justify-center mt-8">
-                        <Button
-                          onClick={showMoreExpanded}
-                          disabled={loadingColumns[col.key]}
-                        >
-                          {loadingColumns[col.key] ? (
-                            <>
-                              <Loader size={16} className="animate-spin" />
-                              Carregando...
-                            </>
-                          ) : (
-                            <>
-                              <Plus size={16} />
-                              Mostrar mais
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              );
-            })}
+      {/* Botão Mostrar Mais (Simplificado) */}
+      {items.length > slice.length && (
+        <div className="flex justify-center mt-8">
+          <Button onClick={showMoreExpanded}>
+            <Plus size={16} className="mr-2" /> Mostrar mais
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+})()}
           </div>
         )}
       </main>

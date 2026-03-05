@@ -428,6 +428,8 @@ export function AudiovisualModal() {
   const { urlGeral, loggedIn, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
+  console.log(data)
+
   const loan = (data as any) ?? (data as LoanDTO | null);
   const catalog = loan as CatalogResponseDTO;
 
@@ -882,7 +884,7 @@ export function AudiovisualModal() {
       return;
     }
 
-    // Chamada para o novo endpoint da tabela Loan
+    console.log(loan);
     const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
@@ -1007,21 +1009,7 @@ export function AudiovisualModal() {
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
                         <CalendarIcon size={16} />
                         {formatDateTimeBR(catalog.created_at)}
-                        {diff && (
-                          <Badge
-                            className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}
-                          >
-                            {diff.months > 0
-                              ? `${diff.months} ${
-                                  diff.months === 1 ? "mês" : "meses"
-                                } e ${diff.days} ${
-                                  diff.days === 1 ? "dia" : "dias"
-                                }`
-                              : `${diff.days} ${
-                                  diff.days === 1 ? "dia" : "dias"
-                                }`}
-                          </Badge>
-                        )}
+                        
                       </div>
                     </div>
                   </div>
@@ -1263,7 +1251,7 @@ export function AudiovisualModal() {
                             to={`/user?id=${catalog.user?.id}`}
                             target="_blank"
                           >
-                            <Alert className="mt-8">
+                            <Alert className="my-8">
                               <div className="flex gap-3 items-center">
                                 <Avatar className="rounded-md h-12 w-12">
                                   <AvatarImage
@@ -1287,123 +1275,7 @@ export function AudiovisualModal() {
                           </Link>
                         )}
 
-                        {/* Histórico */}
-                        {loggedIn && (
-                          <>
-                            <Separator className="mt-8 mb-2" />
-                            <Accordion type="single" collapsible>
-                              <AccordionItem value="item-1">
-                                <div className="flex ">
-                                  <HeaderResultTypeHome
-                                    title="Histórico na plataforma"
-                                    icon={
-                                      <Workflow
-                                        size={24}
-                                        className="text-gray-400"
-                                      />
-                                    }
-                                  />
-                                  <AccordionTrigger></AccordionTrigger>
-                                </div>
-                                <AccordionContent className="p-0">
-                                  <div className="flex flex-col ">
-                                    {historySortedDesc.length === 0 ? (
-                                      <div className="text-sm text-muted-foreground px-1">
-                                        Nenhum evento de workflow.
-                                      </div>
-                                    ) : (
-                                      // ✅ NÃO muta: copia antes do reverse
-                                      [...historySortedDesc].map((ev, idx) => {
-                                        const meta = WORKFLOW_STATUS_META[
-                                          ev.workflow_status
-                                        ] ?? {
-                                          Icon: HelpCircle,
-                                          colorClass: "text-zinc-500",
-                                        };
-
-                                        const { Icon: EvIcon } = meta;
-                                        const username =
-                                          ev.user?.username ||
-                                          ev.user?.email?.split("@")[0] ||
-                                          "Usuário";
-
-                                        const total = historySortedDesc.length;
-                                        const isLast = idx === total - 1;
-
-                                        return (
-                                          <div
-                                            key={ev.id}
-                                            className="flex gap-2"
-                                          >
-                                            <div className="flex flex-col items-center">
-                                              <Alert className="flex w-14 h-14 items-center justify-center">
-                                                <div>
-                                                  <EvIcon
-                                                    className={``}
-                                                    size={16}
-                                                  />
-                                                </div>
-                                              </Alert>
-
-                                              {!isLast && (
-                                                <Separator
-                                                  className="min-h-8"
-                                                  orientation="vertical"
-                                                />
-                                              )}
-                                            </div>
-
-                                            <div className="flex-1">
-                                              <p className="text-lg font-medium">
-                                                {getStatusLabel(
-                                                  ev.workflow_status,
-                                                )}
-                                              </p>
-
-                                              {ev.detail?.justificativa && (
-                                                <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
-                                                  {ev.detail.justificativa}
-                                                </p>
-                                              )}
-
-                                              <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
-                                                <div className="flex gap-1 items-center">
-                                                  <Avatar className="rounded-md h-5 w-5">
-                                                    {ev.user?.photo_url ? (
-                                                      <AvatarImage
-                                                        className="rounded-md h-5 w-5"
-                                                        src={ev.user.photo_url}
-                                                        alt={username}
-                                                      />
-                                                    ) : (
-                                                      <AvatarFallback className="flex items-center justify-center">
-                                                        <User size={10} />
-                                                      </AvatarFallback>
-                                                    )}
-                                                  </Avatar>
-                                                  <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                    {username}
-                                                  </p>
-                                                </div>
-
-                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                                  <CalendarIcon size={16} />
-                                                  {formatDateTimeBR(
-                                                    ev.created_at,
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })
-                                    )}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          </>
-                        )}
+                       
                       </div>
                     </TabsContent>
                     {/* ===== Empréstimo ===== */}

@@ -56,6 +56,7 @@ import {
   Clock,
   FileIcon,
   BookmarkPlus,
+  History,
 } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
@@ -96,7 +97,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { useIsMobile } from "../../hooks/use-mobile";
 import AudiovisualTab from "./emprestimo";
-import { isUint8Array } from "util/types";
+import HistoryTab, { LoanableItemDTO } from "./history";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -202,7 +203,7 @@ type WorkflowStatus =
   | "VALIDATION_APPROVED"
   | "PUBLISHED"
   | "ARCHIVED"
-  | string; // permite desconhecidos
+  | string;
 
 type WorkflowHistoryItem = {
   workflow_status: string;
@@ -360,6 +361,7 @@ export function ItemPage() {
 
   const [loading, setLoading] = useState(true);
   const [catalog, setCatalog] = useState<CatalogResponseDTO>();
+  const [loan, setLoan] = useState<LoanableItemDTO>();
   const [deleting, setDeleting] = useState(false);
 
   const fetchCatalog = useCallback(async () => {
@@ -373,6 +375,18 @@ export function ItemPage() {
       const data: CatalogResponseDTO = await r.json();
 
       setCatalog(data);
+      const isAudiovisual = data?.workflow_history?.some(
+        (ev) => ev.workflow_status === "AUDIOVISUAL_ANUNCIADO",
+      );
+
+      if(isAudiovisual){
+         const r = await fetch(`${urlGeral}loans/${catalogId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) throw new Error(`Erro ${r.status}`);
+      const loanable_item: LoanableItemDTO = await r.json();
+      setLoan(loanable_item)
+      }
     } catch (e: any) {
       toast("Erro ao carregar", {
         description: e?.message || "Não foi possível obter o item.",
@@ -809,6 +823,7 @@ export function ItemPage() {
     tabs = [
       { id: "visao_geral", label: "Visão Geral", icon: Home },
       { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
+      { id: "historico", label: "Histórico", icon: History },
     ];
 
   // Componente principal
@@ -1728,7 +1743,7 @@ export function ItemPage() {
                   {/* Material / Metadados rápidos */}
                   {loggedIn && <Separator className="mt-8 mb-2" />}
 
-                  {loggedIn && (
+                  {loggedIn && !isAudiovisual && (
                     <Accordion type="single" collapsible defaultValue="item-1">
                       <AccordionItem value="item-1">
                         <div className="flex ">
@@ -1890,6 +1905,9 @@ export function ItemPage() {
 
               <TabsContent value="emprestimo">
                 <AudiovisualTab catalog={catalog} />
+              </TabsContent>
+              <TabsContent value="historico">
+                <HistoryTab item={loan} />
               </TabsContent>
             </Tabs>
 
