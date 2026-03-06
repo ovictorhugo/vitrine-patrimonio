@@ -119,7 +119,7 @@ export interface WorkflowHistoryDTO {
   workflow_status: string; // considere criar um union se tiver a enum
   detail?: Record<string, any>;
   user: UserDTO;
-  transfer_requests: WorkflowTransferRequestDTO[];
+  transfer_requests?: WorkflowTransferRequestDTO[];
   catalog_id: UUID;
   created_at: string;
 }

@@ -235,12 +235,12 @@ export function ButtonTransference({ catalog }: Props) {
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between mb-4 z-[9999]"
-                  disabled={!loggedIn && !canTransfer} // <<< DESABILITA QUANDO NÃO ESTÁ EM VITRINE
+                  className="w-full justify-between mb-4 z-[99]"
+                  disabled={!loggedIn && !canTransfer}
                 >
                   <span className="truncate">
                     {loadingLoc ? (
-                      <span className="flex items-center gap-2 z-[9999]">
+                      <span className="flex items-center gap-2 z-[99]">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Carregando locais...
                       </span>

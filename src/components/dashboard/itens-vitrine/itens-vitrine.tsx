@@ -25,6 +25,10 @@ import {
   Loader,
   ListTodo,
   Eye,
+  LucideAlarmClockOff,
+  CalendarCheck,
+  Calendar,
+  BookMarked,
 } from "lucide-react";
 import {
   Select,
@@ -86,6 +90,7 @@ import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import { useIsMobile } from "../../../hooks/use-mobile";
+import { UserDTO } from "../audiovisual/audiovisual";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -219,7 +224,7 @@ export type CatalogEntry = {
   description: string;
   id: UUID;
   asset: CatalogAsset;
-  user: WorkflowHistoryItem["user"];
+  user: UserDTO;
   location: CatalogAsset["location"];
   images: CatalogImage[];
   workflow_history: WorkflowHistoryItem[];
@@ -351,7 +356,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className={
-            triggerClassName ?? isMobile
+            (triggerClassName ?? isMobile)
               ? "w-[220px] min-w-[220px] justify-between"
               : "w-[280px] min-w-[280px] justify-between"
           }
@@ -506,7 +511,7 @@ export function ItensVitrine() {
         setLoadingAgencies(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchSectors = useCallback(
@@ -533,7 +538,7 @@ export function ItensVitrine() {
         setLoadingSectors(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchLocations = useCallback(
@@ -560,7 +565,7 @@ export function ItensVitrine() {
         setLoadingLocations(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   // Cascata
@@ -610,13 +615,13 @@ export function ItensVitrine() {
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   const columns = useMemo(
     () => WORKFLOWS[tab].map((c) => ({ ...c, key: (c.key ?? "").trim() })),
-    [tab]
+    [tab],
   );
 
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -697,7 +702,7 @@ export function ItensVitrine() {
     CatalogEntry[]
   > | null>(null);
   const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(
-    null
+    null,
   );
 
   // Paginação - agora com offset por coluna
@@ -808,10 +813,10 @@ export function ItensVitrine() {
         if (typeof json.total === "number") {
           setTotalByCol(
             (prev) =>
-              ({ ...prev, [workflowStatus as string]: json.total } as Record<
+              ({ ...prev, [workflowStatus as string]: json.total }) as Record<
                 string,
                 number
-              >)
+              >,
           );
         }
 
@@ -835,7 +840,7 @@ export function ItensVitrine() {
           }));
           setEntries((prev) => {
             const otherCols = prev.filter(
-              (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
+              (e) => lastWorkflow(e)?.workflow_status !== workflowStatus,
             );
             return [...otherCols, ...newEntries];
           });
@@ -858,37 +863,35 @@ export function ItensVitrine() {
       locationId,
       PAGE_SIZE,
       debouncedQ,
-    ]
+    ],
   );
 
   // Fetch inicial: busca todas as colunas
-const fetchAllColumns = useCallback(async () => {
-  setLoading(true);
-  setBoard({});
-  setEntries([]);
+  const fetchAllColumns = useCallback(async () => {
+    setLoading(true);
+    setBoard({});
+    setEntries([]);
 
-  try {
+    try {
+      // 1. Criamos um array de Promessas (requests iniciados simultaneamente)
+      const promises = columns.map((col) => {
+        const key = (col.key ?? "").trim();
+        // Se não tiver chave, retornamos uma promessa vazia resolvida para não quebrar o Promise.all
+        if (!key) return Promise.resolve();
+        // Dispara a requisição e retorna a promessa dela
+        return fetchColumnData(key, 0, false);
+      });
 
-    // 1. Criamos um array de Promessas (requests iniciados simultaneamente)
-    const promises = columns.map((col) => {
-      const key = (col.key ?? "").trim();
-      // Se não tiver chave, retornamos uma promessa vazia resolvida para não quebrar o Promise.all
-      if (!key) return Promise.resolve();
-      // Dispara a requisição e retorna a promessa dela
-      return fetchColumnData(key, 0, false);
-    });
+      await Promise.all(promises);
 
-    await Promise.all(promises);
-
-    await fetchStatusCounts();
-    
-  } catch (error) {
-    console.error("Erro no carregamento inicial:", error);
-    // Opcional: toast.error("Erro ao carregar o quadro");
-  } finally {
-    setLoading(false);
-  }
-}, [columns, fetchColumnData, fetchStatusCounts]);
+      await fetchStatusCounts();
+    } catch (error) {
+      console.error("Erro no carregamento inicial:", error);
+      // Opcional: toast.error("Erro ao carregar o quadro");
+    } finally {
+      setLoading(false);
+    }
+  }, [columns, fetchColumnData, fetchStatusCounts]);
 
   useEffect(() => {
     setExpandedColumn(null);
@@ -914,7 +917,7 @@ const fetchAllColumns = useCallback(async () => {
     else params.delete("q");
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace: true }
+      { replace: true },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -938,7 +941,8 @@ const fetchAllColumns = useCallback(async () => {
     for (const [key, items] of Object.entries(board)) {
       // Remove duplicados antes de filtrar
       const uniqueItems = items.filter(
-        (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+        (item, index, self) =>
+          index === self.findIndex((t) => t.id === item.id),
       );
 
       filtered[key] = uniqueItems.filter((e) => {
@@ -967,7 +971,7 @@ const fetchAllColumns = useCallback(async () => {
   const postWorkflowChange = async (
     entry: CatalogEntry | undefined,
     toKey: string | undefined,
-    detailsExtra: Record<string, any>
+    detailsExtra: Record<string, any>,
   ) => {
     if (!entry || !toKey) return false;
     try {
@@ -1119,7 +1123,7 @@ const fetchAllColumns = useCallback(async () => {
 
     // ✅ atualização otimista SEM depender de índice
     const newFromBoard = (board[fromKey] ?? []).filter(
-      (x) => x.id !== entry.id
+      (x) => x.id !== entry.id,
     );
     const newToBoard = [
       optimisticEntry,
@@ -1183,7 +1187,7 @@ const fetchAllColumns = useCallback(async () => {
     const ok = await postWorkflowChange(
       moveTarget.entry,
       moveTarget.toKey,
-      extra
+      extra,
     );
     setPosting(false);
 
@@ -1401,7 +1405,7 @@ const fetchAllColumns = useCallback(async () => {
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
-        handler as any
+        handler as any,
       );
   }, []);
 
@@ -2291,111 +2295,154 @@ const fetchAllColumns = useCallback(async () => {
         ) : (
           <div className="m-0">
             {(() => {
-  if (!expandedColumn) return null;
+              if (!expandedColumn) return null;
 
-  const items = board[expandedColumn] || [];
-  const slice = items.slice(0, expandedVisible);
-  const totalForCol = items.length;
+              const items = board[expandedColumn] || [];
+              const slice = items.slice(0, expandedVisible);
+              const totalForCol = items.length;
 
-  // Reutilizando a função de mapeamento de meta-dados
-  const getColumnMeta = (name: string) => {
-    switch (name) {
-      case "Disponível": return { Icon: BookMarked, colorClass: "text-green-600" };
-      case "Pedido": return { Icon: Calendar, colorClass: "text-blue-400" };
-      case "Emprestado": return { Icon: CalendarCheck, colorClass: "text-blue-600" };
-      case "Atrasado": return { Icon: LucideAlarmClockOff, colorClass: "text-red-500" };
-      case "Manutenção": return { Icon: Wrench, colorClass: "text-amber-500" };
-      default: return { Icon: HelpCircle, colorClass: "text-zinc-500" };
-    }
-  };
+              // Reutilizando a função de mapeamento de meta-dados
+              const getColumnMeta = (name: string) => {
+                switch (name) {
+                  case "Disponível":
+                    return { Icon: BookMarked, colorClass: "text-green-600" };
+                  case "Pedido":
+                    return { Icon: Calendar, colorClass: "text-blue-400" };
+                  case "Emprestado":
+                    return { Icon: CalendarCheck, colorClass: "text-blue-600" };
+                  case "Atrasado":
+                    return {
+                      Icon: LucideAlarmClockOff,
+                      colorClass: "text-red-500",
+                    };
+                  case "Manutenção":
+                    return { Icon: Wrench, colorClass: "text-amber-500" };
+                  default:
+                    return { Icon: HelpCircle, colorClass: "text-zinc-500" };
+                }
+              };
 
-  const { Icon, colorClass } = getColumnMeta(expandedColumn);
+              const { Icon, colorClass } = getColumnMeta(expandedColumn);
 
-  return (
-    <div key={expandedColumn} className="m-0">
-      {/* Cabeçalho Expandido */}
-      <div className={isMobile ? "flex flex-col items-center justify-between mb-4 mt-6" : "flex items-center justify-between mb-4"}>
-        
-        {isMobile && (
-          <div className="w-full flex justify-start mb-8 pl-1">
-            <Button size="sm" onClick={() => setExpandedColumn(null)} className="self-start">
-              <ChevronLeft size={16} className="mr-1" /> Voltar ao quadro
-            </Button>
-          </div>
-        )}
+              return (
+                <div key={expandedColumn} className="m-0">
+                  {/* Cabeçalho Expandido */}
+                  <div
+                    className={
+                      isMobile
+                        ? "flex flex-col items-center justify-between mb-4 mt-6"
+                        : "flex items-center justify-between mb-4"
+                    }
+                  >
+                    {isMobile && (
+                      <div className="w-full flex justify-start mb-8 pl-1">
+                        <Button
+                          size="sm"
+                          onClick={() => setExpandedColumn(null)}
+                          className="self-start"
+                        >
+                          <ChevronLeft size={16} className="mr-1" /> Voltar ao
+                          quadro
+                        </Button>
+                      </div>
+                    )}
 
-        <div className="flex items-center gap-1 mr-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Icon size={16} className={colorClass} />
-            <h2 className={isMobile ? "text-base text-center font-semibold" : "text-lg font-semibold"}>
-              {expandedColumn}
-            </h2>
-          </div>
-          <Badge variant="outline" className={isMobile ? "w-6 items-center hidden" : ""}>
-            {totalForCol}
-          </Badge>
-        </div>
+                    <div className="flex items-center gap-1 mr-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Icon size={16} className={colorClass} />
+                        <h2
+                          className={
+                            isMobile
+                              ? "text-base text-center font-semibold"
+                              : "text-lg font-semibold"
+                          }
+                        >
+                          {expandedColumn}
+                        </h2>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={isMobile ? "w-6 items-center hidden" : ""}
+                      >
+                        {totalForCol}
+                      </Badge>
+                    </div>
 
-        {/* Ações / Botões */}
-        <div className={isMobile ? "flex flex-row gap-3 mt-4" : "flex gap-3"}>
-          <DownloadPdfButton
-            filters={{
-              material_id: materialId || undefined,
-              agency_id: agencyId || undefined,
-              unit_id: unitId || undefined,
-              legal_guardian_id: guardianId || undefined,
-              sector_id: locationId || undefined,
-              location_id: sectorId || undefined,
-              workflow_status: expandedColumn,
-            }}
-            label="Baixar PDF"
-            method="catalog"
-            size="sm"
-          />
-          
-          <Button size="sm" variant="outline" onClick={() => downloadXlsx?.(expandedColumn)}>
-            <Download size={16} className="mr-2" /> Baixar csv
-          </Button>
+                    {/* Ações / Botões */}
+                    <div
+                      className={
+                        isMobile ? "flex flex-row gap-3 mt-4" : "flex gap-3"
+                      }
+                    >
+                      <DownloadPdfButton
+                        filters={{
+                          material_id: materialId || undefined,
+                          agency_id: agencyId || undefined,
+                          unit_id: unitId || undefined,
+                          legal_guardian_id: guardianId || undefined,
+                          sector_id: locationId || undefined,
+                          location_id: sectorId || undefined,
+                          workflow_status: expandedColumn,
+                        }}
+                        label="Baixar PDF"
+                        method="catalog"
+                        size="sm"
+                      />
 
-          {!isMobile && (
-            <Button size="default" onClick={() => setExpandedColumn(null)}>
-              <ChevronLeft size={16} className="mr-1" /> Voltar ao quadro
-            </Button>
-          )}
-        </div>
-      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadXlsx?.(expandedColumn)}
+                      >
+                        <Download size={16} className="mr-2" /> Baixar csv
+                      </Button>
 
-      {/* Esqueletos de Carregamento */}
-      {loading && !items.length ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square w-full rounded-md" />
-          ))}
-        </div>
-      ) : null}
+                      {!isMobile && (
+                        <Button
+                          size="default"
+                          onClick={() => setExpandedColumn(null)}
+                        >
+                          <ChevronLeft size={16} className="mr-1" /> Voltar ao
+                          quadro
+                        </Button>
+                      )}
+                    </div>
+                  </div>
 
-      {/* Grid de Itens */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-        {slice.map((item) => (
-          <ItemPatrimonio
-            key={item.id}
-            {...item.catalog} // Passando os dados do catálogo extraídos do LoanableItem
-            onPromptDelete={() => openDelete(item.id)}
-          />
-        ))}
-      </div>
+                  {/* Esqueletos de Carregamento */}
+                  {loading && !items.length ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <Skeleton
+                          key={i}
+                          className="aspect-square w-full rounded-md"
+                        />
+                      ))}
+                    </div>
+                  ) : null}
 
-      {/* Botão Mostrar Mais (Simplificado) */}
-      {items.length > slice.length && (
-        <div className="flex justify-center mt-8">
-          <Button onClick={showMoreExpanded}>
-            <Plus size={16} className="mr-2" /> Mostrar mais
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-})()}
+                  {/* Grid de Itens */}
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    {slice.map((item) => (
+                      <ItemPatrimonio
+                        key={item.id}
+                        {...item} // Passando os dados do catálogo extraídos do LoanableItem
+                        onPromptDelete={() => openDelete(item.id)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Botão Mostrar Mais (Simplificado) */}
+                  {items.length > slice.length && (
+                    <div className="flex justify-center mt-8">
+                      <Button onClick={showMoreExpanded}>
+                        <Plus size={16} className="mr-2" /> Mostrar mais
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
@@ -2448,7 +2495,7 @@ const fetchAllColumns = useCallback(async () => {
                         onValueChange={(val) => {
                           setSelectedPreset(val);
                           const preset = JUSTIFICATIVAS_DESFAZIMENTO.find(
-                            (p) => p.id === val
+                            (p) => p.id === val,
                           );
                           if (preset && moveTarget.entry) {
                             setJustificativa(preset.build(moveTarget.entry));

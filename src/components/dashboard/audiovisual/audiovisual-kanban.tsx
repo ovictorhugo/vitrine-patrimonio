@@ -8,7 +8,6 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 import { CardContent } from "../../ui/card";
 import React, { useContext } from "react";
 import { UserContext } from "../../../context/context";
-import { LikeButton } from "../../homepage/components/like-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useModal } from "../../hooks/use-modal-store";
@@ -125,11 +124,6 @@ export function AudiovisualKanban(props: Props) {
               </Button>
             </>
           )}
-        {loggedIn && workflowAnunciados && catalog?.id && (
-          <div onClick={(e) => e.stopPropagation()}>
-            <LikeButton id={catalog.id} />
-          </div>
-        )}
       </div>
 
       {/* Área da Imagem */}

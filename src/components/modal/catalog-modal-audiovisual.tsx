@@ -69,7 +69,6 @@ import {
 } from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
 import { DownloadPdfButton } from "../download/download-pdf-button";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
@@ -88,16 +87,16 @@ export interface UserDTO {
   id: UUID;
   username: string;
   email: string;
-  provider?: string;
-  linkedin?: string | null;
-  lattes_id?: string | null;
-  orcid?: string | null;
-  ramal?: string | null;
-  photo_url?: string | null;
-  background_url?: string | null;
-  matricula?: string | null;
-  verify?: boolean;
-  institution_id?: UUID;
+  provider: string;
+  linkedin: string | null;
+  lattes_id: string | null;
+  orcid: string | null;
+  ramal: string | null;
+  photo_url: string | null;
+  background_url: string | null;
+  matricula: string | null;
+  verify: boolean;
+  institution_id: UUID;
 }
 
 export interface LegalGuardianDTO {
@@ -111,29 +110,46 @@ export interface MaterialDTO {
   material_code: string;
   material_name: string;
 }
+export interface UnitDTO {
+  id: UUID;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+}
 
+export interface AgencyDTO {
+  id: UUID;
+  agency_name: string;
+  agency_code: string;
+  unit_id: UUID;
+  unit: UnitDTO;
+}
+
+export interface SectorDTO {
+  id: UUID;
+  sector_name: string;
+  sector_code: string;
+  agency_id: UUID;
+  agency: AgencyDTO;
+}
 export interface LocationDTO {
   id: UUID;
   location_name: string;
   location_code: string;
-  sector?: {
-    id: UUID;
-    sector_name: string;
-    sector_code: string;
-    agency?: {
-      id: UUID;
-      agency_name: string;
-      agency_code: string;
-      unit?: {
-        id: UUID;
-        unit_name: string;
-        unit_code: string;
-      };
-    };
-  };
-  legal_guardian?: LegalGuardianDTO;
+  sector_id: UUID;
+  legal_guardian_id: UUID;
+  sector: SectorDTO;
+  legal_guardian: LegalGuardianDTO;
 }
-
+export interface WorkflowHistoryDTO {
+  id: UUID;
+  workflow_status: string; // considere criar um union se tiver a enum
+  detail?: Record<string, any>;
+  user: UserDTO;
+  transfer_requests?: any[];
+  catalog_id: UUID;
+  created_at: string;
+}
 export interface AssetDTO {
   id: UUID;
   asset_code: string;
@@ -144,9 +160,19 @@ export interface AssetDTO {
   asset_value: string;
   asset_description: string;
   csv_code: string;
-  material?: MaterialDTO | null;
-  legal_guardian?: LegalGuardianDTO | null;
-  location?: LocationDTO | null;
+  accounting_entry_code: string;
+  item_brand: string;
+  item_model: string;
+  group_type_code: string;
+  group_code: string;
+  expense_element_code: string;
+  subelement_code: string;
+
+  material: MaterialDTO;
+  legal_guardian: LegalGuardianDTO;
+  location: LocationDTO;
+
+  is_official: boolean;
 }
 
 export interface CatalogImageDTO {
@@ -157,15 +183,15 @@ export interface CatalogImageDTO {
 
 export interface CatalogResponseDTO {
   id: UUID;
-  created_at: string;
-  situation: string;
-  conservation_status: string;
   description: string;
+  conservation_status: string;
+  situation: string; // ex.: "UNUSED" (crie union se tiver a lista completa)
   asset: AssetDTO;
-  user?: UserDTO | null;
-  location?: LocationDTO | null;
+  user: UserDTO;
+  location: LocationDTO;
   images: CatalogImageDTO[];
-  workflow_history?: any[];
+  workflow_history: WorkflowHistoryDTO[];
+  created_at: string;
 }
 
 export interface LoanDTO {
@@ -181,41 +207,20 @@ export interface LoanDTO {
   is_returned: boolean;
   is_maintenance: boolean;
   lend_detail: string | null;
+  returned_detail: string | null;
   rejection_reason: string | null;
   requester?: UserDTO;
   temporary_guardian?: UserDTO;
 }
-
 export interface LoanableItemDTO {
   id: UUID;
   catalog_id: UUID;
   legal_guardian_id: UUID;
   owner_notes: string | null;
   catalog: CatalogResponseDTO;
-  legal_guardian?: UserDTO;
+  guardian: UserDTO;
   loans: LoanDTO[];
 }
-
-/* ===================== Utils e Constantes ===================== */
-const WORKFLOW_STATUS_LABELS: Record<string, string> = {
-  AUDIOVISUAL_ANUNCIADO: "Item disponível para empréstimo",
-  AUDIOVISUAL_EMPRESTIMO: "Item emprestado",
-  AUDIOVISUAL_ATRASADO: "Item em estado de atraso",
-  AUDIOVISUAL_QUEBRADO: "Item foi quebrado",
-  STARTED: "Iniciado",
-  REVIEW_REQUESTED_VITRINE: "Avaliação S. Patrimônio - Vitrine",
-  ADJUSTMENT_VITRINE: "Ajustes - Vitrine",
-  VITRINE: "Anunciados",
-  AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
-  TRANSFERIDOS: "Transferidos",
-  REVIEW_REQUESTED_DESFAZIMENTO: "Avaliação S. Patrimônio - Desfazimento",
-  ADJUSTMENT_DESFAZIMENTO: "Ajustes - Desfazimento",
-  REVIEW_REQUESTED_COMISSION: "LTD - Lista Temporária de Desfazimento",
-  REJEITADOS_COMISSAO: "Recusados",
-  DESFAZIMENTO: "LFD - Lista Final de Desfazimento",
-  DESCARTADOS: "Processo Finalizado",
-  ACERVO_HISTORICO: "Acervo Histórico",
-};
 
 const chain = (loc?: LocationDTO | null) => {
   if (!loc || !loc.sector) return [];

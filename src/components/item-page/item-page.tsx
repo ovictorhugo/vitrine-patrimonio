@@ -57,6 +57,7 @@ import {
   FileIcon,
   BookmarkPlus,
   History,
+  CalendarIcon,
 } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
@@ -98,6 +99,7 @@ import { DownloadPdfButton } from "../download/download-pdf-button";
 import { useIsMobile } from "../../hooks/use-mobile";
 import AudiovisualTab from "./emprestimo";
 import HistoryTab, { LoanableItemDTO } from "./history";
+import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -379,13 +381,13 @@ export function ItemPage() {
         (ev) => ev.workflow_status === "AUDIOVISUAL_ANUNCIADO",
       );
 
-      if(isAudiovisual){
-         const r = await fetch(`${urlGeral}loans/${catalogId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!r.ok) throw new Error(`Erro ${r.status}`);
-      const loanable_item: LoanableItemDTO = await r.json();
-      setLoan(loanable_item)
+      if (isAudiovisual) {
+        const r = await fetch(`${urlGeral}loans/${catalogId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) throw new Error(`Erro ${r.status}`);
+        const loanable_item: LoanableItemDTO = await r.json();
+        setLoan(loanable_item);
       }
     } catch (e: any) {
       toast("Erro ao carregar", {
@@ -824,6 +826,7 @@ export function ItemPage() {
       { id: "visao_geral", label: "Visão Geral", icon: Home },
       { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
       { id: "historico", label: "Histórico", icon: History },
+      { id: "calendario", label: "Calendário", icon: CalendarIcon },
     ];
 
   // Componente principal
@@ -1634,7 +1637,7 @@ export function ItemPage() {
                       )}
 
                       {/* Localização atual (Catálogo) */}
-                      <Separator className="my-4" />
+                      {!isAudiovisual ? <Separator className="my-4" /> : <></>}
                       <div className="space-y-2">
                         {/* Localização do Catálogo (sempre mostra) */}
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1908,6 +1911,11 @@ export function ItemPage() {
               </TabsContent>
               <TabsContent value="historico">
                 <HistoryTab item={loan} />
+              </TabsContent>
+              <TabsContent value="calendario">
+                <div>
+                  <ItemLoanCalendar item={loan} />
+                </div>
               </TabsContent>
             </Tabs>
 

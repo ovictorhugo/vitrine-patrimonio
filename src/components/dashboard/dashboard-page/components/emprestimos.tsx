@@ -16,12 +16,12 @@ import {
 } from "../../../ui/accordion";
 import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../../../../context/context";
-import { Separator } from "../../../ui/separator";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import GlobalLoanCalendar from "../../audiovisual/calendario";
+import { LoanableItemDTO } from "../../audiovisual/audiovisual";
 
 type Unit = {
   unit_name: string;
@@ -63,7 +63,7 @@ export function Emprestimos() {
   const { urlGeral } = useContext(UserContext);
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
-  const [emprestimos, setEmprestimos] = useState([]);
+  const [emprestimos, setEmprestimos] = useState<LoanableItemDTO[]>([]);
   const [tab, setTab] = useState("lista");
 
   async function getCatalog() {
@@ -133,7 +133,7 @@ export function Emprestimos() {
 
             {tab === "lista" ? (
               <>
-                {emprestimos?.map((catalog) => {
+                {emprestimos?.map((loan) => {
                   const formatData = (isoString?: string) => {
                     if (!isoString) return "Não informada";
                     return new Date(isoString)
@@ -155,18 +155,18 @@ export function Emprestimos() {
                       <Alert className="flex flex-col h-fit rounded-l-none">
                         <div className="flex mb-1 pb-0">
                           <p className="font-semibold flex gap-3 items-center text-left flex-1">
-                            {catalog.asset?.asset_code?.trim()} -{" "}
-                            {catalog.asset?.asset_check_digit}
+                            {loan.catalog.asset?.asset_code?.trim()} -{" "}
+                            {loan.catalog.asset?.asset_check_digit}
                           </p>
                         </div>
                         <div className="flex flex-col p-4 pt-0 justify-between">
                           <div>
                             <div className="text-lg font-bold">
-                              {catalog.asset?.material?.material_name ||
+                              {loan.catalog.asset?.material?.material_name ||
                                 "Sem nome"}
                             </div>
                             <p className="text-left uppercase">
-                              {catalog.asset?.asset_description}
+                              {loan.catalog.asset?.asset_description}
                             </p>
                           </div>
                         </div>
@@ -174,10 +174,10 @@ export function Emprestimos() {
                         <div className="pl-4 ml-4 flex flex-col gap-3">
                           <p className="text-sm font-semibold text-muted-foreground uppercase">
                             Registros de Empréstimo (
-                            {catalog.workflow_history?.length || 0})
+                            {loan.catalog.workflow_history?.length || 0})
                           </p>
 
-                          {catalog.workflow_history?.map((emp, empIndex) => {
+                          {loan.catalog.workflow_history?.map((emp, empIndex) => {
                             // Guardião legal específico deste passo de empréstimo
                             const loanGuardianName =
                               emp.detail?.legal_guardian
@@ -269,7 +269,7 @@ export function Emprestimos() {
               </>
             ) : (
               <div className="mt-4">
-                <GlobalLoanCalendar rentedItems={emprestimos} />
+                {/**<GlobalLoanCalendar board={emprestimos} /> */}
               </div>
             )}
           </Alert>

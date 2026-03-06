@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
 } from "../../../ui/accordion";
 import { HeaderResultTypeHome } from "../../../header-result-type-home";
-import { setDoc } from "firebase/firestore";
 import DocumentCard from "../components/document-card";
 import { Alert } from "../../../ui/alert";
 import { Separator } from "../../../ui/separator";

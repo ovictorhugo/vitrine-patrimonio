@@ -143,7 +143,7 @@ interface LocationDTO {
 }
 
 interface HistoryTabProps {
-  item: LoanableItemDTO;
+  item: LoanableItemDTO | undefined;
 }
 
 export default function HistoryTab({ item }: HistoryTabProps) {
@@ -182,7 +182,7 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                 ? "bg-red-500"
                 : loan.is_returned
                   ? "bg-green-500"
-                  : "bg-blue-500";
+                  : "bg-eng-blue";
 
             return (
               <div key={loan.id || idx} className="flex mb-3">
@@ -222,7 +222,7 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                       ) : (
                         loan.is_executed &&
                         !atrasado && (
-                          <div className="flex items-center gap-1.5 text-blue-600 bg-blue-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                          <div className="flex items-center gap-1.5 text-eng-blue bg-eng-blue/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
                             <Timer size={12} /> Emprestado
                           </div>
                         )

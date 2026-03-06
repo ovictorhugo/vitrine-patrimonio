@@ -21,7 +21,7 @@ import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
 import { Alert } from "../../ui/alert";
 import { AudiovisualKanban } from "./audiovisual-kanban";
-import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import AudiovisualCard from "./audiovisual-card";
 import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { usePermissions } from "../../permissions";
 import { useIsMobile } from "../../../hooks/use-mobile";
@@ -111,13 +111,20 @@ export interface WorkflowDetailDTO {
   fim?: string;
   observation?: string;
 }
-export interface WorkflowHistoryItemDTO {
+export interface WorkflowTransferRequestDTO {
   id: UUID;
-  catalog_id: UUID;
-  workflow_status: string;
-  created_at: string;
-  detail?: WorkflowDetailDTO;
+  status: string; // "PENDING" | "DECLINED" | "ACCEPTABLE" | ...
   user: UserDTO;
+  location: LocationDTO;
+}
+export interface WorkflowHistoryDTO {
+  id: UUID;
+  workflow_status: string; // considere criar um union se tiver a enum
+  detail?: Record<string, any>;
+  user: UserDTO;
+  transfer_requests?: WorkflowTransferRequestDTO[];
+  catalog_id: UUID;
+  created_at: string;
 }
 export interface CatalogResponseDTO {
   id: UUID;
@@ -129,8 +136,8 @@ export interface CatalogResponseDTO {
   user: UserDTO;
   location: LocationDTO;
   images: CatalogImageDTO[];
-  workflow_history: WorkflowHistoryItemDTO[];
-  files: any[] | null;
+  workflow_history: WorkflowHistoryDTO[];
+  files?: any[];
 }
 export interface LoanDTO {
   id: UUID;
@@ -156,7 +163,7 @@ export interface LoanableItemDTO {
   legal_guardian_id: UUID;
   owner_notes: string | null;
   catalog: CatalogResponseDTO;
-  legal_guardian: UserDTO;
+  guardian: UserDTO;
   loans: LoanDTO[];
 }
 
@@ -471,8 +478,6 @@ export function Audiovisual() {
 
                   const items = board[expandedColumn] || [];
                   const totalForCol = items.length;
-
-                  // Reutilizando a função de mapeamento de meta-dados
                   const getColumnMeta = (name: string) => {
                     switch (name) {
                       case "Disponível":
@@ -567,7 +572,6 @@ export function Audiovisual() {
                         </div>
                       </div>
 
-                      {/* Esqueletos de Carregamento */}
                       {loading && !items.length ? (
                         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                           {Array.from({ length: 10 }).map((_, i) => (
@@ -581,7 +585,7 @@ export function Audiovisual() {
 
                       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {items.map((item) => (
-                          <ItemPatrimonio key={item.id} {...item.catalog} />
+                          <AudiovisualCard key={item.id} {...item} />
                         ))}
                       </div>
                     </div>

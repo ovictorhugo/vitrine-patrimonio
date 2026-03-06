@@ -1,40 +1,10 @@
-import {
-  useContext,
-  useMemo,
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-} from "react";
+import { useContext, useState, useEffect } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { cn } from "../../lib";
 import { Calendar } from "../ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../ui/dialog";
-import { Badge } from "../ui/badge";
-import { Card, Carousel } from "../ui/apple-cards-carousel";
-import {
-  Trash,
-  LucideIcon,
-  Wrench,
-  CalendarCheck,
-  BookMarked,
-  LucideAlarmClockOff,
-  ChevronsUpDown,
-  Check,
-  CalendarIcon,
-  ChevronDownIcon,
-  Package2,
-} from "lucide-react";
+import { ChevronsUpDown, Check, ChevronDownIcon, Package2 } from "lucide-react";
 import { toast } from "sonner";
-import { ArrowUUpLeft } from "phosphor-react";
 import {
   Command,
   CommandEmpty,
@@ -43,9 +13,6 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
-import { useModal } from "../hooks/use-modal-store";
-import { useIsMobile } from "../../hooks/use-mobile";
-import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
 import { Files } from "../homepage/components/documents-tab-catalog";
 import { Label } from "../ui/label";
@@ -59,6 +26,9 @@ import {
 } from "../ui/select";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
+
+type UUID = string;
+
 interface UnitDTO {
   id: string;
   unit_name: string;
@@ -128,10 +98,6 @@ interface CatalogImageDTO {
   catalog_id: string;
   file_path: string;
 }
-
-type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
-
-// ===== Inventário em Local =====
 interface InventoryDTO {
   key: string;
   avaliable: boolean;
@@ -149,8 +115,6 @@ interface LocationInventoryDTO {
   inventory: InventoryDTO;
   filled: boolean;
 }
-
-// ===== Transferência =====
 interface TransferRequestDTO {
   id: string;
   status: "PENDING" | "DECLINED" | "ACCEPTABLE" | string;
@@ -162,8 +126,7 @@ interface TransferRequestDTO {
   };
   location: LocationDTO;
 }
-
-export type WorkflowEvent = {
+interface WorkflowEvent {
   id: string;
   detail?: Record<string, any>;
   workflow_status: string;
@@ -175,11 +138,8 @@ export type WorkflowEvent = {
     photo_url?: string;
   } | null;
   transfer_requests?: TransferRequestDTO[];
-};
-
-type UUID = string;
-
-type WorkflowHistoryItem = {
+}
+interface WorkflowHistoryItem {
   workflow_status: string;
   detail?: Record<string, any>;
   id: UUID;
@@ -201,12 +161,11 @@ type WorkflowHistoryItem = {
   catalog_id: UUID;
   created_at: string;
   transfer_requests?: TransferRequestDTO[];
-};
-
-export interface CatalogResponseDTO {
+}
+interface CatalogResponseDTO {
   id: string;
   created_at: string;
-  situation: ApiSituation;
+  situation: string;
   conservation_status: string;
   description: string;
   asset: AssetDTO;
@@ -231,8 +190,7 @@ export interface CatalogResponseDTO {
   workflow_history: WorkflowHistoryItem[];
   transfer_requests: TransferRequest[];
 }
-
-export type TransferRequest = {
+interface TransferRequest {
   id: string;
   status: string;
   user: {
@@ -280,15 +238,8 @@ export type TransferRequest = {
       id: string;
     };
   };
-};
-
-type LegalGuardian = {
-  id: string;
-  legal_guardians_name: string;
-  legal_guardians_code: string;
-};
-
-type UserDTO = {
+}
+interface UserDTO {
   id: string;
   username: string;
   email: string;
@@ -302,56 +253,17 @@ type UserDTO = {
   matricula: string;
   verify: boolean;
   institution_id: string;
-};
+}
 
-const formatDateTimeBR = (iso?: string) => {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(d);
-  } catch {
-    return iso;
-  }
-};
 interface AudiovisualTabProps {
   catalog: CatalogResponseDTO;
 }
 
 export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
-  const isMobile = useIsMobile();
-
   const { urlGeral, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
-  const images = useMemo(() => {
-    return (catalog?.images ?? []).slice(0, 4).map((img, index) => {
-      // Lógica do buildImgUrl movida para cá
-      const p = img.file_path;
-      const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
-      const fullUrl = `${urlGeral}${cleanPath}`;
-
-      return {
-        category: "",
-        title: img.id || `${index}-${img.file_path}`,
-        src: fullUrl,
-      };
-    });
-  }, [catalog?.images, urlGeral]); // Adicionei urlGeral nas dependências
-  const cards = useMemo(
-    () =>
-      images.map((card, index) => (
-        <Card key={card.src} card={card} index={index} layout={true} />
-      )),
-    [images],
-  );
-
   const [observation, setObservation] = useState<string>("");
-
-  const [inputUser, setInputUser] = useState("");
   const [users, setUsers] = useState<UserDTO[]>([]);
 
   // Estados para o Combobox de Usuários
@@ -445,7 +357,7 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     getWorkflows();
   }, []);
 
-function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
+  function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
     const year = dateFrom.getFullYear();
     const month = dateFrom.getMonth();
     const day = dateFrom.getDate();
@@ -459,7 +371,7 @@ function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
         try {
           const start = new Date(item.inicio).getTime();
           const end = new Date(item.fim).getTime();
-          
+
           // Há conflito se o slot de hora intersecta o intervalo do workflow
           return slotStart < end && slotEnd > start;
         } catch {
@@ -646,11 +558,7 @@ function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
   }, []);
 
   async function submit() {
-    if (!dateFrom || !dateTo) {
-      console.error("Datas não selecionadas");
-      return;
-    }
-
+    if (!dateFrom || !dateTo) return;
     const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
     const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
@@ -661,7 +569,18 @@ function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
       return;
     }
 
-    const res = await fetch(`${urlGeral}catalog/${catalog?.id}/workflow`, {
+    const r = await fetch(`${urlGeral}loans/${catalog.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!r.ok) {
+      toast.error("Falha ao pegar dados de empréstimo");
+      throw new Error("Falha ao pegar dados de empréstimo");
+    }
+
+    const loan_data = await r.json();
+
+    const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -669,30 +588,33 @@ function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        workflow_status: "AUDIOVISUAL_EMPRESTIMO",
-        detail: {
-          start_at: timestampFrom,
-          end_at: timestampTo,
-          temporary_guardian_id: selectedUser?.username,
-          is_maintenance:false,
-          lend_detail: observation,
-        },
+        loanable_item_id: loan_data?.id,
+        start_at: timestampFrom,
+        end_at: timestampTo,
+        requester_id: user?.id,
+        temporary_guardian_id: selectedUserId,
+        is_maintenance: false,
+        lend_detail: observation,
       }),
     });
 
     if (!res.ok) {
-      // Tenta ler detalhes do erro (ex.: 422 com 'detail')
       let message = "Erro ao solicitar empréstimo";
       try {
         const err = await res.json();
-        if (err?.detail) message = JSON.stringify(err.detail);
-        toast.error(message);
+        if (err?.detail) {
+          message = Array.isArray(err.detail)
+            ? err.detail[0]?.msg || JSON.stringify(err.detail)
+            : err.detail;
+        }
       } catch {
         toast.error(message);
       }
-      throw new Error(message);
     } else {
       toast.success("Solicitação de empréstimo realizada com sucesso!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
   }
 

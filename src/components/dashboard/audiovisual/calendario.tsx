@@ -85,9 +85,9 @@ export default function GlobalLoanCalendar({
           // Determina o Status e as Cores do Evento
           let statusStr = "EMPRESTADO";
           let colorClass =
-            "bg-eng-blue/10 border-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
+            "bg-eng-blue/10 border-eng-blue text-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
           let badgeClass =
-            "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
+            "bg-eng-blue/10 border-eng-blue text-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
 
           if (loan.is_maintenance) {
             statusStr = "MANUTENÇÃO";

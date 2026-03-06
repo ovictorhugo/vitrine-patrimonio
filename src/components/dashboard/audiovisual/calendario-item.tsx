@@ -90,24 +90,24 @@ export default function ItemLoanCalendar({
       // Dicionário de cores simplificado
       const colors = {
         MANUTENÇÃO: {
-          pill: "bg-amber-50 text-amber-700 border-amber-500",
+          pill: "bg-amber-50 text-amber-700 border-amber-500 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700",
           badge: "bg-amber-100 text-amber-700",
         },
         DEVOLVIDO: {
-          pill: "bg-green-50 text-green-700 border-green-500",
+          pill: "bg-green-50 text-green-700 border-green-500 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
           badge: "bg-green-100 text-green-700",
         },
         PEDIDO: {
-          pill: "bg-gray-100 text-gray-700 border-gray-400",
+          pill: "bg-gray-100 text-gray-700 border-gray-400 dark:bg-zinc-800 dark:text-gray-300 dark:border-zinc-600",
           badge: "bg-gray-200 text-gray-700",
         },
         ATRASADO: {
-          pill: "bg-red-50 text-red-700 border-red-500",
+          pill: "bg-red-50 text-red-700 border-red-500 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
           badge: "bg-red-100 text-red-700",
         },
         EMPRESTADO: {
-          pill: "bg-blue-50 text-blue-700 border-blue-500",
-          badge: "bg-blue-100 text-blue-700",
+          pill: "bg-eng-blue/10 border-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue",
+          badge: "bg-eng-blue/20 text-eng-blue",
         },
       }[status]!;
 
@@ -168,10 +168,7 @@ export default function ItemLoanCalendar({
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-eng-blue" />
-            Histórico:{" "}
-            <span className="text-gray-500 truncate max-w-[200px] sm:max-w-xs">
-              {productName}
-            </span>
+            Histórico
           </h2>
           <p className="text-sm font-medium text-gray-500 capitalize mt-1">
             {format(currentDate, "MMMM yyyy", { locale: ptBR })}
@@ -261,8 +258,8 @@ export default function ItemLoanCalendar({
         onOpenChange={(open) => !open && setSelectedDay(null)}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-          <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[500px] translate-x-[-50%] translate-y-[-50%] rounded-xl bg-white dark:bg-zinc-900 p-0 shadow-2xl z-50 flex flex-col overflow-hidden">
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999]" />
+          <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[500px] translate-x-[-50%] translate-y-[-50%] rounded-xl bg-white dark:bg-zinc-900 p-0 shadow-2xl  z-[999] flex flex-col overflow-hidden">
             <div className="px-6 py-5 border-b dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 flex justify-between items-center">
               <div>
                 <Dialog.Title className="text-xl font-bold flex items-center gap-2 dark:text-white">
@@ -302,7 +299,7 @@ export default function ItemLoanCalendar({
                     </span>
 
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-eng-blue/20 flex items-center justify-center text-eng-blue">
+                      <div className="w-10 h-10 rounded-full bg-eng-blue/20 dark:bg-eng-blue/20 flex items-center justify-center text-eng-blue">
                         <Package className="w-5 h-5" />
                       </div>
                       <div className="flex-1">

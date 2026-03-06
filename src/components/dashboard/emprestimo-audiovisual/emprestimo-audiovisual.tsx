@@ -60,7 +60,6 @@ import { FormularioSpStep } from "./steps/formulario-sp.tsx";
 import { TrocarLocalStep } from "./steps/trocar-local.tsx";
 import { LocalStep } from "./steps/local.tsx";
 import { ImagemStep } from "./steps/imagem.tsx";
-import { ArquivosStep } from "./steps/arquivos.tsx";
 import { FinalStep } from "./steps/final.tsx";
 import { useIsMobile } from "../../../hooks/use-mobile.tsx";
 
@@ -569,7 +568,6 @@ export type StepKey =
   | "trocar-local"
   | "local"
   | "imagens"
-  | "arquivos"
   | "final";
 export type StepDef = { key: StepKey; label: string };
 export type FlowMode = "vitrine" | "desfazimento";
@@ -580,7 +578,6 @@ const getSteps = (mode: FlowMode): StepDef[] =>
         { key: "inicio", label: "Início" },
         { key: "formulario-sp", label: "Formulário" },
         { key: "local", label: "Verificar local" },
-        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ]
@@ -589,7 +586,6 @@ const getSteps = (mode: FlowMode): StepDef[] =>
         { key: "pesquisa", label: "Pesquisa" },
         { key: "formulario", label: "Formulário" },
         { key: "trocar-local", label: "Trocar local" },
-        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ];
@@ -641,10 +637,6 @@ export type StepPropsMap = {
     initialData?: Patrimonio;
   };
   imagens: { imagens?: string[] };
-  arquivos: {
-    docs: File[];
-    initialData?: File[];
-  };
   final: {};
 };
 
@@ -655,7 +647,6 @@ type WizardState = {
     type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc";
   };
   informacoes?: Record<string, unknown>;
-  arquivos?: { docs: File[] };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   imagens?: { images_wizard: string[] };
@@ -841,10 +832,6 @@ export function EmprestimoAudiovisual() {
         initialData: wizard["formulario-sp"],
       },
       imagens: { imagens: wizard.imagens?.images_wizard },
-      arquivos: {
-        docs: wizard.arquivos?.docs ?? [],
-        initialData: wizard.arquivos?.docs,
-      },
       "trocar-local": {
         flowShort: flow,
         initialData: wizard["trocar-local"],
@@ -1182,42 +1169,6 @@ export function EmprestimoAudiovisual() {
       // 5) upload das imagens
       const ok = await uploadImages(catalogId, imgs, urlGeral);
       if (!ok) return;
-
-      // 6) upload dos documentos probatórios (se houver)  ⬅ INSERIR DEPOIS DE OBTER catalogId
-      const infoAdicDocs: File[] = (wizard["informacoes-adicionais"]?.arquivos
-        ?.docs ?? []) as File[];
-      if (infoAdicDocs.length > 0) {
-        for (const f of infoAdicDocs) {
-          const fd = new FormData();
-          fd.append("file", f, f.name);
-          // se o backend aceitar metadados, pode incluir (ex.: tipo do documento):
-          // fd.append("kind", "comprovacao");
-
-          const upDoc = await fetch(`${urlGeral}catalog/${catalogId}/files`, {
-            method: "POST",
-            headers: {
-              // ⚠️ NÃO definir Content-Type manualmente ao enviar FormData
-              Authorization: `Bearer ${token}`,
-            },
-            body: fd,
-          });
-
-          if (upDoc.ok) {
-            toast("Documento anexado", {
-              description: "Documento de justificativa atribuido ao item",
-              action: { label: "Fechar", onClick: () => {} },
-            });
-          }
-
-          if (!upDoc.ok) {
-            const txt = await upDoc.text().catch(() => "");
-            throw new Error(
-              `Falha ao subir documento (${upDoc.status}): ${txt}`
-            );
-          }
-        }
-      }
-
 
       setFinished(true);
       setActive("final");
@@ -1730,12 +1681,6 @@ export function EmprestimoAudiovisual() {
                     <ImagemStep
                       {...attachCommon("imagens")}
                       imagens={wizard.imagens?.images_wizard}
-                      step={idx + 1}
-                    />
-                  )}
-                  {s.key === "arquivos" && (
-                    <ArquivosStep
-                      {...attachCommon("arquivos")}
                       step={idx + 1}
                     />
                   )}
