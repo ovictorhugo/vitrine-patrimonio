@@ -21,6 +21,7 @@ export type ModalType =
   | "dashboard"
   | "join-sala"
   | "item-page"
+  | "item-emprestimo-page"
   | "informacoes"
   | "emprestimo-audiovisual"
   | "pedir-emprestimo-audiovisual"

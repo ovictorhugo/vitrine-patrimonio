@@ -38,6 +38,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       <Route path="/assinar-transferencia/" element={<Home />} />
       <Route path="/validar-pdf" element={<Home />} />
       <Route path="/item" element={<Home />} />
+      <Route path="/item-emprestimo" element={<Home />} />
       <Route path="/informacoes" element={<Home />} />
 
       {/* Rotas de dashboard (livres ou públicas dentro do painel) */}
@@ -109,10 +110,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       <Route
         path="/dashboard/emprestimo-audiovisual"
         element={
-          <ProtectedRoute
-            element={<Admin />}
-            hasPermission={hasAudiovisual}
-          />
+          <ProtectedRoute element={<Admin />} hasPermission={hasAudiovisual} />
         }
       />
 

@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useMemo } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { cn } from "../../lib";
@@ -24,242 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-
-/* ===================== Tipos DTO (mesmos da página) ===================== */
-
-type UUID = string;
-
-interface UnitDTO {
-  id: string;
-  unit_name: string;
-  unit_code: string;
-  unit_siaf: string;
-}
-interface AgencyDTO {
-  id: string;
-  agency_name: string;
-  agency_code: string;
-  unit_id?: string;
-  unit?: UnitDTO;
-}
-interface SectorDTO {
-  id: string;
-  sector_name: string;
-  sector_code: string;
-  agency_id?: string;
-  agency?: AgencyDTO;
-  unit_id?: string;
-  unit?: UnitDTO;
-}
-interface LocationDTO {
-  id: string;
-  location_name: string;
-  location_code: string;
-  sector_id?: string;
-  sector?: SectorDTO;
-  legal_guardian_id?: string;
-  legal_guardian?: LegalGuardianDTO;
-  location_inventories?: LocationInventoryDTO[];
-}
-interface MaterialDTO {
-  id: string;
-  material_code: string;
-  material_name: string;
-}
-interface LegalGuardianDTO {
-  id: string;
-  legal_guardians_code: string;
-  legal_guardians_name: string;
-}
-interface AssetDTO {
-  id: string;
-  asset_code: string;
-  asset_check_digit: string;
-  atm_number: string;
-  serial_number: string;
-  asset_status: string;
-  asset_value: string;
-  asset_description: string;
-  csv_code: string;
-  accounting_entry_code: string;
-  item_brand: string;
-  item_model: string;
-  group_type_code: string;
-  group_code: string;
-  expense_element_code: string;
-  subelement_code: string;
-  is_official?: boolean;
-  material?: MaterialDTO | null;
-  legal_guardian?: LegalGuardianDTO | null;
-  location?: LocationDTO | null;
-}
-interface CatalogImageDTO {
-  id: string;
-  catalog_id: string;
-  file_path: string;
-}
-interface InventoryDTO {
-  key: string;
-  avaliable: boolean;
-  id: string;
-  created_by: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-}
-interface LocationInventoryDTO {
-  id: string;
-  assets: string[];
-  inventory: InventoryDTO;
-  filled: boolean;
-}
-interface TransferRequestDTO {
-  id: string;
-  status: "PENDING" | "DECLINED" | "ACCEPTABLE" | string;
-  user: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-  location: LocationDTO;
-}
-interface WorkflowEvent {
-  id: string;
-  detail?: Record<string, any>;
-  workflow_status: string;
-  created_at: string; // ISO
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string;
-  } | null;
-  transfer_requests?: TransferRequestDTO[];
-}
-interface WorkflowHistoryItem {
-  workflow_status: string;
-  detail?: Record<string, any>;
-  id: UUID;
-  user: {
-    id: UUID;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string;
-    lattes_id: string;
-    orcid: string;
-    ramal: string;
-    photo_url: string;
-    background_url: string;
-    matricula: string;
-    verify: boolean;
-    institution_id: UUID;
-  };
-  catalog_id: UUID;
-  created_at: string;
-  transfer_requests?: TransferRequestDTO[];
-}
-interface CatalogResponseDTO {
-  id: string;
-  created_at: string;
-  situation: string;
-  conservation_status: string;
-  description: string;
-  asset: AssetDTO;
-  files: Files | Files[] | null | undefined;
-  user: {
-    id: UUID;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string;
-    lattes_id: string;
-    orcid: string;
-    ramal: string;
-    photo_url: string;
-    background_url: string;
-    matricula: string;
-    verify: boolean;
-    institution_id: UUID;
-  };
-  location: LocationDTO; // localização ATUAL do item no catálogo
-  images: CatalogImageDTO[];
-  workflow_history: WorkflowHistoryItem[];
-  transfer_requests: TransferRequest[];
-}
-interface TransferRequest {
-  id: string;
-  status: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string;
-    lattes_id: string;
-    orcid: string;
-    ramal: string;
-    photo_url: string;
-    background_url: string;
-    matricula: string;
-    verify: boolean;
-    institution_id: string;
-  };
-  location: {
-    legal_guardian_id: string;
-    sector_id: string;
-    location_name: string;
-    location_code: string;
-    id: string;
-    sector: {
-      agency_id: string;
-      sector_name: string;
-      sector_code: string;
-      id: string;
-      agency: {
-        agency_name: string;
-        agency_code: string;
-        unit_id: string;
-        id: string;
-        unit: {
-          unit_name: string;
-          unit_code: string;
-          unit_siaf: string;
-          id: string;
-        };
-      };
-    };
-    legal_guardian: {
-      legal_guardians_code: string;
-      legal_guardians_name: string;
-      id: string;
-    };
-  };
-}
-interface UserDTO {
-  id: string;
-  username: string;
-  email: string;
-  provider: string;
-  linkedin: string;
-  lattes_id: string;
-  orcid: string;
-  ramal: string;
-  photo_url: string;
-  background_url: string;
-  matricula: string;
-  verify: boolean;
-  institution_id: string;
-}
+import { LoanableItemDTO, UserDTO } from "../dashboard/audiovisual/audiovisual";
 
 interface AudiovisualTabProps {
-  catalog: CatalogResponseDTO;
+  loan: LoanableItemDTO;
 }
 
-export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
+export function AudiovisualTab({ loan }: AudiovisualTabProps) {
   const { urlGeral, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
@@ -278,52 +49,6 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
     : "Selecione o guardião temporário...";
 
-  const asset = catalog?.asset;
-  const titulo =
-    asset?.material?.material_name ||
-    asset?.item_model ||
-    asset?.item_brand ||
-    "Item sem nome";
-
-  const calculateDifference = (createdAt: string) => {
-    const createdDate = new Date(createdAt);
-    const currentDate = new Date();
-    const timeDiff = Math.abs(currentDate.getTime() - createdDate.getTime());
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const months = Math.floor(daysDiff / 30);
-    const days = daysDiff % 30;
-
-    let bgColor = "";
-    if (months < 3) bgColor = "bg-green-700";
-    else if (months < 6) bgColor = "bg-yellow-500";
-    else bgColor = "bg-red-500";
-
-    return { months, days, bgColor };
-  };
-
-  const diff = catalog?.created_at
-    ? calculateDifference(catalog.created_at)
-    : null;
-
-  interface WorkflowDetail {
-    inicio: number | string; // Aceita timestamp ou string ISO
-    fim: number | string;
-    [key: string]: any; // Outros campos do detail
-  }
-
-  interface WorkflowItem {
-    workflow_status: string;
-    detail: WorkflowDetail;
-    [key: string]: any; // Outros campos do workflow
-  }
-
-  interface WorkflowOutput {
-    inicio: string | number;
-    fim: string | number;
-  }
-
-  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
-
   // DATAS
 
   const [openFrom, setOpenFrom] = useState(false);
@@ -338,41 +63,41 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
   const [beginHours, setBeginHours] = useState<number[]>(hours);
   const [endHours, setEndHours] = useState<number[]>(hours);
 
-  async function getWorkflows() {
-    const res = await fetch(`${urlGeral}catalog/${catalog?.id}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const json = await res.json();
-    const workflows = json?.workflow_history.filter((item) => {
-      const statusValido = item.workflow_status === "AUDIOVISUAL_EMPRESTIMO";
-      return statusValido;
-    });
+  const conflictingLoans = useMemo(() => {
+    if (!loan?.loans) return [];
 
-    setWorkflows(workflows);
-  }
+    return (
+      loan.loans
+        // Filtramos apenas empréstimos que não foram devolvidos nem rejeitados, e que possuem data.
+        .filter(
+          (l) =>
+            !l.is_returned && !l.rejection_reason && l.start_at && l.end_at,
+        )
+        .map((l) => ({
+          inicio: l.start_at,
+          fim: l.end_at!,
+        }))
+    );
+  }, [loan?.loans]);
 
-  useEffect(() => {
-    getWorkflows();
-  }, []);
-
-  function getAvailableHours(dateFrom: Date, workflow: WorkflowOutput[]) {
-    const year = dateFrom.getFullYear();
-    const month = dateFrom.getMonth();
-    const day = dateFrom.getDate();
+  function getAvailableHours(
+    targetDate: Date,
+    conflicts: { inicio: string; fim: string }[],
+  ) {
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth();
+    const day = targetDate.getDate();
 
     return hours.filter((hour) => {
       // Criamos o timestamp do slot de hora atual (ex: 14:00:00 até 14:59:59)
       const slotStart = new Date(year, month, day, hour, 0, 0, 0).getTime();
       const slotEnd = new Date(year, month, day, hour, 59, 59, 999).getTime();
 
-      const hasConflict = workflow.some((item) => {
+      const hasConflict = conflicts.some((c) => {
         try {
-          const start = new Date(item.inicio).getTime();
-          const end = new Date(item.fim).getTime();
-
-          // Há conflito se o slot de hora intersecta o intervalo do workflow
+          const start = new Date(c.inicio).getTime();
+          const end = new Date(c.fim).getTime();
+          // Há conflito se o slot de hora intersecta o intervalo do empréstimo
           return slotStart < end && slotEnd > start;
         } catch {
           return false;
@@ -388,34 +113,19 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
     dateFromClean.setHours(0, 0, 0, 0);
     const hora = dateFromClean.getTime();
 
-    const conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-      (acc, item) => {
-        if (!item.detail?.inicio || !item.detail?.fim) return acc;
-
-        const inicioTimestamp = new Date(item.detail.inicio).setHours(
-          0,
-          0,
-          0,
-          0,
-        );
-        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-        if (hora >= inicioTimestamp && hora <= fimTimestamp) {
-          acc.push({
-            inicio: item.detail.inicio,
-            fim: item.detail.fim,
-          });
-        }
-        return acc;
-      },
-      [],
-    );
+    // Filtra apenas os conflitos que caem exatamente no dia selecionado (dateFrom)
+    const conflictsForToday = conflictingLoans.filter((item) => {
+      const inicioTimestamp = new Date(item.inicio).setHours(0, 0, 0, 0);
+      const fimTimestamp = new Date(item.fim).setHours(0, 0, 0, 0);
+      return hora >= inicioTimestamp && hora <= fimTimestamp;
+    });
 
     try {
-      setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
+      setBeginHours(getAvailableHours(dateFrom, conflictsForToday));
     } catch (e) {
-      toast.error("Sem data, tente novamente");
+      toast.error("Erro ao calcular disponibilidade de horário.");
     }
-  }, [dateFrom, workflows]);
+  }, [dateFrom, conflictingLoans]);
 
   useEffect(() => {
     const dateFromClean = new Date(dateFrom);
@@ -434,9 +144,10 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
         hours.find(
           (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v),
         ) || 23;
+
       setEndHours(
         hours.filter(
-          (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict,
+          (v) => v > hourFrom && beginHours.includes(v) && v <= firstConflict,
         ),
       );
     }
@@ -445,32 +156,18 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       if (!dateFrom || !dateTo) return;
 
       const hora = dateFromClean.getTime();
-      let conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-        (acc, item) => {
-          if (!item.detail?.inicio || !item.detail?.fim) return acc;
 
-          const inicioTimestamp = new Date(item.detail.inicio).setHours(
-            0,
-            0,
-            0,
-            0,
-          );
-          const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-
-          // Pega tudo que começa depois de hoje OU termina depois de hoje
-          if (hora < inicioTimestamp || hora < fimTimestamp) {
-            acc.push({
-              inicio: item.detail.inicio,
-              fim: item.detail.fim,
-            });
-          }
-          return acc;
-        },
-        [],
-      );
+      // Encontra conflitos que começam ou terminam depois do dia de início
+      const futureConflicts = conflictingLoans.filter((item) => {
+        const inicioTimestamp = new Date(item.inicio).setHours(0, 0, 0, 0);
+        const fimTimestamp = new Date(item.fim).setHours(0, 0, 0, 0);
+        return hora < inicioTimestamp || hora < fimTimestamp;
+      });
 
       const availableTimes = beginHours.filter((n) => n > hourFrom).length;
       const totalTimes = hours.filter((n) => n > hourFrom).length;
+
+      // Se não há horas suficientes hoje e quer agendar para dias depois, bloqueia
       if (
         availableTimes < totalTimes &&
         dateFromClean.getTime() < dateToClean.getTime()
@@ -482,16 +179,13 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       dateFromClean.setHours(hourFrom, 0, 0, 0);
       const startMs = dateFromClean.getTime();
 
-      // Encontramos o timestamp do PRIMEIRO conflito real que acontece a partir do horário de início
+      // Encontra o PRIMEIRO conflito (barreira) que ocorre após o horário de início selecionado
       let closestBarrier = Infinity;
 
-      conflictingWorkflows.forEach((wf) => {
-        if (typeof wf.inicio === "number") return;
-        const wfStart = new Date(wf.inicio).getTime();
-
+      futureConflicts.forEach((c) => {
+        const wfStart = new Date(c.inicio).getTime();
         // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
         if (wfStart >= startMs) {
-          // Se ainda não temos barreira, ou se essa é anterior à atual...
           if (closestBarrier === Infinity || wfStart < closestBarrier) {
             closestBarrier = wfStart;
           }
@@ -499,27 +193,21 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       });
 
       // --- DEFINIR AS HORAS FINAIS ---
-
-      if (closestBarrier) {
+      if (closestBarrier !== Infinity) {
         const barrierDate = new Date(closestBarrier);
         const barrierDayClean = new Date(closestBarrier).setHours(0, 0, 0, 0);
         const targetDayMs = dateToClean.getTime();
 
         // Cenário A: O bloqueio acontece ANTES de chegar no dia final selecionado.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 12. Dia 15 fica inacessível.
         if (barrierDayClean < targetDayMs) {
           setEndHours([]);
         }
         // Cenário B: O bloqueio é EXATAMENTE no dia final.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 15 às 14:00.
-        // Liberamos as horas do dia 15 apenas até as 14:00.
         else if (barrierDayClean === targetDayMs) {
           const limitHour = barrierDate.getHours();
-          // Só mostra horas menores ou iguais ao início do bloqueio
           setEndHours(hours.filter((h) => h <= limitHour));
         }
         // Cenário C: O bloqueio é num dia DEPOIS do dia final.
-        // Ex: Início dia 10, Fim dia 12. Bloqueio dia 20.
         else {
           setEndHours(hours);
         }
@@ -528,7 +216,7 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
         setEndHours(hours);
       }
     }
-  }, [dateFrom, hourFrom, beginHours, dateTo, workflows]);
+  }, [dateFrom, hourFrom, beginHours, dateTo, conflictingLoans]);
 
   const mergeDateAndTime = (date: Date, time: number): Date => {
     const newDate = new Date(date);
@@ -545,14 +233,12 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
         headers: { Accept: "application/json" },
       });
       const json: { users: UserDTO[] } = await res.json();
-      console.log(json.users);
       setUsers(json.users);
     } catch (e) {
       console.error("Erro ao buscar usuários:", e);
     }
   }
 
-  // carregar inicialmente
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -569,17 +255,8 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
       return;
     }
 
-    const r = await fetch(`${urlGeral}loans/${catalog.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!r.ok) {
-      toast.error("Falha ao pegar dados de empréstimo");
-      throw new Error("Falha ao pegar dados de empréstimo");
-    }
-
-    const loan_data = await r.json();
-
+    console.log(loan)
+    
     const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
@@ -588,7 +265,7 @@ export function AudiovisualTab({ catalog }: AudiovisualTabProps) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        loanable_item_id: loan_data?.id,
+        loanable_item_id: loan?.id,
         start_at: timestampFrom,
         end_at: timestampTo,
         requester_id: user?.id,

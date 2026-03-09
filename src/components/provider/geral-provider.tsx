@@ -7,6 +7,7 @@ import { BuscaPatrimonio } from "../busca-patrimonio/busca-patrimonio";
 import { useModalHomepage } from "../hooks/use-modal-homepage";
 
 import { ItemPage } from "../item-page/item-page";
+import { LoanItemPage } from "../item-emprestimo-page/item-emprestimo-page";
 import { Informacoes } from "../info/informacoes";
 import { PedirEmprestimoAudiovisual } from "../pedir-emprestimo-audiovisual/pedir-emprestimo-audiovisual";
 import { BuscaCatalogo } from "../buscar-catalogo/buscar-catalogo";
@@ -25,6 +26,8 @@ const ModalContent = () => {
       return <BuscaCatalogo />;
     case "item-page":
       return <ItemPage />;
+    case "item-emprestimo-page":
+      return <LoanItemPage />;
     case "informacoes":
       return <Informacoes />;
     case "assinar-transferência":

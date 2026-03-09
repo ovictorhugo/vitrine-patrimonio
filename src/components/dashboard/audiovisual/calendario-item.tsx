@@ -170,7 +170,7 @@ export default function ItemLoanCalendar({
             <CalendarIcon className="w-5 h-5 text-eng-blue" />
             Histórico
           </h2>
-          <p className="text-sm font-medium text-gray-500 capitalize mt-1">
+          <p className="text-sm font-medium text-gray-400 capitalize mt-1">
             {format(currentDate, "MMMM yyyy", { locale: ptBR })}
           </p>
         </div>

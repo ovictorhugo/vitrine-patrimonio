@@ -483,31 +483,27 @@ export function Audiovisual() {
                       case "Disponível":
                         return {
                           Icon: BookMarked,
-                          colorClass: "text-green-600",
                         };
                       case "Pedido":
-                        return { Icon: Calendar, colorClass: "text-blue-400" };
+                        return { Icon: Calendar};
                       case "Emprestado":
                         return {
                           Icon: CalendarCheck,
-                          colorClass: "text-blue-600",
                         };
                       case "Atrasado":
                         return {
                           Icon: LucideAlarmClockOff,
-                          colorClass: "text-red-500",
                         };
                       case "Manutenção":
-                        return { Icon: Wrench, colorClass: "text-amber-500" };
+                        return { Icon: Wrench};
                       default:
                         return {
                           Icon: HelpCircle,
-                          colorClass: "text-zinc-500",
                         };
                     }
                   };
 
-                  const { Icon, colorClass } = getColumnMeta(expandedColumn);
+                  const { Icon } = getColumnMeta(expandedColumn);
 
                   return (
                     <div key={expandedColumn} className="m-0">
@@ -533,7 +529,7 @@ export function Audiovisual() {
 
                         <div className="flex items-center gap-1 mr-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Icon size={16} className={colorClass} />
+                            <Icon size={16} className={"text-gray-400"} />
                             <h2
                               className={
                                 isMobile
@@ -573,7 +569,7 @@ export function Audiovisual() {
                       </div>
 
                       {loading && !items.length ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {Array.from({ length: 10 }).map((_, i) => (
                             <Skeleton
                               key={i}
@@ -583,9 +579,9 @@ export function Audiovisual() {
                         </div>
                       ) : null}
 
-                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 w-full align-center gap-4">
                         {items.map((item) => (
-                          <AudiovisualCard key={item.id} {...item} />
+                          <AudiovisualCard key={item.id} {...item} column={expandedColumn} />
                         ))}
                       </div>
                     </div>

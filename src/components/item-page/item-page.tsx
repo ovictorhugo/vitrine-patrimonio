@@ -88,7 +88,6 @@ import TransferTabCatalog, {
   TransferRequestDTO,
 } from "../homepage/components/transfer-tab-catalog";
 import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
-import { log } from "console";
 import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
 import {
   DocumentsTabCatalog,
@@ -97,9 +96,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DownloadPdfButton } from "../download/download-pdf-button";
 import { useIsMobile } from "../../hooks/use-mobile";
-import AudiovisualTab from "./emprestimo";
-import HistoryTab, { LoanableItemDTO } from "./history";
-import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -363,7 +359,6 @@ export function ItemPage() {
 
   const [loading, setLoading] = useState(true);
   const [catalog, setCatalog] = useState<CatalogResponseDTO>();
-  const [loan, setLoan] = useState<LoanableItemDTO>();
   const [deleting, setDeleting] = useState(false);
 
   const fetchCatalog = useCallback(async () => {
@@ -377,18 +372,6 @@ export function ItemPage() {
       const data: CatalogResponseDTO = await r.json();
 
       setCatalog(data);
-      const isAudiovisual = data?.workflow_history?.some(
-        (ev) => ev.workflow_status === "AUDIOVISUAL_ANUNCIADO",
-      );
-
-      if (isAudiovisual) {
-        const r = await fetch(`${urlGeral}loans/${catalogId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) throw new Error(`Erro ${r.status}`);
-        const loanable_item: LoanableItemDTO = await r.json();
-        setLoan(loanable_item);
-      }
     } catch (e: any) {
       toast("Erro ao carregar", {
         description: e?.message || "Não foi possível obter o item.",
@@ -788,10 +771,6 @@ export function ItemPage() {
     setTransfers(list);
   }, [catalog?.workflow_history]);
 
-  const isAudiovisual = catalog?.workflow_history.some(
-    (ev) => ev.workflow_status === "AUDIOVISUAL_ANUNCIADO",
-  );
-
   let tabs = [
     { id: "visao_geral", label: "Visão Geral", icon: Home },
     { id: "documentos", label: "Documentos", icon: FileIcon },
@@ -818,16 +797,7 @@ export function ItemPage() {
       icon: Users,
       condition: !hasCatalogo,
     },
-    { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
   ];
-
-  if (isAudiovisual)
-    tabs = [
-      { id: "visao_geral", label: "Visão Geral", icon: Home },
-      { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
-      { id: "historico", label: "Histórico", icon: History },
-      { id: "calendario", label: "Calendário", icon: CalendarIcon },
-    ];
 
   // Componente principal
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1635,9 +1605,8 @@ export function ItemPage() {
                           </div>
                         </>
                       )}
-
                       {/* Localização atual (Catálogo) */}
-                      {!isAudiovisual ? <Separator className="my-4" /> : <></>}
+                      <Separator className="my-4" />{" "}
                       <div className="space-y-2">
                         {/* Localização do Catálogo (sempre mostra) */}
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1746,7 +1715,7 @@ export function ItemPage() {
                   {/* Material / Metadados rápidos */}
                   {loggedIn && <Separator className="mt-8 mb-2" />}
 
-                  {loggedIn && !isAudiovisual && (
+                  {loggedIn && (
                     <Accordion type="single" collapsible defaultValue="item-1">
                       <AccordionItem value="item-1">
                         <div className="flex ">
@@ -1904,18 +1873,6 @@ export function ItemPage() {
                   catalog={catalog}
                   roleId={import.meta.env.VITE_ID_COMISSAO_PERMANENTE}
                 />
-              </TabsContent>
-
-              <TabsContent value="emprestimo">
-                <AudiovisualTab catalog={catalog} />
-              </TabsContent>
-              <TabsContent value="historico">
-                <HistoryTab item={loan} />
-              </TabsContent>
-              <TabsContent value="calendario">
-                <div>
-                  <ItemLoanCalendar item={loan} />
-                </div>
               </TabsContent>
             </Tabs>
 

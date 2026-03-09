@@ -671,7 +671,10 @@ export function AudiovisualModal() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link target="_blank" to={`/item?id=${catalog.id}`}>
+                  <Link
+                    target="_blank"
+                    to={`/item-emprestimo?id=${catalog.id}`}
+                  >
                     <Button variant="outline" size="icon">
                       <ArrowSquareOut size={16} />
                     </Button>
