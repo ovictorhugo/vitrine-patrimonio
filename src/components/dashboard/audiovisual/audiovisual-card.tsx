@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -9,6 +9,7 @@ import {
   Timer,
   Check,
   X,
+  Loader2,
 } from "lucide-react";
 import { Alert } from "../../ui/alert";
 import { Carousel, CarouselContent, CarouselItem } from "../../ui/carousel";
@@ -20,10 +21,10 @@ import { useModal } from "../../hooks/use-modal-store";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import { cn } from "../../../lib";
+import { toast } from "sonner";
 import { LoanableItemDTO, LoanDTO } from "./audiovisual"; // Ajuste o caminho se necessário
 
 type Props = LoanableItemDTO & {
-  // Nova propriedade para identificar a coluna atual
   column:
     | "Disponível"
     | "Pedido"
@@ -31,13 +32,7 @@ type Props = LoanableItemDTO & {
     | "Atrasado"
     | "Manutenção"
     | string;
-  isImage?: boolean;
-  isFavorite?: boolean;
-  onToggleFavorite?: (patrimonioId: string) => void;
-  handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
-  viewCount?: number;
-  onPromptDelete?: () => void;
-  onPromptMove?: () => void;
+  reload: Function;
   thumbOnly?: boolean;
 };
 
@@ -69,6 +64,9 @@ const formatData = (dateStr: string | null) => {
 function AudiovisualCard(props: Props) {
   const { urlGeral } = useContext(UserContext);
   const { onOpen } = useModal();
+  const token = localStorage.getItem("jwt_token") || "";
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const materialNome =
     props.catalog?.asset?.material?.material_name ??
@@ -115,42 +113,120 @@ function AudiovisualCard(props: Props) {
         : atrasado
           ? "bg-red-500"
           : !loan.is_executed
-            ? "bg-blue-400"
+            ? "bg-eng-blue/20"
             : "bg-eng-blue";
 
   // ================= FUNÇÕES DE AÇÃO ================= //
+
   const handleFazerEmprestimo = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Fazer empréstimo acionado para:", props.id);
+    // Abre o modal que já possui a aba de criar solicitação
+    onOpen("audiovisual-modal", { ...props });
   };
 
-  const handleAceitar = (e: React.MouseEvent) => {
+  const handleAceitar = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Aceitar empréstimo acionado para:", props.id);
+    if (!loan) return;
+    setIsLoading(true);
+    try {
+      // 1. Confirma o empréstimo
+      const resConfirm = await fetch(
+        `${urlGeral}loans/confirm/${loan.id}?confirm=true`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!resConfirm.ok) {
+        throw new Error("Falha ao aceitar a solicitação.");
+      }
+
+      // 2. Executa o empréstimo imediatamente (entrega física)
+      const resExecute = await fetch(`${urlGeral}loans/execute/${loan.id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!resExecute.ok) {
+        throw new Error("Falha ao registrar a execução do empréstimo.");
+      }
+
+      toast.success("Empréstimo aceito e executado com sucesso!");
+      props.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao aceitar.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRecusar = (e: React.MouseEvent) => {
+  const handleRecusar = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Recusar empréstimo acionado para:", props.id);
+    if (!loan) return;
+
+    const motivo = prompt("Motivo da recusa (opcional):");
+    // Se o usuário cancelar o prompt, não fazemos nada
+    if (motivo === null) return;
+
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams({ confirm: "false" });
+      if (motivo.trim()) {
+        queryParams.append("rejection_reason", motivo.trim());
+      }
+
+      const res = await fetch(
+        `${urlGeral}loans/confirm/${loan.id}/?${queryParams.toString()}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!res.ok) throw new Error("Falha ao recusar a solicitação.");
+
+      toast.success("Empréstimo recusado com sucesso!");
+      props.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao recusar.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDevolver = (e: React.MouseEvent) => {
+  const handleDevolver = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Devolver acionado para:", props.id);
+    if (!loan) return;
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${urlGeral}loans/return/${loan.id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Falha ao devolver o item.");
+
+      toast.success("Item devolvido com sucesso!");
+      props.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao devolver.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div
-      className="flex max-w-[800px] group cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md"
+      className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all"
       onClick={() => onOpen("audiovisual-modal", { ...props })}
     >
-      {/* NOVO LAYOUT DO CARD INFERIOR */}
-      <div className="flex flex-1 border-t border-neutral-200 dark:border-neutral-800 transition-colors group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900/50">
-        {/* Barra Lateral Colorida */}
-        <div className={cn("w-2 min-w-[8px] shrink-0", statusColor)} />
-
-        <div className="flex flex-col flex-1 p-4">
-          <div className="flex flex-col flex-1">
+      {/* Barra Lateral Colorida */}
+      <div className={cn("w-2 min-w-[8px] shrink-0", statusColor)} />
+      <div className="flex flex-1 p-4 border-neutral-200 dark:border-neutral-800 transition-colors group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900/50">
+        <div className="flex flex-col flex-1">
+          <div className="flex flex-col">
             <div className="flex gap-4 mb-2">
               <div className="w-[60%] flex flex-col justify-between">
                 {/* Título */}
@@ -305,27 +381,57 @@ function AudiovisualCard(props: Props) {
                   size="sm"
                   className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
                   onClick={handleFazerEmprestimo}
+                  disabled={isLoading}
                 >
                   <CalendarIcon size={14} className="mr-1.5" /> Fazer empréstimo
                 </Button>
               )}
 
-              {props.column === "Pedido" && (
+              {props.column === "Pedido" && !loan?.is_confirmed && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
                     onClick={handleRecusar}
+                    disabled={isLoading}
                   >
-                    <X size={14} className="mr-1.5" /> Recusar
+                    {isLoading ? (
+                      <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    ) : (
+                      <X size={14} className="mr-1.5" />
+                    )}
+                    Recusar
                   </Button>
                   <Button
                     size="sm"
                     className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
                     onClick={handleAceitar}
+                    disabled={isLoading}
                   >
-                    <Check size={14} className="mr-1.5" /> Aceitar
+                    {isLoading ? (
+                      <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    ) : (
+                      <Check size={14} className="mr-1.5" />
+                    )}
+                    Aceitar
+                  </Button>
+                </>
+              )}
+              {props.column === "Pedido" && loan?.is_confirmed && (
+                <>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
+                    onClick={() => console.log("Já aceito")}
+                    disabled={true}
+                  >
+                    {isLoading ? (
+                      <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    ) : (
+                      <Check size={14} className="mr-1.5" />
+                    )}
+                    Já confirmado
                   </Button>
                 </>
               )}
@@ -337,8 +443,14 @@ function AudiovisualCard(props: Props) {
                   size="sm"
                   className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
                   onClick={handleDevolver}
+                  disabled={isLoading}
                 >
-                  <Timer size={14} className="mr-1.5" /> Devolver
+                  {isLoading ? (
+                    <Loader2 size={14} className="mr-1.5 animate-spin" />
+                  ) : (
+                    <Timer size={14} className="mr-1.5" />
+                  )}
+                  Devolver
                 </Button>
               )}
             </div>

@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import { LoanableItemDTO, UserDTO } from "../dashboard/audiovisual/audiovisual";
+import { Switch } from "../ui/switch";
+import { Alert } from "../ui/alert";
 
 interface AudiovisualTabProps {
   loan: LoanableItemDTO;
@@ -36,6 +38,8 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
 
   const [observation, setObservation] = useState<string>("");
   const [users, setUsers] = useState<UserDTO[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isMaintenance, setIsMaintenance] = useState<boolean>(false);
 
   // Estados para o Combobox de Usuários
   const [openUser, setOpenUser] = useState(false);
@@ -255,8 +259,6 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
       return;
     }
 
-    console.log(loan)
-    
     const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
@@ -267,10 +269,10 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
       body: JSON.stringify({
         loanable_item_id: loan?.id,
         start_at: timestampFrom,
-        end_at: timestampTo,
+        end_at: isMaintenance ? null : timestampTo,
         requester_id: user?.id,
         temporary_guardian_id: selectedUserId,
-        is_maintenance: false,
+        is_maintenance: isMaintenance,
         lend_detail: observation,
       }),
     });
@@ -379,7 +381,6 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
               </Popover>
             </div>
           </div>
-
           <div className="pb-4">
             <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
               <div className="flex gap-4">
@@ -453,7 +454,7 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
                     Fim do empréstimo
                   </Label>
                   <Popover open={openTo} onOpenChange={setOpenTo} modal={true}>
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger asChild disabled={isMaintenance}>
                       <Button
                         variant="outline"
                         id="date-to"
@@ -482,7 +483,9 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
                           setDateTo(date);
                           setOpenTo(false);
                         }}
-                        disabled={dateFrom && { before: dateFrom }}
+                        disabled={
+                          (dateFrom && { before: dateFrom })
+                        }
                       />
                     </PopoverContent>
                   </Popover>
@@ -494,7 +497,7 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
                   <Select
                     value={hourTo.toString()}
                     onValueChange={(v) => setHourTo(Number(v))}
-                    disabled={endHours.length == 0}
+                    disabled={endHours.length == 0 || isMaintenance}
                   >
                     <SelectTrigger className="w-[100px]">
                       <SelectValue placeholder="Itens" />
@@ -511,7 +514,13 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
               </div>
             </div>
           </div>
-
+          <Alert className="flex gap-3 my-4 w-fit">
+            É manutenção?
+            <Switch
+              checked={isMaintenance}
+              onCheckedChange={(checked) => setIsMaintenance(!isMaintenance)}
+            />
+          </Alert>
           <div className="grid gap-3 w-full">
             <Label htmlFor="asset_description">Observações</Label>
             <Textarea

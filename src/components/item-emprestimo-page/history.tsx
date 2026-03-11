@@ -8,6 +8,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Timer,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"; // Assumindo o caminho do seu Avatar
 import { cn } from "../../lib";
@@ -41,7 +42,7 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             Nenhum registro de empréstimo encontrado para este item.
           </div>
         ) : (
-          [...loans].reverse().map((loan, idx) => {
+          [...loans].map((loan, idx) => {
             const requesterName = loan.requester?.username || "N/A";
             const guardianName = loan.temporary_guardian?.username || "N/A";
             const atrasado = isAtrasado(loan);
@@ -49,12 +50,11 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             // Definição da cor da barra lateral
             const statusColor = loan.is_maintenance
               ? "bg-amber-500"
-              : atrasado
-                ? "bg-red-500"
+              : atrasado || (loan.is_returned && !loan.is_confirmed)
+                ? "bg-red-500" // Vermelho para Atrasado ou Recusado
                 : loan.is_returned
-                  ? "bg-green-500"
-                  : "bg-eng-blue";
-
+                  ? "bg-green-500" // Verde para Devolvido (sucesso)
+                  : "bg-eng-blue"; // Azul para os demais casos (Pedido/Emprestado)
             return (
               <div key={loan.id || idx} className="flex mb-3">
                 {/* Barra Lateral Colorida */}
@@ -86,7 +86,11 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                         </div>
                       )}
 
-                      {loan.is_returned ? (
+                      {loan.is_returned && !loan.is_confirmed ? (
+                        <div className="flex items-center gap-1.5 text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                          <X size={12} /> Recusado
+                        </div>
+                      ) : loan.is_returned ? (
                         <div className="flex items-center gap-1.5 text-green-600 bg-green-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
                           <CheckCircle2 size={12} /> Devolvido
                         </div>

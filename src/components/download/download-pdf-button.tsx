@@ -55,6 +55,9 @@ export function DownloadPdfButton({
       } else if (method === "item") {
         baseUrl = `${urlGeral}catalog/pdf/${id}`;
         downloadUrl = buildUrl(baseUrl, {});
+      } else if (method === "loan_item") {
+        baseUrl = `${urlGeral}loans/pdf/${id}`;
+        downloadUrl = buildUrl(baseUrl, {});
       }
       const res = await fetch(downloadUrl, {
         headers: {

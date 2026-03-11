@@ -644,7 +644,7 @@ export function AudiovisualModal() {
 
     return (
       <main
-        className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden ${borderColorClass}`}
+        className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden border-eng-blue`}
       >
         <div className="flex items-center gap-4 p-8 pb-0">
           <Button
@@ -664,9 +664,9 @@ export function AudiovisualModal() {
           <div className="hidden md:flex items-center gap-2">
             <DownloadPdfButton
               filters={{}}
-              id={catalog.id}
+              id={loanItem.id}
               label="Baixar Item"
-              method={"item"}
+              method={"loan_item"}
             />
             <TooltipProvider>
               <Tooltip>

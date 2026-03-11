@@ -258,7 +258,10 @@ export function Audiovisual() {
     fetchColumns().finally(() => setLoading(false));
   }, [fetchColumns]);
 
-  //console.log(board);
+  async function reload() {
+    fetchColumns();
+    setExpandedColumn("");
+  }
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
@@ -485,7 +488,7 @@ export function Audiovisual() {
                           Icon: BookMarked,
                         };
                       case "Pedido":
-                        return { Icon: Calendar};
+                        return { Icon: Calendar };
                       case "Emprestado":
                         return {
                           Icon: CalendarCheck,
@@ -495,7 +498,7 @@ export function Audiovisual() {
                           Icon: LucideAlarmClockOff,
                         };
                       case "Manutenção":
-                        return { Icon: Wrench};
+                        return { Icon: Wrench };
                       default:
                         return {
                           Icon: HelpCircle,
@@ -506,7 +509,7 @@ export function Audiovisual() {
                   const { Icon } = getColumnMeta(expandedColumn);
 
                   return (
-                    <div key={expandedColumn} className="m-0">
+                    <div key={expandedColumn}>
                       <div
                         className={
                           isMobile
@@ -579,9 +582,14 @@ export function Audiovisual() {
                         </div>
                       ) : null}
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 w-full align-center gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 align-center overflow-x-auto">
                         {items.map((item) => (
-                          <AudiovisualCard key={item.id} {...item} column={expandedColumn} />
+                          <AudiovisualCard
+                            key={item.id}
+                            {...item}
+                            column={expandedColumn}
+                            reload={reload}
+                          />
                         ))}
                       </div>
                     </div>
