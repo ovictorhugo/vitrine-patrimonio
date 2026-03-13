@@ -10,6 +10,7 @@ import {
   Check,
   X,
   Loader2,
+  CornerDownLeft,
 } from "lucide-react";
 import { Alert } from "../../ui/alert";
 import { Carousel, CarouselContent, CarouselItem } from "../../ui/carousel";
@@ -23,6 +24,16 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 import { cn } from "../../../lib";
 import { toast } from "sonner";
 import { LoanableItemDTO, LoanDTO } from "./audiovisual"; // Ajuste o caminho se necessário
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../ui/dialog";
+import { AlertDialogHeader } from "../../ui/alert-dialog";
+import { Input } from "../../ui/input";
 
 type Props = LoanableItemDTO & {
   column:
@@ -67,6 +78,8 @@ function AudiovisualCard(props: Props) {
   const token = localStorage.getItem("jwt_token") || "";
 
   const [isLoading, setIsLoading] = useState(false);
+  const [openDetalhamento, setOpenDetalhamento] = useState(false);
+  const [detalhamento, setDetalhamento] = useState("");
 
   const materialNome =
     props.catalog?.asset?.material?.material_name ??
@@ -142,17 +155,7 @@ function AudiovisualCard(props: Props) {
         throw new Error("Falha ao aceitar a solicitação.");
       }
 
-      // 2. Executa o empréstimo imediatamente (entrega física)
-      const resExecute = await fetch(`${urlGeral}loans/execute/${loan.id}`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!resExecute.ok) {
-        throw new Error("Falha ao registrar a execução do empréstimo.");
-      }
-
-      toast.success("Empréstimo aceito e executado com sucesso!");
+      toast.success("Empréstimo aceito com sucesso!");
       props.reload();
     } catch (err: any) {
       toast.error(err.message || "Ocorreu um erro ao aceitar.");
@@ -161,23 +164,43 @@ function AudiovisualCard(props: Props) {
     }
   };
 
-  const handleRecusar = async (e: React.MouseEvent) => {
+  const handleEmprestar = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!loan) return;
+    setIsLoading(true);
+    try {
+      // 1. Confirma o empréstimo
+      const resConfirm = await fetch(`${urlGeral}loans/execute/${loan.id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const motivo = prompt("Motivo da recusa (opcional):");
-    // Se o usuário cancelar o prompt, não fazemos nada
-    if (motivo === null) return;
+      if (!resConfirm.ok) {
+        throw new Error("Falha ao aceitar a solicitação.");
+      }
+
+      toast.success("Empréstimo executado com sucesso!");
+      props.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao aceitar.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendWithObservation = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!loan) return;
 
     setIsLoading(true);
     try {
       const queryParams = new URLSearchParams({ confirm: "false" });
-      if (motivo.trim()) {
-        queryParams.append("rejection_reason", motivo.trim());
+      if (detalhamento.trim()) {
+        queryParams.append("rejection_reason", detalhamento.trim());
       }
 
       const res = await fetch(
-        `${urlGeral}loans/confirm/${loan.id}/?${queryParams.toString()}`,
+        `${urlGeral}loans/${props.column === "Pedido" ? "confirm" : "return"}/${loan.id}/?${queryParams.toString()}`,
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
@@ -187,6 +210,7 @@ function AudiovisualCard(props: Props) {
       if (!res.ok) throw new Error("Falha ao recusar a solicitação.");
 
       toast.success("Empréstimo recusado com sucesso!");
+      setOpenDetalhamento(false);
       props.reload();
     } catch (err: any) {
       toast.error(err.message || "Ocorreu um erro ao recusar.");
@@ -195,38 +219,16 @@ function AudiovisualCard(props: Props) {
     }
   };
 
-  const handleDevolver = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!loan) return;
-
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${urlGeral}loans/return/${loan.id}`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Falha ao devolver o item.");
-
-      toast.success("Item devolvido com sucesso!");
-      props.reload();
-    } catch (err: any) {
-      toast.error(err.message || "Ocorreu um erro ao devolver.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div
-      className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all"
-      onClick={() => onOpen("audiovisual-modal", { ...props })}
-    >
+    <div className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all">
       {/* Barra Lateral Colorida */}
       <div className={cn("w-2 min-w-[8px] shrink-0", statusColor)} />
       <div className="flex flex-1 p-4 border-neutral-200 dark:border-neutral-800 transition-colors group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900/50">
         <div className="flex flex-col flex-1">
-          <div className="flex flex-col">
+          <div
+            className="flex flex-col"
+            onClick={() => onOpen("audiovisual-modal", { ...props })}
+          >
             <div className="flex gap-4 mb-2">
               <div className="w-[60%] flex flex-col justify-between">
                 {/* Título */}
@@ -393,7 +395,10 @@ function AudiovisualCard(props: Props) {
                     variant="outline"
                     size="sm"
                     className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
-                    onClick={handleRecusar}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenDetalhamento(true);
+                    }}
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -418,20 +423,19 @@ function AudiovisualCard(props: Props) {
                   </Button>
                 </>
               )}
-              {props.column === "Pedido" && loan?.is_confirmed && (
+              {props.column === "Confirmados" && (
                 <>
                   <Button
                     size="sm"
                     className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
-                    onClick={() => console.log("Já aceito")}
-                    disabled={true}
+                    onClick={handleEmprestar}
                   >
                     {isLoading ? (
                       <Loader2 size={14} className="mr-1.5 animate-spin" />
                     ) : (
                       <Check size={14} className="mr-1.5" />
                     )}
-                    Já confirmado
+                    Emprestar
                   </Button>
                 </>
               )}
@@ -442,13 +446,16 @@ function AudiovisualCard(props: Props) {
                 <Button
                   size="sm"
                   className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
-                  onClick={handleDevolver}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDetalhamento(true);
+                  }}
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <Loader2 size={14} className="mr-1.5 animate-spin" />
                   ) : (
-                    <Timer size={14} className="mr-1.5" />
+                    <CornerDownLeft size={14} className="mr-1.5" />
                   )}
                   Devolver
                 </Button>
@@ -456,6 +463,26 @@ function AudiovisualCard(props: Props) {
             </div>
           </div>
         </div>
+        <Dialog open={openDetalhamento} onOpenChange={setOpenDetalhamento}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {props.column === "Pedido" ? "Motivo da recusa" : "Detalhes (opcional)"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="max-h-[250px] overflow-y-auto mt-2 space-y-1">
+              <Input
+                value={detalhamento}
+                onChange={(e) => setDetalhamento(e.target.value)}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button onClick={handleSendWithObservation}>Enviar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

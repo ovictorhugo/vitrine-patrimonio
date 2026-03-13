@@ -28,7 +28,6 @@ import {
   ChevronRight,
   MapPin,
   Trash,
-  Pencil,
   Home,
   Undo2,
   CheckIcon,
@@ -38,23 +37,12 @@ import {
   MoveRight,
   XIcon,
   User,
-  ArrowRightLeft,
   CalendarIcon,
-  ChevronDownIcon,
-  Package2,
-  ChevronsUpDown,
-  Check,
+  History,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft } from "phosphor-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useModal } from "../hooks/use-modal-store";
 import { useIsMobile } from "../../hooks/use-mobile";
@@ -69,16 +57,9 @@ import {
 } from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
 import { DownloadPdfButton } from "../download/download-pdf-button";
-import { Label } from "../ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
+import AudiovisualTab from "../item-emprestimo-page/emprestimo";
+import HistoryTab from "../item-emprestimo-page/history";
 
 /* ===================== Tipos DTO ===================== */
 export type UUID = string;
@@ -385,9 +366,9 @@ export function AudiovisualModal() {
   const colorClassStr = qualisColor[csvCodTrimmed] || "bg-zinc-300";
   const borderColorClass = colorClassStr.replace("bg-", "border-");
 
-  const tabs = [
-    { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
+  let tabs = [
+    { id: "emprestimo", label: "Empréstimo", icon: Info },
+    { id: "historico", label: "Histórico", icon: History },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
   ];
 
@@ -414,7 +395,7 @@ export function AudiovisualModal() {
     return () => window.removeEventListener("resize", checkScrollability);
   }, []);
 
-  const [tabOpen, setTabOpen] = useState("visao_geral");
+  const [tabOpen, setTabOpen] = useState("emprestimo");
 
   // Adaptação dos Empréstimos para manter sua lógica de Datas inalterada
   const workflows = useMemo(() => {
@@ -610,9 +591,6 @@ export function AudiovisualModal() {
       toast.error(message);
     } else {
       toast.success("Solicitação de empréstimo realizada com sucesso!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
       if (onClose) onClose();
     }
   }
@@ -782,469 +760,63 @@ export function AudiovisualModal() {
                       </div>
                     </div>
 
-                    {/* ===== Visão Geral ===== */}
-                    <TabsContent value="visao_geral">
-                      <div>
-                        <>
-                          <div className="flex group ">
-                            <div
-                              className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-                                qualisColor[
-                                  csvCodTrimmed as keyof typeof qualisColor
-                                ] || "bg-zinc-300"
-                              } min-h-full`}
-                            />
-                            <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
-                              <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-                                <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
-                                  {asset?.asset_code?.trim()} -{" "}
-                                  {asset?.asset_check_digit}
-                                  {!!asset?.atm_number &&
-                                    asset.atm_number !== "None" && (
-                                      <Badge variant="outline">
-                                        ATM: {asset.atm_number}
-                                      </Badge>
-                                    )}
-                                </p>
-                              </div>
-
-                              <div className="flex flex-col p-4 pt-0 justify-between">
-                                <div>
-                                  <div className="flex flex-wrap gap-3">
-                                    {!!asset?.csv_code &&
-                                      asset?.csv_code !== "None" && (
-                                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                          <div
-                                            className={`w-4 h-4 rounded-md ${
-                                              qualisColor[
-                                                csvCodTrimmed as keyof typeof qualisColor
-                                              ] || "bg-zinc-300"
-                                            }`}
-                                          />
-                                          {csvCodToText[
-                                            csvCodTrimmed as keyof typeof csvCodToText
-                                          ] || "—"}
-                                        </div>
-                                      )}
-
-                                    {status && (
-                                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                        {status.icon}
-                                        {status.text}
-                                      </div>
-                                    )}
-
-                                    {loggedIn && (
-                                      <>
-                                        {!!asset?.legal_guardian &&
-                                          asset.legal_guardian
-                                            .legal_guardians_name !==
-                                            "None" && (
-                                            <div className="flex gap-1 items-center">
-                                              <Avatar className="rounded-md h-5 w-5">
-                                                <AvatarImage
-                                                  className="rounded-md h-5 w-5"
-                                                  src={`${urlGeral}ResearcherData/Image?name=${asset.legal_guardian.legal_guardians_name}`}
-                                                />
-                                                <AvatarFallback className="flex items-center justify-center">
-                                                  <User size={10} />
-                                                </AvatarFallback>
-                                              </Avatar>
-                                              <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                {
-                                                  asset.legal_guardian
-                                                    .legal_guardians_name
-                                                }
-                                              </p>
-                                            </div>
-                                          )}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </Alert>
-                          </div>
-                        </>
-
-                        <div className="flex mt-[30px]">
+                    {/* ===== Empréstimo ===== */}
+                    <TabsContent value="emprestimo">
+                      <div className="flex w-full flex-col">
+                        <div className="flex group ">
                           <div
-                            className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue`}
+                            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 bg-eng-blue min-h-full`}
                           />
-                          <Alert className="flex flex-col rounded-l-none">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <MapPin size={16} />
-                                <p className="text-sm uppercase font-bold">
-                                  Local de tombamento:
-                                </p>
-
-                                {visibleParts.length ? (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    {visibleParts.map((p, i) => (
-                                      <div
-                                        key={i}
-                                        className={
-                                          isMobile
-                                            ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                            : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                        }
-                                      >
-                                        {i > 0 && <ChevronRight size={14} />}{" "}
-                                        {p}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span
-                                    className={
-                                      isMobile
-                                        ? "text-xs text-gray-500"
-                                        : "text-sm text-gray-500"
-                                    }
-                                  >
-                                    Não definido.
-                                  </span>
+                          <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-4 gap-4">
+                            <p className="font-semibold flex gap-3 items-center text-left flex-1">
+                              {asset?.asset_code?.trim()} -{" "}
+                              {asset?.asset_check_digit}
+                              {!!asset?.atm_number &&
+                                asset.atm_number !== "None" && (
+                                  <Badge variant="outline">
+                                    ATM: {asset.atm_number}
+                                  </Badge>
                                 )}
-                              </div>
-
-                              {!isSameLocation && (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <MapPin size={16} />
-                                  <p className="text-sm uppercase font-bold">
-                                    Local atual:
-                                  </p>
-
-                                  {visibleCatalogParts.length ? (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      {visibleCatalogParts.map((p, i) => (
-                                        <div
-                                          key={i}
-                                          className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                        >
-                                          {i > 0 && <ChevronRight size={14} />}{" "}
-                                          {p}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span className="text-sm text-gray-500">
-                                      Não definido.
-                                    </span>
-                                  )}
+                            </p>
+                            <div className="flex gap-1 items-center">
+                              <Avatar className="rounded-md h-5 w-5">
+                                <AvatarImage
+                                  className="rounded-md h-5 w-5"
+                                  src={`${urlGeral}ResearcherData/Image?name=${loanItem?.guardian?.username || ""}`}
+                                />
+                                <AvatarFallback className="flex items-center justify-center">
+                                  <User size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                {asset?.legal_guardian?.legal_guardians_name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <MapPin size={16} />
+                              <p className="text-sm uppercase font-bold">
+                                Local:
+                              </p>
+                              {visibleParts.map((p, i) => (
+                                <div
+                                  key={i}
+                                  className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                >
+                                  {i > 0 && <ChevronRight size={14} />} {p}
                                 </div>
-                              )}
+                              ))}
                             </div>
                           </Alert>
                         </div>
-
-                        {loggedIn && (
-                          <Link
-                            to={`/user?id=${catalog.user?.id}`}
-                            target="_blank"
-                          >
-                            <Alert className="my-8">
-                              <div className="flex gap-3 items-center">
-                                <Avatar className="rounded-md h-12 w-12">
-                                  <AvatarImage
-                                    className=""
-                                    src={`${urlGeral}user/upload/${catalog.user?.id}/icon`}
-                                  />
-                                  <AvatarFallback className="flex items-center justify-center">
-                                    <User size={16} />
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm w-fit text-gray-500">
-                                    Anunciante
-                                  </p>
-                                  <p className="text-black dark:text-white font-medium text-lg truncate">
-                                    {catalog.user?.username}
-                                  </p>
-                                </div>
-                              </div>
-                            </Alert>
-                          </Link>
-                        )}
+                        <AudiovisualTab
+                          loan={loanItem}
+                          reload={() => onClose()}
+                        />
                       </div>
                     </TabsContent>
-                    {/* ===== Empréstimo ===== */}
-                    <TabsContent value="emprestimo">
-                      <div>
-                        <>
-                          <div className="grid gap-6 w-full">
-                            <div className="grid gap-3 w-full">
-                              <Label>Responsável</Label>
-
-                              <div className="flex-1">
-                                <Popover
-                                  open={openUser}
-                                  onOpenChange={setOpenUser}
-                                  modal={true}
-                                >
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      aria-expanded={openUser}
-                                      className={cn(
-                                        "w-full justify-between font-normal z-[99]",
-                                        !selectedUserId &&
-                                          "text-muted-foreground",
-                                      )}
-                                    >
-                                      <span className="truncate">
-                                        {displaySelectedUser}
-                                      </span>
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </PopoverTrigger>
-
-                                  <PopoverContent
-                                    className="p-0 w-[var(--radix-popover-trigger-width)] z-[99]"
-                                    align="start"
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                    onOpenAutoFocus={(e) => e.preventDefault()}
-                                  >
-                                    <Command>
-                                      <CommandInput
-                                        placeholder="Buscar por nome ou email..."
-                                        autoFocus
-                                      />
-                                      <CommandList>
-                                        {users.length === 0 ? (
-                                          <CommandEmpty>
-                                            Carregando usuários...
-                                          </CommandEmpty>
-                                        ) : (
-                                          <CommandEmpty>
-                                            Nenhum usuário encontrado.
-                                          </CommandEmpty>
-                                        )}
-
-                                        <CommandGroup className="max-h-60 overflow-y-auto">
-                                          {users.map((user) => {
-                                            const userName =
-                                              user.username ||
-                                              user.email?.split("@")[0] ||
-                                              "Usuário";
-
-                                            return (
-                                              <CommandItem
-                                                key={user.id}
-                                                value={`${userName} ${user.email}`}
-                                                onSelect={() => {
-                                                  setSelectedUserId(user.id);
-                                                  setOpenUser(false);
-                                                }}
-                                                className="cursor-pointer flex items-center gap-2"
-                                              >
-                                                <Check
-                                                  className={cn(
-                                                    "h-4 w-4 flex-shrink-0",
-                                                    selectedUserId === user.id
-                                                      ? "opacity-100"
-                                                      : "opacity-0",
-                                                  )}
-                                                />
-                                                <div className="flex flex-col">
-                                                  <span>{userName}</span>
-                                                  <span className="text-xs text-muted-foreground">
-                                                    {user.email}
-                                                  </span>
-                                                </div>
-                                              </CommandItem>
-                                            );
-                                          })}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
-                            </div>
-
-                            <div className="">
-                              <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
-                                <div className="flex gap-4">
-                                  <div className="flex flex-1 flex-col gap-3">
-                                    <Label htmlFor="date-from" className="px-1">
-                                      Início do empréstimo
-                                    </Label>
-                                    <Popover
-                                      open={openFrom}
-                                      onOpenChange={setOpenFrom}
-                                      modal={true}
-                                    >
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          id="date-from"
-                                          className="w-full justify-between font-normal"
-                                        >
-                                          {dateFrom
-                                            ? dateFrom.toLocaleDateString(
-                                                "pt-BR",
-                                                {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                },
-                                              )
-                                            : "Select date"}
-                                          <ChevronDownIcon />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent
-                                        className="w-auto overflow-hidden p-0 z-[99]"
-                                        align="start"
-                                      >
-                                        <Calendar
-                                          mode="single"
-                                          selected={dateFrom}
-                                          captionLayout="dropdown"
-                                          onSelect={(date) => {
-                                            if (!date) return;
-                                            setDateFrom(date);
-                                            setOpenFrom(false);
-                                          }}
-                                        />
-                                      </PopoverContent>
-                                    </Popover>
-                                  </div>
-                                  <div className="flex flex-col gap-3">
-                                    <Label
-                                      htmlFor="time-from"
-                                      className="invisible px-1"
-                                    >
-                                      From
-                                    </Label>
-                                    <Select
-                                      value={hourFrom.toString()}
-                                      onValueChange={(v) =>
-                                        setHourFrom(Number(v))
-                                      }
-                                      disabled={beginHours.length == 0}
-                                    >
-                                      <SelectTrigger className="w-[100px]">
-                                        <SelectValue placeholder="Itens" />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-[999]">
-                                        {beginHours.map((val) => (
-                                          <SelectItem
-                                            key={val}
-                                            value={val.toString()}
-                                          >
-                                            {`${val}h`}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                                <div className="flex gap-4">
-                                  <div className="flex flex-1 flex-col gap-3">
-                                    <Label htmlFor="date-to" className="px-1">
-                                      Fim do empréstimo
-                                    </Label>
-                                    <Popover
-                                      open={openTo}
-                                      onOpenChange={setOpenTo}
-                                      modal={true}
-                                    >
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          id="date-to"
-                                          className="w-full justify-between font-normal"
-                                        >
-                                          {dateTo
-                                            ? dateTo.toLocaleDateString(
-                                                "pt-BR",
-                                                {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                },
-                                              )
-                                            : "Select date"}
-                                          <ChevronDownIcon />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent
-                                        className="w-auto overflow-hidden p-0 z-[99]"
-                                        align="start"
-                                      >
-                                        <Calendar
-                                          mode="single"
-                                          selected={dateTo}
-                                          captionLayout="dropdown"
-                                          onSelect={(date) => {
-                                            if (!date) return;
-                                            setDateTo(date);
-                                            setOpenTo(false);
-                                          }}
-                                          disabled={
-                                            dateFrom && { before: dateFrom }
-                                          }
-                                        />
-                                      </PopoverContent>
-                                    </Popover>
-                                  </div>
-                                  <div className="flex flex-col gap-3">
-                                    <Label
-                                      htmlFor="time-to"
-                                      className="invisible px-1"
-                                    >
-                                      To
-                                    </Label>
-                                    <Select
-                                      value={hourTo.toString()}
-                                      onValueChange={(v) =>
-                                        setHourTo(Number(v))
-                                      }
-                                      disabled={endHours.length == 0}
-                                    >
-                                      <SelectTrigger className="w-[100px]">
-                                        <SelectValue placeholder="Itens" />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-[999]">
-                                        {endHours.map((val) => (
-                                          <SelectItem
-                                            key={val}
-                                            value={val.toString()}
-                                          >
-                                            {`${val}h`}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="grid gap-3 w-full">
-                              <Label htmlFor="asset_description">
-                                Observações
-                              </Label>
-                              <Textarea
-                                id="description"
-                                value={observation}
-                                onChange={(e) => setObservation(e.target.value)}
-                              />
-                            </div>
-                          </div>
-                        </>
-                        <div className="flex m-auto my-8 items-center justify-end">
-                          <Button size="sm" onClick={submit}>
-                            Solicitar empréstimo
-                            <Package2 size={16} className="" />
-                          </Button>
-                        </div>
-                      </div>
+                    <TabsContent value="historico">
+                      <HistoryTab item={loanItem} />
                     </TabsContent>
-
                     {/* ===== Calendário ===== */}
                     <TabsContent value="calendario">
                       <div>

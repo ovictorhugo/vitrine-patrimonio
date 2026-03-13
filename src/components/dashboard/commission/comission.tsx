@@ -20,7 +20,6 @@ import AdmComission from "./tabs/adm-comission";
 import { usePermissions } from "../../permissions";
 import { useQuery } from "../../authentication/signIn";
 import { Estatistica } from "./tabs/estatistica";
-import { DownloadPdfButton } from "../../download/download-pdf-button";
 export function Comission() {
   const { urlGeral, permission } = useContext(UserContext);
   const navigate = useNavigate();

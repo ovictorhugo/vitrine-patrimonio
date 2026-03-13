@@ -30,15 +30,17 @@ import { Alert } from "../ui/alert";
 
 interface AudiovisualTabProps {
   loan: LoanableItemDTO;
+  reload: () => void;
 }
 
-export function AudiovisualTab({ loan }: AudiovisualTabProps) {
+export function AudiovisualTab(
+  { loan, reload }: AudiovisualTabProps,
+) {
   const { urlGeral, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
   const [observation, setObservation] = useState<string>("");
   const [users, setUsers] = useState<UserDTO[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [isMaintenance, setIsMaintenance] = useState<boolean>(false);
 
   // Estados para o Combobox de Usuários
@@ -252,10 +254,15 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
     const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
     const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
-    if (timestampTo <= timestampFrom) {
+    if (timestampTo <= timestampFrom && !isMaintenance) {
       toast.error(
         "Horário inválido! A hora final deve ser maior que a inicial.",
       );
+      return;
+    }
+
+    if (!selectedUserId || selectedUserId === "") {
+      toast.error("Favor preencher o responsável.");
       return;
     }
 
@@ -292,7 +299,7 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
     } else {
       toast.success("Solicitação de empréstimo realizada com sucesso!");
       setTimeout(() => {
-        window.location.reload();
+        reload();
       }, 1500);
     }
   }
@@ -483,9 +490,7 @@ export function AudiovisualTab({ loan }: AudiovisualTabProps) {
                           setDateTo(date);
                           setOpenTo(false);
                         }}
-                        disabled={
-                          (dateFrom && { before: dateFrom })
-                        }
+                        disabled={dateFrom && { before: dateFrom }}
                       />
                     </PopoverContent>
                   </Popover>

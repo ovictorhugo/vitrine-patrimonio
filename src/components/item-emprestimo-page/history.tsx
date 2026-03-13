@@ -23,6 +23,8 @@ export default function HistoryTab({ item }: HistoryTabProps) {
 
   const loans = item?.loans || [];
 
+  const reversed = loans.reverse();
+
   // Função auxiliar para formatar datas (estilo 20/05/2024)
   const formatData = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
@@ -42,7 +44,7 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             Nenhum registro de empréstimo encontrado para este item.
           </div>
         ) : (
-          [...loans].map((loan, idx) => {
+          [...reversed].map((loan, idx) => {
             const requesterName = loan.requester?.username || "N/A";
             const guardianName = loan.temporary_guardian?.username || "N/A";
             const atrasado = isAtrasado(loan);

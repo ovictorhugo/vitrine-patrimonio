@@ -10,6 +10,7 @@ import {
   LucideAlarmClockOff,
   CalendarCheck,
   Wrench,
+  Check,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -26,6 +27,7 @@ import { ScrollArea, ScrollBar } from "../../ui/scroll-area";
 import { usePermissions } from "../../permissions";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import LoanCalendar from "./calendario";
+import { DownloadPdfButton } from "../../download/download-pdf-button";
 export type UUID = string;
 
 export interface UserDTO {
@@ -186,6 +188,7 @@ export function Audiovisual() {
   const [board, setBoard] = useState<Record<string, LoanableItemDTO[]>>({
     Disponível: [],
     Pedido: [],
+    Confirmados: [],
     Emprestado: [],
     Atrasado: [],
     Manutenção: [],
@@ -209,6 +212,7 @@ export function Audiovisual() {
       const categorizedBoard: Record<string, LoanableItemDTO[]> = {
         Disponível: [],
         Pedido: [],
+        Confirmados: [],
         Emprestado: [],
         Atrasado: [],
         Manutenção: [],
@@ -233,8 +237,10 @@ export function Audiovisual() {
           categorizedBoard["Manutenção"].push(entry);
         } else if (lastLoan.is_returned) {
           categorizedBoard["Disponível"].push(entry);
-        } else if (!lastLoan.is_executed) {
+        } else if (!lastLoan.is_executed && !lastLoan.is_confirmed) {
           categorizedBoard["Pedido"].push(entry);
+        } else if (!lastLoan.is_executed && lastLoan.is_confirmed) {
+          categorizedBoard["Confirmados"].push(entry);
         } else {
           // Se chegou aqui, is_executed é true e is_returned é false
           if (lastLoan.end_at && new Date(lastLoan.end_at) < now) {
@@ -317,6 +323,11 @@ export function Audiovisual() {
             ) : (
               <></>
             )}
+            <DownloadPdfButton
+              filters={{}}
+              id={""}
+              label="Baixar tudo"
+              method={"loan_all"}/>
           </div>
           <div className="flex gap-2 items-center mt-4">
             <div className="flex">
@@ -386,6 +397,10 @@ export function Audiovisual() {
                           case "Pedido":
                             return {
                               Icon: Calendar,
+                            };
+                          case "Confirmados":
+                            return {
+                              Icon: Check,
                             };
                           case "Emprestado":
                             return {

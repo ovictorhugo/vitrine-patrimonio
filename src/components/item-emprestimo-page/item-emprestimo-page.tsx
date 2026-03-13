@@ -515,9 +515,9 @@ export function LoanItemPage() {
           <div className="hidden md:flex items-center gap-2">
             <DownloadPdfButton
               filters={{}}
-              id={catalogId}
+              id={loan.id}
               label="Baixar Item"
-              method={"item"}
+              method={"loan_item"}
             />
           </div>
         </div>
@@ -666,7 +666,10 @@ export function LoanItemPage() {
                       </div>
                     </Alert>
                   </div>
-                  <AudiovisualTab loan={loan} />
+                  <AudiovisualTab
+                    loan={loan}
+                    reload={() => window.location.reload()}
+                  />
                 </div>
               </TabsContent>
 
