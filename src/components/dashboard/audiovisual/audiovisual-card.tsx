@@ -116,12 +116,10 @@ function AudiovisualCard(props: Props) {
   };
 
   const atrasado = isAtrasado(loan);
-
-  // Se não houver empréstimo, ele fica "Disponível" (verde)
   const statusColor =
     !loan || loan.is_returned
-      ? "bg-green-500"
-      : loan.is_maintenance
+      ? "'bg-green-500'"
+      : props.in_maintenance
         ? "bg-amber-500"
         : atrasado
           ? "bg-red-500"
@@ -219,6 +217,32 @@ function AudiovisualCard(props: Props) {
     }
   };
 
+  const handleEndMaintenance = async () => {
+    setIsLoading(true);
+    
+    try {
+      const res = await fetch(
+        `${urlGeral}loans/end_maintenance/${props.id}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.detail || "Falha ao retirar o item da manutenção.");
+      }
+
+      toast.success("Manutenção finalizada com sucesso!");
+      props.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao finalizar a manutenção.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all">
       {/* Barra Lateral Colorida */}
@@ -297,7 +321,7 @@ function AudiovisualCard(props: Props) {
 
                       <div className="flex flex-col gap-1.5">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                          Guardião Temporário
+                          Responsável
                         </p>
                         <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm">
                           <Avatar className="rounded-md h-5 w-5 shrink-0">
@@ -359,7 +383,7 @@ function AudiovisualCard(props: Props) {
             </div>
 
             {/* Observações / Recusa */}
-            {props.column !== "Disponível" &&
+            {props.column !== "Disponível" && props.column !== "Manutenção" &&
               loan &&
               (loan.lend_detail || loan.rejection_reason) && (
                 <div className="mt-auto pt-3 border-t border-zinc-200 dark:border-zinc-800">
@@ -441,8 +465,7 @@ function AudiovisualCard(props: Props) {
               )}
 
               {(props.column === "Emprestado" ||
-                props.column === "Atrasado" ||
-                props.column === "Manutenção") && (
+                props.column === "Atrasado") && (
                 <Button
                   size="sm"
                   className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
@@ -460,6 +483,24 @@ function AudiovisualCard(props: Props) {
                   Devolver
                 </Button>
               )}
+              {(props.column === "Manutenção") && (
+                <Button
+                  size="sm"
+                  className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEndMaintenance();
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 size={14} className="mr-1.5 animate-spin" />
+                  ) : (
+                    <CornerDownLeft size={14} className="mr-1.5" />
+                  )}
+                  Finalizar manutenção
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -467,7 +508,9 @@ function AudiovisualCard(props: Props) {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                {props.column === "Pedido" ? "Motivo da recusa" : "Detalhes (opcional)"}
+                {props.column === "Pedido"
+                  ? "Motivo da recusa"
+                  : "Detalhes (opcional)"}
               </DialogTitle>
             </DialogHeader>
 

@@ -24,6 +24,7 @@ import {
   History,
   CalendarIcon,
   Info,
+  Wrench,
 } from "lucide-react";
 import { UserContext } from "../../context/context";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ import HistoryTab from "./history";
 import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 import { Files } from "../homepage/components/documents-tab-catalog";
 import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
+import MaintenanceTab from "./maintenance";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -386,6 +388,7 @@ export function LoanItemPage() {
     { id: "emprestimo", label: "Empréstimo", icon: Info },
     { id: "historico", label: "Histórico", icon: History },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
+    { id: "maintenance", label: "Manutenção", icon: Wrench },
   ];
 
   // Componente principal
@@ -678,8 +681,16 @@ export function LoanItemPage() {
               </TabsContent>
               <TabsContent value="calendario">
                 <div>
-                  <ItemLoanCalendar item={loan} />
+                  <div className="text-2xl p-8 m-2 flex justify-between items-center">
+                    Calendário
+                  </div>
+                  <div className="px-8">
+                  <ItemLoanCalendar item={loan} /></div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="maintenance">
+                <MaintenanceTab item={loan} />
               </TabsContent>
             </Tabs>
 

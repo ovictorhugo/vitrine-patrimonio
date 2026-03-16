@@ -27,21 +27,19 @@ import {
 import { LoanableItemDTO, UserDTO } from "../dashboard/audiovisual/audiovisual";
 import { Switch } from "../ui/switch";
 import { Alert } from "../ui/alert";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 interface AudiovisualTabProps {
   loan: LoanableItemDTO;
   reload: () => void;
 }
 
-export function AudiovisualTab(
-  { loan, reload }: AudiovisualTabProps,
-) {
+export function AudiovisualTab({ loan, reload }: AudiovisualTabProps) {
   const { urlGeral, user } = useContext(UserContext);
   const token = localStorage.getItem("jwt_token") || "";
 
   const [observation, setObservation] = useState<string>("");
   const [users, setUsers] = useState<UserDTO[]>([]);
-  const [isMaintenance, setIsMaintenance] = useState<boolean>(false);
 
   // Estados para o Combobox de Usuários
   const [openUser, setOpenUser] = useState(false);
@@ -53,7 +51,7 @@ export function AudiovisualTab(
   // Formata o nome para exibição (fallback para a primeira parte do email se não tiver username)
   const displaySelectedUser = selectedUser
     ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
-    : "Selecione o guardião temporário...";
+    : "Selecione o Responsável...";
 
   // DATAS
 
@@ -248,13 +246,14 @@ export function AudiovisualTab(
   useEffect(() => {
     fetchUsers();
   }, []);
+  const isMobile = useIsMobile();
 
   async function submit() {
     if (!dateFrom || !dateTo) return;
     const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
     const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
-    if (timestampTo <= timestampFrom && !isMaintenance) {
+    if (timestampTo <= timestampFrom) {
       toast.error(
         "Horário inválido! A hora final deve ser maior que a inicial.",
       );
@@ -276,10 +275,10 @@ export function AudiovisualTab(
       body: JSON.stringify({
         loanable_item_id: loan?.id,
         start_at: timestampFrom,
-        end_at: isMaintenance ? null : timestampTo,
+        end_at: timestampTo,
         requester_id: user?.id,
         temporary_guardian_id: selectedUserId,
-        is_maintenance: isMaintenance,
+        is_maintenance: false,
         lend_detail: observation,
       }),
     });
@@ -303,248 +302,261 @@ export function AudiovisualTab(
       }, 1500);
     }
   }
-
-  return (
-    <main className={`grid flex-col gap-4 md:gap-8`}>
-      <div className="p-8">
-        <div className="grid grid-cols-1">
-          <div className="grid gap-3 w-full pb-4">
-            <Label>Responsável</Label>
-            <div className="flex-1">
-              <Popover
-                modal={true}
-                open={openUser}
-                onOpenChange={(val) => {
-                  setOpenUser(val);
-                }}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openUser}
-                    className="w-full justify-between"
-                  >
-                    {displaySelectedUser}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-0 w-[var(--radix-popover-trigger-width)] z-[99]"
-                  align="start"
-                  onKeyDown={(e) => e.stopPropagation()}
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
-                  <Command>
-                    <CommandInput
-                      placeholder="Buscar por nome ou email..."
-                      autoFocus
-                    />
-                    <CommandList>
-                      {users.length === 0 ? (
-                        <CommandEmpty>Carregando usuários...</CommandEmpty>
-                      ) : (
-                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
-                      )}
-
-                      <CommandGroup className="max-h-60 overflow-y-auto">
-                        {users.map((user) => {
-                          const userName =
-                            user.username ||
-                            user.email?.split("@")[0] ||
-                            "Usuário";
-
-                          return (
-                            <CommandItem
-                              key={user.id}
-                              value={`${userName} ${user.email}`}
-                              onSelect={() => {
-                                setSelectedUserId(user.id);
-                                setOpenUser(false);
-                              }}
-                              className="cursor-pointer flex items-center gap-2"
-                            >
-                              <Check
-                                className={cn(
-                                  "h-4 w-4 flex-shrink-0",
-                                  selectedUserId === user.id
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span>{userName}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {user.email}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          <div className="pb-4">
-            <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
-              <div className="flex gap-4">
-                <div className="flex flex-1 flex-col gap-3">
-                  <Label htmlFor="date-from" className="px-1">
-                    Início do empréstimo
-                  </Label>
-                  <Popover
-                    open={openFrom}
-                    onOpenChange={setOpenFrom}
-                    modal={true}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        id="date-from"
-                        className="w-full justify-between font-normal"
-                      >
-                        {dateFrom
-                          ? dateFrom.toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Select date"}
-                        <ChevronDownIcon />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto overflow-hidden p-0 z-[99]"
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={dateFrom}
-                        captionLayout="dropdown"
-                        onSelect={(date) => {
-                          if (!date) return;
-                          setDateFrom(date);
-                          setOpenFrom(false);
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="time-from" className="invisible px-1">
-                    From
-                  </Label>
-                  <Select
-                    value={hourFrom.toString()}
-                    onValueChange={(v) => setHourFrom(Number(v))}
-                    disabled={beginHours.length == 0}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Itens" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[999]">
-                      {beginHours.map((val) => (
-                        <SelectItem key={val} value={val.toString()}>
-                          {`${val}h`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex flex-1 flex-col gap-3">
-                  <Label htmlFor="date-to" className="px-1">
-                    Fim do empréstimo
-                  </Label>
-                  <Popover open={openTo} onOpenChange={setOpenTo} modal={true}>
-                    <PopoverTrigger asChild disabled={isMaintenance}>
-                      <Button
-                        variant="outline"
-                        id="date-to"
-                        className="w-full justify-between font-normal"
-                      >
-                        {dateTo
-                          ? dateTo.toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Select date"}
-                        <ChevronDownIcon />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto overflow-hidden p-0 z-[99]"
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={dateTo}
-                        captionLayout="dropdown"
-                        onSelect={(date) => {
-                          if (!date) return;
-                          setDateTo(date);
-                          setOpenTo(false);
-                        }}
-                        disabled={dateFrom && { before: dateFrom }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="time-to" className="invisible px-1">
-                    To
-                  </Label>
-                  <Select
-                    value={hourTo.toString()}
-                    onValueChange={(v) => setHourTo(Number(v))}
-                    disabled={endHours.length == 0 || isMaintenance}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Itens" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[999]">
-                      {endHours.map((val) => (
-                        <SelectItem key={val} value={val.toString()}>
-                          {`${val}h`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Alert className="flex gap-3 my-4 w-fit">
-            É manutenção?
-            <Switch
-              checked={isMaintenance}
-              onCheckedChange={(checked) => setIsMaintenance(!isMaintenance)}
-            />
-          </Alert>
-          <div className="grid gap-3 w-full">
-            <Label htmlFor="asset_description">Observações</Label>
-            <Textarea
-              id="description"
-              value={observation}
-              onChange={(e) => setObservation(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex m-auto mt-8 items-center justify-end">
-          <Button size="sm" onClick={submit}>
-            Solicitar empréstimo
-            <Package2 size={16} className="" />
-          </Button>
+  if (loan.in_maintenance) {
+    return (
+      <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 mt-8">
+        <div className="w-[90%] flex flex-col items-center justify-center">
+          <p className="text-6xl text-[#719CB8] font-bold mb-16 animate-pulse">
+            U_U
+          </p>
+          <h1 className="text-center text-xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+            Este item está em manutenção. <br />
+            Não é possível fazer empréstimos no momento.
+          </h1>
         </div>
       </div>
-    </main>
-  );
+    );
+  } else
+    return (
+      <main className={`grid flex-col gap-4 md:gap-8`}>
+        <div className="p-8">
+          <div className="grid grid-cols-1">
+            <div className="grid gap-3 w-full pb-4">
+              <Label>Responsável</Label>
+              <div className="flex-1">
+                <Popover
+                  modal={true}
+                  open={openUser}
+                  onOpenChange={(val) => {
+                    setOpenUser(val);
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openUser}
+                      className="w-full justify-between"
+                    >
+                      {displaySelectedUser}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="p-0 w-[var(--radix-popover-trigger-width)] z-[99]"
+                    align="start"
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
+                    <Command>
+                      <CommandInput
+                        placeholder="Buscar por nome ou email..."
+                        autoFocus
+                      />
+                      <CommandList>
+                        {users.length === 0 ? (
+                          <CommandEmpty>Carregando usuários...</CommandEmpty>
+                        ) : (
+                          <CommandEmpty>
+                            Nenhum usuário encontrado.
+                          </CommandEmpty>
+                        )}
+
+                        <CommandGroup className="max-h-60 overflow-y-auto">
+                          {users.map((user) => {
+                            const userName =
+                              user.username ||
+                              user.email?.split("@")[0] ||
+                              "Usuário";
+
+                            return (
+                              <CommandItem
+                                key={user.id}
+                                value={`${userName} ${user.email}`}
+                                onSelect={() => {
+                                  setSelectedUserId(user.id);
+                                  setOpenUser(false);
+                                }}
+                                className="cursor-pointer flex items-center gap-2"
+                              >
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 flex-shrink-0",
+                                    selectedUserId === user.id
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span>{userName}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {user.email}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <div className="pb-4">
+              <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
+                <div className="flex gap-4">
+                  <div className="flex flex-1 flex-col gap-3">
+                    <Label htmlFor="date-from" className="px-1">
+                      Início do empréstimo
+                    </Label>
+                    <Popover
+                      open={openFrom}
+                      onOpenChange={setOpenFrom}
+                      modal={true}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          id="date-from"
+                          className="w-full justify-between font-normal"
+                        >
+                          {dateFrom
+                            ? dateFrom.toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Select date"}
+                          <ChevronDownIcon />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0 z-[99]"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          captionLayout="dropdown"
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setDateFrom(date);
+                            setOpenFrom(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Label htmlFor="time-from" className="invisible px-1">
+                      From
+                    </Label>
+                    <Select
+                      value={hourFrom.toString()}
+                      onValueChange={(v) => setHourFrom(Number(v))}
+                      disabled={beginHours.length == 0}
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="Itens" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[999]">
+                        {beginHours.map((val) => (
+                          <SelectItem key={val} value={val.toString()}>
+                            {`${val}h`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-1 flex-col gap-3">
+                    <Label htmlFor="date-to" className="px-1">
+                      Fim do empréstimo
+                    </Label>
+                    <Popover
+                      open={openTo}
+                      onOpenChange={setOpenTo}
+                      modal={true}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          id="date-to"
+                          className="w-full justify-between font-normal"
+                        >
+                          {dateTo
+                            ? dateTo.toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Select date"}
+                          <ChevronDownIcon />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0 z-[99]"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          captionLayout="dropdown"
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setDateTo(date);
+                            setOpenTo(false);
+                          }}
+                          disabled={dateFrom && { before: dateFrom }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <Label htmlFor="time-to" className="invisible px-1">
+                      To
+                    </Label>
+                    <Select
+                      value={hourTo.toString()}
+                      onValueChange={(v) => setHourTo(Number(v))}
+                      disabled={endHours.length == 0}
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="Itens" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[999]">
+                        {endHours.map((val) => (
+                          <SelectItem key={val} value={val.toString()}>
+                            {`${val}h`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3 w-full">
+              <Label htmlFor="asset_description">Observações</Label>
+              <Textarea
+                id="description"
+                value={observation}
+                onChange={(e) => setObservation(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex m-auto mt-8 items-center justify-end">
+            <Button size="sm" onClick={submit}>
+              Solicitar empréstimo
+              <Package2 size={16} className="" />
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
 }
 
 export default AudiovisualTab;

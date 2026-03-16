@@ -163,6 +163,7 @@ export interface LoanableItemDTO {
   id: UUID;
   catalog_id: UUID;
   legal_guardian_id: UUID;
+  in_maintenance: boolean;
   owner_notes: string | null;
   catalog: CatalogResponseDTO;
   guardian: UserDTO;
@@ -233,7 +234,7 @@ export function Audiovisual() {
         // Pega o último item do array de empréstimos
         const lastLoan = loans[loans.length - 1];
 
-        if (lastLoan.is_maintenance) {
+        if (entry.in_maintenance) {
           categorizedBoard["Manutenção"].push(entry);
         } else if (lastLoan.is_returned) {
           categorizedBoard["Disponível"].push(entry);
@@ -323,11 +324,6 @@ export function Audiovisual() {
             ) : (
               <></>
             )}
-            <DownloadPdfButton
-              filters={{}}
-              id={""}
-              label="Baixar tudo"
-              method={"loan_all"}/>
           </div>
           <div className="flex gap-2 items-center mt-4">
             <div className="flex">
@@ -354,13 +350,17 @@ export function Audiovisual() {
                 Calendário
               </Button>
             </div>
-
             {isMobile ? (
               <></>
             ) : (
               <Separator orientation="vertical" className="h-8 mx-2" />
             )}
-
+            <DownloadPdfButton
+              filters={{}}
+              id={""}
+              label="Baixar tudo"
+              method={"loan_all"}
+            />
             {hasAnunciarItem && !isMobile ? (
               <Button
                 size="sm"

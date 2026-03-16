@@ -59,7 +59,7 @@ export function DownloadPdfButton({
         baseUrl = `${urlGeral}loans/pdf/${id}`;
         downloadUrl = buildUrl(baseUrl, {});
       } else if (method === "loan_all") {
-        baseUrl = `${urlGeral}loans/all_pdf/`;
+        baseUrl = `${urlGeral}loans/all_pdf`;
         downloadUrl = buildUrl(baseUrl, {});
       }
       const res = await fetch(downloadUrl, {

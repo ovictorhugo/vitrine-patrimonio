@@ -276,7 +276,7 @@ export function AudiovisualModal() {
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const displaySelectedUser = selectedUser
     ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
-    : "Selecione o guardião temporário...";
+    : "Selecione o Responsável...";
 
   async function fetchUsers() {
     try {

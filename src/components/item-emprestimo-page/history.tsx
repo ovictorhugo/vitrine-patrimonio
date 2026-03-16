@@ -39,6 +39,9 @@ export default function HistoryTab({ item }: HistoryTabProps) {
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="pl-4 ml-4 flex flex-col gap-3">
+        <div className="text-2xl mb-4 flex justify-between items-center">
+          Histórico
+        </div>
         {loans.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed rounded-lg text-muted-foreground">
             Nenhum registro de empréstimo encontrado para este item.
@@ -169,7 +172,7 @@ export default function HistoryTab({ item }: HistoryTabProps) {
 
                     <div className="flex flex-col gap-1">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                        Guardião Temporário
+                        Responsável
                       </p>
                       <div className="flex gap-2 items-center bg-zinc-50 dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
                         <Avatar className="rounded-md h-5 w-5">
