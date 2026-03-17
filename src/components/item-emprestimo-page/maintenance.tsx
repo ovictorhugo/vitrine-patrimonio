@@ -7,6 +7,7 @@ import {
   Wrench,
   CheckCircle2,
   LoaderCircle,
+  NotebookPen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { cn } from "../../lib";
@@ -25,6 +26,7 @@ import {
   DialogFooter,
 } from "../ui/dialog";
 import { usePermissions } from "../permissions";
+import { Alert } from "../ui/alert";
 
 interface MaintenanceTabProps {
   item: LoanableItemDTO | undefined;
@@ -48,9 +50,25 @@ export default function MaintenanceTab({ item }: MaintenanceTabProps) {
   const reversed = loans.reverse();
 
   // Função auxiliar para formatar datas (estilo 20/05/2024)
-  const formatData = (dateStr: string | null) => {
+  const formatData = (dateStr: string) => {
     if (!dateStr) return "N/A";
+    if (dateStr === "N/A") return "Não realizado";
     return new Date(dateStr).toLocaleDateString("pt-BR");
+  };
+  const showDate = (dateStr: Date = new Date(0)) => {
+    if (dateStr === new Date(0)) return "N/A";
+    return new Date(dateStr).toLocaleDateString("pt-BR");
+  };
+
+  const shiftDate = () => {
+    let first_date = item?.last_check || null;
+    if (first_date === null) return "N/A";
+
+    const date = new Date(first_date);
+    // Adiciona a quantidade de dias especificada
+    date.setDate(date.getDate() + 100);
+
+    return date.toLocaleDateString("pt-BR");
   };
 
   useEffect(() => {
@@ -151,7 +169,7 @@ export default function MaintenanceTab({ item }: MaintenanceTabProps) {
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="pl-4 ml-4 flex flex-col gap-3">
-        <div className="text-2xl mb-4 flex justify-between items-center">
+        <div className="text-4xl mb-6 flex justify-between items-center font-semibold">
           Histórico de manutenções
           {/* O botão agora apenas abre o modal */}
           <Button
@@ -161,7 +179,27 @@ export default function MaintenanceTab({ item }: MaintenanceTabProps) {
             Colocar em manutenção
           </Button>
         </div>
-
+        <div className="flex group ">
+          <div
+            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 bg-eng-blue min-h-full`}
+          />
+          <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-4 gap-3">
+            <div className="flex gap-6">
+              <p className="font-semibold flex gap-3 items-center text-xl text-left">
+                Última vistoria:
+              </p>
+              <div className="w-fit text-sm bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
+                {showDate(item?.last_check)}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xl font-semibold">Próxima vistoria:</p>
+              <div className="w-fit text-sm bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
+                {shiftDate()}
+              </div>
+            </div>
+          </Alert>
+        </div>
         {/* Modal de Confirmação */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
@@ -229,7 +267,7 @@ export default function MaintenanceTab({ item }: MaintenanceTabProps) {
                       <span
                         className={"text-sm text-gray-500 dark:text-gray-300"}
                       >
-                        {formatData(loan.end_at)}
+                        {formatData(loan.end_at ?? "")}
                       </span>
                     </div>
 

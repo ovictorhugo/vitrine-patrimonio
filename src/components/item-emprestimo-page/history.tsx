@@ -36,6 +36,19 @@ export default function HistoryTab({ item }: HistoryTabProps) {
     return new Date(loan.end_at) < new Date();
   };
 
+  // Nova função auxiliar para comparar datas sem horário
+  // Retorna true se dataB (retorno) é estritamente depois de dataA (prev. fim)
+  const eDevolucaoAtrasada = (
+    endAt: string | null,
+    returnedAt: string | null,
+  ): boolean => {
+    if (!endAt || !returnedAt) return false;
+    // Cria objetos Date e zera o horário (setHours(0, 0, 0, 0)) para comparar apenas a data
+    const dateEnd = new Date(new Date(endAt).setHours(0, 0, 0, 0));
+    const dateReturned = new Date(new Date(returnedAt).setHours(0, 0, 0, 0));
+    return dateReturned > dateEnd;
+  };
+
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="pl-4 ml-4 flex flex-col gap-3">
@@ -52,11 +65,19 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             const guardianName = loan.temporary_guardian?.username || "N/A";
             const atrasado = isAtrasado(loan);
 
+            // Nova lógica para devolução em atraso baseada apenas na data
+            const devolucaoAtrasada = eDevolucaoAtrasada(
+              loan.end_at,
+              loan.returned_at,
+            );
+
             // Definição da cor da barra lateral
             const statusColor = loan.is_maintenance
               ? "bg-amber-500"
-              : atrasado || (loan.is_returned && !loan.is_confirmed)
-                ? "bg-red-500" // Vermelho para Atrasado ou Recusado
+              : atrasado ||
+                  devolucaoAtrasada ||
+                  (loan.is_returned && !loan.is_confirmed)
+                ? "bg-red-500" // Vermelho para Atrasado, Devolvido em atraso ou Recusado
                 : loan.is_returned
                   ? "bg-green-500" // Verde para Devolvido (sucesso)
                   : "bg-eng-blue"; // Azul para os demais casos (Pedido/Emprestado)
@@ -88,6 +109,13 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                       {atrasado && (
                         <div className="flex items-center gap-1.5 text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">
                           <AlertCircle size={12} /> Atrasado
+                        </div>
+                      )}
+
+                      {/* Nova Badge para Devolução em Atraso */}
+                      {devolucaoAtrasada && (
+                        <div className="flex items-center gap-1.5 text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">
+                          <AlertCircle size={12} /> Devolvido em atraso
                         </div>
                       )}
 
@@ -137,8 +165,9 @@ export default function HistoryTab({ item }: HistoryTabProps) {
 
                     {loan.returned_at && (
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="size-4 text-green-500" />
-                        <p className="text-sm font-semibold uppercase">
+                        {/* Removida a lógica frágil de comparação de strings e simplificada a exibição do retorno */}
+                        <CheckCircle2 className="size-4 text-gray-500 dark:text-gray-300" />
+                        <p className="text-sm font-semibold uppercase text-gray-500 dark:text-gray-300">
                           Retorno:
                         </p>
                         <span className="text-sm text-gray-500 dark:text-gray-300">

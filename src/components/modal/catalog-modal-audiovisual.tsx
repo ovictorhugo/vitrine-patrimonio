@@ -40,6 +40,7 @@ import {
   CalendarIcon,
   History,
   Info,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft } from "phosphor-react";
@@ -60,6 +61,8 @@ import { DownloadPdfButton } from "../download/download-pdf-button";
 import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 import AudiovisualTab from "../item-emprestimo-page/emprestimo";
 import HistoryTab from "../item-emprestimo-page/history";
+import MaintenanceTab from "../item-emprestimo-page/maintenance";
+import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
 
 /* ===================== Tipos DTO ===================== */
 export type UUID = string;
@@ -192,15 +195,6 @@ export interface LoanDTO {
   rejection_reason: string | null;
   requester?: UserDTO;
   temporary_guardian?: UserDTO;
-}
-export interface LoanableItemDTO {
-  id: UUID;
-  catalog_id: UUID;
-  legal_guardian_id: UUID;
-  owner_notes: string | null;
-  catalog: CatalogResponseDTO;
-  guardian: UserDTO;
-  loans: LoanDTO[];
 }
 
 const chain = (loc?: LocationDTO | null) => {
@@ -370,6 +364,7 @@ export function AudiovisualModal() {
     { id: "emprestimo", label: "Empréstimo", icon: Info },
     { id: "historico", label: "Histórico", icon: History },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
+    { id: "maintenance", label: "Manutenção", icon: Wrench },
   ];
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -822,6 +817,9 @@ export function AudiovisualModal() {
                       <div>
                         <ItemLoanCalendar item={loanItem} />
                       </div>
+                    </TabsContent>
+                    <TabsContent value="maintenance">
+                      <MaintenanceTab item={loanItem} />
                     </TabsContent>
                   </Tabs>
                 </div>

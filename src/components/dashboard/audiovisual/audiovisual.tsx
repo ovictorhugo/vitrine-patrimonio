@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   Wrench,
   Check,
+  Cog,
 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ import { usePermissions } from "../../permissions";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import LoanCalendar from "./calendario";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
+import VistoriaTab from "./vistorias";
 export type UUID = string;
 
 export interface UserDTO {
@@ -167,6 +169,7 @@ export interface LoanableItemDTO {
   owner_notes: string | null;
   catalog: CatalogResponseDTO;
   guardian: UserDTO;
+  last_check: Date;
   loans: LoanDTO[];
 }
 
@@ -343,11 +346,22 @@ export function Audiovisual() {
                   setTab("calendario");
                 }}
                 size="sm"
-                className="rounded-l-none"
+                className="rounded-none"
                 variant={tab === "calendario" ? "default" : "outline"}
               >
                 <Calendar size={16} className="" />
                 Calendário
+              </Button>
+              <Button
+                onClick={() => {
+                  setTab("vistoria");
+                }}
+                size="sm"
+                className="rounded-l-none"
+                variant={tab === "vistoria" ? "default" : "outline"}
+              >
+                <Cog size={16} className="" />
+                Vistoria
               </Button>
             </div>
             {isMobile ? (
@@ -358,7 +372,7 @@ export function Audiovisual() {
             <DownloadPdfButton
               filters={{}}
               id={""}
-              label="Baixar tudo"
+              label="Baixar inventário"
               method={"loan_all"}
             />
             {hasAnunciarItem && !isMobile ? (
@@ -432,7 +446,7 @@ export function Audiovisual() {
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Icon size={16} className={"text-gray-400"} />
+                                <Icon size={20} className={"text-gray-400"} />
                                 <span
                                   title={colName}
                                   className="font-semibold truncate"
@@ -508,6 +522,10 @@ export function Audiovisual() {
                         return {
                           Icon: CalendarCheck,
                         };
+                      case "Confirmados":
+                        return {
+                          Icon: Check,
+                        };
                       case "Atrasado":
                         return {
                           Icon: LucideAlarmClockOff,
@@ -547,7 +565,7 @@ export function Audiovisual() {
 
                         <div className="flex items-center gap-1 mr-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Icon size={16} className={"text-gray-400"} />
+                            <Icon size={20} className={"text-eng-blue"} />
                             <h2
                               className={
                                 isMobile
@@ -597,7 +615,9 @@ export function Audiovisual() {
                         </div>
                       ) : null}
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 align-center overflow-x-auto">
+                      <div
+                        className={`grid grid-cols-1 ${expandedColumn === "Disponível" ? "md:grid-cols-4" : "md:grid-cols-3"} gap-4 align-center overflow-x-auto`}
+                      >
                         {items.map((item) => (
                           <AudiovisualCard
                             key={item.id}
@@ -614,7 +634,13 @@ export function Audiovisual() {
             )}
           </>
         ) : (
-          <LoanCalendar board={board} />
+          <></>
+        )}
+        {tab === "calendario" ? <LoanCalendar board={board} /> : <></>}
+        {tab === "vistoria" ? (
+          <VistoriaTab board={board} setTab={()=> setTab("emprestimo")} />
+        ) : (
+          <></>
         )}
       </main>
     </div>

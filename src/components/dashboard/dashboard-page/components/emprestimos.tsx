@@ -23,42 +23,6 @@ import { Button } from "../../../ui/button";
 import GlobalLoanCalendar from "../../audiovisual/calendario";
 import { LoanableItemDTO } from "../../audiovisual/audiovisual";
 
-type Unit = {
-  unit_name: string;
-  unit_code: string;
-  unit_siaf: string;
-  id: string;
-};
-type Agency = {
-  agency_name: string;
-  agency_code: string;
-  unit_id: string;
-  id: string;
-  unit: Unit;
-};
-type Sector = {
-  agency_id: string;
-  sector_name: string;
-  sector_code: string;
-  id: string;
-  agency: Agency;
-};
-type LegalGuardian = {
-  legal_guardians_code: string;
-  legal_guardians_name: string;
-  id: string;
-};
-
-type LocationDTO = {
-  legal_guardian_id: string;
-  sector_id: string;
-  location_name: string;
-  location_code: string;
-  id: string;
-  sector: Sector;
-  legal_guardian: LegalGuardian;
-};
-
 export function Emprestimos() {
   const { urlGeral } = useContext(UserContext);
   const token =
@@ -67,31 +31,21 @@ export function Emprestimos() {
   const [tab, setTab] = useState("lista");
 
   async function getCatalog() {
-    const res = await fetch(`${urlGeral}catalog/emprestimos/my`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    const json = await res.json();
+    try {
+      const res = await fetch(`${urlGeral}loans/my`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
 
-      console.log(json);
-    const catalogosComEmprestimos =
-      json?.catalog_entries?.map((catalogo) => {
-        const emprestimosFiltrados = catalogo.workflow_history
-          ? catalogo.workflow_history.filter(
-              (item) => item.workflow_status === "AUDIOVISUAL_EMPRESTIMO",
-            )
-          : [];
-        return {
-          ...catalogo,
-          workflow_history: emprestimosFiltrados,
-        };
-      }) || [];
-
-    if (res.ok) {
-      setEmprestimos(catalogosComEmprestimos);
-      console.log(catalogosComEmprestimos);
+      // O endpoint retorna { loanable_items: [...] }
+      if (json && json.loanable_items) {
+        setEmprestimos(json.loanable_items);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar meus empréstimos:", error);
     }
   }
 
@@ -104,7 +58,7 @@ export function Emprestimos() {
       <AccordionItem value="item">
         <AccordionTrigger>
           <HeaderResultTypeHome
-            title="Meus empreśtimos"
+            title="Meus empréstimos"
             icon={<CalendarCheck size={24} className="text-gray-400" />}
           />
         </AccordionTrigger>
@@ -133,8 +87,8 @@ export function Emprestimos() {
 
             {tab === "lista" ? (
               <>
-                {emprestimos?.map((loan) => {
-                  const formatData = (isoString?: string) => {
+                {emprestimos?.map((item) => {
+                  const formatData = (isoString?: string | null) => {
                     if (!isoString) return "Não informada";
                     return new Date(isoString)
                       .toLocaleDateString("pt-BR", {
@@ -148,117 +102,118 @@ export function Emprestimos() {
                   };
 
                   return (
-                    <div className="flex my-4">
+                    <div key={item.id} className="flex my-4">
                       <div
                         className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 bg-eng-blue min-h-full`}
                       />
-                      <Alert className="flex flex-col h-fit rounded-l-none">
+                      <Alert className="flex flex-col h-fit rounded-l-none w-full">
                         <div className="flex mb-1 pb-0">
                           <p className="font-semibold flex gap-3 items-center text-left flex-1">
-                            {loan.catalog.asset?.asset_code?.trim()} -{" "}
-                            {loan.catalog.asset?.asset_check_digit}
+                            {item.catalog?.asset?.asset_code?.trim() || "S/C"} -{" "}
+                            {item.catalog?.asset?.asset_check_digit || ""}
                           </p>
                         </div>
                         <div className="flex flex-col p-4 pt-0 justify-between">
                           <div>
                             <div className="text-lg font-bold">
-                              {loan.catalog.asset?.material?.material_name ||
+                              {item.catalog?.asset?.material?.material_name ||
                                 "Sem nome"}
                             </div>
-                            <p className="text-left uppercase">
-                              {loan.catalog.asset?.asset_description}
+                            <p className="text-left uppercase text-sm text-muted-foreground">
+                              {item.catalog?.asset?.asset_description || ""}
                             </p>
                           </div>
                         </div>
-                        {/* 2. LISTA DE EMPRÉSTIMOS DESTE CATÁLOGO */}
+
+                        {/* LISTA DE EMPRÉSTIMOS DESTE ITEM */}
                         <div className="pl-4 ml-4 flex flex-col gap-3">
                           <p className="text-sm font-semibold text-muted-foreground uppercase">
-                            Registros de Empréstimo (
-                            {loan.catalog.workflow_history?.length || 0})
+                            Registros de Empréstimo ({item.loans?.length || 0})
                           </p>
 
-                          {loan.catalog.workflow_history?.map((emp, empIndex) => {
-                            // Guardião legal específico deste passo de empréstimo
-                            const loanGuardianName =
-                              emp.detail?.legal_guardian
-                                ?.legal_guardians_name ||
-                              emp.detail?.legal_guardian ||
-                              "";
-                            const requesterName = emp.detail?.user?.username || "";
-                            const dataInicio = formatData(emp.detail?.inicio);
-                            const dataFim = formatData(emp.detail?.fim);
+                          {item.loans?.map((loan, empIndex) => {
+                            // Pegando os dados corretos da tabela 'loans'
+                            const guardianName =
+                              loan.temporary_guardian?.username || "N/A";
+                            const requesterName =
+                              loan.requester?.username || "N/A";
+                            const dataInicio = formatData(loan.start_at);
+                            const dataFim = formatData(loan.end_at);
 
                             return (
-                              <>
-                                <div key={emp.id || empIndex} className="">
-                                  <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/40 transition delay-150 duration-300 ease-in-out hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded cursor-pointer border border-transparent hover:border-zinc-300 dark:hover:border-zinc-700">
-                                    {/* Datas */}
-                                    <div className="flex items-center gap-6 flex-wrap">
-                                      <div className="flex items-center gap-2">
-                                        <Calendar className="size-4 text-muted-foreground" />
-                                        <p className="text-sm font-semibold uppercase">
-                                          Início:
-                                        </p>
-                                        <span className="text-sm text-gray-500 dark:text-gray-300">
-                                          {dataInicio}
-                                        </span>
-                                      </div>
+                              <div key={loan.id || empIndex} className="w-full">
+                                <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/40 transition delay-150 duration-300 ease-in-out hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded cursor-pointer border border-transparent hover:border-zinc-300 dark:hover:border-zinc-700">
+                                  {/* Datas */}
+                                  <div className="flex items-center gap-6 flex-wrap mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="size-4 text-muted-foreground" />
+                                      <p className="text-sm font-semibold uppercase">
+                                        Início:
+                                      </p>
+                                      <span className="text-sm text-gray-500 dark:text-gray-300">
+                                        {dataInicio}
+                                      </span>
+                                    </div>
 
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="size-4 text-muted-foreground" />
+                                      <p className="text-sm font-semibold uppercase">
+                                        Fim:
+                                      </p>
+                                      <span className="text-sm text-gray-500 dark:text-gray-300">
+                                        {dataFim}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Envolvidos (Solicitante e Guardião Temporário) */}
+                                  <div className="flex gap-3 flex-wrap">
+                                    <div className="flex flex-col gap-1">
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                                        Guardião (Responsável)
+                                      </p>
                                       <div className="flex items-center gap-2">
-                                        <Clock className="size-4 text-muted-foreground" />
-                                        <p className="text-sm font-semibold uppercase">
-                                          Fim:
-                                        </p>
-                                        <span className="text-sm text-gray-500 dark:text-gray-300">
-                                          {dataFim}
-                                        </span>
+                                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
+                                          <Avatar className="rounded-md h-5 w-5">
+                                            <AvatarImage
+                                              className="rounded-md h-5 w-5 object-cover"
+                                              src={`${urlGeral}Researchercatalog/Image?name=${guardianName}`}
+                                            />
+                                            <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
+                                              <User size={10} />
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                            {guardianName}
+                                          </p>
+                                        </div>
                                       </div>
                                     </div>
 
-                                    {/* Guardião do Empréstimo */}
-                                    <div className="flex gap-3">
-                                      {!!loanGuardianName &&
-                                        loanGuardianName !== "None" && (
-                                          <div className="flex items-center gap-2 flex-wrap mt-1">
-                                            <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                                              <Avatar className="rounded-md h-5 w-5">
-                                                <AvatarImage
-                                                  className="rounded-md h-5 w-5 object-cover"
-                                                  src={`${urlGeral}Researchercatalog/Image?name=${loanGuardianName}`}
-                                                />
-                                                <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                                                  <User size={10} />
-                                                </AvatarFallback>
-                                              </Avatar>
-                                              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                                {loanGuardianName}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        )}
-                                      {!!requesterName &&
-                                        requesterName !== "None" && (
-                                          <div className="flex items-center gap-2 flex-wrap mt-1">
-                                            <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                                              <Avatar className="rounded-md h-5 w-5">
-                                                <AvatarImage
-                                                  className="rounded-md h-5 w-5 object-cover"
-                                                  src={`${urlGeral}Researchercatalog/Image?name=${requesterName}`}
-                                                />
-                                                <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                                                  <User size={10} />
-                                                </AvatarFallback>
-                                              </Avatar>
-                                              <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                                {requesterName}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        )}
+                                    <div className="flex flex-col gap-1">
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                                        Solicitante
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
+                                          <Avatar className="rounded-md h-5 w-5">
+                                            <AvatarImage
+                                              className="rounded-md h-5 w-5 object-cover"
+                                              src={`${urlGeral}Researchercatalog/Image?name=${requesterName}`}
+                                            />
+                                            <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
+                                              <User size={10} />
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                            {requesterName}
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </>
+                              </div>
                             );
                           })}
                         </div>
@@ -269,7 +224,7 @@ export function Emprestimos() {
               </>
             ) : (
               <div className="mt-4">
-                {/**<GlobalLoanCalendar board={emprestimos} /> */}
+                <GlobalLoanCalendar board={{"":emprestimos}} />
               </div>
             )}
           </Alert>
