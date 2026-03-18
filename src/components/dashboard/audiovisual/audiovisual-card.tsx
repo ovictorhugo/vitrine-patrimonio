@@ -34,6 +34,7 @@ import {
 } from "../../ui/dialog";
 import { AlertDialogHeader } from "../../ui/alert-dialog";
 import { Input } from "../../ui/input";
+import { DownloadPdfButton } from "../../download/download-pdf-button";
 
 type Props = LoanableItemDTO & {
   column:
@@ -124,8 +125,8 @@ function AudiovisualCard(props: Props) {
         : atrasado
           ? "bg-red-500"
           : !loan.is_executed
-            ? "bg-eng-blue/20"
-            : "bg-eng-blue";
+            ? "bg-eng-blue"
+            : "bg-eng-blue/20";
 
   // ================= FUNÇÕES DE AÇÃO ================= //
 
@@ -219,19 +220,18 @@ function AudiovisualCard(props: Props) {
 
   const handleEndMaintenance = async () => {
     setIsLoading(true);
-    
+
     try {
-      const res = await fetch(
-        `${urlGeral}loans/end_maintenance/${props.id}`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${urlGeral}loans/end_maintenance/${props.id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail || "Falha ao retirar o item da manutenção.");
+        throw new Error(
+          errorData?.detail || "Falha ao retirar o item da manutenção.",
+        );
       }
 
       toast.success("Manutenção finalizada com sucesso!");
@@ -383,7 +383,8 @@ function AudiovisualCard(props: Props) {
             </div>
 
             {/* Observações / Recusa */}
-            {props.column !== "Disponível" && props.column !== "Manutenção" &&
+            {props.column !== "Disponível" &&
+              props.column !== "Manutenção" &&
               loan &&
               (loan.lend_detail || loan.rejection_reason) && (
                 <div className="mt-auto pt-3 border-t border-zinc-200 dark:border-zinc-800">
@@ -415,10 +416,16 @@ function AudiovisualCard(props: Props) {
 
               {props.column === "Pedido" && !loan?.is_confirmed && (
                 <>
+                  <DownloadPdfButton
+                    filters={{}}
+                    id={loan?.id}
+                    label="Baixar termo"
+                    method={"loan_terms"}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+                    className="flex-1 bg-red-500 text-white hover:bg-red-200 hover:text-red-700 dark:hover:bg-red-900/20"
                     onClick={(e) => {
                       e.stopPropagation();
                       setOpenDetalhamento(true);
@@ -449,6 +456,12 @@ function AudiovisualCard(props: Props) {
               )}
               {props.column === "Confirmados" && (
                 <>
+                  <DownloadPdfButton
+                    filters={{}}
+                    id={loan?.id}
+                    label="Baixar termo"
+                    method={"loan_terms"}
+                  />
                   <Button
                     size="sm"
                     className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
@@ -483,7 +496,7 @@ function AudiovisualCard(props: Props) {
                   Devolver
                 </Button>
               )}
-              {(props.column === "Manutenção") && (
+              {props.column === "Manutenção" && (
                 <Button
                   size="sm"
                   className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"

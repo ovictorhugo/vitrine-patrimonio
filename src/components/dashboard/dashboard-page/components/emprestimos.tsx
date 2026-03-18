@@ -22,6 +22,7 @@ import { Alert } from "../../../ui/alert";
 import { Button } from "../../../ui/button";
 import GlobalLoanCalendar from "../../audiovisual/calendario";
 import { LoanableItemDTO } from "../../audiovisual/audiovisual";
+import { DownloadPdfButton } from "../../../download/download-pdf-button";
 
 export function Emprestimos() {
   const { urlGeral } = useContext(UserContext);
@@ -139,31 +140,40 @@ export function Emprestimos() {
                               loan.requester?.username || "N/A";
                             const dataInicio = formatData(loan.start_at);
                             const dataFim = formatData(loan.end_at);
+                            const emAberto = !loan.is_executed;
 
                             return (
                               <div key={loan.id || empIndex} className="w-full">
                                 <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/40 transition delay-150 duration-300 ease-in-out hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded cursor-pointer border border-transparent hover:border-zinc-300 dark:hover:border-zinc-700">
-                                  {/* Datas */}
-                                  <div className="flex items-center gap-6 flex-wrap mb-3">
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="size-4 text-muted-foreground" />
-                                      <p className="text-sm font-semibold uppercase">
-                                        Início:
-                                      </p>
-                                      <span className="text-sm text-gray-500 dark:text-gray-300">
-                                        {dataInicio}
-                                      </span>
-                                    </div>
+                                  <div className="flex justify-between">
+                                    {/* Datas */}
+                                    <div className="flex items-center gap-6 flex-wrap mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="size-4 text-muted-foreground" />
+                                        <p className="text-sm font-semibold uppercase">
+                                          Início:
+                                        </p>
+                                        <span className="text-sm text-gray-500 dark:text-gray-300">
+                                          {dataInicio}
+                                        </span>
+                                      </div>
 
-                                    <div className="flex items-center gap-2">
-                                      <Clock className="size-4 text-muted-foreground" />
-                                      <p className="text-sm font-semibold uppercase">
-                                        Fim:
-                                      </p>
-                                      <span className="text-sm text-gray-500 dark:text-gray-300">
-                                        {dataFim}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <Clock className="size-4 text-muted-foreground" />
+                                        <p className="text-sm font-semibold uppercase">
+                                          Fim:
+                                        </p>
+                                        <span className="text-sm text-gray-500 dark:text-gray-300">
+                                          {dataFim}
+                                        </span>
+                                      </div>
                                     </div>
+                                    { emAberto ? <DownloadPdfButton
+                                      filters={{}}
+                                      id={loan?.id}
+                                      label="Baixar termo"
+                                      method={"loan_terms"}
+                                    />: <></> }
                                   </div>
 
                                   {/* Envolvidos (Solicitante e Guardião Temporário) */}
@@ -224,7 +234,7 @@ export function Emprestimos() {
               </>
             ) : (
               <div className="mt-4">
-                <GlobalLoanCalendar board={{"":emprestimos}} />
+                <GlobalLoanCalendar board={{ "": emprestimos }} />
               </div>
             )}
           </Alert>
