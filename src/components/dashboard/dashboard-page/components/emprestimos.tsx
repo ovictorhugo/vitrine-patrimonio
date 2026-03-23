@@ -7,6 +7,7 @@ import {
   List,
   User,
   UserCheck,
+  UserIcon,
 } from "lucide-react";
 import {
   Accordion,
@@ -23,6 +24,7 @@ import { Button } from "../../../ui/button";
 import GlobalLoanCalendar from "../../audiovisual/calendario";
 import { LoanableItemDTO } from "../../audiovisual/audiovisual";
 import { DownloadPdfButton } from "../../../download/download-pdf-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../../ui/tooltip";
 
 export function Emprestimos() {
   const { urlGeral } = useContext(UserContext);
@@ -177,51 +179,77 @@ export function Emprestimos() {
                                   </div>
 
                                   {/* Envolvidos (Solicitante e Guardião Temporário) */}
-                                  <div className="flex gap-3 flex-wrap">
-                                    <div className="flex flex-col gap-1">
-                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                                        Guardião (Responsável)
-                                      </p>
-                                      <div className="flex items-center gap-2">
-                                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                                          <Avatar className="rounded-md h-5 w-5">
-                                            <AvatarImage
-                                              className="rounded-md h-5 w-5 object-cover"
-                                              src={`${urlGeral}Researchercatalog/Image?name=${guardianName}`}
-                                            />
-                                            <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                                              <User size={10} />
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                            {guardianName}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
+                                  <div className="flex gap-3 mb-4">
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                          Solicitante
+                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `/user?id=${loan.requester?.id}`,
+                                  "_blank",
+                                );
+                              }}
+                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                            >
+                              <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                <AvatarImage
+                                  src={`${urlGeral}user/upload/${loan.requester?.id}/icon`}
+                                />
+                                <AvatarFallback>
+                                  <UserIcon size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                {requesterName}
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{requesterName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
 
-                                    <div className="flex flex-col gap-1">
-                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                                        Solicitante
-                                      </p>
-                                      <div className="flex items-center gap-2">
-                                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                                          <Avatar className="rounded-md h-5 w-5">
-                                            <AvatarImage
-                                              className="rounded-md h-5 w-5 object-cover"
-                                              src={`${urlGeral}Researchercatalog/Image?name=${requesterName}`}
-                                            />
-                                            <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                                              <User size={10} />
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                            {requesterName}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                          Responsável
+                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `/user?id=${loan.requester?.id}`,
+                                  "_blank",
+                                );
+                              }}
+                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                            >
+                              <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                <AvatarImage
+                                  src={`${urlGeral}user/upload/${loan.temporary_guardian?.id}/icon`}
+                                />
+                                <AvatarFallback>
+                                  <UserIcon size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                {guardianName}
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{guardianName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
                                 </div>
                               </div>
                             );

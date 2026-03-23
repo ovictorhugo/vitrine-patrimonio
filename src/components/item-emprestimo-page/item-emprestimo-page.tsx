@@ -41,6 +41,7 @@ import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
 import { Files } from "../homepage/components/documents-tab-catalog";
 import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
 import MaintenanceTab from "./maintenance";
+import { usePermissions } from "../permissions";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -223,6 +224,7 @@ export function LoanItemPage() {
   const query = useQuery();
 
   const { urlGeral, loggedIn } = useContext(UserContext);
+  const { hasAnunciarItem } = usePermissions();
   const token = localStorage.getItem("jwt_token") || "";
 
   const buildImgUrl = (p: string) => {
@@ -685,12 +687,28 @@ export function LoanItemPage() {
                     Calendário
                   </div>
                   <div className="px-8">
-                  <ItemLoanCalendar item={loan} /></div>
+                    <ItemLoanCalendar item={loan} />
+                  </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="maintenance">
-                <MaintenanceTab item={loan} />
+                {hasAnunciarItem ? (
+                  <MaintenanceTab item={loan} />
+                ) : (
+                  <>
+                    <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+                      <div className="w-[90%] flex flex-col items-center justify-center">
+                        <p className="text-6xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                          U_U
+                        </p>
+                        <h1 className="text-center text-xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                          Você não tem permissão de acessar essas informações
+                        </h1>
+                      </div>
+                    </div>
+                  </>
+                )}
               </TabsContent>
             </Tabs>
 

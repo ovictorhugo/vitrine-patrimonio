@@ -35,6 +35,7 @@ import {
 import { AlertDialogHeader } from "../../ui/alert-dialog";
 import { Input } from "../../ui/input";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 
 type Props = LoanableItemDTO & {
   column:
@@ -80,6 +81,7 @@ function AudiovisualCard(props: Props) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [openDetalhamento, setOpenDetalhamento] = useState(false);
+  const [openVistoriaDialog, setOpenVistoriaDialog] = useState(false);
   const [detalhamento, setDetalhamento] = useState("");
 
   const materialNome =
@@ -126,7 +128,7 @@ function AudiovisualCard(props: Props) {
           ? "bg-red-500"
           : !loan.is_executed
             ? "bg-eng-blue"
-            : "bg-eng-blue/20";
+            : "bg-eng-blue";
 
   // ================= FUNÇÕES DE AÇÃO ================= //
 
@@ -189,6 +191,7 @@ function AudiovisualCard(props: Props) {
 
   const handleSendWithObservation = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    setOpenDetalhamento(false)
     if (!loan) return;
 
     setIsLoading(true);
@@ -218,14 +221,27 @@ function AudiovisualCard(props: Props) {
     }
   };
 
-  const handleEndMaintenance = async () => {
+  const handleEndMaintenance = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setOpenVistoriaDialog(true);
+  };
+
+  const confirmEndMaintenance = async (isVistoria: boolean) => {
     setIsLoading(true);
+    setOpenVistoriaDialog(false);
 
     try {
-      const res = await fetch(`${urlGeral}loans/end_maintenance/${props.id}`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+      const queryParams = new URLSearchParams({
+        is_vistoria: String(isVistoria),
       });
+
+      const res = await fetch(
+        `${urlGeral}loans/end_maintenance/${props.id}?${queryParams.toString()}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
@@ -304,38 +320,70 @@ function AudiovisualCard(props: Props) {
                         <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
                           Solicitante
                         </p>
-                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                          <Avatar className="rounded-md h-5 w-5 shrink-0">
-                            <AvatarImage
-                              src={`${urlGeral}user/upload/${loan.requester?.id}/icon`}
-                            />
-                            <AvatarFallback>
-                              <UserIcon size={10} />
-                            </AvatarFallback>
-                          </Avatar>
-                          <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
-                            {requesterName}
-                          </p>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `/user?id=${loan.requester?.id}`,
+                                  "_blank",
+                                );
+                              }}
+                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                            >
+                              <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                <AvatarImage
+                                  src={`${urlGeral}user/upload/${loan.requester?.id}/icon`}
+                                />
+                                <AvatarFallback>
+                                  <UserIcon size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                {requesterName}
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{requesterName}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
                           Responsável
                         </p>
-                        <div className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                          <Avatar className="rounded-md h-5 w-5 shrink-0">
-                            <AvatarImage
-                              src={`${urlGeral}user/upload/${loan.temporary_guardian?.id}/icon`}
-                            />
-                            <AvatarFallback>
-                              <UserIcon size={10} />
-                            </AvatarFallback>
-                          </Avatar>
-                          <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
-                            {guardianName}
-                          </p>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `/user?id=${loan.requester?.id}`,
+                                  "_blank",
+                                );
+                              }}
+                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                            >
+                              <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                <AvatarImage
+                                  src={`${urlGeral}user/upload/${loan.temporary_guardian?.id}/icon`}
+                                />
+                                <AvatarFallback>
+                                  <UserIcon size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                {guardianName}
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{guardianName}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>
@@ -406,7 +454,10 @@ function AudiovisualCard(props: Props) {
               {props.column === "Disponível" && (
                 <Button
                   size="sm"
-                  className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                  className={cn(
+                    "w-full bg-eng-blue hover:bg-eng-blue/90 text-white",
+                    statusColor,
+                  )}
                   onClick={handleFazerEmprestimo}
                   disabled={isLoading}
                 >
@@ -441,7 +492,9 @@ function AudiovisualCard(props: Props) {
                   </Button>
                   <Button
                     size="sm"
-                    className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
+                    className={
+                      "w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                    }
                     onClick={handleAceitar}
                     disabled={isLoading}
                   >
@@ -464,7 +517,10 @@ function AudiovisualCard(props: Props) {
                   />
                   <Button
                     size="sm"
-                    className="flex-1 bg-eng-blue hover:bg-eng-blue/90 text-white"
+                    className={cn(
+                      "w-full bg-eng-blue hover:bg-eng-blue/90 text-white",
+                      statusColor,
+                    )}
                     onClick={handleEmprestar}
                   >
                     {isLoading ? (
@@ -481,7 +537,10 @@ function AudiovisualCard(props: Props) {
                 props.column === "Atrasado") && (
                 <Button
                   size="sm"
-                  className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                  className={cn(
+                    "w-full bg-eng-blue hover:bg-eng-blue/90 text-white",
+                    statusColor,
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpenDetalhamento(true);
@@ -499,7 +558,10 @@ function AudiovisualCard(props: Props) {
               {props.column === "Manutenção" && (
                 <Button
                   size="sm"
-                  className="w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                  className={cn(
+                    "w-full bg-eng-blue hover:bg-eng-blue/90 text-white",
+                    statusColor,
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEndMaintenance();
@@ -536,6 +598,38 @@ function AudiovisualCard(props: Props) {
 
             <DialogFooter className="mt-4">
               <Button onClick={handleSendWithObservation}>Enviar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={openVistoriaDialog} onOpenChange={setOpenVistoriaDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                Considerar essa manutenção como vistoria?
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Ao confirmar, a data da última vistoria do item será atualizada.
+              </p>
+            </div>
+
+            <DialogFooter className="mt-4 flex gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => confirmEndMaintenance(false)}
+                disabled={isLoading}
+              >
+                Não
+              </Button>
+              <Button
+                onClick={() => confirmEndMaintenance(true)}
+                disabled={isLoading}
+                className="bg-eng-blue hover:bg-eng-blue/90 text-white"
+              >
+                Sim
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

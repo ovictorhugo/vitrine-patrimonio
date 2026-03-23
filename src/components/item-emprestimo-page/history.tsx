@@ -28,7 +28,13 @@ export default function HistoryTab({ item }: HistoryTabProps) {
   // Função auxiliar para formatar datas (estilo 20/05/2024)
   const formatData = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString("pt-BR");
+
+    const date = new Date(dateStr);
+    const dataFormatada = date.toLocaleDateString("pt-BR");
+    const hora = date.getHours(); // Pega apenas a hora (0 a 23)
+
+    // Retorna no formato "20/05/2024 às 14h"
+    return `${dataFormatada} às ${hora}h`;
   };
 
   const isAtrasado = (loan: LoanDTO) => {
@@ -74,13 +80,15 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             // Definição da cor da barra lateral
             const statusColor = loan.is_maintenance
               ? "bg-amber-500"
-              : atrasado ||
-                  devolucaoAtrasada ||
-                  (loan.is_returned && !loan.is_confirmed)
-                ? "bg-red-500" // Vermelho para Atrasado, Devolvido em atraso ou Recusado
-                : loan.is_returned
-                  ? "bg-green-500" // Verde para Devolvido (sucesso)
-                  : "bg-eng-blue"; // Azul para os demais casos (Pedido/Emprestado)
+              : loan.rejection_reason
+                ? "bg-blue-950" // Novo caso: Azul Escuro para Pedido Recusado com motivo
+                : atrasado ||
+                    devolucaoAtrasada ||
+                    (loan.is_returned && !loan.is_confirmed)
+                  ? "bg-red-500" // Vermelho para Atrasado, Devolvido em atraso ou Recusado genericamente
+                  : loan.is_returned
+                    ? "bg-green-500" // Verde para Devolvido (sucesso)
+                    : "bg-eng-blue"; // Azul padrão para os demais casos (Pedido/Emprestado ativo)
             return (
               <div key={loan.id || idx} className="flex mb-3">
                 {/* Barra Lateral Colorida */}
@@ -119,7 +127,12 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                         </div>
                       )}
 
-                      {loan.is_returned && !loan.is_confirmed ? (
+                      {/* Nova lógica de Recusa com motivo (Prioridade Azul Escuro) */}
+                      {loan.rejection_reason ? (
+                        <div className="flex items-center gap-1.5 text-blue-900 bg-blue-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                          <X size={12} /> Recusado
+                        </div>
+                      ) : loan.is_returned && !loan.is_confirmed ? (
                         <div className="flex items-center gap-1.5 text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
                           <X size={12} /> Recusado
                         </div>

@@ -188,6 +188,7 @@ export function Audiovisual() {
 
   const [loading, setLoading] = useState(false);
   const [expandedColumn, setExpandedColumn] = useState("");
+  const [filtroHojeAtivo, setFiltroHojeAtivo] = useState(false);
 
   const [board, setBoard] = useState<Record<string, LoanableItemDTO[]>>({
     Disponível: [],
@@ -223,35 +224,62 @@ export function Audiovisual() {
       };
 
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // Zera as horas para comparar o atraso apenas pela data
 
-      // SEPARAR Entries POR TIPO
+      // SEPARAR Entries POR TIPO (BASEADO EM PRIORIDADE)
       newEntries.forEach((entry) => {
-        const loans = entry.loans || [];
-
-        // Se não tem histórico de empréstimo, está disponível
-        if (loans.length === 0) {
-          categorizedBoard["Disponível"].push(entry);
+        // 1. Prioridade Máxima: Manutenção
+        if (entry.in_maintenance) {
+          categorizedBoard["Manutenção"].push(entry);
           return;
         }
 
-        // Pega o último item do array de empréstimos
-        const lastLoan = loans[loans.length - 1];
+        const loans = entry.loans || [];
 
-        if (entry.in_maintenance) {
-          categorizedBoard["Manutenção"].push(entry);
-        } else if (lastLoan.is_returned) {
-          categorizedBoard["Disponível"].push(entry);
-        } else if (!lastLoan.is_executed && !lastLoan.is_confirmed) {
-          categorizedBoard["Pedido"].push(entry);
-        } else if (!lastLoan.is_executed && lastLoan.is_confirmed) {
-          categorizedBoard["Confirmados"].push(entry);
-        } else {
-          // Se chegou aqui, is_executed é true e is_returned é false
-          if (lastLoan.end_at && new Date(lastLoan.end_at) < now) {
+        // 2. Busca os diferentes tipos de status dentro do histórico do item
+        // Empréstimo ativo (executado e não devolvido)
+        const activeLoan = loans.find((l) => l.is_executed && !l.is_returned);
+
+        // Empréstimo confirmado para o futuro (não executado, confirmado e não devolvido)
+        const confirmedLoan = loans.find(
+          (l) => !l.is_executed && l.is_confirmed && !l.is_returned,
+        );
+
+        // Pedido pendente (não executado, não confirmado, não devolvido e sem motivo de recusa)
+        const pendingLoan = loans.find(
+          (l) =>
+            !l.is_executed &&
+            !l.is_confirmed &&
+            !l.is_returned &&
+            !l.rejection_reason,
+        );
+
+        // 3. Aplica a hierarquia
+        if (activeLoan) {
+          // Se está com alguém, verificamos se está atrasado
+          let isAtrasado = false;
+          if (activeLoan.end_at) {
+            const endAtDate = new Date(activeLoan.end_at);
+            endAtDate.setHours(0, 0, 0, 0);
+            if (endAtDate < now) {
+              isAtrasado = true;
+            }
+          }
+
+          if (isAtrasado) {
             categorizedBoard["Atrasado"].push(entry);
           } else {
             categorizedBoard["Emprestado"].push(entry);
           }
+        } else if (confirmedLoan) {
+          // Se não está emprestado, mas tem reserva futura aprovada
+          categorizedBoard["Confirmados"].push(entry);
+        } else if (pendingLoan) {
+          // Se não tem reserva aprovada, mas tem pedido na fila
+          categorizedBoard["Pedido"].push(entry);
+        } else {
+          // Se passou por tudo e não caiu em nada, o item tá livre para jogo
+          categorizedBoard["Disponível"].push(entry);
         }
       });
 
@@ -541,6 +569,25 @@ export function Audiovisual() {
 
                   const { Icon } = getColumnMeta(expandedColumn);
 
+                  const itensFiltrados = items.filter((item) => {
+                    if (!filtroHojeAtivo) return true;
+                    if (expandedColumn !== "Emprestado") return true;
+
+                    const emprestimoAtivo = item.loans?.find(
+                      (l) => !l.is_returned,
+                    );
+                    if (!emprestimoAtivo || !emprestimoAtivo.end_at)
+                      return false;
+
+                    const dataFim = new Date(emprestimoAtivo.end_at);
+                    const hoje = new Date();
+                    return (
+                      dataFim.getDate() === hoje.getDate() &&
+                      dataFim.getMonth() === hoje.getMonth() &&
+                      dataFim.getFullYear() === hoje.getFullYear()
+                    );
+                  });
+
                   return (
                     <div key={expandedColumn}>
                       <div
@@ -554,7 +601,10 @@ export function Audiovisual() {
                           <div className="w-full flex justify-start mb-8 pl-1">
                             <Button
                               size="sm"
-                              onClick={() => setExpandedColumn("")}
+                              onClick={() => {
+                                setExpandedColumn("");
+                                setFiltroHojeAtivo(false);
+                              }}
                               className="self-start"
                             >
                               <ChevronLeft size={16} className="mr-1" /> Voltar
@@ -584,6 +634,18 @@ export function Audiovisual() {
                           >
                             {totalForCol}
                           </Badge>
+                          {expandedColumn === "Emprestado" ? (
+                            <Button
+                              size="default"
+                              onClick={() =>
+                                setFiltroHojeAtivo(!filtroHojeAtivo)
+                              }
+                              variant={filtroHojeAtivo ? "default" : "outline"}
+                              className="ml-8"
+                            >
+                              Devolução hoje
+                            </Button>
+                          ) : null}
                         </div>
 
                         {/* Ações / Botões */}
@@ -618,7 +680,7 @@ export function Audiovisual() {
                       <div
                         className={`grid grid-cols-1 ${expandedColumn === "Disponível" ? "md:grid-cols-4" : "md:grid-cols-3"} gap-4 align-center overflow-x-auto`}
                       >
-                        {items.map((item) => (
+                        {itensFiltrados.map((item) => (
                           <AudiovisualCard
                             key={item.id}
                             {...item}
@@ -638,7 +700,7 @@ export function Audiovisual() {
         )}
         {tab === "calendario" ? <LoanCalendar board={board} /> : <></>}
         {tab === "vistoria" ? (
-          <VistoriaTab board={board} setTab={()=> setTab("emprestimo")} />
+          <VistoriaTab board={board} setTab={() => setTab("emprestimo")} />
         ) : (
           <></>
         )}

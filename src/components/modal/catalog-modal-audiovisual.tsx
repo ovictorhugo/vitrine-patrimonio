@@ -63,6 +63,7 @@ import AudiovisualTab from "../item-emprestimo-page/emprestimo";
 import HistoryTab from "../item-emprestimo-page/history";
 import MaintenanceTab from "../item-emprestimo-page/maintenance";
 import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
+import { usePermissions } from "../permissions";
 
 /* ===================== Tipos DTO ===================== */
 export type UUID = string;
@@ -231,6 +232,7 @@ export function AudiovisualModal() {
   const isModalOpen = isOpen && typeModal === "audiovisual-modal";
 
   const { urlGeral, loggedIn, user } = useContext(UserContext);
+  const { hasAnunciarItem } = usePermissions();
   const token = localStorage.getItem("jwt_token") || "";
 
   // CORREÇÃO AQUI: Cast duplo para extrair o objeto perfeitamente
@@ -638,7 +640,7 @@ export function AudiovisualModal() {
             <DownloadPdfButton
               filters={{}}
               id={loanItem.id}
-              label="Baixar Item"
+              label="Baixar Histórico"
               method={"loan_item"}
             />
             <TooltipProvider>
@@ -819,7 +821,23 @@ export function AudiovisualModal() {
                       </div>
                     </TabsContent>
                     <TabsContent value="maintenance">
-                      <MaintenanceTab item={loanItem} />
+                      {hasAnunciarItem ? (
+                        <MaintenanceTab item={loanItem} />
+                      ) : (
+                        <>
+                          <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+                            <div className="w-[90%] flex flex-col items-center justify-center">
+                              <p className="text-6xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                                U_U
+                              </p>
+                              <h1 className="text-center text-xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                                Você não tem permissão de acessar essas
+                                informações
+                              </h1>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </TabsContent>
                   </Tabs>
                 </div>
