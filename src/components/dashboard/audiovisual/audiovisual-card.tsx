@@ -121,7 +121,7 @@ function AudiovisualCard(props: Props) {
   const atrasado = isAtrasado(loan);
   const statusColor =
     !loan || loan.is_returned
-      ? "'bg-green-500'"
+      ? "bg-green-500"
       : props.in_maintenance
         ? "bg-amber-500"
         : atrasado
@@ -191,7 +191,7 @@ function AudiovisualCard(props: Props) {
 
   const handleSendWithObservation = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setOpenDetalhamento(false)
+    setOpenDetalhamento(false);
     if (!loan) return;
 
     setIsLoading(true);
@@ -259,10 +259,13 @@ function AudiovisualCard(props: Props) {
     }
   };
 
+  console.log(props.column);
+  console.log(loan)
+
   return (
     <div className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all">
       {/* Barra Lateral Colorida */}
-      <div className={cn("w-2 min-w-[8px] shrink-0", statusColor)} />
+      <div className={cn("w-2 min-w-[8px] shrink-0 ", statusColor)} />
       <div className="flex flex-1 p-4 border-neutral-200 dark:border-neutral-800 transition-colors group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900/50">
         <div className="flex flex-col flex-1">
           <div
@@ -465,14 +468,8 @@ function AudiovisualCard(props: Props) {
                 </Button>
               )}
 
-              {props.column === "Pedido" && !loan?.is_confirmed && (
+              {props.column === "Pedido" && !loan?.is_confirmed ? (
                 <>
-                  <DownloadPdfButton
-                    filters={{}}
-                    id={loan?.id}
-                    label="Baixar termo"
-                    method={"loan_terms"}
-                  />
                   <Button
                     variant="outline"
                     size="sm"
@@ -505,6 +502,21 @@ function AudiovisualCard(props: Props) {
                     )}
                     Aceitar
                   </Button>
+                  <DownloadPdfButton
+                    filters={{}}
+                    id={loan?.id}
+                    label="Baixar termo"
+                    method={"loan_terms"}
+                  />
+                </>
+              ) : (
+                <>
+                  <DownloadPdfButton
+                    filters={{}}
+                    id={loan?.id}
+                    label="Baixar termo"
+                    method={"loan_terms"}
+                  />
                 </>
               )}
               {props.column === "Confirmados" && (

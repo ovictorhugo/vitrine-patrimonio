@@ -279,7 +279,7 @@ export function PatrimonioItemCollection({
   if (isMobile) {
     return (
       <>
-        <div className="flex group cursor-pointer" onClick={handleOpen}>
+        <div className="grid w-full group cursor-pointer" onClick={handleOpen}>
           {/* Barra colorida */}
           <div
             className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
@@ -289,7 +289,7 @@ export function PatrimonioItemCollection({
 
           {/* Card */}
           <div>
-            <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
+            <Alert className="rounded-l-none items-center p-0 flex w-full flex-1 rounded-b-none border-b-0">
               {/* Coluna info */}
 
               <div className="w-full">
@@ -579,7 +579,7 @@ export function PatrimonioItemCollection({
   } else {
     return (
       <>
-        <div className="flex group cursor-pointer" onClick={handleOpen}>
+        <div className="grid w-full group cursor-pointer" onClick={handleOpen}>
           {/* Barra colorida */}
           <div
             className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
@@ -589,7 +589,7 @@ export function PatrimonioItemCollection({
 
           {/* Card */}
           <div className="w-full">
-            <Alert className="rounded-l-none items-center p-0 flex w-full rounded-b-none border-b-0">
+            <Alert className="rounded-l-none items-center p-0 flex flex-1 w-full rounded-b-none border-b-0">
               {/* Coluna info */}
               <div className="flex-1 min-w-0">
                 {/* HEADER */}

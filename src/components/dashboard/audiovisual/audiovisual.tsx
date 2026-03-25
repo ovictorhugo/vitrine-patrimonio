@@ -356,8 +356,14 @@ export function Audiovisual() {
               <></>
             )}
           </div>
-          <div className="flex gap-2 items-center mt-4">
-            <div className="flex">
+          <div
+            className={
+              isMobile
+                ? "grid gap-4 w-full justify-center mt-4"
+                : "flex gap-2 items-center mt-4"
+            }
+          >
+            <div className="flex items-center">
               <Button
                 size="sm"
                 onClick={() => {
@@ -374,22 +380,11 @@ export function Audiovisual() {
                   setTab("calendario");
                 }}
                 size="sm"
-                className="rounded-none"
+                className="rounded-l-none"
                 variant={tab === "calendario" ? "default" : "outline"}
               >
                 <Calendar size={16} className="" />
                 Calendário
-              </Button>
-              <Button
-                onClick={() => {
-                  setTab("vistoria");
-                }}
-                size="sm"
-                className="rounded-l-none"
-                variant={tab === "vistoria" ? "default" : "outline"}
-              >
-                <Cog size={16} className="" />
-                Vistoria
               </Button>
             </div>
             {isMobile ? (
@@ -397,24 +392,38 @@ export function Audiovisual() {
             ) : (
               <Separator orientation="vertical" className="h-8 mx-2" />
             )}
-            <DownloadPdfButton
-              filters={{}}
-              id={""}
-              label="Baixar inventário"
-              method={"loan_all"}
-            />
-            {hasAnunciarItem && !isMobile ? (
-              <Button
-                size="sm"
-                onClick={() =>
-                  navigate("/dashboard/emprestimo-audiovisual", {
-                    replace: true,
-                  })
-                }
-              >
-                <Plus size={16} className="" />
-                Anunciar item
-              </Button>
+
+            {hasAnunciarItem ? (
+              <div className={isMobile ? "grid gap-1" : "flex gap-2"}>
+                <DownloadPdfButton
+                  filters={{}}
+                  id={""}
+                  label="Baixar inventário"
+                  method={"loan_all"}
+                />
+                <Button
+                  onClick={() => {
+                    setTab("vistoria");
+                  }}
+                  size="sm"
+                  className="rounded"
+                  variant={tab === "vistoria" ? "default" : "outline"}
+                >
+                  <Cog size={16} className="" />
+                  Vistoria
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate("/dashboard/emprestimo-audiovisual", {
+                      replace: true,
+                    })
+                  }
+                >
+                  <Plus size={16} className="" />
+                  Anunciar item
+                </Button>
+              </div>
             ) : (
               <></>
             )}

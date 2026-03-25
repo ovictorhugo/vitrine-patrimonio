@@ -344,7 +344,7 @@ export function CollectionPage() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== navegação & paginação por querystring (offset/limit) =====
@@ -353,10 +353,10 @@ export function CollectionPage() {
   const initialLimit = Number(qs.get("limit") || "24");
 
   const [offset, setOffset] = useState<number>(
-    Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0
+    Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0,
   );
   const [limit, setLimit] = useState<number>(
-    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 24
+    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 24,
   );
 
   const isFirstPage = offset === 0;
@@ -365,14 +365,14 @@ export function CollectionPage() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -394,10 +394,10 @@ export function CollectionPage() {
   // pesquisa, material e responsável (para a LISTA principal)
   const [qMain, setQMain] = useState("");
   const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>(
-    []
+    [],
   );
   const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>(
-    []
+    [],
   );
   const [materialIdMain, setMaterialIdMain] = useState<UUID | null>(null);
   const [guardianIdMain, setGuardianIdMain] = useState<UUID | null>(null);
@@ -429,7 +429,7 @@ export function CollectionPage() {
             id: m.id,
             code: m.material_code,
             label: m.material_name || m.material_code,
-          }))
+          })),
         );
 
         setGuardianItemsMain(
@@ -437,7 +437,7 @@ export function CollectionPage() {
             id: g.id,
             code: g.legal_guardians_code,
             label: g.legal_guardians_name || g.legal_guardians_code,
-          }))
+          })),
         );
       } catch (e) {
         console.error("Erro ao carregar materiais ou responsáveis:", e);
@@ -481,7 +481,7 @@ export function CollectionPage() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar coleção (HTTP ${res.status}).`
+          text || `Falha ao carregar coleção (HTTP ${res.status}).`,
         );
       }
 
@@ -523,13 +523,13 @@ export function CollectionPage() {
     if (!collection_id) return;
     try {
       const url = `${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO&collection_id=${encodeURIComponent(
-        collection_id
+        collection_id,
       )}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar estatísticas (HTTP ${res.status}).`
+          text || `Falha ao carregar estatísticas (HTTP ${res.status}).`,
         );
       }
 
@@ -537,10 +537,10 @@ export function CollectionPage() {
       const arr: any[] = Array.isArray(json)
         ? json
         : Array.isArray(json?.results)
-        ? json.results
-        : Array.isArray(json?.data)
-        ? json.data
-        : [];
+          ? json.results
+          : Array.isArray(json?.data)
+            ? json.data
+            : [];
 
       let coletados = 0;
       let pendentes = 0;
@@ -603,7 +603,7 @@ export function CollectionPage() {
           {
             method: "GET",
             headers: authHeaders,
-          }
+          },
         );
         const json = await res.json();
         setAgencies(json?.agencies ?? []);
@@ -611,7 +611,7 @@ export function CollectionPage() {
         setAgencies([]);
       }
     },
-    [urlGeral, authHeaders]
+    [urlGeral, authHeaders],
   );
 
   // carregar setores
@@ -624,7 +624,7 @@ export function CollectionPage() {
           {
             method: "GET",
             headers: authHeaders,
-          }
+          },
         );
         const json = await res.json();
         setSectors(json?.sectors ?? []);
@@ -632,7 +632,7 @@ export function CollectionPage() {
         setSectors([]);
       }
     },
-    [urlGeral, authHeaders]
+    [urlGeral, authHeaders],
   );
 
   // carregar locais
@@ -645,7 +645,7 @@ export function CollectionPage() {
           {
             method: "GET",
             headers: authHeaders,
-          }
+          },
         );
         const json = await res.json();
         setLocations(json?.locations ?? []);
@@ -653,7 +653,7 @@ export function CollectionPage() {
         setLocations([]);
       }
     },
-    [urlGeral, authHeaders]
+    [urlGeral, authHeaders],
   );
 
   // encadeamento filtros
@@ -744,7 +744,7 @@ export function CollectionPage() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar coleção (HTTP ${res.status}).`
+          text || `Falha ao carregar coleção (HTTP ${res.status}).`,
         );
       }
 
@@ -766,40 +766,40 @@ export function CollectionPage() {
   }, [urlGeral]);
 
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
 
   useEffect(() => {
     let timeouts: NodeJS.Timeout[] = [];
     setLoadingMessage(
-      "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+      "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
     );
     timeouts.push(
       setTimeout(
         () => setLoadingMessage("Estamos quase lá, continue aguardando..."),
-        5000
-      )
+        5000,
+      ),
     );
     timeouts.push(
-      setTimeout(() => setLoadingMessage("Só mais um pouco..."), 10000)
-    );
-    timeouts.push(
-      setTimeout(
-        () =>
-          setLoadingMessage(
-            "Está demorando mais que o normal... estamos tentando encontrar tudo."
-          ),
-        15000
-      )
+      setTimeout(() => setLoadingMessage("Só mais um pouco..."), 10000),
     );
     timeouts.push(
       setTimeout(
         () =>
           setLoadingMessage(
-            "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+            "Está demorando mais que o normal... estamos tentando encontrar tudo.",
           ),
-        15000
-      )
+        15000,
+      ),
+    );
+    timeouts.push(
+      setTimeout(
+        () =>
+          setLoadingMessage(
+            "Estamos empenhados em achar todos os dados, aguarde só mais um pouco",
+          ),
+        15000,
+      ),
     );
     return () => {
       timeouts.forEach(clearTimeout);
@@ -851,7 +851,7 @@ export function CollectionPage() {
         throw new Error(text || "Erro ao atualizar a coleção.");
       }
       setCollection((prev) =>
-        prev ? { ...prev, name: newName, description: newDescription } : prev
+        prev ? { ...prev, name: newName, description: newDescription } : prev,
       );
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
@@ -895,7 +895,7 @@ export function CollectionPage() {
       // aqui não sabemos o status anterior, então não mexemos nos contadores
       // (se quiser, pode ajustar o filho para informar o status antes de deletar)
     },
-    [fetchCollectionItems]
+    [fetchCollectionItems],
   );
 
   const { hasColecoes } = usePermissions();
@@ -966,7 +966,7 @@ export function CollectionPage() {
     // atualiza estatísticas locais: coletados diminuem, pendentes não mudam
     if (localSuccess > 0) {
       setCountDesfazimento((prev) =>
-        prev - localSuccess >= 0 ? prev - localSuccess : 0
+        prev - localSuccess >= 0 ? prev - localSuccess : 0,
       );
     }
 
@@ -985,7 +985,7 @@ export function CollectionPage() {
       Array.from({ length: 12 }, (_, index) => (
         <Skeleton key={index} className="w-full rounded-md aspect-square" />
       )),
-    []
+    [],
   );
 
   // ===== loading somente da coleção (primeiro acesso) =====
@@ -1221,7 +1221,7 @@ export function CollectionPage() {
                                 setValue(id);
                                 setOffset(0);
                                 const params = new URLSearchParams(
-                                  location.search
+                                  location.search,
                                 );
                                 params.set("tab", id);
                                 params.set("offset", "0");
@@ -1440,12 +1440,12 @@ export function CollectionPage() {
                                   // pendente -> coletado
                                   setCountDesfazimento((prev) => prev + 1);
                                   setCountNaoDesfazimento((prev) =>
-                                    prev > 0 ? prev - 1 : prev
+                                    prev > 0 ? prev - 1 : prev,
                                   );
                                 } else {
                                   // coletado -> pendente
                                   setCountDesfazimento((prev) =>
-                                    prev > 0 ? prev - 1 : prev
+                                    prev > 0 ? prev - 1 : prev,
                                   );
                                   setCountNaoDesfazimento((prev) => prev + 1);
                                 }
@@ -1465,8 +1465,8 @@ export function CollectionPage() {
                                             ? patch.comment
                                             : it.comment,
                                       }
-                                    : it
-                                )
+                                    : it,
+                                ),
                               );
                             }}
                             onDeleted={handleItemDeleted}

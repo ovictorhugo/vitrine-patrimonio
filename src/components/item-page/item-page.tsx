@@ -369,7 +369,8 @@ export function ItemPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!r.ok) throw new Error(`Erro ${r.status}`);
-      const data: CatalogResponseDTO = await r.json();
+      let data: CatalogResponseDTO = await r.json();
+
 
       setCatalog(data);
     } catch (e: any) {
@@ -1734,94 +1735,92 @@ export function ItemPage() {
                                 Nenhum evento de workflow.
                               </div>
                             ) : (
-                              catalog.workflow_history
-                                ?.reverse()
-                                .map((ev, idx) => {
-                                  const meta = WORKFLOW_STATUS_META[
-                                    ev.workflow_status
-                                  ] ?? {
-                                    Icon: HelpCircle,
-                                    colorClass: "text-zinc-500",
-                                  };
+                              catalog.workflow_history?.map((ev, idx) => {
+                                const meta = WORKFLOW_STATUS_META[
+                                  ev.workflow_status
+                                ] ?? {
+                                  Icon: HelpCircle,
+                                  colorClass: "text-zinc-500",
+                                };
 
-                                  const { Icon } = meta;
-                                  const username =
-                                    ev.user?.username ||
-                                    ev.user?.email?.split("@")[0] ||
-                                    "Usuário";
+                                const { Icon } = meta;
+                                const username =
+                                  ev.user?.username ||
+                                  ev.user?.email?.split("@")[0] ||
+                                  "Usuário";
 
-                                  const total =
-                                    catalog?.workflow_history?.length ?? 0;
-                                  const isLast = idx === total - 1;
-                                  return (
-                                    <div key={ev.id} className="flex gap-2">
-                                      {/* Bloco do ícone à esquerda, seguindo seu layout */}
-                                      <div className="flex flex-col items-center">
-                                        <Alert className="flex w-14 h-14 items-center justify-center">
-                                          <div>
-                                            <Icon className={``} size={16} />
-                                          </div>
-                                        </Alert>
+                                const total =
+                                  catalog?.workflow_history?.length ?? 0;
+                                const isLast = idx === total - 1;
+                                return (
+                                  <div key={ev.id} className="flex gap-2">
+                                    {/* Bloco do ícone à esquerda, seguindo seu layout */}
+                                    <div className="flex flex-col items-center">
+                                      <Alert className="flex w-14 h-14 items-center justify-center">
+                                        <div>
+                                          <Icon className={``} size={16} />
+                                        </div>
+                                      </Alert>
 
-                                        {!isLast && (
-                                          <Separator
-                                            className="min-h-8"
-                                            orientation="vertical"
-                                          />
-                                        )}
-                                      </div>
+                                      {!isLast && (
+                                        <Separator
+                                          className="min-h-8"
+                                          orientation="vertical"
+                                        />
+                                      )}
+                                    </div>
 
-                                      {/* Conteúdo à direita */}
-                                      <div className="flex-1">
-                                        <p className="text-lg font-medium">
-                                          {getStatusLabel(ev.workflow_status)}
+                                    {/* Conteúdo à direita */}
+                                    <div className="flex-1">
+                                      <p className="text-lg font-medium">
+                                        {getStatusLabel(ev.workflow_status)}
+                                      </p>
+
+                                      {ev.detail?.justificativa && (
+                                        <p
+                                          className={
+                                            isMobile
+                                              ? "text-xs text-justify dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
+                                              : "text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
+                                          }
+                                        >
+                                          {ev.detail.justificativa}
                                         </p>
+                                      )}
 
-                                        {ev.detail?.justificativa && (
-                                          <p
-                                            className={
-                                              isMobile
-                                                ? "text-xs text-justify dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
-                                                : "text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal"
-                                            }
-                                          >
-                                            {ev.detail.justificativa}
+                                      {/* linha com avatar + user + data */}
+                                      <div className="flex gap-3 mt-2 mb-2 flex-wrap items-center justify-between ">
+                                        <div className="flex gap-1 items-center">
+                                          <Avatar className="rounded-md h-5 w-5">
+                                            {ev.user?.photo_url ? (
+                                              <AvatarImage
+                                                className="rounded-md h-5 w-5"
+                                                src={ev.user.photo_url}
+                                                alt={username}
+                                              />
+                                            ) : (
+                                              <AvatarFallback className="flex items-center justify-center">
+                                                <User size={10} />
+                                              </AvatarFallback>
+                                            )}
+                                          </Avatar>
+                                          <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                            {username}
                                           </p>
-                                        )}
-
-                                        {/* linha com avatar + user + data */}
-                                        <div className="flex gap-3 mt-2 mb-2 flex-wrap items-center justify-between ">
-                                          <div className="flex gap-1 items-center">
-                                            <Avatar className="rounded-md h-5 w-5">
-                                              {ev.user?.photo_url ? (
-                                                <AvatarImage
-                                                  className="rounded-md h-5 w-5"
-                                                  src={ev.user.photo_url}
-                                                  alt={username}
-                                                />
-                                              ) : (
-                                                <AvatarFallback className="flex items-center justify-center">
-                                                  <User size={10} />
-                                                </AvatarFallback>
-                                              )}
-                                            </Avatar>
-                                            <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                              {username}
-                                            </p>
-                                          </div>
-
-                                          <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                            <Calendar size={16} />
-                                            {formatDateTimeBR(ev.created_at)}
-                                          </div>
                                         </div>
 
-                                        {/* Se quiser mostrar detalhes do evento futuramente:
-              {ev.detail && <p className="text-sm text-muted-foreground mt-1">...</p>} */}
+                                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                                          <Calendar size={16} />
+                                          {formatDateTimeBR(ev.created_at)}
+                                        </div>
                                       </div>
+
+                                      {/* Se quiser mostrar detalhes do evento futuramente:
+              {ev.detail && <p className="text-sm text-muted-foreground mt-1">...</p>} */}
                                     </div>
-                                  );
-                                })
+                                  </div>
+                                );
+                              })
                             )}
                           </div>
                         </AccordionContent>
