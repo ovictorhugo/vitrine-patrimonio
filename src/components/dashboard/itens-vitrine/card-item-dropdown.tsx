@@ -98,6 +98,7 @@ export type CatalogEntry = {
   situation: string;
   conservation_status: string;
   description: string;
+  current_workflow_status: string;
   id: UUID;
   asset: CatalogAsset;
   user: UserDTO;

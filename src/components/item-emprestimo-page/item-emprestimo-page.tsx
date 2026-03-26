@@ -679,17 +679,21 @@ export function LoanItemPage() {
               </TabsContent>
 
               <TabsContent value="historico">
-                <HistoryTab item={loan} />
+                {hasAnunciarItem ? <HistoryTab item={loan} /> : <></>}
               </TabsContent>
               <TabsContent value="calendario">
-                <div>
-                  <div className="text-2xl p-8 m-2 flex justify-between items-center">
-                    Calendário
+                {hasAnunciarItem ? (
+                  <div>
+                    <div className="text-2xl p-8 m-2 flex justify-between items-center">
+                      Calendário
+                    </div>
+                    <div className="px-8">
+                      <ItemLoanCalendar item={loan} />
+                    </div>
                   </div>
-                  <div className="px-8">
-                    <ItemLoanCalendar item={loan} />
-                  </div>
-                </div>
+                ) : (
+                  <></>
+                )}
               </TabsContent>
 
               <TabsContent value="maintenance">

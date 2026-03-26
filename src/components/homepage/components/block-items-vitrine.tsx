@@ -49,7 +49,7 @@ interface Props {
 
 /* ===== Helpers de URL/filtros (compatível com seu modal) ===== */
 const first = (v: string | null) =>
-  v ? v.split(";").filter(Boolean)[0] ?? "" : "";
+  v ? (v.split(";").filter(Boolean)[0] ?? "") : "";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   if (val && val.trim().length > 0) sp.set(key, val);
@@ -60,13 +60,13 @@ const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
 const getPluralOrSingular = (
   sp: URLSearchParams,
   pluralKey: string,
-  singularKey: string
+  singularKey: string,
 ) => sp.get(pluralKey) ?? sp.get(singularKey);
 
 const firstFromPluralOrSingular = (
   sp: URLSearchParams,
   pluralKey: string,
-  singularKey: string
+  singularKey: string,
 ) => first(getPluralOrSingular(sp, pluralKey, singularKey));
 
 export function BlockItemsVitrine(props: Props) {
@@ -80,49 +80,25 @@ export function BlockItemsVitrine(props: Props) {
 
   // ===== Lê PLURAL OU SINGULAR na URL =====
   const initialQ = queryUrl.get("q") || "";
-  const [q, setQ] = useState(initialQ);
-
-  const [materialId, setMaterialId] = useState(
-    first(queryUrl.get("material_ids") ?? queryUrl.get("material_id"))
-  );
-  const [legalGuardianId, setLegalGuardianId] = useState(
-    first(
-      queryUrl.get("legal_guardian_ids") ?? queryUrl.get("legal_guardian_id")
-    )
-  );
-  const [locationId, setLocationId] = useState(
-    first(queryUrl.get("location_ids") ?? queryUrl.get("location_id"))
-  );
-  const [unitId, setUnitId] = useState(
-    first(queryUrl.get("unit_ids") ?? queryUrl.get("unit_id"))
-  );
-  const [agencyId, setAgencyId] = useState(
-    first(queryUrl.get("agency_ids") ?? queryUrl.get("agency_id"))
-  );
-  const [sectorId, setSectorId] = useState(
-    first(queryUrl.get("sector_ids") ?? queryUrl.get("sector_id"))
-  );
-
-  // paginação
-  const initialOffset = Number(queryUrl.get("offset") || "0");
-  const initialLimit = Number(queryUrl.get("limit") || "24");
-  const [offset, setOffset] = useState<number>(initialOffset);
-  const [limit, setLimit] = useState<number>(initialLimit);
+  const sp = new URLSearchParams(location.search);
+  const offset = Number(sp.get("offset") || "0");
+  const limit = Number(sp.get("limit") || "24");
+  const q = sp.get("q") || "";
 
   const [items, setItems] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  const token = localStorage.getItem("jwt_token") || "";
   const baseHeaders: HeadersInit = useMemo(() => {
+    const token = localStorage.getItem("jwt_token") || "";
     const h: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
     };
     if (token) h.Authorization = `Bearer ${token}`;
     return h;
-  }, [token]);
+  }, []);
 
   // ====== Dialog: EXCLUIR ======
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -142,6 +118,7 @@ export function BlockItemsVitrine(props: Props) {
     if (!deleteTargetId) return;
     try {
       setDeleting(true);
+      const token = localStorage.getItem("jwt_token") || "";
       const r = await fetch(`${baseUrl}/catalog/${deleteTargetId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -154,7 +131,9 @@ export function BlockItemsVitrine(props: Props) {
       toast("Item excluído com sucesso.");
       try {
         window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
+          new CustomEvent("catalog:deleted", {
+            detail: { id: deleteTargetId },
+          }),
         );
       } catch {}
       closeDelete();
@@ -165,7 +144,7 @@ export function BlockItemsVitrine(props: Props) {
     } finally {
       setDeleting(false);
     }
-  }, [deleteTargetId, baseUrl, token]);
+  }, [deleteTargetId, baseUrl]);
 
   // ====== Dialog: MOVIMENTAR ======
   const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -249,7 +228,7 @@ export function BlockItemsVitrine(props: Props) {
         window.dispatchEvent(
           new CustomEvent("catalog:workflow-updated", {
             detail: { id: moveTargetId, newStatus: moveStatus },
-          })
+          }),
         );
       } catch {}
 
@@ -267,23 +246,17 @@ export function BlockItemsVitrine(props: Props) {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    doScroll = true
+    doScroll = true,
   ) => {
-    const sp = new URLSearchParams(location.search);
-    sp.set("offset", newOffset.toString());
-    sp.set("limit", newLimit.toString());
+    // 1. Pega a URL exatamente como está agora (com todos os filtros já aplicados)
+    const currentSp = new URLSearchParams(location.search);
 
-    setParamOrDelete(sp, "q", q);
+    // 2. Altera apenas a paginação
+    currentSp.set("offset", newOffset.toString());
+    currentSp.set("limit", newLimit.toString());
 
-    // mantém padrão plural na escrita (compat com modal)
-    setParamOrDelete(sp, "material_ids", materialId);
-    setParamOrDelete(sp, "legal_guardian_ids", legalGuardianId);
-    setParamOrDelete(sp, "location_ids", locationId);
-    setParamOrDelete(sp, "unit_ids", unitId);
-    setParamOrDelete(sp, "agency_ids", agencyId);
-    setParamOrDelete(sp, "sector_ids", sectorId);
-
-    navigate({ pathname: location.pathname, search: sp.toString() });
+    // 3. Navega! (Não precisa dar setParamOrDelete para as outras coisas, elas já estão na URL)
+    navigate({ pathname: location.pathname, search: currentSp.toString() });
 
     if (doScroll && hasNavigated && containerRef.current) {
       containerRef.current.scrollIntoView({
@@ -294,96 +267,74 @@ export function BlockItemsVitrine(props: Props) {
     setHasNavigated(true);
   };
 
-  // reflete mudanças de paginação na URL
-  useEffect(() => {
-    handleNavigate(offset, limit, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, limit]);
-
-  // ===== Sincroniza estado quando a URL muda (ex.: modal abriu/fechou) =====
-  useEffect(() => {
-    const sp = new URLSearchParams(location.search);
-    const qUrl = sp.get("q") ?? "";
-
-    setQ((prev) => (prev !== qUrl ? qUrl : prev));
-
-    setMaterialId((prev) => {
-      const next = firstFromPluralOrSingular(sp, "material_ids", "material_id");
-      return prev !== next ? next : prev;
-    });
-
-    setLegalGuardianId((prev) => {
-      const next = firstFromPluralOrSingular(
-        sp,
-        "legal_guardian_ids",
-        "legal_guardian_id"
-      );
-      return prev !== next ? next : prev;
-    });
-
-    setLocationId((prev) => {
-      const next = firstFromPluralOrSingular(sp, "location_ids", "location_id");
-      return prev !== next ? next : prev;
-    });
-
-    setUnitId((prev) => {
-      const next = firstFromPluralOrSingular(sp, "unit_ids", "unit_id");
-      return prev !== next ? next : prev;
-    });
-
-    setAgencyId((prev) => {
-      const next = firstFromPluralOrSingular(sp, "agency_ids", "agency_id");
-      return prev !== next ? next : prev;
-    });
-
-    setSectorId((prev) => {
-      const next = firstFromPluralOrSingular(sp, "sector_ids", "sector_id");
-      return prev !== next ? next : prev;
-    });
-
-    const off = Number(sp.get("offset") ?? "0");
-    const lim = Number(sp.get("limit") ?? String(limit));
-    setOffset((prev) => (prev !== off ? off : prev));
-    setLimit((prev) => (prev !== lim ? lim : prev));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
-
-  // ===== GET /catalog/ com filtros (SINGULARES para o backend) =====
   useEffect(() => {
     const controller = new AbortController();
+
+    // Lemos a URL diretamente AQUI, no momento exato em que o efeito roda
+    const sp = new URLSearchParams(location.search);
+
+    // Capturamos os valores da URL (com fallbacks se estiverem vazios)
+    const currentQ = sp.get("q") || "";
+    const currentOffset = sp.get("offset") || "0";
+    const currentLimit = sp.get("limit") || "24";
+
+    const currentMaterialId = firstFromPluralOrSingular(
+      sp,
+      "material_ids",
+      "material_id",
+    );
+    const currentLegalGuardianId = firstFromPluralOrSingular(
+      sp,
+      "legal_guardian_ids",
+      "legal_guardian_id",
+    );
+    const currentLocationId = firstFromPluralOrSingular(
+      sp,
+      "location_ids",
+      "location_id",
+    );
+    const currentUnitId = firstFromPluralOrSingular(sp, "unit_ids", "unit_id");
+    const currentAgencyId = firstFromPluralOrSingular(
+      sp,
+      "agency_ids",
+      "agency_id",
+    );
+    const currentSectorId = firstFromPluralOrSingular(
+      sp,
+      "sector_ids",
+      "sector_id",
+    );
+
     const run = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // 1. Normaliza a entrada para garantir que seja sempre um array
-        // Se props.workflow for undefined, cria um array com [undefined] para rodar a busca genérica 1 vez
         const workflowsToFetch = Array.isArray(props.workflow)
           ? props.workflow
           : props.workflow
-          ? [props.workflow]
-          : [null];
+            ? [props.workflow]
+            : [null];
 
-        // 2. Mapeia cada workflow para uma Promise de fetch
         const requests = workflowsToFetch.map(async (wfStatus) => {
-          const url = new URL(`${baseUrl}/catalog/`);
+          // Lembre-se de usar o seu endpoint OTIMIZADO aqui: /catalog/simple
+          const url = new URL(`${baseUrl}/catalog`);
 
-          // Aplica o workflow específico desta iteração
           if (wfStatus) url.searchParams.set("workflow_status", wfStatus);
 
-          // --- Aplica os filtros comuns (repetidos para cada URL) ---
-
-          // busca textual
-          if (q) url.searchParams.set("q", q);
-
-          // converte plural->singular para API
-          if (materialId) url.searchParams.set("material_id", materialId);
-          if (legalGuardianId)
-            url.searchParams.set("legal_guardian_id", legalGuardianId);
-          if (locationId) url.searchParams.set("location_id", locationId);
-          if (unitId) url.searchParams.set("unit_id", unitId);
-          if (agencyId) url.searchParams.set("agency_id", agencyId);
-          if (sectorId) url.searchParams.set("sector_id", sectorId);
+          // Usamos as variáveis locais que lemos direto da URL, e não o State do React!
+          if (currentQ) url.searchParams.set("q", currentQ);
+          if (currentMaterialId)
+            url.searchParams.set("material_id", currentMaterialId);
+          if (currentLegalGuardianId)
+            url.searchParams.set("legal_guardian_id", currentLegalGuardianId);
+          if (currentLocationId)
+            url.searchParams.set("location_id", currentLocationId);
+          if (currentUnitId) url.searchParams.set("unit_id", currentUnitId);
+          if (currentAgencyId)
+            url.searchParams.set("agency_id", currentAgencyId);
+          if (currentSectorId)
+            url.searchParams.set("sector_id", currentSectorId);
 
           if (props.user_id) url.searchParams.set("user_id", props.user_id);
 
@@ -394,8 +345,8 @@ export function BlockItemsVitrine(props: Props) {
           if (props.type === "reviewer_id")
             url.searchParams.set("reviewer_id", props.value || "");
 
-          url.searchParams.set("offset", String(offset));
-          url.searchParams.set("limit", String(limit));
+          url.searchParams.set("offset", currentOffset);
+          url.searchParams.set("limit", currentLimit);
 
           const res = await fetch(url.toString(), {
             method: "GET",
@@ -405,17 +356,12 @@ export function BlockItemsVitrine(props: Props) {
 
           if (!res.ok)
             throw new Error(`Erro ao buscar catálogo (${res.status})`);
-
           return res.json() as Promise<CatalogResponse>;
         });
 
-        // 3. Aguarda todas as requisições terminarem
         const responses = await Promise.all(requests);
-
-        // 4. Combina os resultados de todas as chamadas em um único array
-        // O flatMap pega o array de arrays [[item1], [item2]] e transforma em [item1, item2]
         const combinedItems = responses.flatMap((data) =>
-          Array.isArray(data.catalog_entries) ? data.catalog_entries : []
+          Array.isArray(data.catalog_entries) ? data.catalog_entries : [],
         );
 
         setItems(combinedItems);
@@ -431,24 +377,18 @@ export function BlockItemsVitrine(props: Props) {
 
     run();
     return () => controller.abort();
+
+    // As dependências agora são a URL e as props.
+    // Removemos os estados (q, offset, limit, materialId, etc) daqui!
   }, [
+    location.search,
     baseUrl,
     baseHeaders,
     props.workflow,
-    q,
-    materialId,
-    legalGuardianId,
-    locationId,
-    unitId,
-    agencyId,
-    sectorId,
-    offset,
-    limit,
     props.type,
     props.value,
     props.user_id,
   ]);
-
   // paginação
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
@@ -458,7 +398,7 @@ export function BlockItemsVitrine(props: Props) {
       Array.from({ length: 12 }, (_, index) => (
         <Skeleton key={index} className="w-full rounded-md aspect-square" />
       )),
-    []
+    [],
   );
 
   // Remover ou Atualizar item da lista quando algum outro lugar mover o workflow
@@ -498,7 +438,7 @@ export function BlockItemsVitrine(props: Props) {
           return prev.map((it) =>
             it.id === detail.id
               ? { ...it, workflow_status: detail.newStatus }
-              : it
+              : it,
           );
         }
 
@@ -510,7 +450,7 @@ export function BlockItemsVitrine(props: Props) {
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
-        handler as any
+        handler as any,
       );
   }, [props.workflow]);
 
@@ -572,9 +512,7 @@ export function BlockItemsVitrine(props: Props) {
           value={limit.toString()}
           onValueChange={(value) => {
             const newLimit = parseInt(value);
-            setOffset(0);
-            setLimit(newLimit);
-            handleNavigate(0, newLimit);
+            handleNavigate(0, newLimit, true);
           }}
         >
           <SelectTrigger className="w-[100px]">
@@ -595,7 +533,11 @@ export function BlockItemsVitrine(props: Props) {
         <div className="flex gap-4">
           <Button
             variant="outline"
-            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+            onClick={() => {
+              // Calcula o novo offset e joga direto para a função que muda a URL
+              const novoOffset = Math.max(0, offset - limit);
+              handleNavigate(novoOffset, limit, true);
+            }}
             disabled={isFirstPage}
           >
             <ChevronLeft size={16} className="mr-2" />
@@ -603,7 +545,10 @@ export function BlockItemsVitrine(props: Props) {
           </Button>
 
           <Button
-            onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
+            onClick={() => {
+              const novoOffset = offset + limit;
+              handleNavigate(novoOffset, limit, true);
+            }}
             disabled={isLastPage}
           >
             Próximo
@@ -613,86 +558,90 @@ export function BlockItemsVitrine(props: Props) {
       </div>
 
       {/* ===================== DIALOG: EXCLUIR ===================== */}
-      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Deletar item do catálogo
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500 ">
-              Esta ação é irreversível. Ao deletar, todas as informações deste
-              item no catálogo serão perdidas.
-            </DialogDescription>
-          </DialogHeader>
+      {isDeleteOpen && (
+        <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+                Deletar item do catálogo
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500 ">
+                Esta ação é irreversível. Ao deletar, todas as informações deste
+                item no catálogo serão perdidas.
+              </DialogDescription>
+            </DialogHeader>
 
-          <DialogFooter className="">
-            <Button variant="ghost" onClick={closeDelete}>
-              <ArrowUUpLeft size={16} /> Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={deleting}
-            >
-              <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="">
+              <Button variant="ghost" onClick={closeDelete}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                <Trash size={16} /> {deleting ? "Deletando…" : "Deletar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* ===================== DIALOG: MOVIMENTAR ===================== */}
-      <Dialog open={isMoveOpen} onOpenChange={setIsMoveOpen}>
-        <DialogContent>
-          <DialogHeader className="pt-8 px-6 flex flex-col items-center">
-            <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px] text-center">
-              Movimentar item do catálogo
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500 text-center">
-              Selecione um status e (opcionalmente) escreva uma observação para
-              registrar no histórico do item.
-            </DialogDescription>
-          </DialogHeader>
+      {isMoveOpen && (
+        <Dialog open={isMoveOpen} onOpenChange={setIsMoveOpen}>
+          <DialogContent>
+            <DialogHeader className="pt-8 px-6 flex flex-col items-center">
+              <DialogTitle className="text-2xl mb-2 font-medium max-w-[520px] text-center">
+                Movimentar item do catálogo
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500 text-center">
+                Selecione um status e (opcionalmente) escreva uma observação
+                para registrar no histórico do item.
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="px-6 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={moveStatus} onValueChange={setMoveStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(props.workflowOptions || []).map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="px-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={moveStatus} onValueChange={setMoveStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(props.workflowOptions || []).map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Observação</label>
+                <Input
+                  value={moveObs}
+                  onChange={(e) => setMoveObs(e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Observação</label>
-              <Input
-                value={moveObs}
-                onChange={(e) => setMoveObs(e.target.value)}
-                placeholder="Opcional"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="py-4 px-6">
-            <Button variant="ghost" onClick={closeMove}>
-              <ArrowUUpLeft size={16} /> Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmMove}
-              disabled={!moveStatus || moving}
-            >
-              <Repeat size={16} /> {moving ? "Salvando…" : "Confirmar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="py-4 px-6">
+              <Button variant="ghost" onClick={closeMove}>
+                <ArrowUUpLeft size={16} /> Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmMove}
+                disabled={!moveStatus || moving}
+              >
+                <Repeat size={16} /> {moving ? "Salvando…" : "Confirmar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

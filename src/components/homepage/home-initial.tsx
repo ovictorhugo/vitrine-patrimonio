@@ -181,6 +181,8 @@ export function HomeInicial() {
   const [tab, setTab] = useState("desfazimento");
   const isMobile = useIsMobile();
 
+  const workflows = useMemo(() => ["VITRINE"], []);
+
   return (
     <div className="    ">
       <Helmet>
@@ -396,7 +398,7 @@ export function HomeInicial() {
           </Tabs>
         </div>
 
-        <BlockItemsVitrine workflow={["VITRINE"]} />
+        <BlockItemsVitrine workflow={workflows} />
       </div>
     </div>
   );
