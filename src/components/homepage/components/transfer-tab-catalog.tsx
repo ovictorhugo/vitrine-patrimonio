@@ -21,6 +21,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { UserContext } from "../../../context/context";
+import { CatalogResponseDTO } from "../../item-emprestimo-page/item-emprestimo-page";
 
 /* ===== Tipos mínimos para funcionar isolado ===== */
 type UUID = string;
@@ -120,11 +121,6 @@ type WorkflowEvent = {
   transfer_requests?: TransferRequestDTO[];
 };
 
-export type CatalogResponseDTO = {
-  id: UUID;
-  user: UserDTO;
-  workflow_history?: WorkflowEvent[];
-};
 
 /* ===== Utils ===== */
 const chain = (loc?: LocationDTO | null) => {
@@ -235,7 +231,7 @@ export function TransferTabCatalog({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            owner: catalog?.user.id,
+            owner: catalog?.user?.id,
             new_guardian: tr.user.id,
             catalog_id: catalog?.id,
             location_id: tr.location.id,

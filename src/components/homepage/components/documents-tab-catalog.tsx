@@ -79,12 +79,21 @@ type LocationDTO = {
   sector?: SectorDTO | null;
   legal_guardian?: LegalGuardianDTO | null;
 };
-type UserDTO = {
-  id: UUID;
-  username?: string;
-  email?: string;
-  photo_url?: string | null;
-};
+export interface UserDTO {
+  id: string;
+  username: string;
+  email: string;
+  provider: string;
+  linkedin?: string;
+  lattes_id?: string;
+  orcid?: string;
+  ramal?: string;
+  photo_url?: string;
+  background_url?: string;
+  matricula?: string;
+  verify?: boolean;
+  institution_id: string;
+}
 
 export type TransferRequestDTO = {
   id: UUID;
@@ -116,15 +125,10 @@ export type CatalogResponseDTO = {
 
   workflow_history?: WorkflowEvent[];
 
-  user: WorkflowHistoryItem["user"];
+  user: UserDTO;
 
   // ✅ NOVO: situação do catálogo
-  situation?:
-    | "BROKEN"
-    | "UNUSED"
-    | "UNECONOMICAL"
-    | "RECOVERABLE"
-    | string;
+  situation?: "BROKEN" | "UNUSED" | "UNECONOMICAL" | "RECOVERABLE" | string;
 };
 
 export interface TransferTabCatalogProps {
@@ -156,7 +160,7 @@ function buildFileUrl(base: string, path: string) {
  * - UNUSED ou RECOVERABLE => vitrine
  */
 function getReviewRequestedStatusBySituation(
-  situation?: CatalogResponseDTO["situation"]
+  situation?: CatalogResponseDTO["situation"],
 ) {
   const s = (situation ?? "").toUpperCase();
 
@@ -308,7 +312,7 @@ export function DocumentsTabCatalog({
         toast.error("Não foi possível baixar o arquivo.");
       }
     },
-    [tokenProp, urlGeral]
+    [tokenProp, urlGeral],
   );
 
   /* ===================== WORKFLOW (para permissão) ===================== */
@@ -325,7 +329,7 @@ export function DocumentsTabCatalog({
       "REJEITADOS_COMISSAO",
       "REVIEW_REQUESTED_DESFAZIMENTO",
     ],
-    []
+    [],
   );
 
   const { user } = useContext(UserContext);
@@ -360,7 +364,7 @@ export function DocumentsTabCatalog({
 
       setDocsLocal((prev) => [...prev, ...acceptedFiles]);
     },
-    [canUpload, catalog?.id, tokenProp]
+    [canUpload, catalog?.id, tokenProp],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -374,7 +378,7 @@ export function DocumentsTabCatalog({
       const url = URL.createObjectURL(file);
       window.open(url, "_blank");
     },
-    [docsLocal]
+    [docsLocal],
   );
 
   const removeDoc = useCallback((index: number) => {
@@ -428,31 +432,28 @@ export function DocumentsTabCatalog({
 
       // 2) Decide status pelo catalog.situation
       const nextWorkflowStatus = getReviewRequestedStatusBySituation(
-        catalog?.situation
+        catalog?.situation,
       );
 
       // 3) POST workflow
-      const wfRes = await fetch(
-        `${urlGeral}catalog/${catalog.id}/workflow`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${tokenProp}`,
-            "Content-Type": "application/json",
+      const wfRes = await fetch(`${urlGeral}catalog/${catalog.id}/workflow`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenProp}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workflow_status: nextWorkflowStatus,
+          detail: {
+            documents_uploaded: createdFiles.map((f) => ({
+              id: f.id,
+              name: f.file_name,
+            })),
+            previous_status: currentWorkflowStatus,
+            catalog_situation: catalog?.situation,
           },
-          body: JSON.stringify({
-            workflow_status: nextWorkflowStatus,
-            detail: {
-              documents_uploaded: createdFiles.map((f) => ({
-                id: f.id,
-                name: f.file_name,
-              })),
-              previous_status: currentWorkflowStatus,
-              catalog_situation: catalog?.situation,
-            },
-          }),
-        }
-      );
+        }),
+      });
 
       if (!wfRes.ok) {
         throw new Error(`Falha ao atualizar workflow (${wfRes.status})`);
@@ -505,7 +506,7 @@ export function DocumentsTabCatalog({
             headers: {
               Authorization: `Bearer ${tokenProp}`,
             },
-          }
+          },
         );
 
         if (!res.ok) {
@@ -524,7 +525,7 @@ export function DocumentsTabCatalog({
         toast.error("Não foi possível excluir o arquivo.");
       }
     },
-    [catalog?.id, tokenProp, urlGeral, onChange]
+    [catalog?.id, tokenProp, urlGeral, onChange],
   );
 
   /* ===================== RENDER ===================== */
@@ -668,9 +669,7 @@ export function DocumentsTabCatalog({
                       ) : (
                         <FileIcon className="w-10 h-10" />
                       )}
-                      <span className="text-xs mt-1">
-                        {mime || "arquivo"}
-                      </span>
+                      <span className="text-xs mt-1">{mime || "arquivo"}</span>
                     </div>
                   )}
                 </div>

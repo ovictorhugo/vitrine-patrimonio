@@ -66,38 +66,32 @@ interface SectorDTO {
   unit_id?: string;
   unit?: UnitDTO;
 }
-interface LegalGuardian {
-  legal_guardians_name: string;
-  legal_guardians_code: string;
-  id: UUID;
-}
-
-type UUID = string;
 interface LocationDTO {
-  legal_guardian_id: UUID;
-  sector_id: UUID;
+  id: string;
   location_name: string;
   location_code: string;
-  id: UUID;
-  sector: {
-    agency_id: UUID;
-    sector_name: string;
-    sector_code: string;
-    id: UUID;
-    agency: {
-      agency_name: string;
-      agency_code: string;
-      unit_id: UUID;
-      id: UUID;
-      unit: {
-        unit_name: string;
-        unit_code: string;
-        unit_siaf: string;
-        id: UUID;
-      };
-    };
+  sector_id?: string;
+  sector?: SectorDTO;
+  legal_guardian_id?: string;
+  legal_guardian?: LegalGuardianDTO;
+  location_inventories?: LocationInventoryDTO[];
+}
+interface InventoryDTO {
+  key: string;
+  avaliable: boolean;
+  id: string;
+  created_by: {
+    id: string;
+    username?: string;
+    email?: string;
+    photo_url?: string | null;
   };
-  legal_guardian: LegalGuardian;
+}
+interface LocationInventoryDTO {
+  id: string;
+  assets: string[];
+  inventory: InventoryDTO;
+  filled: boolean;
 }
 interface MaterialDTO {
   id: string;
@@ -126,10 +120,10 @@ interface AssetDTO {
   group_code: string;
   expense_element_code: string;
   subelement_code: string;
-  is_official: boolean;
-  material: MaterialDTO;
-  legal_guardian: LegalGuardianDTO;
-  location: LocationDTO;
+  is_official?: boolean;
+  material?: MaterialDTO | null;
+  legal_guardian?: LegalGuardianDTO | null;
+  location?: LocationDTO | null;
 }
 type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
 
@@ -140,7 +134,7 @@ interface CatalogImageDTO {
 }
 
 export interface UserDTO {
-  id: UUID;
+  id: string;
   username: string;
   email: string;
   provider: string;
@@ -152,18 +146,8 @@ export interface UserDTO {
   background_url?: string;
   matricula?: string;
   verify?: boolean;
-  institution_id: UUID;
+  institution_id: string;
 }
-type WorkflowHistoryItem = {
-  workflow_status: string;
-  detail?: Record<string, any>;
-  id: UUID;
-  user: UserDTO;
-  catalog_id: UUID;
-  created_at: string;
-  transfer_requests?: TransferRequestDTO[];
-};
-
 export interface CatalogResponseDTO {
   id: string;
   created_at: string;
@@ -171,13 +155,23 @@ export interface CatalogResponseDTO {
   conservation_status: string;
   description: string;
   asset: AssetDTO;
-  files: Files | Files[] | null | undefined;
   user: UserDTO;
-  location: LocationDTO; // localização ATUAL do item no catálogo
+  location?: LocationDTO | null;
   images: CatalogImageDTO[];
-  workflow_history: WorkflowHistoryItem[];
-  transfer_requests?: TransferRequest[];
+  files: Files | Files[] | null | undefined;
+  workflow_history?: WorkflowEvent[];
+  transfer_requests: TransferRequest[];
+  current_workflow_status: string;
 }
+
+export type WorkflowEvent = {
+  id: string;
+  detail?: Record<string, any>;
+  workflow_status: string;
+  created_at: string; // ISO
+  user: UserDTO,
+  transfer_requests?: TransferRequestDTO[];
+};
 
 export type TransferRequest = {
   id: string;
