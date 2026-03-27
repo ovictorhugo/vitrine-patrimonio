@@ -42,39 +42,33 @@ export function Header() {
     return (
       <div className={"top-0  absolut w-full "}>
         <header
-          className={`h-[100px] mb-2 px-4 flex justify-between dark:bg-black items-center`}
+          className={`h-[110px] px-2 gap-1 flex justify-between dark:bg-black items-center`}
         >
-          <div className="  flex items-center w-full justify-between">
-            <div className="w-[200px] mb-4 mt-7 h-5">
-              <Link to={"/"} onClick={() => handleClick()}>
-                {theme == "dark" ? <LogoVitrineWhite /> : <LogoVitrine />}
-              </Link>
-            </div>
-          </div>
-          <div className="h-4 w-[1px]  bg-neutral-200 dark:bg-neutral-800"></div>
-
-          <div className="flex flex-col justify-center m-auto w-[250px] pl-10 mb-0">
+          <div className="flex flex-col-reverse w-[400px] px-2 gap-2">
+            <Link to={"/"} onClick={() => handleClick()}>
+              {theme == "dark" ? <LogoVitrineWhite /> : <LogoVitrine />}
+            </Link>
             <Link to={""} target="_blank" className=" whitespace-nowrap ">
               <img
                 src={theme == "dark" ? logo_4_white : logo_4}
                 alt=""
-                className="whitespace-nowrap flex flex-1 h-[38px]"
+                className="whitespace-nowrap flex flex-1 h-[35px]"
               />
             </Link>
-            <div className="justify-between w-full mt-2 gap-3">
-              <Link to={"/informacoes"}>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                  <Info className="h-4 w-4" />
-                  <span className="sr-only">Informações</span>
-                </Button>
-              </Link>
+          </div>
+          <div className="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800" />
 
-              <ModeToggle />
+          <div className="flex m-auto w-[250px] pl-2">
+            <Link to={"/informacoes"}>
+              <Button variant="outline" size="icon" className="h-8 w-8">
+                <Info className="h-4 w-4" />
+                <span className="sr-only">Informações</span>
+              </Button>
+            </Link>
 
-              {loggedIn && <NotificationsHeader />}
-
-              <SpeedActions />
-            </div>
+            <ModeToggle />
+            {loggedIn && <NotificationsHeader />}
+            <SpeedActions />
           </div>
           <div className="flex gap-1 items-center justify-center">
             <div

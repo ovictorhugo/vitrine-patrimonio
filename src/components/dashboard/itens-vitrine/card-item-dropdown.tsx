@@ -1,6 +1,6 @@
 // src/pages/vitrine/card-item-dropdown.tsx
 import { Draggable } from "@hello-pangea/dnd";
-import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import React from "react";
 import { useContext } from "react";
 import { UserContext } from "../../../context/context";
 import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
@@ -125,7 +125,7 @@ type Props = ParentActions & {
   draggableId: string;
 };
 
-export function CardItemDropdown({
+export const CardItemDropdown = React.memo(function CardItemDropdown({
   entry,
   index,
   isFavorite,
@@ -137,7 +137,6 @@ export function CardItemDropdown({
   isImage,
   draggableId,
 }: Props) {
-  // (se precisar de algo do contexto)
   useContext(UserContext);
 
   return (
@@ -168,4 +167,4 @@ export function CardItemDropdown({
       )}
     </Draggable>
   );
-}
+});

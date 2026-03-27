@@ -125,7 +125,7 @@ export default function SimpleLayout({
     return (
       <div>
         <SidebarProvider
-          className="    "
+          className=""
           defaultOpen={true}
           open={isCollapsed}
           onOpenChange={() => setIsCollapsed((prev) => !prev)}
