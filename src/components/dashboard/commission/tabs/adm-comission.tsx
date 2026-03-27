@@ -224,6 +224,7 @@ export type CatalogEntry = {
   images: CatalogImage[];
   workflow_history: WorkflowHistoryItem[];
   created_at: string;
+  current_workflow_status: string;
 };
 
 type CatalogResponse = {
@@ -454,7 +455,7 @@ export function AdmComission() {
         setLoadingAgencies(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchSectors = useCallback(
@@ -481,7 +482,7 @@ export function AdmComission() {
         setLoadingSectors(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchLocations = useCallback(
@@ -508,7 +509,7 @@ export function AdmComission() {
         setLoadingLocations(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   // Cascata
@@ -552,7 +553,7 @@ export function AdmComission() {
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
@@ -565,7 +566,7 @@ export function AdmComission() {
         name: u.username ?? u.email ?? "Usuário",
       })),
     ],
-    [commissionUsers]
+    [commissionUsers],
   );
 
   // Board
@@ -590,7 +591,7 @@ export function AdmComission() {
     CatalogEntry[]
   > | null>(null);
   const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(
-    null
+    null,
   );
 
   // Paginação - offset por coluna
@@ -792,7 +793,7 @@ export function AdmComission() {
       locationId,
       PAGE_SIZE,
       q,
-    ]
+    ],
   );
 
   /* ===== Estatísticas review-commission ===== */
@@ -857,7 +858,7 @@ export function AdmComission() {
   // total geral esperando avaliação
   const totalWaiting = useMemo(
     () => reviewStats.reduce((sum, s) => sum + (s.total ?? 0), 0),
-    [reviewStats]
+    [reviewStats],
   );
 
   // total por coluna (stats -> totalByCol -> fallback board)
@@ -877,13 +878,13 @@ export function AdmComission() {
 
       return (board[colKey] ?? []).length;
     },
-    [reviewStats, totalByCol, board]
+    [reviewStats, totalByCol, board],
   );
 
   // Fetch inicial/geral: colunas (sequencial) + stats
-const fetchAllColumns = useCallback(async () => {
+  const fetchAllColumns = useCallback(async () => {
     setLoading(true);
-    
+
     // Reseta todos os estados de controle antes de iniciar
     setBoard({});
     setEntries([]);
@@ -902,7 +903,6 @@ const fetchAllColumns = useCallback(async () => {
 
       // Aguarda todas as colunas responderem
       await Promise.all(promises);
-      
     } finally {
       setLoading(false);
     }
@@ -959,7 +959,7 @@ const fetchAllColumns = useCallback(async () => {
     else params.delete("q");
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace: true }
+      { replace: true },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materialId, guardianId, unitId, agencyId, sectorId, locationId, q]);
@@ -998,7 +998,7 @@ const fetchAllColumns = useCallback(async () => {
   // Drag & Drop -> PUT reviewers
   const putReviewers = async (
     entry: CatalogEntry | undefined,
-    reviewers: string[]
+    reviewers: string[],
   ) => {
     if (!entry) return false;
     try {
@@ -1075,7 +1075,7 @@ const fetchAllColumns = useCallback(async () => {
         rafIdRef.current = requestAnimationFrame(autoScrollTick);
       }
     },
-    [autoScrollTick]
+    [autoScrollTick],
   );
 
   const handleDragStart = useCallback(() => {
@@ -1127,7 +1127,7 @@ const fetchAllColumns = useCallback(async () => {
 
       // Atualizar o board original (não o filtrado)
       const newFromBoard = (board[fromKey] ?? []).filter(
-        (x) => x.id !== entry.id
+        (x) => x.id !== entry.id,
       );
       const newToBoard = [entry, ...(board[toKey] ?? [])];
 
@@ -1145,7 +1145,7 @@ const fetchAllColumns = useCallback(async () => {
         setEntries(prevEntries);
       }
     },
-    [board, board, entries, commissionUsers, putReviewers]
+    [board, board, entries, commissionUsers, putReviewers],
   );
 
   const handleDragEnd = useCallback(
@@ -1156,7 +1156,7 @@ const fetchAllColumns = useCallback(async () => {
       stopAutoScrollLoop();
       void handleDragEndDrop(result);
     },
-    [handlePointerMoveWhileDrag, handleDragEndDrop]
+    [handlePointerMoveWhileDrag, handleDragEndDrop],
   );
 
   const closingActionRef = useRef<"confirm" | "cancel" | null>(null);

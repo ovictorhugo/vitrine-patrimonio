@@ -232,6 +232,7 @@ export interface CatalogResponseDTO {
   created_at: string;
   situation: ApiSituation;
   conservation_status: string;
+  current_workflow_status: string;
   description: string;
   asset: AssetDTO;
   files: Files | Files[] | null | undefined;
@@ -370,7 +371,6 @@ export function ItemPage() {
       });
       if (!r.ok) throw new Error(`Erro ${r.status}`);
       let data: CatalogResponseDTO = await r.json();
-
 
       setCatalog(data);
     } catch (e: any) {

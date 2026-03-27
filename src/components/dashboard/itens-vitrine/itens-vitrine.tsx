@@ -229,6 +229,7 @@ export type CatalogEntry = {
   images: CatalogImage[];
   workflow_history: WorkflowHistoryItem[];
   created_at: string;
+  current_workflow_status: string;
 };
 
 type CatalogResponse = {

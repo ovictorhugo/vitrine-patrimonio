@@ -242,6 +242,7 @@ export interface CatalogResponseDTO {
   files: Files | Files[] | null | undefined;
   workflow_history?: WorkflowEvent[];
   transfer_requests: TransferRequest[];
+  current_workflow_status: string;
 }
 
 export type TransferRequest = {
@@ -484,7 +485,43 @@ export function CatalogModal() {
   const [isAudiovisual, setIsAudiovisual] = useState(false);
 
   // Se você passa data.catalog, uso, senão tento data direto
-  const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+  let catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+
+  useEffect(() => {
+    // Só faz a busca se o modal estiver aberto e houver um ID
+    if (!isOpen || !catalog?.id) return;
+
+    let isMounted = true; // Evita memory leaks se o usuário fechar o modal muito rápido
+
+    const fetchUpdatedCatalog = async () => {
+      try {
+        const res = await fetch(`${urlGeral}catalog/${catalog.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const updatedData = await res.json();
+
+        // Se o modal ainda estiver aberto, atualiza os dados silenciosamente
+        if (isMounted) {
+          catalog = updatedData;
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar catálogo em background:", error);
+        // Se der erro de rede, não fazemos nada. O usuário continua vendo os dados iniciais.
+      }
+    };
+
+    fetchUpdatedCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, catalog?.id, urlGeral, token]);
 
   // Helpers do layout original
   const buildImgUrl = (p: string) => {

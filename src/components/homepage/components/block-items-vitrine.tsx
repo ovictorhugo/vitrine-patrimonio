@@ -318,7 +318,7 @@ export function BlockItemsVitrine(props: Props) {
 
         const requests = workflowsToFetch.map(async (wfStatus) => {
           // Lembre-se de usar o seu endpoint OTIMIZADO aqui: /catalog/simple
-          const url = new URL(`${baseUrl}/catalog`);
+          const url = new URL(`${baseUrl}/catalog/cards`);
 
           if (wfStatus) url.searchParams.set("workflow_status", wfStatus);
 

@@ -169,6 +169,7 @@ export type CatalogEntry = {
   images: { id: UUID; catalog_id: UUID; file_path: string }[];
   workflow_history: WorkflowHistoryItem[];
   created_at: string;
+  current_workflow_status: string;
 };
 
 type CatalogResponse = { catalog_entries: CatalogEntry[]; total?: number };
@@ -249,7 +250,7 @@ const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const flattenObject = (
   obj: any,
   prefix = "",
-  out: Record<string, any> = {}
+  out: Record<string, any> = {},
 ): Record<string, any> => {
   if (obj == null) return out;
   if (Array.isArray(obj)) {
@@ -285,7 +286,7 @@ const convertJsonToCsv = (data: any[]): string => {
   const lines = [
     headers.join(";"),
     ...flattened.map((row) =>
-      headers.map((h) => esc((row as any)[h])).join(";")
+      headers.map((h) => esc((row as any)[h])).join(";"),
     ),
   ];
   return lines.join("\n");
@@ -330,7 +331,8 @@ function StatusAccordion({
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
-  const effectiveTotal = typeof total === "number" ? total : items?.length ?? 0;
+  const effectiveTotal =
+    typeof total === "number" ? total : (items?.length ?? 0);
 
   useEffect(() => {
     if (!expanded) setVisible(PAGE_SIZE);
@@ -645,7 +647,7 @@ export function Anunciados(props: {
       typeof window !== "undefined"
         ? localStorage.getItem("jwt_token") || ""
         : "",
-    []
+    [],
   );
   const authHeaders: HeadersInit = useMemo(() => {
     const h: Record<string, string> = {
@@ -806,7 +808,7 @@ export function Anunciados(props: {
         setLoadingAgencies(false);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   // Sectors
@@ -828,7 +830,7 @@ export function Anunciados(props: {
         setLoadingSectors(false);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   // Locations
@@ -850,7 +852,7 @@ export function Anunciados(props: {
         setLoadingLocations(false);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   // Cascata
@@ -895,7 +897,7 @@ export function Anunciados(props: {
       .toUpperCase();
 
   const comissaoRoles = user?.roles?.filter((role) =>
-    normalize(role.name).includes("CAL")
+    normalize(role.name).includes("CAL"),
   );
 
   // role_id derivado da URL / props / primeira comissão disponível
@@ -978,10 +980,10 @@ export function Anunciados(props: {
     Record<string, boolean>
   >({});
   const [offsetByStatus, setOffsetByStatus] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const [totalByStatus, setTotalByStatus] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const [loadingAny, setLoadingAny] = useState(false);
 
@@ -1044,7 +1046,9 @@ export function Anunciados(props: {
       closeDelete();
       try {
         window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: deleteTargetId } })
+          new CustomEvent("catalog:deleted", {
+            detail: { id: deleteTargetId },
+          }),
         );
       } catch {}
     } catch (e: any) {
@@ -1131,7 +1135,7 @@ export function Anunciados(props: {
       params.set("limit", String(limit));
       return params;
     },
-    [buildCommonParams]
+    [buildCommonParams],
   );
 
   /* ====== Fetch por status ====== */
@@ -1174,7 +1178,7 @@ export function Anunciados(props: {
         setLoadingPageByStatus((prev) => ({ ...prev, [statusKey]: false }));
       }
     },
-    [baseUrl, authHeaders, buildParamsForStatus]
+    [baseUrl, authHeaders, buildParamsForStatus],
   );
 
   /* ====== Fetch das estatísticas (counts) ====== */
@@ -1189,7 +1193,7 @@ export function Anunciados(props: {
 
       if (res.status === 503) {
         console.warn(
-          "API de estatísticas indisponível (503). Mantendo contadores atuais."
+          "API de estatísticas indisponível (503). Mantendo contadores atuais.",
         );
         return;
       }
@@ -1309,7 +1313,7 @@ export function Anunciados(props: {
         window.dispatchEvent(
           new CustomEvent("catalog:workflow-updated", {
             detail: { id: moveTargetId, newStatus: moveStatus },
-          })
+          }),
         );
       } catch {}
 
@@ -1387,7 +1391,7 @@ export function Anunciados(props: {
   const downloadCsvFor = (statusKey: string, statusName: string) => {
     try {
       const data = (board[statusKey] ?? []).map(
-        ({ workflow_history, ...rest }) => rest
+        ({ workflow_history, ...rest }) => rest,
       );
       const csv = convertJsonToCsv(data);
       const blob = new Blob([csv], {
@@ -1502,7 +1506,7 @@ export function Anunciados(props: {
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
-        handler as any
+        handler as any,
       );
   }, [adjustCountsOnMove]);
 

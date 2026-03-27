@@ -103,32 +103,51 @@ function AudiovisualCard(props: Props) {
     firstImgSrcSet = buildResponsiveSrcSet(baseForSet);
     firstImgPlaceholder = `${baseForSet}${baseForSet.includes("?") ? "&" : "?"}w=24&q=10`;
   }
+  const loans = props.loans || [];
 
-  // Pegamos o empréstimo mais recente/ativo para exibir no Card
-  const loan =
-    props.loans && props.loans.length > 0
-      ? props.loans[props.loans.length - 1]
-      : null;
+  // 1. Aplica as mesmas regras de busca do quadro principal
+  const activeLoan = loans.find((l) => l.is_executed && !l.is_returned);
+  const confirmedLoan = loans.find(
+    (l) => !l.is_executed && l.is_confirmed && !l.is_returned,
+  );
+  const pendingLoan = loans.find(
+    (l) =>
+      !l.is_executed &&
+      !l.is_confirmed &&
+      !l.is_returned &&
+      !l.rejection_reason,
+  );
+
+  // 2. Define o empréstimo relevante respeitando a hierarquia de prioridades
+  const loan = activeLoan || confirmedLoan || pendingLoan || null;
 
   const requesterName = loan?.requester?.username || "N/A";
   const guardianName = loan?.temporary_guardian?.username || "N/A";
 
-  const isAtrasado = (l: LoanDTO | null) => {
-    if (!l || l.is_returned || !l.end_at) return false;
-    return new Date(l.end_at) < new Date();
+  // 3. Verifica o atraso zerando as horas (para bater exatamente com a lógica do Kanban)
+  const checkAtrasado = (l: LoanDTO | null) => {
+    // Só faz sentido estar atrasado se for um empréstimo ativo que possui data de devolução
+    if (!l || !l.is_executed || l.is_returned || !l.end_at) return false;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Zera as horas
+
+    const endAtDate = new Date(l.end_at);
+    endAtDate.setHours(0, 0, 0, 0); // Zera as horas
+
+    return endAtDate < now;
   };
 
-  const atrasado = isAtrasado(loan);
-  const statusColor =
-    !loan || loan.is_returned
-      ? "bg-green-500"
-      : props.in_maintenance
-        ? "bg-amber-500"
-        : atrasado
-          ? "bg-red-500"
-          : !loan.is_executed
-            ? "bg-eng-blue"
-            : "bg-eng-blue";
+  const atrasado = checkAtrasado(loan);
+
+  // 4. Define a cor do status baseado na hierarquia de estados
+  const statusColor = props.in_maintenance
+    ? "bg-amber-500" // Prioridade 1: Manutenção
+    : !loan
+      ? "bg-green-500" // Se não tem nenhum empréstimo relevante, está Disponível
+      : atrasado
+        ? "bg-red-500" // Atrasado
+        : "bg-eng-blue"; // Emprestado, Confirmado ou Pedido
 
   // ================= FUNÇÕES DE AÇÃO ================= //
 
@@ -260,7 +279,7 @@ function AudiovisualCard(props: Props) {
   };
 
   console.log(props.column);
-  console.log(loan)
+  console.log(loan);
 
   return (
     <div className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all">
@@ -468,56 +487,58 @@ function AudiovisualCard(props: Props) {
                 </Button>
               )}
 
-              {props.column === "Pedido" && !loan?.is_confirmed ? (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-red-500 text-white hover:bg-red-200 hover:text-red-700 dark:hover:bg-red-900/20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenDetalhamento(true);
-                    }}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 size={14} className="mr-1.5 animate-spin" />
-                    ) : (
-                      <X size={14} className="mr-1.5" />
-                    )}
-                    Recusar
-                  </Button>
-                  <Button
-                    size="sm"
-                    className={
-                      "w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
-                    }
-                    onClick={handleAceitar}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 size={14} className="mr-1.5 animate-spin" />
-                    ) : (
-                      <Check size={14} className="mr-1.5" />
-                    )}
-                    Aceitar
-                  </Button>
+              {props.column === "Pedido" ? (
+                !loan?.is_confirmed ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-red-500 text-white hover:bg-red-200 hover:text-red-700 dark:hover:bg-red-900/20"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDetalhamento(true);
+                      }}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 size={14} className="mr-1.5 animate-spin" />
+                      ) : (
+                        <X size={14} className="mr-1.5" />
+                      )}
+                      Recusar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className={
+                        "w-full bg-eng-blue hover:bg-eng-blue/90 text-white"
+                      }
+                      onClick={handleAceitar}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 size={14} className="mr-1.5 animate-spin" />
+                      ) : (
+                        <Check size={14} className="mr-1.5" />
+                      )}
+                      Aceitar
+                    </Button>
+                    <DownloadPdfButton
+                      filters={{}}
+                      id={loan?.id}
+                      label="Baixar termo"
+                      method={"loan_terms"}
+                    />
+                  </>
+                ) : (
                   <DownloadPdfButton
                     filters={{}}
                     id={loan?.id}
                     label="Baixar termo"
                     method={"loan_terms"}
                   />
-                </>
+                )
               ) : (
-                <>
-                  <DownloadPdfButton
-                    filters={{}}
-                    id={loan?.id}
-                    label="Baixar termo"
-                    method={"loan_terms"}
-                  />
-                </>
+                <></>
               )}
               {props.column === "Confirmados" && (
                 <>
@@ -550,7 +571,7 @@ function AudiovisualCard(props: Props) {
                 <Button
                   size="sm"
                   className={cn(
-                    "w-full bg-eng-blue hover:bg-eng-blue/90 text-white",
+                    "w-full bg-red-500 hover:bg-red-300 text-white",
                     statusColor,
                   )}
                   onClick={(e) => {

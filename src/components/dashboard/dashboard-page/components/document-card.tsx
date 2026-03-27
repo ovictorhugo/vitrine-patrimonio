@@ -136,6 +136,7 @@ export interface CatalogDTO {
   images: CatalogImageDTO[];
   workflow_history: WorkflowHistoryDTO[];
   created_at: string;
+  current_workflow_status: string;
 }
 
 export type SignerData = {

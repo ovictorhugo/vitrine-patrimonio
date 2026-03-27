@@ -142,6 +142,7 @@ export interface CatalogResponseDTO {
   images: CatalogImageDTO[];
   workflow_history: WorkflowHistoryDTO[];
   files?: any[];
+  current_workflow_status: string;
 }
 export interface LoanDTO {
   id: UUID;
@@ -395,12 +396,6 @@ export function Audiovisual() {
 
             {hasAnunciarItem ? (
               <div className={isMobile ? "grid gap-1" : "flex gap-2"}>
-                <DownloadPdfButton
-                  filters={{}}
-                  id={""}
-                  label="Baixar inventário"
-                  method={"loan_all"}
-                />
                 <Button
                   onClick={() => {
                     setTab("vistoria");
@@ -412,6 +407,13 @@ export function Audiovisual() {
                   <Cog size={16} className="" />
                   Vistoria
                 </Button>
+                <DownloadPdfButton
+                  filters={{}}
+                  id={""}
+                  label="Baixar inventário"
+                  method={"loan_all"}
+                />
+
                 <Button
                   size="sm"
                   onClick={() =>
