@@ -798,12 +798,15 @@ export function ItensVitrine() {
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
         if (debouncedQ) params.set("q", debouncedQ);
+
+        console.log(params.toString())
         const res = await fetch(
-          `${urlGeral}catalog/cards/?${params.toString()}`,
+          `${urlGeral}catalog/cards?${params.toString()}`,
           {
+            method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
             },
           },
         );
