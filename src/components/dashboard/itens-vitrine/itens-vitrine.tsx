@@ -708,7 +708,7 @@ export function ItensVitrine() {
 
   // Paginação - agora com offset por coluna
   // Paginação
-  const PAGE_SIZE = 24;
+  const PAGE_SIZE = 10;
   const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
@@ -967,7 +967,7 @@ export function ItensVitrine() {
 
   const EDGE_PX = 140;
   const MAX_STEP = 40;
-  const BASE_STEP = 12;
+  const BASE_STEP = 10;
 
   const autoScrollTick = useCallback(() => {
     if (!draggingRef.current) return stopAutoScrollLoop();
@@ -2291,7 +2291,7 @@ export function ItensVitrine() {
 
               const items = board[expandedColumn] || [];
               const slice = items.slice(0, expandedVisible);
-              const totalForCol = items.length;
+              const totalForCol = statusCounts[expandedColumn] ?? items.length;
 
               // Reutilizando a função de mapeamento de meta-dados
               const getColumnMeta = (name: string) => {
@@ -2425,12 +2425,14 @@ export function ItensVitrine() {
                   </div>
 
                   {/* Botão Mostrar Mais (Simplificado) */}
-                  {items.length > slice.length && (
+                  {totalForCol > items.length ? (
                     <div className="flex justify-center mt-8">
                       <Button onClick={showMoreExpanded}>
                         <Plus size={16} className="mr-2" /> Mostrar mais
                       </Button>
                     </div>
+                  ) : (
+                    <></>
                   )}
                 </div>
               );

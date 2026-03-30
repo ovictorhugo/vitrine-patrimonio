@@ -82,8 +82,9 @@ export function BlockItemsVitrine(props: Props) {
   const initialQ = queryUrl.get("q") || "";
   const sp = new URLSearchParams(location.search);
   const offset = Number(sp.get("offset") || "0");
-  const limit = Number(sp.get("limit") || "24");
+  const limit = Number(sp.get("limit") || "10");
   const q = sp.get("q") || "";
+  const initialFetchDone = useRef(false);
 
   const [items, setItems] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -269,14 +270,11 @@ export function BlockItemsVitrine(props: Props) {
 
   useEffect(() => {
     const controller = new AbortController();
-
-    // Lemos a URL diretamente AQUI, no momento exato em que o efeito roda
     const sp = new URLSearchParams(location.search);
 
-    // Capturamos os valores da URL (com fallbacks se estiverem vazios)
     const currentQ = sp.get("q") || "";
     const currentOffset = sp.get("offset") || "0";
-    const currentLimit = sp.get("limit") || "24";
+    const currentLimit = sp.get("limit") || "10";
 
     const currentMaterialId = firstFromPluralOrSingular(
       sp,
@@ -305,10 +303,14 @@ export function BlockItemsVitrine(props: Props) {
       "sector_id",
     );
 
-    const run = async () => {
+    // ✅ Transformamos a busca numa função interna para podermos encadear
+    const runFetch = async (overrideLimit?: string, isSilent = false) => {
       try {
-        setLoading(true);
-        setError(null);
+        // Só mostra Skeleton se NÃO for uma busca silenciosa
+        if (!isSilent) {
+          setLoading(true);
+          setError(null);
+        }
 
         const workflowsToFetch = Array.isArray(props.workflow)
           ? props.workflow
@@ -317,12 +319,10 @@ export function BlockItemsVitrine(props: Props) {
             : [null];
 
         const requests = workflowsToFetch.map(async (wfStatus) => {
-          // Lembre-se de usar o seu endpoint OTIMIZADO aqui: /catalog/simple
           const url = new URL(`${baseUrl}/catalog/cards`);
 
           if (wfStatus) url.searchParams.set("workflow_status", wfStatus);
 
-          // Usamos as variáveis locais que lemos direto da URL, e não o State do React!
           if (currentQ) url.searchParams.set("q", currentQ);
           if (currentMaterialId)
             url.searchParams.set("material_id", currentMaterialId);
@@ -337,7 +337,6 @@ export function BlockItemsVitrine(props: Props) {
             url.searchParams.set("sector_id", currentSectorId);
 
           if (props.user_id) url.searchParams.set("user_id", props.user_id);
-
           if (props.type === "user_id")
             url.searchParams.set("user_id", props.value || "");
           if (props.type === "location_id")
@@ -346,7 +345,7 @@ export function BlockItemsVitrine(props: Props) {
             url.searchParams.set("reviewer_id", props.value || "");
 
           url.searchParams.set("offset", currentOffset);
-          url.searchParams.set("limit", currentLimit);
+          url.searchParams.set("limit", overrideLimit || currentLimit);
 
           const res = await fetch(url.toString(), {
             method: "GET",
@@ -365,21 +364,29 @@ export function BlockItemsVitrine(props: Props) {
         );
 
         setItems(combinedItems);
-        setLoading(false);
+        if (!isSilent) setLoading(false);
+
+        if (overrideLimit === "5" && currentOffset === "0") {
+          runFetch(currentLimit, true); // true = isSilent
+        }
       } catch (e: any) {
         if (e.name !== "AbortError") {
           setError(e?.message || "Erro inesperado ao carregar itens.");
           setItems([]);
-          setLoading(false);
+          if (!isSilent) setLoading(false);
         }
       }
     };
 
-    run();
-    return () => controller.abort();
+    // ✅ REGRA DE DISPARO: É a primeira vez abrindo a tela? Busca 4. Senão, busca normal.
+    if (!initialFetchDone.current && currentOffset === "0") {
+      initialFetchDone.current = true;
+      runFetch("5", false);
+    } else {
+      runFetch(undefined, false); 
+    }
 
-    // As dependências agora são a URL e as props.
-    // Removemos os estados (q, offset, limit, materialId, etc) daqui!
+    return () => controller.abort();
   }, [
     location.search,
     baseUrl,
@@ -395,7 +402,7 @@ export function BlockItemsVitrine(props: Props) {
 
   const skeletons = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, index) => (
+      Array.from({ length: 10 }, (_, index) => (
         <Skeleton key={index} className="w-full rounded-md aspect-square" />
       )),
     [],
@@ -470,7 +477,7 @@ export function BlockItemsVitrine(props: Props) {
   return (
     <div ref={containerRef}>
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-2   md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {skeletons.map((item, index) => (
             <div className="w-full" key={index}>
               {item}
