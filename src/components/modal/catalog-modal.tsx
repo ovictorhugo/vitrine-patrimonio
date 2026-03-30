@@ -95,7 +95,6 @@ import {
 } from "../homepage/components/documents-tab-catalog";
 import { ReviewersCatalogModal } from "../homepage/components/reviewers-catalog-modal";
 import { DownloadPdfButton } from "../download/download-pdf-button";
-import { AudiovisualModal } from "./catalog-modal-audiovisual";
 
 /* ===================== Tipos DTO (mesmos da página) ===================== */
 interface UnitDTO {
@@ -243,6 +242,7 @@ export interface CatalogResponseDTO {
   files: Files | Files[] | null | undefined;
   workflow_history?: WorkflowEvent[];
   transfer_requests: TransferRequest[];
+  current_workflow_status: string;
 }
 
 export type TransferRequest = {
@@ -484,8 +484,55 @@ export function CatalogModal() {
   const token = localStorage.getItem("jwt_token") || "";
   const [isAudiovisual, setIsAudiovisual] = useState(false);
 
-  // Se você passa data.catalog, uso, senão tento data direto
-  const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+  const initialCatalog =
+    (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+
+  // 2. Transformamos o catalog em um ESTADO do React
+  const [catalog, setCatalog] = useState<any>(
+    initialCatalog,
+  );
+
+  // 3. (Opcional, mas recomendado) Garante que ao fechar e abrir outro item, o estado reseta
+  useEffect(() => {
+    if (isOpen && initialCatalog) {
+      setCatalog(initialCatalog);
+    }
+  }, [isOpen, initialCatalog]);
+
+  // 4. O seu useEffect de busca atualizado para usar o setCatalog
+  useEffect(() => {
+    if (!isOpen || !initialCatalog?.id) return;
+
+    let isMounted = true;
+
+    const fetchUpdatedCatalog = async () => {
+      try {
+        const res = await fetch(`${urlGeral}catalog/${initialCatalog.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const updatedData = await res.json();
+
+        // ✅ Agora usamos o setter do estado! Isso avisa o React para atualizar a tela.
+        if (isMounted) {
+          setCatalog(updatedData);
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar catálogo em background:", error);
+      }
+    };
+
+    fetchUpdatedCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, initialCatalog?.id, urlGeral, token]);
 
   // Helpers do layout original
   const buildImgUrl = (p: string) => {
@@ -595,7 +642,7 @@ export function CatalogModal() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            owner: catalog?.user.id,
+            owner: catalog?.user?.id,
             new_guardian: tr.user.id,
             catalog_id: catalog?.id,
             location_id: tr.location.id,
@@ -1900,7 +1947,7 @@ export function CatalogModal() {
           </Dialog>
         </main>
       );
-    } else return <AudiovisualModal />;
+    }
   };
 
   if (isMobile) {

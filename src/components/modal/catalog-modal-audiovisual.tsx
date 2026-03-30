@@ -28,7 +28,6 @@ import {
   ChevronRight,
   MapPin,
   Trash,
-  Pencil,
   Home,
   Undo2,
   CheckIcon,
@@ -38,44 +37,19 @@ import {
   MoveRight,
   XIcon,
   User,
-  LucideIcon,
-  Workflow,
-  ArrowRightLeft,
-  Wrench,
-  BookmarkPlus,
-  CalendarCheck,
-  BookMarked,
-  LucideAlarmClockOff,
-  ChevronsUpDown,
-  Check,
   CalendarIcon,
-  ChevronDownIcon,
-  Package2,
+  History,
+  Info,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ArrowSquareOut, ArrowUUpLeft } from "phosphor-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../ui/accordion";
-import { HeaderResultTypeHome } from "../header-result-type-home";
 import { useModal } from "../hooks/use-modal-store";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { Drawer, DrawerContent } from "../ui/drawer";
 import { UserContext } from "../../context/context";
 import { ScrollArea } from "../ui/scroll-area";
-import { LikeButton } from "../item-page/like-button";
 import {
   Tooltip,
   TooltipContent,
@@ -83,66 +57,86 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { Tabs, TabsContent } from "../ui/tabs";
-import { usePermissions } from "../permissions";
-import { Files } from "../homepage/components/documents-tab-catalog";
 import { DownloadPdfButton } from "../download/download-pdf-button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { getDefaultAutoSelectFamily } from "net";
+import ItemLoanCalendar from "../dashboard/audiovisual/calendario-item";
+import AudiovisualTab from "../item-emprestimo-page/emprestimo";
+import HistoryTab from "../item-emprestimo-page/history";
+import MaintenanceTab from "../item-emprestimo-page/maintenance";
+import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
+import { usePermissions } from "../permissions";
 
-/* ===================== Tipos DTO (mesmos da página) ===================== */
-interface UnitDTO {
-  id: string;
+/* ===================== Tipos DTO ===================== */
+export type UUID = string;
+
+export interface UserDTO {
+  id: UUID;
+  username: string;
+  email: string;
+  provider: string;
+  linkedin: string | null;
+  lattes_id: string | null;
+  orcid: string | null;
+  ramal: string | null;
+  photo_url: string | null;
+  background_url: string | null;
+  matricula: string | null;
+  verify: boolean;
+  institution_id: UUID;
+}
+
+export interface LegalGuardianDTO {
+  id: UUID;
+  legal_guardians_code: string;
+  legal_guardians_name: string;
+}
+
+export interface MaterialDTO {
+  id: UUID;
+  material_code: string;
+  material_name: string;
+}
+export interface UnitDTO {
+  id: UUID;
   unit_name: string;
   unit_code: string;
   unit_siaf: string;
 }
-interface AgencyDTO {
-  id: string;
+
+export interface AgencyDTO {
+  id: UUID;
   agency_name: string;
   agency_code: string;
-  unit_id?: string;
-  unit?: UnitDTO;
+  unit_id: UUID;
+  unit: UnitDTO;
 }
-interface SectorDTO {
-  id: string;
+
+export interface SectorDTO {
+  id: UUID;
   sector_name: string;
   sector_code: string;
-  agency_id?: string;
-  agency?: AgencyDTO;
-  unit_id?: string;
-  unit?: UnitDTO;
+  agency_id: UUID;
+  agency: AgencyDTO;
 }
-interface LocationDTO {
-  id: string;
+export interface LocationDTO {
+  id: UUID;
   location_name: string;
   location_code: string;
-  sector_id?: string;
-  sector?: SectorDTO;
-  legal_guardian_id?: string;
-  legal_guardian?: LegalGuardianDTO;
-  location_inventories?: LocationInventoryDTO[];
+  sector_id: UUID;
+  legal_guardian_id: UUID;
+  sector: SectorDTO;
+  legal_guardian: LegalGuardianDTO;
 }
-interface MaterialDTO {
-  id: string;
-  material_code: string;
-  material_name: string;
+export interface WorkflowHistoryDTO {
+  id: UUID;
+  workflow_status: string; // considere criar um union se tiver a enum
+  detail?: Record<string, any>;
+  user: UserDTO;
+  transfer_requests?: any[];
+  catalog_id: UUID;
+  created_at: string;
 }
-interface LegalGuardianDTO {
-  id: string;
-  legal_guardians_code: string;
-  legal_guardians_name: string;
-}
-interface AssetDTO {
-  id: string;
+export interface AssetDTO {
+  id: UUID;
   asset_code: string;
   asset_check_digit: string;
   atm_number: string;
@@ -158,191 +152,57 @@ interface AssetDTO {
   group_code: string;
   expense_element_code: string;
   subelement_code: string;
-  is_official?: boolean;
-  material?: MaterialDTO | null;
-  legal_guardian?: LegalGuardianDTO | null;
-  location?: LocationDTO | null;
+
+  material: MaterialDTO;
+  legal_guardian: LegalGuardianDTO;
+  location: LocationDTO;
+
+  is_official: boolean;
 }
-interface CatalogImageDTO {
-  id: string;
-  catalog_id: string;
+
+export interface CatalogImageDTO {
+  id: UUID;
+  catalog_id: UUID;
   file_path: string;
 }
 
-type ApiSituation = "UNUSED" | "BROKEN" | "UNECONOMICAL" | "RECOVERABLE";
-
-// ===== Inventário em Local =====
-interface InventoryDTO {
-  key: string;
-  avaliable: boolean;
-  id: string;
-  created_by: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-}
-interface LocationInventoryDTO {
-  id: string;
-  assets: string[];
-  inventory: InventoryDTO;
-  filled: boolean;
-}
-
-// ===== Transferência =====
-interface TransferRequestDTO {
-  id: string;
-  status: "PENDING" | "DECLINED" | "ACCEPTABLE" | string;
-  user: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string | null;
-  };
-  location: LocationDTO;
-}
-
-type WorkflowStatus =
-  | "STARTED"
-  | "VALIDATION_VITRINE"
-  | "VALIDATION_UNDOING"
-  | "VALIDATION_REJECTED"
-  | "VALIDATION_APPROVED"
-  | "PUBLISHED"
-  | "ARCHIVED"
-  | string;
-
-export type WorkflowEvent = {
-  id: string;
-  detail?: Record<string, any>;
-  workflow_status: string;
-  created_at: string; // ISO
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    photo_url?: string;
-  } | null;
-  transfer_requests?: TransferRequestDTO[];
-};
-
 export interface CatalogResponseDTO {
-  id: string;
-  created_at: string;
-  situation: ApiSituation;
-  conservation_status: string;
+  id: UUID;
   description: string;
+  conservation_status: string;
+  situation: string; // ex.: "UNUSED" (crie union se tiver a lista completa)
   asset: AssetDTO;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-  } | null;
-  location?: LocationDTO | null;
+  user: UserDTO;
+  location: LocationDTO;
   images: CatalogImageDTO[];
-  files: Files | Files[] | null | undefined;
-  workflow_history?: WorkflowEvent[];
-  transfer_requests: TransferRequest[];
+  workflow_history: WorkflowHistoryDTO[];
+  created_at: string;
 }
 
-export type TransferRequest = {
-  id: string;
-  status: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string;
-    lattes_id: string;
-    orcid: string;
-    ramal: string;
-    photo_url: string;
-    background_url: string;
-    matricula: string;
-    verify: boolean;
-    institution_id: string;
-  };
-  location: {
-    legal_guardian_id: string;
-    sector_id: string;
-    location_name: string;
-    location_code: string;
-    id: string;
-    sector: {
-      agency_id: string;
-      sector_name: string;
-      sector_code: string;
-      id: string;
-      agency: {
-        agency_name: string;
-        agency_code: string;
-        unit_id: string;
-        id: string;
-        unit: {
-          unit_name: string;
-          unit_code: string;
-          unit_siaf: string;
-          id: string;
-        };
-      };
-    };
-    legal_guardian: {
-      legal_guardians_code: string;
-      legal_guardians_name: string;
-      id: string;
-    };
-  };
-};
-
-type LegalGuardian = {
-  id: string;
-  legal_guardians_name: string;
-  legal_guardians_code: string;
-};
-
-/* ===================== Utils ===================== */
-
-const WORKFLOW_STATUS_META: Record<
-  string,
-  { Icon: LucideIcon; colorClass: string }
-> = {
-  AUDIOVISUAL_ANUNCIADO: { Icon: BookMarked, colorClass: "text-amber-500" },
-  AUDIOVISUAL_EMPRESTIMO: { Icon: CalendarCheck, colorClass: "text-blue-500" },
-  AUDIOVISUAL_ATRASADO: {
-    Icon: LucideAlarmClockOff,
-    colorClass: "text-green-600",
-  },
-  AUDIOVISUAL_QUEBRADO: { Icon: Wrench, colorClass: "text-indigo-500" },
-};
-
-const WORKFLOW_STATUS_LABELS: Record<string, string> = {
-  AUDIOVISUAL_ANUNCIADO: "Item disponível para empréstimo",
-  AUDIOVISUAL_EMPRESTIMO: "Item emprestado",
-  AUDIOVISUAL_ATRASADO: "Item em estado de atraso",
-  AUDIOVISUAL_QUEBRADO: "Item foi quebrado",
-
-  STARTED: "Iniciado",
-  REVIEW_REQUESTED_VITRINE: "Avaliação S. Patrimônio - Vitrine",
-  ADJUSTMENT_VITRINE: "Ajustes - Vitrine",
-  VITRINE: "Anunciados",
-  AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
-  TRANSFERIDOS: "Transferidos",
-  REVIEW_REQUESTED_DESFAZIMENTO: "Avaliação S. Patrimônio - Desfazimento",
-  ADJUSTMENT_DESFAZIMENTO: "Ajustes - Desfazimento",
-  REVIEW_REQUESTED_COMISSION: "LTD - Lista Temporária de Desfazimento",
-  REJEITADOS_COMISSAO: "Recusados",
-  DESFAZIMENTO: "LFD - Lista Final de Desfazimento",
-  DESCARTADOS: "Processo Finalizado",
-  ACERVO_HISTORICO: "Acervo Histórico",
-};
+export interface LoanDTO {
+  id: UUID;
+  loanable_item_id: UUID;
+  requester_id: UUID | null;
+  temporary_guardian_id: UUID;
+  start_at: string;
+  end_at: string | null;
+  returned_at: string | null;
+  is_confirmed: boolean;
+  is_executed: boolean;
+  is_returned: boolean;
+  is_maintenance: boolean;
+  lend_detail: string | null;
+  returned_detail: string | null;
+  rejection_reason: string | null;
+  requester?: UserDTO;
+  temporary_guardian?: UserDTO;
+}
 
 const chain = (loc?: LocationDTO | null) => {
   if (!loc || !loc.sector) return [];
   const s = loc.sector;
   const a = s.agency;
-  const u = a?.unit ?? s.unit;
+  const u = a?.unit;
   const parts: string[] = [];
   if (u) parts.push(`${u.unit_code} - ${u.unit_name}`);
   if (a) parts.push(`${a.agency_code} - ${a.agency_name}`);
@@ -365,30 +225,33 @@ const formatDateTimeBR = (iso?: string) => {
   }
 };
 
+/* ===================== Componente Principal ===================== */
 export function AudiovisualModal() {
   const isMobile = useIsMobile();
   const { onClose, isOpen, type: typeModal, data } = useModal();
-  const isModalOpen = isOpen && typeModal === "catalog-modal";
+  const isModalOpen = isOpen && typeModal === "audiovisual-modal";
 
-  const { urlGeral, loggedIn } = useContext(UserContext);
+  const { urlGeral, loggedIn, user } = useContext(UserContext);
+  const { hasAnunciarItem } = usePermissions();
   const token = localStorage.getItem("jwt_token") || "";
 
-  const catalog = (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
+  // CORREÇÃO AQUI: Cast duplo para extrair o objeto perfeitamente
+  const loanItem = data as unknown as LoanableItemDTO | null;
+  const catalog = loanItem?.catalog;
 
   const images = useMemo(() => {
     return (catalog?.images ?? []).slice(0, 4).map((img, index) => {
-      // Lógica do buildImgUrl movida para cá
       const p = img.file_path;
       const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
       const fullUrl = `${urlGeral}${cleanPath}`;
-
       return {
         category: "",
         title: img.id || `${index}-${img.file_path}`,
         src: fullUrl,
       };
     });
-  }, [catalog?.images, urlGeral]); // Adicionei urlGeral nas dependências
+  }, [catalog?.images, urlGeral]);
+
   const cards = useMemo(
     () =>
       images.map((card, index) => (
@@ -396,83 +259,39 @@ export function AudiovisualModal() {
       )),
     [images],
   );
-  const historySortedDesc = useMemo(() => {
-    const hist = catalog?.workflow_history ?? [];
-    return [...hist].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-  }, [catalog?.workflow_history]);
 
-  // Sempre pega o status atual real (último workflow cronológico)
-  const lastWorkflow = historySortedDesc[0];
-
-  const { hasAcervoHistorico } = usePermissions();
-
-  const handleBack = () => onClose(); // no modal, voltar = fechar
+  const handleBack = () => onClose();
   const handleVoltar = () => onClose();
 
-  /* ================= Legal Guardian ================ */
-
-  const guardianReqIdRef = useRef(0);
-  const [openGuardian, setOpenGuardian] = useState(false);
-  // termos de busca
-  const [guardianQ, setGuardianQ] = useState("");
-  const guardianQd = useDebounced(guardianQ, 300);
-  // loading
-  const [loading, setLoading] = useState({
-    guardians: false,
-  });
-
   const [observation, setObservation] = useState<string>("");
-  const [legalGuardians, setLegalGuardians] = useState<LegalGuardian[]>([]);
-  const [selectedGuardianId, setLegalGuardianId] = useState("");
+  const [users, setUsers] = useState<UserDTO[]>([]);
 
-  function useDebounced<T>(value: T, delay = 300) {
-    const [debounced, setDebounced] = useState(value);
-    useEffect(() => {
-      const id = setTimeout(() => setDebounced(value), delay);
-      return () => clearTimeout(id);
-    }, [value, delay]);
-    return debounced;
+  const [openUser, setOpenUser] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  const selectedUser = users.find((u) => u.id === selectedUserId);
+  const displaySelectedUser = selectedUser
+    ? selectedUser.username || selectedUser.email?.split("@")[0] || "Usuário"
+    : "Selecione o Responsável...";
+
+  async function fetchUsers() {
+    try {
+      const res = await fetch(`${urlGeral}users/?limit=2000`, {
+        headers: { Accept: "application/json" },
+      });
+      const json: { users: UserDTO[] } = await res.json();
+      setUsers(json.users);
+    } catch (e) {
+      console.error("Erro ao buscar usuários:", e);
+    }
   }
 
-  const fetchLegalGuardians = useCallback(
-    async (q?: string) => {
-      const reqId = ++guardianReqIdRef.current;
-      setLoading((p) => ({ ...p, guardians: true }));
-      try {
-        const params = q ? `?q=${encodeURIComponent(q)}` : "";
-        const res = await fetch(`${urlGeral}legal-guardians/${params}`, {
-          headers: { Accept: "application/json" },
-        });
-        const json: { legal_guardians: LegalGuardian[] } = await res.json();
-        if (guardianReqIdRef.current !== reqId) return; // resposta antiga
-        setLegalGuardians(json.legal_guardians);
-      } catch (e) {
-        if (guardianReqIdRef.current === reqId) setLegalGuardians([]);
-        console.error("Erro ao buscar responsáveis:", e);
-      } finally {
-        if (guardianReqIdRef.current === reqId)
-          setLoading((p) => ({ ...p, guardians: false }));
-      }
-    },
-    [urlGeral],
-  );
-
-  // carregar inicialmente
   useEffect(() => {
-    fetchLegalGuardians(guardianQd);
-  }, [fetchLegalGuardians, guardianQd]);
-
-  const handleGuardianSelect = (id: string) => {
-    const g = legalGuardians.find((x) => x.id === id);
-    setLegalGuardianId(g?.id || "");
-  };
+    if (isModalOpen) fetchUsers();
+  }, [isModalOpen]);
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
   const closeDelete = () => setIsDeleteOpen(false);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -483,16 +302,11 @@ export function AudiovisualModal() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) {
-        const t = await r.text().catch(() => "");
-        throw new Error(`Falha ao excluir (${r.status}): ${t}`);
-      }
+      if (!r.ok) throw new Error("Falha ao excluir");
       toast("Item excluído com sucesso.");
-      try {
-        window.dispatchEvent(
-          new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
-        );
-      } catch {}
+      window.dispatchEvent(
+        new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
+      );
       onClose();
     } catch (e: any) {
       toast("Erro ao excluir", {
@@ -505,11 +319,7 @@ export function AudiovisualModal() {
   }, [catalog, onClose, token, urlGeral]);
 
   const asset = catalog?.asset;
-  const titulo =
-    asset?.material?.material_name ||
-    asset?.item_model ||
-    asset?.item_brand ||
-    "Item sem nome";
+  const titulo = asset?.material?.material_name || "Item sem nome";
 
   const locCatalogoParts = chain(catalog?.location) ?? [];
   const visibleCatalogParts = !loggedIn
@@ -529,7 +339,6 @@ export function AudiovisualModal() {
     OC: "bg-blue-500",
     RE: "bg-purple-500",
   };
-
   const csvCodToText: Record<string, string> = {
     BM: "Bom",
     AE: "Anti-Econômico",
@@ -540,7 +349,7 @@ export function AudiovisualModal() {
 
   const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
-    NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any },
+    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
     TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
     MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
@@ -550,40 +359,16 @@ export function AudiovisualModal() {
   const csvCodTrimmed = (asset?.csv_code || "").trim();
   const bemStaTrimmed = (asset?.asset_status || "").trim();
   const status = statusMap[bemStaTrimmed];
-
-  const colorClassStr =
-    qualisColor[csvCodTrimmed as keyof typeof qualisColor] || "bg-zinc-300";
+  const colorClassStr = qualisColor[csvCodTrimmed] || "bg-zinc-300";
   const borderColorClass = colorClassStr.replace("bg-", "border-");
 
-  const getStatusLabel = (status: WorkflowStatus) =>
-    WORKFLOW_STATUS_LABELS[status] ?? status;
-
-  const calculateDifference = (createdAt: string) => {
-    const createdDate = new Date(createdAt);
-    const currentDate = new Date();
-    const timeDiff = Math.abs(currentDate.getTime() - createdDate.getTime());
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    const months = Math.floor(daysDiff / 30);
-    const days = daysDiff % 30;
-
-    let bgColor = "";
-    if (months < 3) bgColor = "bg-green-700";
-    else if (months < 6) bgColor = "bg-yellow-500";
-    else bgColor = "bg-red-500";
-
-    return { months, days, bgColor };
-  };
-
-  const diff = catalog?.created_at
-    ? calculateDifference(catalog.created_at)
-    : null;
-
-  const tabs = [
-    { id: "visao_geral", label: "Visão Geral", icon: Home },
-    { id: "emprestimo", label: "Empréstimo", icon: ArrowRightLeft },
+  let tabs = [
+    { id: "emprestimo", label: "Empréstimo", icon: Info },
+    { id: "historico", label: "Histórico", icon: History },
+    { id: "calendario", label: "Calendário", icon: CalendarIcon },
+    { id: "maintenance", label: "Manutenção", icon: Wrench },
   ];
 
-  // Componente principal
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -596,51 +381,38 @@ export function AudiovisualModal() {
     }
   };
 
-  const scrollLeft = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollBy({ left: -200, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollBy({ left: 200, behavior: "smooth" });
-    }
-  };
+  const scrollLeft = () =>
+    scrollAreaRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollAreaRef.current?.scrollBy({ left: 200, behavior: "smooth" });
 
   useEffect(() => {
     checkScrollability();
-    const handleResize = () => checkScrollability();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("resize", checkScrollability);
+    return () => window.removeEventListener("resize", checkScrollability);
   }, []);
 
-  const [tabOpen, setTabOpen] = useState("visao_geral");
+  const [tabOpen, setTabOpen] = useState("emprestimo");
 
-  interface WorkflowDetail {
-    inicio: number | string; // Aceita timestamp ou string ISO
-    fim: number | string;
-    [key: string]: any; // Outros campos do detail
-  }
+  // Adaptação dos Empréstimos para manter sua lógica de Datas inalterada
+  const workflows = useMemo(() => {
+    if (!loanItem?.loans) return [];
+    return loanItem.loans
+      .filter(
+        (l) => !l.is_returned && !l.rejection_reason && l.start_at && l.end_at,
+      )
+      .map((l) => ({
+        workflow_status: "AUDIOVISUAL_EMPRESTIMO",
+        detail: {
+          inicio: l.start_at,
+          fim: l.end_at,
+        },
+      }));
+  }, [loanItem?.loans]);
 
-  interface WorkflowItem {
-    workflow_status: string;
-    detail: WorkflowDetail;
-    [key: string]: any; // Outros campos do workflow
-  }
-
-  interface WorkflowOutput {
-    inicio: string | number;
-    fim: string | number;
-  }
-
-  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
-
-  // DATAS
-
+  // =============== LÓGICA DE DATAS (Inalterada) ===============
   const [openFrom, setOpenFrom] = useState(false);
   const [openTo, setOpenTo] = useState(false);
-
   const [dateFrom, setDateFrom] = useState<Date>(new Date());
   const [dateTo, setDateTo] = useState<Date>(new Date());
   const [hourFrom, setHourFrom] = useState<number>(11);
@@ -650,43 +422,24 @@ export function AudiovisualModal() {
   const [beginHours, setBeginHours] = useState<number[]>(hours);
   const [endHours, setEndHours] = useState<number[]>(hours);
 
-  async function getWorkflows() {
-    const res = await fetch(`${urlGeral}catalog/${catalog?.id}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const json = await res.json();
-    const workflows = json?.workflow_history.filter((item) => {
-      const statusValido = item.workflow_status === "AUDIOVISUAL_EMPRESTIMO";
-      return statusValido;
-    });
-
-    setWorkflows(workflows);
-  }
-
-  useEffect(() => {
-    getWorkflows();
-  }, []);
-
-  function getAvailableHours(dateFrom, workflow) {
+  function getAvailableHours(dateFrom: Date, workflow: any[]) {
     const year = dateFrom.getFullYear();
     const month = dateFrom.getMonth();
     const day = dateFrom.getDate();
 
     return hours.filter((hour) => {
-      const timeToCheck = new Date(year, month, day, hour, 0, 0, 0).getTime();
+      const slotStart = new Date(year, month, day, hour, 0, 0, 0).getTime();
+      const slotEnd = new Date(year, month, day, hour, 59, 59, 999).getTime();
 
       const hasConflict = workflow.some((item) => {
         try {
-          const start = new Date(item.inicio.replace("Z", "")).getTime();
-          const end = new Date(item.fim.replace("Z", "")).getTime();
-          return timeToCheck >= start && timeToCheck < end;
+          const start = new Date(item.inicio).getTime();
+          const end = new Date(item.fim).getTime();
+          return slotStart < end && slotEnd > start;
         } catch {
           return false;
         }
       });
-
       return !hasConflict;
     });
   }
@@ -696,48 +449,29 @@ export function AudiovisualModal() {
     dateFromClean.setHours(0, 0, 0, 0);
     const hora = dateFromClean.getTime();
 
-    const conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-      (acc, item) => {
-        if (!item.detail?.inicio || !item.detail?.fim) return acc;
+    const conflictingWorkflows = workflows.reduce<any[]>((acc, item) => {
+      if (!item.detail?.inicio || !item.detail?.fim) return acc;
+      const inicioTimestamp = new Date(item.detail.inicio).setHours(0, 0, 0, 0);
+      const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+      if (hora >= inicioTimestamp && hora <= fimTimestamp) {
+        acc.push({ inicio: item.detail.inicio, fim: item.detail.fim });
+      }
+      return acc;
+    }, []);
 
-        const inicioTimestamp = new Date(item.detail.inicio).setHours(
-          0,
-          0,
-          0,
-          0,
-        );
-        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-        if (hora >= inicioTimestamp && hora <= fimTimestamp) {
-          acc.push({
-            inicio: item.detail.inicio,
-            fim: item.detail.fim,
-          });
-        }
-        return acc;
-      },
-      [],
-    );
-
-    try {
-      setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
-    } catch (e) {
-      toast.error("Sem data, tente novamente");
-    }
+    setBeginHours(getAvailableHours(dateFrom, conflictingWorkflows));
   }, [dateFrom, workflows]);
 
   useEffect(() => {
     const dateFromClean = new Date(dateFrom);
     dateFromClean.setHours(0, 0, 0, 0);
-
     const dateToClean = new Date(dateTo);
     dateToClean.setHours(0, 0, 0, 0);
 
-    // CASO 1: Início e Fim no mesmo dia
     if (dateFromClean.getTime() === dateToClean.getTime()) {
       const nonConflict = hours.filter(
         (v) => v > hourFrom && beginHours.includes(v),
       );
-
       const firstConflict =
         hours.find(
           (v) => hours.includes(v) && v > hourFrom && !nonConflict.includes(v),
@@ -747,35 +481,23 @@ export function AudiovisualModal() {
           (v) => v > hourFrom && beginHours.includes(v) && v < firstConflict,
         ),
       );
-    }
-    // CASO 2: Dias diferentes
-    else {
+    } else {
       if (!dateFrom || !dateTo) return;
-
       const hora = dateFromClean.getTime();
-      let conflictingWorkflows = workflows.reduce<WorkflowOutput[]>(
-        (acc, item) => {
-          if (!item.detail?.inicio || !item.detail?.fim) return acc;
-
-          const inicioTimestamp = new Date(item.detail.inicio).setHours(
-            0,
-            0,
-            0,
-            0,
-          );
-          const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
-
-          // Pega tudo que começa depois de hoje OU termina depois de hoje
-          if (hora < inicioTimestamp || hora < fimTimestamp) {
-            acc.push({
-              inicio: item.detail.inicio,
-              fim: item.detail.fim,
-            });
-          }
-          return acc;
-        },
-        [],
-      );
+      let conflictingWorkflows = workflows.reduce<any[]>((acc, item) => {
+        if (!item.detail?.inicio || !item.detail?.fim) return acc;
+        const inicioTimestamp = new Date(item.detail.inicio).setHours(
+          0,
+          0,
+          0,
+          0,
+        );
+        const fimTimestamp = new Date(item.detail.fim).setHours(0, 0, 0, 0);
+        if (hora < inicioTimestamp || hora < fimTimestamp) {
+          acc.push({ inicio: item.detail.inicio, fim: item.detail.fim });
+        }
+        return acc;
+      }, []);
 
       const availableTimes = beginHours.filter((n) => n > hourFrom).length;
       const totalTimes = hours.filter((n) => n > hourFrom).length;
@@ -789,50 +511,29 @@ export function AudiovisualModal() {
 
       dateFromClean.setHours(hourFrom, 0, 0, 0);
       const startMs = dateFromClean.getTime();
-
-      // Encontramos o timestamp do PRIMEIRO conflito real que acontece a partir do horário de início
       let closestBarrier = Infinity;
 
       conflictingWorkflows.forEach((wf) => {
         if (typeof wf.inicio === "number") return;
         const wfStart = new Date(wf.inicio.replace("Z", "")).getTime();
-
-        // Se esse workflow começa DEPOIS (ou junto) do início escolhido pelo usuário
-        if (wfStart >= startMs) {
-          // Se ainda não temos barreira, ou se essa é anterior à atual...
-          if (closestBarrier === Infinity || wfStart < closestBarrier) {
-            closestBarrier = wfStart;
-          }
+        if (
+          wfStart >= startMs &&
+          (closestBarrier === Infinity || wfStart < closestBarrier)
+        ) {
+          closestBarrier = wfStart;
         }
       });
 
-      // --- DEFINIR AS HORAS FINAIS ---
-
-      if (closestBarrier) {
+      if (closestBarrier !== Infinity) {
         const barrierDate = new Date(closestBarrier);
         const barrierDayClean = new Date(closestBarrier).setHours(0, 0, 0, 0);
         const targetDayMs = dateToClean.getTime();
 
-        // Cenário A: O bloqueio acontece ANTES de chegar no dia final selecionado.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 12. Dia 15 fica inacessível.
-        if (barrierDayClean < targetDayMs) {
-          setEndHours([]);
-        }
-        // Cenário B: O bloqueio é EXATAMENTE no dia final.
-        // Ex: Início dia 10, Fim dia 15. Bloqueio dia 15 às 14:00.
-        // Liberamos as horas do dia 15 apenas até as 14:00.
-        else if (barrierDayClean === targetDayMs) {
-          const limitHour = barrierDate.getHours();
-          // Só mostra horas menores ou iguais ao início do bloqueio
-          setEndHours(hours.filter((h) => h <= limitHour));
-        }
-        // Cenário C: O bloqueio é num dia DEPOIS do dia final.
-        // Ex: Início dia 10, Fim dia 12. Bloqueio dia 20.
-        else {
-          setEndHours(hours);
-        }
+        if (barrierDayClean < targetDayMs) setEndHours([]);
+        else if (barrierDayClean === targetDayMs)
+          setEndHours(hours.filter((h) => h <= barrierDate.getHours()));
+        else setEndHours(hours);
       } else {
-        // Sem conflitos futuros, dia liberado
         setEndHours(hours);
       }
     }
@@ -840,19 +541,12 @@ export function AudiovisualModal() {
 
   const mergeDateAndTime = (date: Date, time: number): Date => {
     const newDate = new Date(date);
-    newDate.setHours(time);
-    newDate.setMinutes(0);
-    newDate.setSeconds(0);
-    newDate.setMilliseconds(0);
+    newDate.setHours(time, 0, 0, 0);
     return newDate;
   };
 
   async function submit() {
-    if (!dateFrom || !dateTo) {
-      console.error("Datas não selecionadas");
-      return;
-    }
-
+    if (!dateFrom || !dateTo) return;
     const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
     const timestampTo = mergeDateAndTime(dateTo, hourTo);
 
@@ -863,9 +557,7 @@ export function AudiovisualModal() {
       return;
     }
 
-    const guardian = legalGuardians.find((g) => g.id === selectedGuardianId);
-
-    const res = await fetch(`${urlGeral}catalog/${catalog?.id}/workflow`, {
+    const res = await fetch(`${urlGeral}loans/request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -873,125 +565,34 @@ export function AudiovisualModal() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        workflow_status: "AUDIOVISUAL_EMPRESTIMO",
-        detail: {
-          inicio: timestampFrom,
-          fim: timestampTo,
-          legal_guardian: guardian,
-          observation: observation,
-        },
+        loanable_item_id: loanItem?.id, // ID CORRETO VINDO DO LOANABLE ITEM
+        start_at: timestampFrom,
+        end_at: timestampTo,
+        requester_id: user?.id,
+        temporary_guardian_id: selectedUserId,
+        is_maintenance: false,
+        lend_detail: observation,
       }),
     });
 
     if (!res.ok) {
-      // Tenta ler detalhes do erro (ex.: 422 com 'detail')
       let message = "Erro ao solicitar empréstimo";
       try {
         const err = await res.json();
-        if (err?.detail) message = JSON.stringify(err.detail);
-        toast.error(message);
-      } catch {
-        toast.error(message);
-      }
-      throw new Error(message);
+        if (err?.detail) {
+          message = Array.isArray(err.detail)
+            ? err.detail[0]?.msg || JSON.stringify(err.detail)
+            : err.detail;
+        }
+      } catch {}
+      toast.error(message);
     } else {
       toast.success("Solicitação de empréstimo realizada com sucesso!");
-      onClose();
+      if (onClose) onClose();
     }
   }
 
-  ///// ACERVO HISTÓRICO
-
-  const currentStatusFromServer = lastWorkflow?.workflow_status ?? "";
-  const [isAcervoHistoricoLocal, setIsAcervoHistoricoLocal] = useState(
-    currentStatusFromServer === "ACERVO_HISTORICO",
-  );
-
-  useEffect(() => {
-    setIsAcervoHistoricoLocal(
-      (lastWorkflow?.workflow_status ?? "") === "ACERVO_HISTORICO",
-    );
-  }, [lastWorkflow?.workflow_status, catalog?.id]);
-
-  const postWorkflow = useCallback(
-    async (newStatus: string) => {
-      if (!catalog?.id) {
-        toast("Não foi possível alterar o workflow", {
-          description: "ID do catálogo não encontrado.",
-        });
-        return null;
-      }
-
-      const endpoint = `${urlGeral}catalog/${catalog.id}/workflow`;
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          workflow_status: newStatus,
-          detail: { additionalProp1: {} },
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(
-          `Falha ao alterar workflow (${res.status}): ${
-            text || "Erro desconhecido"
-          }`,
-        );
-      }
-
-      return await res.json().catch(() => null);
-    },
-    [catalog?.id, token, urlGeral],
-  );
-
-  const [addingAcervo, setAddingAcervo] = useState(false);
-
-  const handleAddToAcervoHistorico = useCallback(async () => {
-    try {
-      setAddingAcervo(true);
-
-      await postWorkflow("ACERVO_HISTORICO");
-
-      setIsAcervoHistoricoLocal(true);
-
-      toast("Item adicionado ao Acervo Histórico ", {
-        description: "Workflow atualizado com sucesso.",
-      });
-    } catch (e: any) {
-      toast("Erro ao adicionar ao Acervo Histórico", {
-        description: e?.message || "Tente novamente.",
-      });
-    } finally {
-      setAddingAcervo(false);
-    }
-  }, [postWorkflow]);
-
-  const handleBackToReviewRequestedDesfazimento = useCallback(async () => {
-    try {
-      setAddingAcervo(true);
-
-      await postWorkflow("REVIEW_REQUESTED_DESFAZIMENTO");
-
-      setIsAcervoHistoricoLocal(false);
-
-      toast("Item enviado para Avaliação de Desfazimento ", {
-        description: "Workflow atualizado com sucesso.",
-      });
-    } catch (e: any) {
-      toast("Erro ao alterar workflow", {
-        description: e?.message || "Tente novamente.",
-      });
-    } finally {
-      setAddingAcervo(false);
-    }
-  }, [postWorkflow]);
-
+  // =============== Render JSX ===============
   const content = () => {
     if (!catalog) {
       return (
@@ -1018,7 +619,7 @@ export function AudiovisualModal() {
 
     return (
       <main
-        className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden ${borderColorClass}`}
+        className={`grid flex-col gap-4 md:gap-8 border-b-[12px] rounded-b-lg overflow-hidden border-eng-blue`}
       >
         <div className="flex items-center gap-4 p-8 pb-0">
           <Button
@@ -1038,14 +639,17 @@ export function AudiovisualModal() {
           <div className="hidden md:flex items-center gap-2">
             <DownloadPdfButton
               filters={{}}
-              id={catalog.id}
-              label="Baixar Item"
-              method={"item"}
+              id={loanItem.id}
+              label="Baixar Histórico"
+              method={"loan_item"}
             />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link target="_blank" to={`/item?id=${catalog.id}`}>
+                  <Link
+                    target="_blank"
+                    to={`/item-emprestimo?id=${catalog.id}`}
+                  >
                     <Button variant="outline" size="icon">
                       <ArrowSquareOut size={16} />
                     </Button>
@@ -1053,39 +657,6 @@ export function AudiovisualModal() {
                 </TooltipTrigger>
                 <TooltipContent className="z-[99]">Ir a página</TooltipContent>
               </Tooltip>
-
-              {hasAcervoHistorico && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={isAcervoHistoricoLocal ? "default" : "outline"}
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isAcervoHistoricoLocal) {
-                          handleBackToReviewRequestedDesfazimento();
-                        } else {
-                          handleAddToAcervoHistorico();
-                        }
-                      }}
-                      disabled={addingAcervo}
-                    >
-                      <BookmarkPlus
-                        size={16}
-                        className={addingAcervo ? "animate-pulse" : ""}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-
-                  <TooltipContent className="z-[99]">
-                    {addingAcervo
-                      ? "Atualizando..."
-                      : isAcervoHistoricoLocal
-                        ? "Enviar para Avaliação de Desfazimento"
-                        : "Adicionar ao Acervo Histórico"}
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </TooltipProvider>
           </div>
         </div>
@@ -1106,21 +677,6 @@ export function AudiovisualModal() {
                       <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-2 items-center">
                         <CalendarIcon size={16} />
                         {formatDateTimeBR(catalog.created_at)}
-                        {diff && (
-                          <Badge
-                            className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}
-                          >
-                            {diff.months > 0
-                              ? `${diff.months} ${
-                                  diff.months === 1 ? "mês" : "meses"
-                                } e ${diff.days} ${
-                                  diff.days === 1 ? "dia" : "dias"
-                                }`
-                              : `${diff.days} ${
-                                  diff.days === 1 ? "dia" : "dias"
-                                }`}
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1201,583 +757,87 @@ export function AudiovisualModal() {
                       </div>
                     </div>
 
-                    {/* ===== Visão Geral ===== */}
-                    <TabsContent value="visao_geral">
-                      <div>
-                        <>
-                          <div className="flex group ">
-                            <div
-                              className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-                                qualisColor[
-                                  csvCodTrimmed as keyof typeof qualisColor
-                                ] || "bg-zinc-300"
-                              } min-h-full`}
-                            />
-                            <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
-                              <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
-                                <p className="font-semibold flex gap-3 items-center text-left mb-4 flex-1">
-                                  {asset?.asset_code?.trim()} -{" "}
-                                  {asset?.asset_check_digit}
-                                  {!!asset?.atm_number &&
-                                    asset.atm_number !== "None" && (
-                                      <Badge variant="outline">
-                                        ATM: {asset.atm_number}
-                                      </Badge>
-                                    )}
-                                </p>
-                              </div>
-
-                              <div className="flex flex-col p-4 pt-0 justify-between">
-                                <div>
-                                  <div className="flex flex-wrap gap-3">
-                                    {!!asset?.csv_code &&
-                                      asset?.csv_code !== "None" && (
-                                        <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                          <div
-                                            className={`w-4 h-4 rounded-md ${
-                                              qualisColor[
-                                                csvCodTrimmed as keyof typeof qualisColor
-                                              ] || "bg-zinc-300"
-                                            }`}
-                                          />
-                                          {csvCodToText[
-                                            csvCodTrimmed as keyof typeof csvCodToText
-                                          ] || "—"}
-                                        </div>
-                                      )}
-
-                                    {status && (
-                                      <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                        {status.icon}
-                                        {status.text}
-                                      </div>
-                                    )}
-
-                                    {loggedIn && (
-                                      <>
-                                        {!!asset?.legal_guardian &&
-                                          asset.legal_guardian
-                                            .legal_guardians_name !==
-                                            "None" && (
-                                            <div className="flex gap-1 items-center">
-                                              <Avatar className="rounded-md h-5 w-5">
-                                                <AvatarImage
-                                                  className="rounded-md h-5 w-5"
-                                                  src={`${urlGeral}ResearcherData/Image?name=${asset.legal_guardian.legal_guardians_name}`}
-                                                />
-                                                <AvatarFallback className="flex items-center justify-center">
-                                                  <User size={10} />
-                                                </AvatarFallback>
-                                              </Avatar>
-                                              <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                {
-                                                  asset.legal_guardian
-                                                    .legal_guardians_name
-                                                }
-                                              </p>
-                                            </div>
-                                          )}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </Alert>
-                          </div>
-                        </>
-
-                        <div className="flex mt-[30px]">
+                    {/* ===== Empréstimo ===== */}
+                    <TabsContent value="emprestimo">
+                      <div className="flex w-full flex-col">
+                        <div className="flex group ">
                           <div
-                            className={`w-2 min-w-2 rounded-l-md border border-r-0 bg-eng-blue`}
+                            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 bg-eng-blue min-h-full`}
                           />
-                          <Alert className="flex flex-col rounded-l-none">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <MapPin size={16} />
-                                <p className="text-sm uppercase font-bold">
-                                  Local de tombamento:
-                                </p>
-
-                                {visibleParts.length ? (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    {visibleParts.map((p, i) => (
-                                      <div
-                                        key={i}
-                                        className={
-                                          isMobile
-                                            ? "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                            : "text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                        }
-                                      >
-                                        {i > 0 && <ChevronRight size={14} />}{" "}
-                                        {p}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span
-                                    className={
-                                      isMobile
-                                        ? "text-xs text-gray-500"
-                                        : "text-sm text-gray-500"
-                                    }
-                                  >
-                                    Não definido.
-                                  </span>
+                          <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-4 gap-4">
+                            <p className="font-semibold flex gap-3 items-center text-left flex-1">
+                              {asset?.asset_code?.trim()} -{" "}
+                              {asset?.asset_check_digit}
+                              {!!asset?.atm_number &&
+                                asset.atm_number !== "None" && (
+                                  <Badge variant="outline">
+                                    ATM: {asset.atm_number}
+                                  </Badge>
                                 )}
-                              </div>
-
-                              {!isSameLocation && (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <MapPin size={16} />
-                                  <p className="text-sm uppercase font-bold">
-                                    Local atual:
-                                  </p>
-
-                                  {visibleCatalogParts.length ? (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      {visibleCatalogParts.map((p, i) => (
-                                        <div
-                                          key={i}
-                                          className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
-                                        >
-                                          {i > 0 && <ChevronRight size={14} />}{" "}
-                                          {p}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span className="text-sm text-gray-500">
-                                      Não definido.
-                                    </span>
-                                  )}
+                            </p>
+                            <div className="flex gap-1 items-center">
+                              <Avatar className="rounded-md h-5 w-5">
+                                <AvatarImage
+                                  className="rounded-md h-5 w-5"
+                                  src={`${urlGeral}ResearcherData/Image?name=${loanItem?.guardian?.username || ""}`}
+                                />
+                                <AvatarFallback className="flex items-center justify-center">
+                                  <User size={10} />
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                {asset?.legal_guardian?.legal_guardians_name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <MapPin size={16} />
+                              <p className="text-sm uppercase font-bold">
+                                Local:
+                              </p>
+                              {visibleParts.map((p, i) => (
+                                <div
+                                  key={i}
+                                  className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2"
+                                >
+                                  {i > 0 && <ChevronRight size={14} />} {p}
                                 </div>
-                              )}
+                              ))}
                             </div>
                           </Alert>
                         </div>
-
-                        {loggedIn && (
-                          <Link
-                            to={`/user?id=${catalog.user?.id}`}
-                            target="_blank"
-                          >
-                            <Alert className="mt-8">
-                              <div className="flex gap-3 items-center">
-                                <Avatar className="rounded-md h-12 w-12">
-                                  <AvatarImage
-                                    className=""
-                                    src={`${urlGeral}user/upload/${catalog.user?.id}/icon`}
-                                  />
-                                  <AvatarFallback className="flex items-center justify-center">
-                                    <User size={16} />
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm w-fit text-gray-500">
-                                    Anunciante
-                                  </p>
-                                  <p className="text-black dark:text-white font-medium text-lg truncate">
-                                    {catalog.user?.username}
-                                  </p>
-                                </div>
-                              </div>
-                            </Alert>
-                          </Link>
-                        )}
-
-                        {/* Histórico */}
-                        {loggedIn && (
-                          <>
-                            <Separator className="mt-8 mb-2" />
-                            <Accordion type="single" collapsible>
-                              <AccordionItem value="item-1">
-                                <div className="flex ">
-                                  <HeaderResultTypeHome
-                                    title="Histórico na plataforma"
-                                    icon={
-                                      <Workflow
-                                        size={24}
-                                        className="text-gray-400"
-                                      />
-                                    }
-                                  />
-                                  <AccordionTrigger></AccordionTrigger>
-                                </div>
-                                <AccordionContent className="p-0">
-                                  <div className="flex flex-col ">
-                                    {historySortedDesc.length === 0 ? (
-                                      <div className="text-sm text-muted-foreground px-1">
-                                        Nenhum evento de workflow.
-                                      </div>
-                                    ) : (
-                                      // ✅ NÃO muta: copia antes do reverse
-                                      [...historySortedDesc].map((ev, idx) => {
-                                        const meta = WORKFLOW_STATUS_META[
-                                          ev.workflow_status
-                                        ] ?? {
-                                          Icon: HelpCircle,
-                                          colorClass: "text-zinc-500",
-                                        };
-
-                                        const { Icon: EvIcon } = meta;
-                                        const username =
-                                          ev.user?.username ||
-                                          ev.user?.email?.split("@")[0] ||
-                                          "Usuário";
-
-                                        const total = historySortedDesc.length;
-                                        const isLast = idx === total - 1;
-
-                                        return (
-                                          <div
-                                            key={ev.id}
-                                            className="flex gap-2"
-                                          >
-                                            <div className="flex flex-col items-center">
-                                              <Alert className="flex w-14 h-14 items-center justify-center">
-                                                <div>
-                                                  <EvIcon
-                                                    className={``}
-                                                    size={16}
-                                                  />
-                                                </div>
-                                              </Alert>
-
-                                              {!isLast && (
-                                                <Separator
-                                                  className="min-h-8"
-                                                  orientation="vertical"
-                                                />
-                                              )}
-                                            </div>
-
-                                            <div className="flex-1">
-                                              <p className="text-lg font-medium">
-                                                {getStatusLabel(
-                                                  ev.workflow_status,
-                                                )}
-                                              </p>
-
-                                              {ev.detail?.justificativa && (
-                                                <p className="text-sm dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
-                                                  {ev.detail.justificativa}
-                                                </p>
-                                              )}
-
-                                              <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
-                                                <div className="flex gap-1 items-center">
-                                                  <Avatar className="rounded-md h-5 w-5">
-                                                    {ev.user?.photo_url ? (
-                                                      <AvatarImage
-                                                        className="rounded-md h-5 w-5"
-                                                        src={ev.user.photo_url}
-                                                        alt={username}
-                                                      />
-                                                    ) : (
-                                                      <AvatarFallback className="flex items-center justify-center">
-                                                        <User size={10} />
-                                                      </AvatarFallback>
-                                                    )}
-                                                  </Avatar>
-                                                  <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
-                                                    {username}
-                                                  </p>
-                                                </div>
-
-                                                <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
-                                                  <CalendarIcon size={16} />
-                                                  {formatDateTimeBR(
-                                                    ev.created_at,
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })
-                                    )}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          </>
-                        )}
+                        <AudiovisualTab
+                          loan={loanItem}
+                          reload={() => onClose()}
+                        />
                       </div>
                     </TabsContent>
-                    {/* ===== Empréstimo ===== */}
-                    <TabsContent value="emprestimo">
+                    <TabsContent value="historico">
+                      <HistoryTab item={loanItem} />
+                    </TabsContent>
+                    {/* ===== Calendário ===== */}
+                    <TabsContent value="calendario">
                       <div>
+                        <ItemLoanCalendar item={loanItem} />
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="maintenance">
+                      {hasAnunciarItem ? (
+                        <MaintenanceTab item={loanItem} />
+                      ) : (
                         <>
-                          <div className="grid gap-6 w-full">
-                            <div className="grid gap-3 w-full">
-                              <Label>Responsável</Label>
-
-                              <div className="flex-1">
-                                <Popover
-                                  modal={false}
-                                  open={openGuardian}
-                                  onOpenChange={(val) => {
-                                    setOpenGuardian(val);
-                                  }}
-                                >
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      aria-expanded={openGuardian}
-                                      className="w-full justify-between"
-                                    >
-                                      {selectedGuardianId
-                                        ? legalGuardians.find(
-                                            (g) => g.id === selectedGuardianId,
-                                          )?.legal_guardians_name
-                                        : loading.guardians
-                                          ? "Carregando..."
-                                          : "Selecione o responsável"}
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent
-                                    className="w-[320px] p-0 z-[9999] pointer-events-auto"
-                                    align="start"
-                                    sideOffset={6}
-                                  >
-                                    <Command>
-                                      <CommandInput
-                                        placeholder="Buscar responsável (nome ou código)..."
-                                        onValueChange={(v) => {
-                                          setGuardianQ(v);
-                                          fetchLegalGuardians(v);
-                                        }}
-                                      />
-                                      <CommandList>
-                                        <CommandEmpty>
-                                          {loading.guardians
-                                            ? "Carregando..."
-                                            : "Nenhum responsável encontrado."}
-                                        </CommandEmpty>
-                                        <CommandGroup>
-                                          {legalGuardians
-                                            .slice()
-                                            .sort((a, b) =>
-                                              a.legal_guardians_name.localeCompare(
-                                                b.legal_guardians_name,
-                                                "pt-BR",
-                                                { sensitivity: "base" },
-                                              ),
-                                            )
-                                            .map((g) => (
-                                              <CommandItem
-                                                key={g.id}
-                                                value={`${g.legal_guardians_name} ${g.legal_guardians_code}`}
-                                                onSelect={() => {
-                                                  handleGuardianSelect(g.id);
-                                                  setOpenGuardian(false);
-                                                }}
-                                              >
-                                                <Check
-                                                  className={cn(
-                                                    "mr-2 h-4 w-4",
-                                                    selectedGuardianId === g.id
-                                                      ? "opacity-100"
-                                                      : "opacity-0",
-                                                  )}
-                                                />
-                                                <div className="flex flex-col">
-                                                  <span className="text-sm">
-                                                    {g.legal_guardians_name}
-                                                  </span>
-                                                </div>
-                                              </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
-                            </div>
-
-                            <div className="">
-                              <div className="flex w-full max-w-64 min-w-0 flex-col gap-6">
-                                <div className="flex gap-4">
-                                  <div className="flex flex-1 flex-col gap-3">
-                                    <Label htmlFor="date-from" className="px-1">
-                                      Início do empréstimo
-                                    </Label>
-                                    <Popover
-                                      open={openFrom}
-                                      onOpenChange={setOpenFrom}
-                                      modal={true}
-                                    >
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          id="date-from"
-                                          className="w-full justify-between font-normal"
-                                        >
-                                          {dateFrom
-                                            ? dateFrom.toLocaleDateString(
-                                                "pt-BR",
-                                                {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                },
-                                              )
-                                            : "Select date"}
-                                          <ChevronDownIcon />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent
-                                        className="w-auto overflow-hidden p-0 z-[99]"
-                                        align="start"
-                                      >
-                                        <Calendar
-                                          mode="single"
-                                          selected={dateFrom}
-                                          captionLayout="dropdown"
-                                          onSelect={(date) => {
-                                            if (!date) return;
-                                            setDateFrom(date);
-                                            setOpenFrom(false);
-                                          }}
-                                        />
-                                      </PopoverContent>
-                                    </Popover>
-                                  </div>
-                                  <div className="flex flex-col gap-3">
-                                    <Label
-                                      htmlFor="time-from"
-                                      className="invisible px-1"
-                                    >
-                                      From
-                                    </Label>
-                                    <Select
-                                      value={hourFrom.toString()}
-                                      onValueChange={(v) =>
-                                        setHourFrom(Number(v))
-                                      }
-                                      disabled={beginHours.length == 0}
-                                    >
-                                      <SelectTrigger className="w-[100px]">
-                                        <SelectValue placeholder="Itens" />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-[999]">
-                                        {beginHours.map((val) => (
-                                          <SelectItem
-                                            key={val}
-                                            value={val.toString()}
-                                          >
-                                            {`${val}h`}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                                <div className="flex gap-4">
-                                  <div className="flex flex-1 flex-col gap-3">
-                                    <Label htmlFor="date-to" className="px-1">
-                                      Fim do empréstimo
-                                    </Label>
-                                    <Popover
-                                      open={openTo}
-                                      onOpenChange={setOpenTo}
-                                      modal={true}
-                                    >
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          id="date-to"
-                                          className="w-full justify-between font-normal"
-                                        >
-                                          {dateTo
-                                            ? dateTo.toLocaleDateString(
-                                                "pt-BR",
-                                                {
-                                                  day: "2-digit",
-                                                  month: "short",
-                                                  year: "numeric",
-                                                },
-                                              )
-                                            : "Select date"}
-                                          <ChevronDownIcon />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent
-                                        className="w-auto overflow-hidden p-0 z-[99]"
-                                        align="start"
-                                      >
-                                        <Calendar
-                                          mode="single"
-                                          selected={dateTo}
-                                          captionLayout="dropdown"
-                                          onSelect={(date) => {
-                                            if (!date) return;
-                                            setDateTo(date);
-                                            setOpenTo(false);
-                                          }}
-                                          disabled={
-                                            dateFrom && { before: dateFrom }
-                                          }
-                                        />
-                                      </PopoverContent>
-                                    </Popover>
-                                  </div>
-                                  <div className="flex flex-col gap-3">
-                                    <Label
-                                      htmlFor="time-to"
-                                      className="invisible px-1"
-                                    >
-                                      To
-                                    </Label>
-                                    <Select
-                                      value={hourTo.toString()}
-                                      onValueChange={(v) =>
-                                        setHourTo(Number(v))
-                                      }
-                                      disabled={endHours.length == 0}
-                                    >
-                                      <SelectTrigger className="w-[100px]">
-                                        <SelectValue placeholder="Itens" />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-[999]">
-                                        {endHours.map((val) => (
-                                          <SelectItem
-                                            key={val}
-                                            value={val.toString()}
-                                          >
-                                            {`${val}h`}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="grid gap-3 w-full">
-                              <Label htmlFor="asset_description">
-                                Observações
-                              </Label>
-                              <Textarea
-                                id="description"
-                                value={observation}
-                                onChange={(e) => setObservation(e.target.value)}
-                              />
+                          <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+                            <div className="w-[90%] flex flex-col items-center justify-center">
+                              <p className="text-6xl text-[#719CB8] font-bold mb-16 animate-pulse">
+                                U_U
+                              </p>
+                              <h1 className="text-center text-xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+                                Você não tem permissão de acessar essas
+                                informações
+                              </h1>
                             </div>
                           </div>
                         </>
-                        <div className="flex m-auto mt-8 items-center justify-end">
-                          <Button size="sm" onClick={submit}>
-                            Solicitar empréstimo
-                            <Package2 size={16} className="" />
-                          </Button>
-                        </div>
-                      </div>
+                      )}
                     </TabsContent>
                   </Tabs>
                 </div>

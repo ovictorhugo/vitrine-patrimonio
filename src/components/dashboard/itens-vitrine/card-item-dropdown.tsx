@@ -1,6 +1,6 @@
 // src/pages/vitrine/card-item-dropdown.tsx
 import { Draggable } from "@hello-pangea/dnd";
-import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import React from "react";
 import { useContext } from "react";
 import { UserContext } from "../../../context/context";
 import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
@@ -8,8 +8,16 @@ import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-
 /* ===== Tipos (compatíveis com a página) ===== */
 type UUID = string;
 
-interface Material { material_name: string; material_code: string; id: UUID; }
-interface LegalGuardian { legal_guardians_name: string; legal_guardians_code: string; id: UUID; }
+interface Material {
+  material_name: string;
+  material_code: string;
+  id: UUID;
+}
+interface LegalGuardian {
+  legal_guardians_name: string;
+  legal_guardians_code: string;
+  id: UUID;
+}
 
 interface CatalogAsset {
   asset_code: string;
@@ -46,7 +54,12 @@ interface CatalogAsset {
         agency_code: string;
         unit_id: UUID;
         id: UUID;
-        unit: { unit_name: string; unit_code: string; unit_siaf: string; id: UUID; };
+        unit: {
+          unit_name: string;
+          unit_code: string;
+          unit_siaf: string;
+          id: UUID;
+        };
       };
     };
     legal_guardian: LegalGuardian;
@@ -58,38 +71,37 @@ export type WorkflowHistoryItem = {
   workflow_status: string;
   detail?: Record<string, any>;
   id: UUID;
-  user: {
-    id: UUID;
-    username: string;
-    email: string;
-    provider: string;
-    linkedin: string | null;
-    lattes_id: string | null;
-    orcid: string | null;
-    ramal: string | null;
-    photo_url: string | null;
-    background_url: string | null;
-    matricula: string | null;
-    verify: boolean;
-    institution_id: UUID;
-  };
+  user: UserDTO;
   catalog_id: UUID;
   created_at: string;
-
-
-
-  
 };
 
-type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string; };
+type CatalogImage = { id: UUID; catalog_id: UUID; file_path: string };
+
+export interface UserDTO {
+  id: UUID;
+  username: string;
+  email: string;
+  provider: string;
+  linkedin: string | null;
+  lattes_id: string | null;
+  orcid: string | null;
+  ramal: string | null;
+  photo_url: string | null;
+  background_url: string | null;
+  matricula: string | null;
+  verify: boolean;
+  institution_id: UUID;
+}
 
 export type CatalogEntry = {
   situation: string;
   conservation_status: string;
   description: string;
+  current_workflow_status: string;
   id: UUID;
   asset: CatalogAsset;
-  user: WorkflowHistoryItem["user"];
+  user: UserDTO;
   location: CatalogAsset["location"];
   images: CatalogImage[];
   workflow_history: WorkflowHistoryItem[];
@@ -103,17 +115,17 @@ type ParentActions = {
   handlePutItem?: (patrimonio_id: string, verificado: boolean) => Promise<void>;
   viewCount?: number;
   onPromptDelete?: () => void; // abre diálogo de deletar no pai
-  onPromptMove?: () => void;   // abre diálogo de movimentar no pai
+  onPromptMove?: () => void; // abre diálogo de movimentar no pai
 };
 
 type Props = ParentActions & {
   entry: CatalogEntry;
   index: number;
-  isImage: boolean
-  draggableId: string
+  isImage: boolean;
+  draggableId: string;
 };
 
-export function CardItemDropdown({
+export const CardItemDropdown = React.memo(function CardItemDropdown({
   entry,
   index,
   isFavorite,
@@ -123,37 +135,36 @@ export function CardItemDropdown({
   onPromptDelete,
   onPromptMove,
   isImage,
-  draggableId
+  draggableId,
 }: Props) {
-  // (se precisar de algo do contexto)
   useContext(UserContext);
 
   return (
-   <Draggable draggableId={draggableId} index={index}>
-    {(prov, snap) => (
-      <div
-        ref={prov.innerRef}
-        {...prov.draggableProps}
-        {...prov.dragHandleProps}
-        className={`${snap.isDragging ? "" : ""}`}
-        style={{
-          ...prov.draggableProps.style,
-          pointerEvents: snap.isDragging ? 'none' : 'auto',
-        }}
-      >
-        <ItemPatrimonioKanban
-          key={entry.id}
-          {...entry}
-          isFavorite={isFavorite}
-          onToggleFavorite={onToggleFavorite}
-          handlePutItem={handlePutItem}
-          viewCount={viewCount}
-          onPromptDelete={onPromptDelete}
-          onPromptMove={onPromptMove}
-          isImage={isImage}
-        />
-      </div>
-    )}
-  </Draggable>
+    <Draggable draggableId={draggableId} index={index}>
+      {(prov, snap) => (
+        <div
+          ref={prov.innerRef}
+          {...prov.draggableProps}
+          {...prov.dragHandleProps}
+          className={`${snap.isDragging ? "" : ""}`}
+          style={{
+            ...prov.draggableProps.style,
+            pointerEvents: snap.isDragging ? "none" : "auto",
+          }}
+        >
+          <ItemPatrimonioKanban
+            key={entry.id}
+            {...entry}
+            isFavorite={isFavorite}
+            onToggleFavorite={onToggleFavorite}
+            handlePutItem={handlePutItem}
+            viewCount={viewCount}
+            onPromptDelete={onPromptDelete}
+            onPromptMove={onPromptMove}
+            isImage={isImage}
+          />
+        </div>
+      )}
+    </Draggable>
   );
-}
+});

@@ -1,7 +1,5 @@
 // src/pages/vitrine/ItensVitrine.tsx
 import { Helmet } from "react-helmet";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import {
   ChevronDown,
   ChevronLeft,
@@ -25,6 +23,10 @@ import {
   Loader,
   ListTodo,
   Eye,
+  LucideAlarmClockOff,
+  CalendarCheck,
+  Calendar,
+  BookMarked,
 } from "lucide-react";
 import {
   Select,
@@ -84,9 +86,9 @@ import { RoleMembers } from "../cargos-funcoes/components/role-members";
 import { usePermissions } from "../../permissions";
 import { JUSTIFICATIVAS_DESFAZIMENTO } from "./JUSTIFICATIVAS_DESFAZIMENTO";
 import { handleDownloadXlsx } from "./handle-download";
-import { ItemPatrimonioKanban } from "../../homepage/components/item-patrimonio-kanban";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import { useIsMobile } from "../../../hooks/use-mobile";
+import { UserDTO } from "../audiovisual/audiovisual";
 
 /* ========================= Tipos do backend ========================= */
 type UUID = string;
@@ -220,11 +222,12 @@ export type CatalogEntry = {
   description: string;
   id: UUID;
   asset: CatalogAsset;
-  user: WorkflowHistoryItem["user"];
+  user: UserDTO;
   location: CatalogAsset["location"];
   images: CatalogImage[];
   workflow_history: WorkflowHistoryItem[];
   created_at: string;
+  current_workflow_status: string;
 };
 
 type CatalogResponse = {
@@ -306,16 +309,6 @@ const COLUMN_RULES: Record<string, ColumnRule> = {
   DESFAZIMENTO: { requireJustification: true },
 };
 
-/* ========================= Utils de board ========================= */
-const lastWorkflow = (entry: CatalogEntry): WorkflowHistoryItem | undefined => {
-  const hist = entry.workflow_history ?? [];
-  if (!hist.length) return undefined;
-  return hist[0];
-};
-
-const codeFrom = (e: CatalogEntry) =>
-  [e?.asset?.asset_code, e?.asset?.asset_check_digit].filter(Boolean).join("-");
-
 /* ========================= Combobox ========================= */
 export type ComboboxItem = { id: UUID; code?: string; label: string };
 
@@ -352,7 +345,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className={
-            triggerClassName ?? isMobile
+            (triggerClassName ?? isMobile)
               ? "w-[220px] min-w-[220px] justify-between"
               : "w-[280px] min-w-[280px] justify-between"
           }
@@ -415,6 +408,7 @@ export function ItensVitrine() {
   const { urlGeral } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
@@ -456,10 +450,29 @@ export function ItensVitrine() {
   const [sectors, setSectors] = useState<SectorDTO[]>([]);
   const [locations, setLocations] = useState<LocationDTO[]>([]);
 
-  const [unitId, setUnitId] = useState<UUID | null>(null);
-  const [agencyId, setAgencyId] = useState<UUID | null>(null);
-  const [sectorId, setSectorId] = useState<UUID | null>(null);
-  const [locationId, setLocationId] = useState<UUID | null>(null);
+  // Inicializa os estados já lendo a URL de forma síncrona
+  const [materialId, setMaterialId] = useState<UUID | null>(() =>
+    params.get("material_id"),
+  );
+  const [guardianId, setGuardianId] = useState<UUID | null>(() =>
+    params.get("legal_guardian_id"),
+  );
+  const [unitId, setUnitId] = useState<UUID | null>(() =>
+    params.get("unit_id"),
+  );
+  const [agencyId, setAgencyId] = useState<UUID | null>(() =>
+    params.get("agency_id"),
+  );
+  const [sectorId, setSectorId] = useState<UUID | null>(() =>
+    params.get("sector_id"),
+  );
+  const [locationId, setLocationId] = useState<UUID | null>(() =>
+    params.get("location_id"),
+  );
+
+  const initialQ = params.get("q") ?? "";
+  const [q, setQ] = useState(initialQ);
+  const [debouncedQ, setDebouncedQ] = useState(initialQ); // Já inicializa o debounced certo para não atrasar 1 segundo
 
   // Fetch listas hierarquia
   useEffect(() => {
@@ -507,7 +520,7 @@ export function ItensVitrine() {
         setLoadingAgencies(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchSectors = useCallback(
@@ -534,7 +547,7 @@ export function ItensVitrine() {
         setLoadingSectors(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   const fetchLocations = useCallback(
@@ -561,7 +574,7 @@ export function ItensVitrine() {
         setLoadingLocations(false);
       }
     },
-    [urlGeral, token]
+    [urlGeral, token],
   );
 
   // Cascata
@@ -591,14 +604,10 @@ export function ItensVitrine() {
 
   const [tab, setTab] = useState<BoardKind>("desfazimento");
   const isMobile = useIsMobile();
-  const [showFilters, setShowFilters] = useState(isMobile ? false : true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
-  const [materialId, setMaterialId] = useState<UUID | null>(null);
-  const [guardianId, setGuardianId] = useState<UUID | null>(null);
-  const [q, setQ] = useState("");
-  const [debouncedQ, setDebouncedQ] = useState("");
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -611,13 +620,12 @@ export function ItensVitrine() {
   // Catálogo (agora organizado por coluna)
   const [loading, setLoading] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
-  const [entries, setEntries] = useState<CatalogEntry[]>([]);
 
   const columns = useMemo(
     () => WORKFLOWS[tab].map((c) => ({ ...c, key: (c.key ?? "").trim() })),
-    [tab]
+    [tab],
   );
 
   const [board, setBoard] = useState<Record<string, CatalogEntry[]>>({});
@@ -697,13 +705,10 @@ export function ItensVitrine() {
     string,
     CatalogEntry[]
   > | null>(null);
-  const [snapshotEntries, setSnapshotEntries] = useState<CatalogEntry[] | null>(
-    null
-  );
 
   // Paginação - agora com offset por coluna
   // Paginação
-  const PAGE_SIZE = 24;
+  const PAGE_SIZE = 10;
   const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 
@@ -793,12 +798,15 @@ export function ItensVitrine() {
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
         if (debouncedQ) params.set("q", debouncedQ);
-        const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const res = await fetch(
+          `${urlGeral}catalog/cards/?${params.toString()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         if (!res.ok) throw new Error();
 
@@ -809,37 +817,26 @@ export function ItensVitrine() {
         if (typeof json.total === "number") {
           setTotalByCol(
             (prev) =>
-              ({ ...prev, [workflowStatus as string]: json.total } as Record<
+              ({ ...prev, [workflowStatus as string]: json.total }) as Record<
                 string,
                 number
-              >)
+              >,
           );
         }
 
-        // Atualiza entries globais e board
+        // Atualiza board
         if (append) {
           // Adiciona aos existentes
           setBoard((prev) => ({
             ...prev,
             [workflowStatus]: [...(prev[workflowStatus] ?? []), ...newEntries],
           }));
-          setEntries((prev) => {
-            const existingIds = new Set(prev.map((e) => e.id));
-            const filtered = newEntries.filter((e) => !existingIds.has(e.id));
-            return [...prev, ...filtered];
-          });
         } else {
           // Substitui
           setBoard((prev) => ({
             ...prev,
             [workflowStatus]: newEntries,
           }));
-          setEntries((prev) => {
-            const otherCols = prev.filter(
-              (e) => lastWorkflow(e)?.workflow_status !== workflowStatus
-            );
-            return [...otherCols, ...newEntries];
-          });
         }
       } catch (err) {
         console.error("Erro ao buscar coluna:", err);
@@ -859,37 +856,34 @@ export function ItensVitrine() {
       locationId,
       PAGE_SIZE,
       debouncedQ,
-    ]
+    ],
   );
 
   // Fetch inicial: busca todas as colunas
-const fetchAllColumns = useCallback(async () => {
-  setLoading(true);
-  setBoard({});
-  setEntries([]);
+  const fetchAllColumns = useCallback(async () => {
+    setLoading(true);
+    setBoard({});
 
-  try {
+    try {
+      // 1. Criamos um array de Promessas (requests iniciados simultaneamente)
+      const promises = columns.map((col) => {
+        const key = (col.key ?? "").trim();
+        // Se não tiver chave, retornamos uma promessa vazia resolvida para não quebrar o Promise.all
+        if (!key) return Promise.resolve();
+        // Dispara a requisição e retorna a promessa dela
+        return fetchColumnData(key, 0, false);
+      });
 
-    // 1. Criamos um array de Promessas (requests iniciados simultaneamente)
-    const promises = columns.map((col) => {
-      const key = (col.key ?? "").trim();
-      // Se não tiver chave, retornamos uma promessa vazia resolvida para não quebrar o Promise.all
-      if (!key) return Promise.resolve();
-      // Dispara a requisição e retorna a promessa dela
-      return fetchColumnData(key, 0, false);
-    });
+      await Promise.all(promises);
 
-    await Promise.all(promises);
-
-    await fetchStatusCounts();
-    
-  } catch (error) {
-    console.error("Erro no carregamento inicial:", error);
-    // Opcional: toast.error("Erro ao carregar o quadro");
-  } finally {
-    setLoading(false);
-  }
-}, [columns, fetchColumnData, fetchStatusCounts]);
+      await fetchStatusCounts();
+    } catch (error) {
+      console.error("Erro no carregamento inicial:", error);
+      // Opcional: toast.error("Erro ao carregar o quadro");
+    } finally {
+      setLoading(false);
+    }
+  }, [columns, fetchColumnData, fetchStatusCounts]);
 
   useEffect(() => {
     setExpandedColumn(null);
@@ -898,7 +892,7 @@ const fetchAllColumns = useCallback(async () => {
 
   // Atualiza URL com filtros
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(window.location.search);
     if (materialId) params.set("material_id", materialId);
     else params.delete("material_id");
     if (guardianId) params.set("legal_guardian_id", guardianId);
@@ -913,10 +907,10 @@ const fetchAllColumns = useCallback(async () => {
     else params.delete("location_id");
     if (debouncedQ) params.set("q", debouncedQ);
     else params.delete("q");
-    navigate(
-      { pathname: location.pathname, search: params.toString() },
-      { replace: true }
-    );
+
+    const newSearch = params.toString();
+    const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+    window.history.replaceState(null, "", newUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     materialId,
@@ -928,47 +922,10 @@ const fetchAllColumns = useCallback(async () => {
     debouncedQ,
   ]);
 
-  // Filtro q (client) - aplicado sobre o board já carregado
-  // Filtro q (client) - aplicado sobre o board já carregado
-  const filteredBoard = useMemo(() => {
-    if (!debouncedQ.trim()) return board;
-
-    const term = debouncedQ.trim().toLowerCase();
-    const filtered: Record<string, CatalogEntry[]> = {};
-
-    for (const [key, items] of Object.entries(board)) {
-      // Remove duplicados antes de filtrar
-      const uniqueItems = items.filter(
-        (item, index, self) => index === self.findIndex((t) => t.id === item.id)
-      );
-
-      filtered[key] = uniqueItems.filter((e) => {
-        const code = codeFrom(e);
-        const haystack = [
-          code,
-          e?.asset?.atm_number,
-          e?.asset?.asset_description,
-          e?.asset?.material?.material_name,
-          e?.asset?.item_brand,
-          e?.asset?.item_model,
-          e?.asset?.serial_number,
-          e?.description,
-          e?.asset?.legal_guardian?.legal_guardians_name,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(term);
-      });
-    }
-
-    return filtered;
-  }, [board, q]);
-
   const postWorkflowChange = async (
     entry: CatalogEntry | undefined,
     toKey: string | undefined,
-    detailsExtra: Record<string, any>
+    detailsExtra: Record<string, any>,
   ) => {
     if (!entry || !toKey) return false;
     try {
@@ -1010,7 +967,7 @@ const fetchAllColumns = useCallback(async () => {
 
   const EDGE_PX = 140;
   const MAX_STEP = 40;
-  const BASE_STEP = 12;
+  const BASE_STEP = 10;
 
   const autoScrollTick = useCallback(() => {
     if (!draggingRef.current) return stopAutoScrollLoop();
@@ -1102,7 +1059,6 @@ const fetchAllColumns = useCallback(async () => {
 
     // snapshots para rollback
     const prevBoard = JSON.parse(JSON.stringify(board));
-    const prevEntries = [...entries];
 
     const optimisticHistory: WorkflowHistoryItem = {
       id: crypto.randomUUID(),
@@ -1120,7 +1076,7 @@ const fetchAllColumns = useCallback(async () => {
 
     // ✅ atualização otimista SEM depender de índice
     const newFromBoard = (board[fromKey] ?? []).filter(
-      (x) => x.id !== entry.id
+      (x) => x.id !== entry.id,
     );
     const newToBoard = [
       optimisticEntry,
@@ -1133,15 +1089,9 @@ const fetchAllColumns = useCallback(async () => {
       [toKey]: newToBoard,
     }));
 
-    setEntries((old) => {
-      const filtered = old.filter((it) => it.id !== entry.id);
-      return [...filtered, optimisticEntry];
-    });
-
     // modal de justificativa?
     if (needs.requireJustification || needs.extraFields?.length) {
       setSnapshotBoard(prevBoard);
-      setSnapshotEntries(prevEntries);
       setMoveTarget({ entry: optimisticEntry, fromKey, toKey });
       setMoveModalOpen(true);
       return;
@@ -1154,7 +1104,6 @@ const fetchAllColumns = useCallback(async () => {
     postWorkflowChange(optimisticEntry, toKey, {}).then((ok) => {
       if (!ok) {
         setBoard(prevBoard);
-        setEntries(prevEntries);
         adjustCountsOnMove(toKey, fromKey); // rollback contadores
       }
     });
@@ -1178,19 +1127,17 @@ const fetchAllColumns = useCallback(async () => {
       extra[f.name] = extraValues[f.name] ?? "";
 
     const prevBoard = snapshotBoard ?? board;
-    const prevEntries = snapshotEntries ?? entries;
 
     setPosting(true);
     const ok = await postWorkflowChange(
       moveTarget.entry,
       moveTarget.toKey,
-      extra
+      extra,
     );
     setPosting(false);
 
     if (!ok) {
       setBoard(prevBoard);
-      setEntries(prevEntries);
       closingActionRef.current = "cancel";
       setMoveModalOpen(false);
       return;
@@ -1201,7 +1148,6 @@ const fetchAllColumns = useCallback(async () => {
 
     closingActionRef.current = "confirm";
     setSnapshotBoard(null);
-    setSnapshotEntries(null);
     setMoveModalOpen(false);
     setMoveTarget({});
     setJustificativa("");
@@ -1214,9 +1160,8 @@ const fetchAllColumns = useCallback(async () => {
       const reason = closingActionRef.current;
       closingActionRef.current = null;
 
-      if (reason !== "confirm" && snapshotBoard && snapshotEntries) {
+      if (reason !== "confirm" && snapshotBoard) {
         setBoard(snapshotBoard);
-        setEntries(snapshotEntries);
       }
 
       setMoveModalOpen(false);
@@ -1224,7 +1169,6 @@ const fetchAllColumns = useCallback(async () => {
       setJustificativa("");
       setExtraValues({});
       setSnapshotBoard(null);
-      setSnapshotEntries(null);
       setSelectedPreset("");
     } else {
       setMoveModalOpen(true);
@@ -1250,17 +1194,45 @@ const fetchAllColumns = useCallback(async () => {
     setLocations([]);
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const u = params.get("unit_id");
-    const a = params.get("agency_id");
-    const s = params.get("sector_id");
-    const l = params.get("location_id");
-    if (u) setUnitId(u);
-    if (a) setAgencyId(a);
-    if (s) setSectorId(s);
-    if (l) setLocationId(l);
-  }, []); // eslint-disable-line
+  const unitItems = useMemo(
+    () =>
+      (units ?? []).map((u) => ({
+        id: u.id,
+        code: u.unit_code,
+        label: u.unit_name || u.unit_code,
+      })),
+    [units],
+  );
+
+  const agencyItems = useMemo(
+    () =>
+      (agencies ?? []).map((a) => ({
+        id: a.id,
+        code: a.agency_code,
+        label: a.agency_name || a.agency_code,
+      })),
+    [agencies],
+  );
+
+  const sectorItems = useMemo(
+    () =>
+      (sectors ?? []).map((s) => ({
+        id: s.id,
+        code: s.sector_code,
+        label: s.sector_name || s.sector_code,
+      })),
+    [sectors],
+  );
+
+  const locationItems = useMemo(
+    () =>
+      (locations ?? []).map((l) => ({
+        id: l.id,
+        code: l.location_code,
+        label: l.location_name || l.location_code,
+      })),
+    [locations],
+  );
 
   const materialItems: ComboboxItem[] = (materials ?? []).map((m) => ({
     id: m.id,
@@ -1338,7 +1310,17 @@ const fetchAllColumns = useCallback(async () => {
         const t = await r.text().catch(() => "");
         throw new Error(`Falha ao excluir (${r.status}): ${t}`);
       }
-      setEntries((prev) => prev.filter((it) => it.id !== deleteTargetId));
+
+      setBoard((prevBoard) => {
+        const newBoard = { ...prevBoard };
+        Object.keys(newBoard).forEach((key) => {
+          newBoard[key] = newBoard[key].filter(
+            (it) => it.id !== deleteTargetId,
+          );
+        });
+        return newBoard;
+      });
+
       toast("Item excluído com sucesso.");
       closeDelete();
     } catch (e: any) {
@@ -1354,7 +1336,14 @@ const fetchAllColumns = useCallback(async () => {
     const handler = (e: any) => {
       const id = e?.detail?.id as string | undefined;
       if (!id) return;
-      setEntries((prev) => prev.filter((it) => it.id !== id));
+
+      setBoard((prevBoard) => {
+        const newBoard = { ...prevBoard };
+        Object.keys(newBoard).forEach((key) => {
+          newBoard[key] = newBoard[key].filter((it) => it.id !== id);
+        });
+        return newBoard;
+      });
     };
     window.addEventListener("catalog:deleted" as any, handler as any);
     return () =>
@@ -1370,39 +1359,67 @@ const fetchAllColumns = useCallback(async () => {
       const newStatus = detail?.newStatus?.trim();
       if (!id || !newStatus) return;
 
-      setEntries((prev) => {
+      setBoard((prevBoard) => {
         let touched = false;
-        const next = prev.map((it) => {
-          if (it.id !== id) return it;
-          const current = it.workflow_history?.[0]?.workflow_status?.trim();
-          if (current === newStatus) return it;
-          touched = true;
+        const newBoard = { ...prevBoard };
 
+        // Find the item and remove it from its current column if it exists
+        let foundItem: CatalogEntry | null = null;
+        Object.keys(newBoard).forEach((key) => {
+          const index = newBoard[key].findIndex((it) => it.id === id);
+          if (index !== -1) {
+            foundItem = newBoard[key][index];
+
+            const currentStatus =
+              foundItem.workflow_history?.[0]?.workflow_status?.trim();
+            if (currentStatus === newStatus) {
+              // Status is already the same, no need to touch it
+              foundItem = null;
+            } else {
+              touched = true;
+              // Remove from current list
+              newBoard[key] = newBoard[key].filter((it) => it.id !== id);
+            }
+          }
+        });
+
+        if (touched && foundItem) {
           const newHistoryItem: WorkflowHistoryItem = {
             id:
               typeof crypto !== "undefined" && "randomUUID" in crypto
                 ? crypto.randomUUID()
                 : `${Date.now()}-${Math.random()}`,
-            catalog_id: it.id,
+            catalog_id: (foundItem as CatalogEntry).id,
             workflow_status: newStatus,
             detail: {},
             created_at: new Date().toISOString(),
-            user: it.user ?? null,
+            user: (foundItem as CatalogEntry).user ?? null,
           };
 
-          return {
-            ...it,
-            workflow_history: [newHistoryItem, ...(it.workflow_history ?? [])],
+          const updatedItem = {
+            ...(foundItem as CatalogEntry),
+            workflow_history: [
+              newHistoryItem,
+              ...((foundItem as CatalogEntry).workflow_history ?? []),
+            ],
           };
-        });
-        return touched ? next : prev;
+
+          // Ensure the destination column array exists
+          if (!newBoard[newStatus]) {
+            newBoard[newStatus] = [];
+          }
+          // Add to the new column
+          newBoard[newStatus] = [updatedItem, ...newBoard[newStatus]];
+        }
+
+        return touched ? newBoard : prevBoard;
       });
     };
     window.addEventListener("catalog:workflow-updated" as any, handler as any);
     return () =>
       window.removeEventListener(
         "catalog:workflow-updated" as any,
-        handler as any
+        handler as any,
       );
   }, []);
 
@@ -1434,6 +1451,7 @@ const fetchAllColumns = useCallback(async () => {
   const [selectedPreset, setSelectedPreset] = useState<string>("");
 
   const downloadXlsx = async (colKey?: string, onlyVisible = false) => {
+    const allEntries = Object.values(board).flat();
     let itemsToExport: CatalogEntry[] = [];
     if (colKey) {
       const all = board[colKey] ?? [];
@@ -1441,7 +1459,7 @@ const fetchAllColumns = useCallback(async () => {
       itemsToExport =
         onlyVisible && isExpanded ? all.slice(0, expandedVisible) : all;
     } else {
-      itemsToExport = entries;
+      itemsToExport = allEntries;
     }
 
     if (!Array.isArray(itemsToExport)) {
@@ -1684,11 +1702,7 @@ const fetchAllColumns = useCallback(async () => {
                     <Separator className="h-8" orientation="vertical" />
 
                     <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
+                      items={unitItems}
                       value={unitId}
                       onChange={(v) => setUnitId(v)}
                       onSearch={setUnitQ}
@@ -1697,11 +1711,7 @@ const fetchAllColumns = useCallback(async () => {
                     />
 
                     <Combobox
-                      items={(agencies ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
+                      items={agencyItems}
                       value={agencyId}
                       onChange={(v) => setAgencyId(v)}
                       onSearch={setAgencyQ}
@@ -1711,11 +1721,7 @@ const fetchAllColumns = useCallback(async () => {
                     />
 
                     <Combobox
-                      items={(sectors ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
+                      items={sectorItems}
                       value={sectorId}
                       onChange={(v) => setSectorId(v)}
                       onSearch={setSectorQ}
@@ -1725,11 +1731,7 @@ const fetchAllColumns = useCallback(async () => {
                     />
 
                     <Combobox
-                      items={(locations ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
+                      items={locationItems}
                       value={locationId}
                       onChange={(v) => setLocationId(v)}
                       onSearch={setLocationQ}
@@ -1758,13 +1760,6 @@ const fetchAllColumns = useCallback(async () => {
                 <ChevronRight size={16} />
               </Button>
             </div>
-
-            {hasCargosFuncoes && (
-              <RoleMembers
-                roleId={ROLE_COMISSAO_ID}
-                title="Comissão de desfazimento"
-              />
-            )}
 
             {expandedColumn === null && (
               <Button
@@ -2026,7 +2021,7 @@ const fetchAllColumns = useCallback(async () => {
                                         <CardItemDropdown
                                           entry={entry}
                                           index={idx}
-                                          draggableId={entry.id} // ADICIONAR esta prop
+                                          draggableId={entry.id}
                                           isImage={isImage}
                                           onPromptDelete={() =>
                                             openDelete(entry.id)
@@ -2291,22 +2286,39 @@ const fetchAllColumns = useCallback(async () => {
           </div>
         ) : (
           <div className="m-0">
-            {columns.map((col) => {
-              if (expandedColumn !== col.key) return null;
+            {(() => {
+              if (!expandedColumn) return null;
 
-              const items = board[col.key] ?? [];
+              const items = board[expandedColumn] || [];
               const slice = items.slice(0, expandedVisible);
-              const meta = WORKFLOW_STATUS_META[col.key] ?? {
-                Icon: HelpCircle,
-                colorClass: "text-zinc-500",
-              };
-              const { Icon } = meta;
+              const totalForCol = statusCounts[expandedColumn] ?? items.length;
 
-              // 👇 NOVO
-              const totalForCol = statusCounts[col.key] ?? items.length;
+              // Reutilizando a função de mapeamento de meta-dados
+              const getColumnMeta = (name: string) => {
+                switch (name) {
+                  case "Disponível":
+                    return { Icon: BookMarked, colorClass: "text-green-600" };
+                  case "Pedido":
+                    return { Icon: Calendar, colorClass: "text-blue-400" };
+                  case "Emprestado":
+                    return { Icon: CalendarCheck, colorClass: "text-blue-600" };
+                  case "Atrasado":
+                    return {
+                      Icon: LucideAlarmClockOff,
+                      colorClass: "text-red-500",
+                    };
+                  case "Manutenção":
+                    return { Icon: Wrench, colorClass: "text-amber-500" };
+                  default:
+                    return { Icon: HelpCircle, colorClass: "text-zinc-500" };
+                }
+              };
+
+              const { Icon, colorClass } = getColumnMeta(expandedColumn);
 
               return (
-                <div key={col.key}>
+                <div key={expandedColumn} className="m-0">
+                  {/* Cabeçalho Expandido */}
                   <div
                     className={
                       isMobile
@@ -2314,23 +2326,22 @@ const fetchAllColumns = useCallback(async () => {
                         : "flex items-center justify-between mb-4"
                     }
                   >
-                    {isMobile ? (
+                    {isMobile && (
                       <div className="w-full flex justify-start mb-8 pl-1">
                         <Button
                           size="sm"
                           onClick={() => setExpandedColumn(null)}
                           className="self-start"
                         >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
+                          <ChevronLeft size={16} className="mr-1" /> Voltar ao
+                          quadro
                         </Button>
                       </div>
-                    ) : (
-                      <></>
                     )}
+
                     <div className="flex items-center gap-1 mr-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Icon size={16} />
+                        <Icon size={16} className={colorClass} />
                         <h2
                           className={
                             isMobile
@@ -2338,7 +2349,7 @@ const fetchAllColumns = useCallback(async () => {
                               : "text-lg font-semibold"
                           }
                         >
-                          {col.name}
+                          {expandedColumn}
                         </h2>
                       </div>
                       <Badge
@@ -2348,9 +2359,11 @@ const fetchAllColumns = useCallback(async () => {
                         {totalForCol}
                       </Badge>
                     </div>
+
+                    {/* Ações / Botões */}
                     <div
                       className={
-                        isMobile ? "flex flex-row  gap-3 mt-4 " : "flex gap-3"
+                        isMobile ? "flex flex-row gap-3 mt-4" : "flex gap-3"
                       }
                     >
                       <DownloadPdfButton
@@ -2367,118 +2380,63 @@ const fetchAllColumns = useCallback(async () => {
                         method="catalog"
                         size="sm"
                       />
+
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => downloadXlsx(col.key)}
+                        onClick={() => downloadXlsx?.(expandedColumn)}
                       >
-                        <Download size={16} />
-                        Baixar csv
+                        <Download size={16} className="mr-2" /> Baixar csv
                       </Button>
-                      {isMobile ? (
-                        <></>
-                      ) : (
+
+                      {!isMobile && (
                         <Button
                           size="default"
                           onClick={() => setExpandedColumn(null)}
                         >
-                          <ChevronLeft size={16} />
-                          Voltar ao quadro
+                          <ChevronLeft size={16} className="mr-1" /> Voltar ao
+                          quadro
                         </Button>
                       )}
                     </div>
                   </div>
 
-                  {(loading || loadingColumns[col.key]) && !items.length ? (
+                  {/* Esqueletos de Carregamento */}
+                  {loading && !items.length ? (
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-                      <Skeleton className="aspect-square w-full rounded-md" />
-
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="aspect-square w-full rounded-md" />
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <Skeleton
+                          key={i}
+                          className="aspect-square w-full rounded-md"
+                        />
+                      ))}
                     </div>
                   ) : null}
 
+                  {/* Grid de Itens */}
                   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {slice.map((item) => (
                       <ItemPatrimonio
                         key={item.id}
-                        {...item}
+                        {...item} // Passando os dados do catálogo extraídos do LoanableItem
                         onPromptDelete={() => openDelete(item.id)}
                       />
                     ))}
                   </div>
 
-                  {(() => {
-                    const totalFromTotals = totalByCol[col.key];
-                    const totalFromStats = statusCounts[col.key];
-
-                    // Tenta usar algum total "confiável"
-                    let effectiveTotal: number | undefined;
-                    if (
-                      typeof totalFromTotals === "number" &&
-                      totalFromTotals >= items.length
-                    ) {
-                      effectiveTotal = totalFromTotals;
-                    } else if (
-                      typeof totalFromStats === "number" &&
-                      totalFromStats >= items.length
-                    ) {
-                      effectiveTotal = totalFromStats;
-                    }
-
-                    const loaded = items.length;
-                    const visible = slice.length;
-
-                    let hasMore = false;
-
-                    // 1) Já tem itens carregados além dos visíveis (só mostrar mais do que já veio do backend)
-                    if (loaded > visible) {
-                      hasMore = true;
-                    }
-                    // 2) Temos um total confiável vindo da API: compara direto
-                    else if (effectiveTotal != null) {
-                      hasMore = loaded < effectiveTotal;
-                    }
-                    // 3) Fallback: não sabemos o total, mas
-                    //    - não tem filtro de texto
-                    //    - quantidade é múltiplo de PAGE_SIZE (padrão de paginação)
-                    else if (!q.trim()) {
-                      hasMore = loaded > 0 && loaded % PAGE_SIZE === 0;
-                    }
-
-                    if (!hasMore) return null;
-
-                    return hasMore ? (
-                      <div className="flex justify-center mt-8">
-                        <Button
-                          onClick={showMoreExpanded}
-                          disabled={loadingColumns[col.key]}
-                        >
-                          {loadingColumns[col.key] ? (
-                            <>
-                              <Loader size={16} className="animate-spin" />
-                              Carregando...
-                            </>
-                          ) : (
-                            <>
-                              <Plus size={16} />
-                              Mostrar mais
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : null;
-                  })()}
+                  {/* Botão Mostrar Mais (Simplificado) */}
+                  {totalForCol > items.length ? (
+                    <div className="flex justify-center mt-8">
+                      <Button onClick={showMoreExpanded}>
+                        <Plus size={16} className="mr-2" /> Mostrar mais
+                      </Button>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
                 </div>
               );
-            })}
+            })()}
           </div>
         )}
       </main>
@@ -2531,7 +2489,7 @@ const fetchAllColumns = useCallback(async () => {
                         onValueChange={(val) => {
                           setSelectedPreset(val);
                           const preset = JUSTIFICATIVAS_DESFAZIMENTO.find(
-                            (p) => p.id === val
+                            (p) => p.id === val,
                           );
                           if (preset && moveTarget.entry) {
                             setJustificativa(preset.build(moveTarget.entry));

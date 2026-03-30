@@ -234,7 +234,7 @@ function ItemPatrimonioBase(props: Props) {
   const isFavorite = !!props.isFavorite;
   const diff = useMemo(
     () => calculateDifference(props.created_at),
-    [props.created_at]
+    [props.created_at],
   );
 
   const materialNome =
@@ -244,7 +244,7 @@ function ItemPatrimonioBase(props: Props) {
 
   const assetCode = props.asset?.asset_code ?? "";
   const assetDgv = props.asset?.asset_check_digit ?? "";
-  const csvCodTrimmed = (props.asset.csv_code || "").trim();
+  const csvCodTrimmed = (props.asset?.csv_code || "").trim();
 
   // Workflows (mesma lógica original)
   const firstStatus = props.workflow_history?.[0]?.workflow_status ?? "";
@@ -320,7 +320,7 @@ function ItemPatrimonioBase(props: Props) {
 
             <div className="flex gap-2 items-center">
               {/* Editar (somente dono ou permissão) */}
-              {(props.user.id === user?.id || hasCatalogo) &&
+              {(props.user?.id === user?.id || hasCatalogo) &&
                 workflowReview && (
                   <Button
                     onClick={(event) => {
@@ -336,7 +336,7 @@ function ItemPatrimonioBase(props: Props) {
                 )}
 
               {/* Deletar (somente dono ou permissão) */}
-              {(props.user.id === user?.id || hasCatalogo) &&
+              {(props.user?.id === user?.id || hasCatalogo) &&
                 workflowReview &&
                 props.onPromptDelete && (
                   <Button
@@ -485,7 +485,7 @@ function ItemPatrimonioBase(props: Props) {
                     className="h-6 w-6 rounded-md shrink-0"
                   >
                     <AvatarImage
-                      src={`${urlGeral}user/upload/${props.user.id}/icon`}
+                      src={`${urlGeral}user/upload/${props.user?.id}/icon`}
                     />
                     <AvatarFallback>
                       <User size={12} />
@@ -493,7 +493,7 @@ function ItemPatrimonioBase(props: Props) {
                   </Avatar>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{props.user.username}</p>
+                  <p>{props.user?.username || ""}</p>
                 </TooltipContent>
               </Tooltip>
             </div>

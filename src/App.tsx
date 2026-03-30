@@ -84,7 +84,7 @@ function App() {
   const storedIsCollapsed = localStorage.getItem("isCollapsed");
   const [searchType, setSearchType] = useState("cod");
   const [isCollapsed, setIsCollapsed] = useState(
-    storedIsCollapsed ? JSON.parse(storedIsCollapsed) : true
+    storedIsCollapsed ? JSON.parse(storedIsCollapsed) : true,
   );
 
   useEffect(() => {
@@ -97,7 +97,7 @@ function App() {
   const [mode, setMode] = useState("user");
 
   const [urlGeral, setUrlGeral] = useState(
-    import.meta.env.VITE_BACKEND_URL || ""
+    import.meta.env.VITE_BACKEND_URL || "",
   );
   const [bens, setBens] = useState<CatalogResponseDTO[]>([]);
   const [role, setRole] = useState("");

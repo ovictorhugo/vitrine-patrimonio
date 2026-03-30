@@ -89,7 +89,7 @@ export function Search() {
     Number(queryUrl.get("offset") || "0")
   );
   const [limit, setLimit] = useState<number>(
-    Number(queryUrl.get("limit") || "24")
+    Number(queryUrl.get("limit") || "12")
   );
 
   const [hasNavigated, setHasNavigated] = useState(false);

@@ -60,7 +60,6 @@ import { FormularioSpStep } from "./steps/formulario-sp.tsx";
 import { TrocarLocalStep } from "./steps/trocar-local.tsx";
 import { LocalStep } from "./steps/local.tsx";
 import { ImagemStep } from "./steps/imagem.tsx";
-import { ArquivosStep } from "./steps/arquivos.tsx";
 import { FinalStep } from "./steps/final.tsx";
 import { useIsMobile } from "../../../hooks/use-mobile.tsx";
 
@@ -181,8 +180,8 @@ function encodeCode128B(text: string) {
     if (cc < 32 || cc > 126) {
       throw new Error(
         `Caractere inválido para Code128B: ${JSON.stringify(
-          ch
-        )} (charCode ${cc})`
+          ch,
+        )} (charCode ${cc})`,
       );
     }
   }
@@ -199,7 +198,7 @@ function encodeCode128B(text: string) {
 function modulesCount(patterns: string[]) {
   return patterns.reduce(
     (acc, p) => acc + p.split("").reduce((a, d) => a + parseInt(d, 10), 0),
-    0
+    0,
   );
 }
 const Barcode128SVG: React.FC<{
@@ -231,7 +230,7 @@ const Barcode128SVG: React.FC<{
     for (const w of widths) {
       if (isBar)
         bars.push(
-          <rect key={`${x}`} x={x} y={0} width={w} height={1} fill="#000" />
+          <rect key={`${x}`} x={x} y={0} width={w} height={1} fill="#000" />,
         );
       x += w;
       isBar = !isBar;
@@ -439,7 +438,7 @@ const PrintableLabel: React.FC<{
 /** Renderiza off-screen e captura com html2canvas */
 async function renderOffscreenAndCapture(
   element: React.ReactElement,
-  opts?: { foreignObjectRendering?: boolean }
+  opts?: { foreignObjectRendering?: boolean },
 ): Promise<HTMLCanvasElement> {
   const container = document.createElement("div");
   container.setAttribute("data-print-container", "true");
@@ -463,7 +462,7 @@ async function renderOffscreenAndCapture(
   root.render(element);
 
   await new Promise((r) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => r(null)))
+    requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
   );
 
   if ((document as any).fonts?.ready) {
@@ -569,7 +568,6 @@ export type StepKey =
   | "trocar-local"
   | "local"
   | "imagens"
-  | "arquivos"
   | "final";
 export type StepDef = { key: StepKey; label: string };
 export type FlowMode = "vitrine" | "desfazimento";
@@ -580,7 +578,6 @@ const getSteps = (mode: FlowMode): StepDef[] =>
         { key: "inicio", label: "Início" },
         { key: "formulario-sp", label: "Formulário" },
         { key: "local", label: "Verificar local" },
-        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ]
@@ -589,7 +586,6 @@ const getSteps = (mode: FlowMode): StepDef[] =>
         { key: "pesquisa", label: "Pesquisa" },
         { key: "formulario", label: "Formulário" },
         { key: "trocar-local", label: "Trocar local" },
-        { key: "arquivos", label: "Arquivos" },
         { key: "imagens", label: "Imagens" },
         { key: "final", label: "Final" },
       ];
@@ -641,10 +637,6 @@ export type StepPropsMap = {
     initialData?: Patrimonio;
   };
   imagens: { imagens?: string[] };
-  arquivos: {
-    docs: File[];
-    initialData?: File[];
-  };
   final: {};
 };
 
@@ -655,7 +647,6 @@ type WizardState = {
     type?: "cod" | "atm" | "nom" | "dsc" | "pes" | "loc";
   };
   informacoes?: Record<string, unknown>;
-  arquivos?: { docs: File[] };
   formulario?: Patrimonio;
   "formulario-sp"?: Patrimonio;
   imagens?: { images_wizard: string[] };
@@ -738,7 +729,7 @@ type SavedLabelItem = {
 export function EmprestimoAudiovisual() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { urlGeral } = useContext(UserContext);
+  const { urlGeral, user } = useContext(UserContext);
 
   /* ---- Wizard state ---- */
   const [flow, setFlow] = useState<FlowMode>("vitrine");
@@ -806,7 +797,7 @@ export function EmprestimoAudiovisual() {
         return shallowEqual(prev, next) ? prev : next;
       });
     },
-    []
+    [],
   );
 
   const setWizardIfChanged = useCallback(
@@ -816,7 +807,7 @@ export function EmprestimoAudiovisual() {
         return shallowEqual(prev, next) ? prev : next;
       });
     },
-    []
+    [],
   );
 
   /* ---- Props por etapa ---- */
@@ -841,10 +832,6 @@ export function EmprestimoAudiovisual() {
         initialData: wizard["formulario-sp"],
       },
       imagens: { imagens: wizard.imagens?.images_wizard },
-      arquivos: {
-        docs: wizard.arquivos?.docs ?? [],
-        initialData: wizard.arquivos?.docs,
-      },
       "trocar-local": {
         flowShort: flow,
         initialData: wizard["trocar-local"],
@@ -853,7 +840,7 @@ export function EmprestimoAudiovisual() {
       },
       final: {},
     }),
-    [wizard, flow, active, pesquisaType]
+    [wizard, flow, active, pesquisaType],
   );
 
   /* ---- sincroniza validações e aba ativa quando o flow muda ---- */
@@ -880,7 +867,7 @@ export function EmprestimoAudiovisual() {
   /* ---- índice e total ---- */
   const idx = useMemo(
     () => STEPS.findIndex((s) => s.key === active),
-    [active, STEPS]
+    [active, STEPS],
   );
   const total = STEPS.length;
   const isLast = idx === total - 1;
@@ -892,7 +879,7 @@ export function EmprestimoAudiovisual() {
 
   const canFinish = useMemo(
     () => STEPS.every((s) => valid[s.key] === true),
-    [STEPS, valid]
+    [STEPS, valid],
   );
 
   const goPrev = useCallback(() => {
@@ -906,10 +893,10 @@ export function EmprestimoAudiovisual() {
   const onValidityChangeFactory = useCallback(
     (key: StepKey) => (v: boolean) => {
       setValidIfChanged((prev) =>
-        prev[key] === v ? prev : { ...prev, [key]: v }
+        prev[key] === v ? prev : { ...prev, [key]: v },
       );
     },
-    [setValidIfChanged]
+    [setValidIfChanged],
   );
 
   const onStateChangeFactory = useCallback(
@@ -933,7 +920,7 @@ export function EmprestimoAudiovisual() {
         return { ...prev, [key]: nextForKey } as WizardState;
       });
     },
-    [setWizardIfChanged]
+    [setWizardIfChanged],
   );
 
   const attachCommon = useCallback(
@@ -944,14 +931,14 @@ export function EmprestimoAudiovisual() {
       onStateChange: onStateChangeFactory(key),
       ...(stepProps as any)[key],
     }),
-    [onValidityChangeFactory, onStateChangeFactory, stepProps, idx]
+    [onValidityChangeFactory, onStateChangeFactory, stepProps, idx],
   );
 
   ///////// FINALIZAR
 
   const pickLocationId = (
     flow: FlowMode,
-    w: WizardState
+    w: WizardState,
   ): string | undefined => {
     const useTroca = (w["trocar-local"]?.isOpen ?? flow !== "vitrine") === true;
 
@@ -969,7 +956,7 @@ export function EmprestimoAudiovisual() {
 
   const buildAssetsPayload = (
     form: Patrimonio,
-    tl?: WizardState["trocar-local"]
+    tl?: WizardState["trocar-local"],
   ) => ({
     bem_cod: form.asset_code || "",
     bem_dgv: form.asset_check_digit || "",
@@ -998,7 +985,7 @@ export function EmprestimoAudiovisual() {
   const uploadImages = async (
     catalogId: string,
     imgs: string[],
-    urlBase: string
+    urlBase: string,
   ) => {
     if (!Array.isArray(imgs) || imgs.length < 4) {
       toast("Você precisa submeter 4 imagens", {
@@ -1021,7 +1008,7 @@ export function EmprestimoAudiovisual() {
       if (!resp.ok) {
         const txt = await resp.text().catch(() => "");
         throw new Error(
-          `Falha ao enviar imagem ${idx + 1}: ${resp.status} ${txt}`
+          `Falha ao enviar imagem ${idx + 1}: ${resp.status} ${txt}`,
         );
       }
     });
@@ -1115,7 +1102,7 @@ export function EmprestimoAudiovisual() {
         if (createAsset.status !== 201) {
           const txt = await createAsset.text();
           throw new Error(
-            `Falha ao criar asset (${createAsset.status}): ${txt}`
+            `Falha ao criar asset (${createAsset.status}): ${txt}`,
           );
         }
 
@@ -1151,89 +1138,38 @@ export function EmprestimoAudiovisual() {
         description: infoAdic?.observacao || "",
       };
 
-      const createCatalog = await fetch(`${urlGeral}catalog/`, {
+      const upAudioVis = await fetch(`${urlGeral}loans/items`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(catalogPayload),
       });
 
-      if (createCatalog.status !== 201) {
-        const txt = await createCatalog.text();
+      if (upAudioVis.status !== 201) {
+        const txt = await upAudioVis.text();
         throw new Error(
-          `Falha ao criar catálogo (${createCatalog.status}): ${txt}`
+          `Falha ao criar catálogo (${upAudioVis.status}): ${txt}`,
         );
       }
 
-      const catalogJson = await createCatalog.json();
-      const catalogId = catalogJson?.id as string | undefined;
-      if (!catalogId) throw new Error("Resposta /catalog/ sem ID.");
 
-      // 5) upload das imagens
-      const ok = await uploadImages(catalogId, imgs, urlGeral);
-      if (!ok) return;
-
-      // 6) upload dos documentos probatórios (se houver)  ⬅ INSERIR DEPOIS DE OBTER catalogId
-      const infoAdicDocs: File[] = (wizard["informacoes-adicionais"]?.arquivos
-        ?.docs ?? []) as File[];
-      if (infoAdicDocs.length > 0) {
-        for (const f of infoAdicDocs) {
-          const fd = new FormData();
-          fd.append("file", f, f.name);
-          // se o backend aceitar metadados, pode incluir (ex.: tipo do documento):
-          // fd.append("kind", "comprovacao");
-
-          const upDoc = await fetch(`${urlGeral}catalog/${catalogId}/files`, {
-            method: "POST",
-            headers: {
-              // ⚠️ NÃO definir Content-Type manualmente ao enviar FormData
-              Authorization: `Bearer ${token}`,
-            },
-            body: fd,
-          });
-
-          if (upDoc.ok) {
-            toast("Documento anexado", {
-              description: "Documento de justificativa atribuido ao item",
-              action: { label: "Fechar", onClick: () => {} },
-            });
-          }
-
-          if (!upDoc.ok) {
-            const txt = await upDoc.text().catch(() => "");
-            throw new Error(
-              `Falha ao subir documento (${upDoc.status}): ${txt}`
-            );
-          }
-        }
-      }
-      const upAudioVis = await fetch(
-        `${urlGeral}catalog/${catalogId}/workflow`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            workflow_status: "AUDIOVISUAL_ANUNCIADO",
-            detail: {},
-          }),
-        }
-      );
-
-      if (upAudioVis.status !== 201) {
+       if (upAudioVis.status !== 201) {
         const txt = await upAudioVis.text();
         throw new Error(
           `Falha ao criar catálogo (${upAudioVis.status}): ${txt}`
         );
       }
 
-      setCreatedAssetId(assetId || null);
-      setCreatedCatalogId(catalogId || null);
+      const catalogJson = await upAudioVis.json();
+      const catalogId = catalogJson?.catalog_id as string | undefined;
+      if (!catalogId) throw new Error("Resposta /catalog/ sem ID.");
+
+      // 5) upload das imagens
+      const ok = await uploadImages(catalogId, imgs, urlGeral);
+      if (!ok) return;
+
       setFinished(true);
       setActive("final");
 
@@ -1270,7 +1206,7 @@ export function EmprestimoAudiovisual() {
       // Render off-screen a etiqueta
       const canvas = await renderOffscreenAndCapture(
         <PrintableLabel data={dataForLabel} sizeKey={selectedSize} />,
-        { foreignObjectRendering: false }
+        { foreignObjectRendering: false },
       );
 
       const imgData = canvas.toDataURL("image/png");
@@ -1289,7 +1225,7 @@ export function EmprestimoAudiovisual() {
       const fullCode = fullCodeFrom(dataForLabel);
       pdf.addImage(imgData, "PNG", x, y, w, h, undefined, "MEDIUM");
       pdf.save(
-        `etiqueta_${fullCode || (dataForLabel as any)?.id || "bem"}.pdf`
+        `etiqueta_${fullCode || (dataForLabel as any)?.id || "bem"}.pdf`,
       );
     } catch (error) {
       console.error("Erro ao gerar PDF da plaqueta:", error);
@@ -1325,7 +1261,7 @@ export function EmprestimoAudiovisual() {
         const { jsPDF } = await import("jspdf");
         const canvas = await renderOffscreenAndCapture(
           <PrintableLabel data={item.data} sizeKey={selectedSize} />,
-          { foreignObjectRendering: false }
+          { foreignObjectRendering: false },
         );
         const imgData = canvas.toDataURL("image/png");
         const { w, h } = SIZE_PRESETS_MM[selectedSize];
@@ -1348,7 +1284,7 @@ export function EmprestimoAudiovisual() {
         toast("Erro ao gerar PDF desta plaqueta.");
       }
     },
-    [selectedSize]
+    [selectedSize],
   );
 
   // Baixa TODAS as plaquetas (grid A4, auto paginate)
@@ -1374,11 +1310,11 @@ export function EmprestimoAudiovisual() {
 
       const cols = Math.max(
         1,
-        Math.floor((pageW - 2 * margin + gap) / (Lw + gap))
+        Math.floor((pageW - 2 * margin + gap) / (Lw + gap)),
       );
       const rows = Math.max(
         1,
-        Math.floor((pageH - 2 * margin + gap) / (Lh + gap))
+        Math.floor((pageH - 2 * margin + gap) / (Lh + gap)),
       );
       const perPage = cols * rows;
 
@@ -1398,7 +1334,7 @@ export function EmprestimoAudiovisual() {
         const item = savedItems[i];
         const canvas = await renderOffscreenAndCapture(
           <PrintableLabel data={item.data} sizeKey={selectedSize} />,
-          { foreignObjectRendering: false }
+          { foreignObjectRendering: false },
         );
         const imgData = canvas.toDataURL("image/png");
         pdf.addImage(imgData, "PNG", x, y, Lw, Lh);
@@ -1414,41 +1350,41 @@ export function EmprestimoAudiovisual() {
 
   /* ===================== RENDER ===================== */
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
 
   useEffect(() => {
     const timeouts: NodeJS.Timeout[] = [];
     setLoadingMessage(
-      " Estamos criando o registro, gerando o catálogo e enviando as imagens."
+      " Estamos criando o registro, gerando o catálogo e enviando as imagens.",
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Estamos quase lá, continue aguardando...");
-      }, 5000)
+      }, 5000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Só mais um pouco...");
-      }, 10000)
+      }, 10000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Está demorando mais que o normal... estamos tentando enviar tudo."
+          "Está demorando mais que o normal... estamos tentando enviar tudo.",
         );
-      }, 15000)
+      }, 15000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Estamos empenhados em concluir, aguarde só mais um pouco"
+          "Estamos empenhados em concluir, aguarde só mais um pouco",
         );
-      }, 15000)
+      }, 15000),
     );
 
     return () => {
@@ -1687,13 +1623,13 @@ export function EmprestimoAudiovisual() {
               value={active}
               onValueChange={(v) => {
                 const targetIndex = STEPS.findIndex(
-                  (s) => s.key === (v as StepKey)
+                  (s) => s.key === (v as StepKey),
                 );
                 if (
                   targetIndex !== -1 &&
                   (targetIndex <= idx ||
                     STEPS.slice(0, targetIndex).every(
-                      (s) => valid[s.key] === true
+                      (s) => valid[s.key] === true,
                     ))
                 ) {
                   setActive(v as StepKey);
@@ -1748,12 +1684,6 @@ export function EmprestimoAudiovisual() {
                       step={idx + 1}
                     />
                   )}
-                  {s.key === "arquivos" && (
-                    <ArquivosStep
-                      {...attachCommon("arquivos")}
-                      step={idx + 1}
-                    />
-                  )}
                   {s.key === "final" && (
                     <FinalStep
                       {...attachCommon("final")}
@@ -1775,7 +1705,7 @@ export function EmprestimoAudiovisual() {
                       key={s.key}
                       className={cn(
                         "mr-2",
-                        valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                        valid[s.key] ? "text-emerald-600" : "text-amber-600",
                       )}
                     >
                       ●

@@ -21,6 +21,8 @@ export function Home() {
       onOpen("buscar-catalogo");
     } else if (location.pathname == "/item") {
       onOpen("item-page");
+    } else if (location.pathname == "/item-emprestimo") {
+      onOpen("item-emprestimo-page");
     } else if (location.pathname == "/informacoes") {
       onOpen("informacoes");
     } else if (location.pathname == "/assinar-transferencia/") {

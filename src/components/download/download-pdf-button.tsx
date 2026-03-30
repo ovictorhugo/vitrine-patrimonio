@@ -35,10 +35,16 @@ export function DownloadPdfButton({
 }: DownloadPdfButtonProps) {
   const { urlGeral } = useContext(UserContext);
 
-  const baseUrl = useMemo(() => ensureTrailingSlash(urlGeral || ""), [urlGeral]);
+  const baseUrl = useMemo(
+    () => ensureTrailingSlash(urlGeral || ""),
+    [urlGeral],
+  );
   const token = useMemo(
-    () => (typeof window !== "undefined" ? localStorage.getItem("jwt_token") || "" : ""),
-    []
+    () =>
+      typeof window !== "undefined"
+        ? localStorage.getItem("jwt_token") || ""
+        : "",
+    [],
   );
 
   const [loading, setLoading] = useState(false);
@@ -47,13 +53,22 @@ export function DownloadPdfButton({
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let baseUrl = `${urlGeral}/${method}/pdf/`;
+      let baseUrl = `${urlGeral}${method}/pdf/`;
       let downloadUrl = buildUrl(baseUrl, filters);
       if (method === "collections") {
-        baseUrl = `${urlGeral}/${method}/${filters.collection_id}/items/pdf`;
+        baseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
         downloadUrl = buildUrl(baseUrl, {});
       } else if (method === "item") {
-        baseUrl = `${urlGeral}/catalog/pdf/${id}`;
+        baseUrl = `${urlGeral}catalog/pdf/${id}`;
+        downloadUrl = buildUrl(baseUrl, {});
+      } else if (method === "loan_item") {
+        baseUrl = `${urlGeral}loans/pdf/${id}`;
+        downloadUrl = buildUrl(baseUrl, {});
+      } else if (method === "loan_all") {
+        baseUrl = `${urlGeral}loans/all_pdf`;
+        downloadUrl = buildUrl(baseUrl, {});
+      } else if (method === "loan_terms") {
+        baseUrl = `${urlGeral}loans/terms_pdf/${id}`;
         downloadUrl = buildUrl(baseUrl, {});
       }
       const res = await fetch(downloadUrl, {
@@ -79,7 +94,15 @@ export function DownloadPdfButton({
 
   return (
     <>
-      <Button onClick={fetchData} disabled={loading} variant="outline" size={size}>
+      <Button
+        onClick={(e) => {
+          e.stopPropagation();
+          fetchData();
+        }}
+        disabled={loading}
+        variant="outline"
+        size={size}
+      >
         {loading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (

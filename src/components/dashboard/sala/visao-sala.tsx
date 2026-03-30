@@ -177,7 +177,6 @@ export function VisaoSala() {
     async function fetchLocation() {
       try {
         setLoading(true);
-
         const res = await fetch(`${urlGeral}locations/${type_search}`, {
           method: "GET",
           signal: controller.signal,
@@ -187,7 +186,7 @@ export function VisaoSala() {
         if (!res.ok) {
           const text = await res.text().catch(() => "");
           throw new Error(
-            text || `Falha ao buscar localização (${res.status})`
+            text || `Falha ao buscar localização (${res.status})`,
           );
         }
 
@@ -212,42 +211,42 @@ export function VisaoSala() {
   };
 
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
 
   useEffect(() => {
     let timeouts: NodeJS.Timeout[] = [];
 
     setLoadingMessage(
-      "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+      "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Estamos quase lá, continue aguardando...");
-      }, 5000)
+      }, 5000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Só mais um pouco...");
-      }, 10000)
+      }, 10000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Está demorando mais que o normal... estamos tentando encontrar tudo."
+          "Está demorando mais que o normal... estamos tentando encontrar tudo.",
         );
-      }, 15000)
+      }, 15000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco",
         );
-      }, 15000)
+      }, 15000),
     );
 
     return () => {
@@ -268,11 +267,11 @@ export function VisaoSala() {
   type UploadFolder = "profile" | "background";
 
   const [urlBackground, setUrlBackground] = useState(
-    `${urlGeral}location/upload/${room?.id}/cover`
+    `${urlGeral}location/upload/${room?.id}/cover`,
   );
 
   const [urlPerfil, setUrlPerfil] = useState(
-    `${urlGeral}location/upload/${room?.id}/icon`
+    `${urlGeral}location/upload/${room?.id}/icon`,
   );
 
   useEffect(() => {

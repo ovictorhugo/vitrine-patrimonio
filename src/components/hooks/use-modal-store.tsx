@@ -33,6 +33,7 @@ export type ModalType =
   | "sign-in"
   | "search-patrimonio-exact"
   | "transfer-modal"
+  | "audiovisual-modal"
   | "document-signers";
 
 /** DTOs auxiliares */
@@ -169,6 +170,9 @@ export interface ModalData {
   is_official?: boolean;
   transfer_request?: TransferRequestDTO;
   document_data?: DocumentData;
+  loanable_item_id?: string;
+  loan_id?: string;
+  is_loan?: boolean;
 }
 
 /** Factory para garantir um data SEM resíduos */

@@ -27,90 +27,119 @@ import {
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { LoanableItemDTO } from "./audiovisual"; // Ajuste o caminho se necessário
 
 // --- Utils ---
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- Interfaces (Adaptadas para sua estrutura) ---
-
-// Estrutura do Usuário (reutilizada)
-interface UserData {
-  username: string;
-  email: string;
-}
-
-// Detalhes do Workflow
-interface WorkflowDetail {
-  inicio?: string;
-  fim?: string;
-  observation?: string;
-}
-
-// Um item do histórico
-interface WorkflowItem {
-  id: string;
-  workflow_status: string;
-  detail?: WorkflowDetail;
-  user: UserData;
-  created_at: string;
-}
-
-export interface CatalogEntry {
-  id: string;
-  asset: {
-    material: {
-      material_name: string;
-    };
-  };
-  workflow_history: WorkflowItem[];
-}
-
+// --- Interfaces Locais ---
 interface CalendarEvent {
   eventId: string;
   productId: string;
-  productName: string; // O nome do item sendo emprestado
+  productName: string;
   userName: string;
   userEmail: string;
   status: string;
   start: Date;
   end: Date;
   observation?: string;
+  colorClass: string;
+  badgeClass: string;
 }
 
 // --- Componente ---
 export default function GlobalLoanCalendar({
-  rentedItems,
+  board,
 }: {
-  rentedItems: CatalogEntry[];
+  board: Record<string, LoanableItemDTO[]>;
 }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 1. Processamento: Achatar todos os históricos em uma única lista de eventos
+  // 1. Processamento: Achatar o board e extrair os empréstimos (loans)
   const allEvents: CalendarEvent[] = useMemo(() => {
-    if (!rentedItems) return [];
-    return rentedItems.flatMap((product) => {
-      // Para cada produto, pega o histórico
-      return (product.workflow_history || [])
-        .filter(
-          (historyItem) => historyItem.detail?.inicio && historyItem.detail?.fim
-        )
-        .map((historyItem) => ({
-          eventId: historyItem.id,
-          productId: product.id,
-          productName: product.asset.material.material_name, // Nome do produto
-          userName: historyItem.user.username,
-          userEmail: historyItem.user.email,
-          status: historyItem.workflow_status,
-          start: parseISO(historyItem.detail!.inicio!),
-          end: parseISO(historyItem.detail!.fim!),
-          observation: historyItem.detail?.observation,
-        }));
+    if (!board) return [];
+
+    // Junta todos os itens de todas as colunas em um único array
+    const allItems = Object.values(board).flat();
+    const now = new Date();
+
+    return allItems.flatMap((item) => {
+      if (!item.loans || item.loans.length === 0) return [];
+
+      return item.loans
+        .map((loan) => {
+          if (!loan.start_at) return null;
+
+          const start = parseISO(loan.start_at);
+          // Se não tiver data de fim, usamos a de devolução ou projetamos para o final do dia de início
+          const end = loan.end_at
+            ? parseISO(loan.end_at)
+            : loan.returned_at
+              ? parseISO(loan.returned_at)
+              : startOfDay(start);
+
+          // Determina o Status e as Cores do Evento
+          let statusStr = "EMPRESTADO";
+          let colorClass =
+            "bg-eng-blue/10 border-eng-blue text-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
+          let badgeClass =
+            "bg-eng-blue/10 border-eng-blue text-eng-blue dark:bg-eng-blue/40 dark:text-white dark:border-eng-blue";
+
+          if (loan.is_maintenance) {
+            statusStr = "MANUTENÇÃO";
+            colorClass =
+              "bg-amber-50 text-amber-700 border-amber-500 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700";
+            badgeClass =
+              "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300";
+          } else if (loan.is_returned) {
+            statusStr = "DEVOLVIDO";
+            colorClass =
+              "bg-green-50 text-green-700 border-green-500 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700";
+            badgeClass =
+              "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300";
+          } else if (!loan.is_executed) {
+            statusStr = "PEDIDO";
+            colorClass =
+              "bg-gray-100 text-gray-700 border-gray-400 dark:bg-zinc-800 dark:text-gray-300 dark:border-zinc-600";
+            badgeClass =
+              "bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:text-gray-300";
+          } else if (loan.end_at && new Date(loan.end_at) < now) {
+            statusStr = "ATRASADO";
+            colorClass =
+              "bg-red-50 text-red-700 border-red-500 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700";
+            badgeClass =
+              "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
+          }
+
+          const fallbackName =
+            item.catalog?.asset?.asset_description || "Item sem nome";
+
+          return {
+            eventId: loan.id,
+            productId: item.id,
+            productName:
+              item.catalog?.asset?.material?.material_name || fallbackName,
+            userName:
+              loan.requester?.username ||
+              loan.temporary_guardian?.username ||
+              "Desconhecido",
+            userEmail:
+              loan.requester?.email || loan.temporary_guardian?.email || "",
+            status: statusStr,
+            start: start,
+            end: end,
+            observation: loan.lend_detail || item.owner_notes || "",
+            colorClass,
+            badgeClass,
+          };
+        })
+        .filter(Boolean) as CalendarEvent[];
     });
-  }, [rentedItems]);
+  }, [board]);
 
   // 2. Geração dos dias do calendário
   const daysInMonth = useMemo(() => {
@@ -137,9 +166,12 @@ export default function GlobalLoanCalendar({
     if (!selectedDay) return [];
     return allEvents.filter(
       (event) =>
-        isWithinInterval(selectedDay, { start: event.start, end: event.end }) ||
+        isWithinInterval(selectedDay, {
+          start: startOfDay(event.start),
+          end: endOfDay(event.end),
+        }) ||
         isSameDay(selectedDay, event.start) ||
-        isSameDay(selectedDay, event.end)
+        isSameDay(selectedDay, event.end),
     );
   }, [selectedDay, allEvents]);
 
@@ -189,7 +221,7 @@ export default function GlobalLoanCalendar({
             isWithinInterval(day, {
               start: startOfDay(event.start),
               end: endOfDay(event.end),
-            })
+            }),
           );
 
           const isCurrentMonth = isSameMonth(day, currentDate);
@@ -205,7 +237,7 @@ export default function GlobalLoanCalendar({
                   ? "bg-gray-50/50 text-gray-300 dark:bg-zinc-900/50 dark:text-zinc-700"
                   : "bg-white border-gray-100 shadow-[0_0_10px_rgba(0,0,0,0.02)] dark:bg-zinc-950 dark:border-zinc-800 dark:shadow-none",
                 isToday &&
-                  "ring-2 ring-eng-blue ring-offset-2 z-10 dark:ring-offset-zinc-950"
+                  "ring-2 ring-eng-blue ring-offset-2 z-10 dark:ring-offset-zinc-950",
               )}
             >
               {/* Número do dia */}
@@ -215,7 +247,7 @@ export default function GlobalLoanCalendar({
                   isToday
                     ? "bg-eng-blue text-white"
                     : "text-gray-700 dark:text-gray-300",
-                  !isCurrentMonth && "text-gray-300 dark:text-zinc-700"
+                  !isCurrentMonth && "text-gray-300 dark:text-zinc-700",
                 )}
               >
                 {format(day, "d")}
@@ -223,23 +255,18 @@ export default function GlobalLoanCalendar({
 
               {/* Lista de eventos (Pílulas) */}
               <div className="flex flex-col gap-1 overflow-hidden">
-                {dayEvents.slice(0, 4).map((evt) => {
-                  const isLate = evt.status.includes("ATRASADO");
-                  return (
-                    <div
-                      key={`${evt.eventId}-${day.toISOString()}`}
-                      className={cn(
-                        "text-[10px] px-1.5 py-1 rounded truncate font-medium border-l-2",
-                        isLate
-                          ? "bg-red-50 text-red-700 border-red-500 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                          : "bg-eng-blue/10 text-eng-blue border-eng-blue dark:bg-eng-blue/30 dark:text-white dark:border-eng-blue"
-                      )}
-                      title={`${evt.productName} - ${evt.userName}`}
-                    >
-                      {evt.productName}
-                    </div>
-                  );
-                })}
+                {dayEvents.slice(0, 4).map((evt) => (
+                  <div
+                    key={`${evt.eventId}-${day.toISOString()}`}
+                    className={cn(
+                      "text-[10px] px-1.5 py-1 rounded truncate font-medium border-l-2",
+                      evt.colorClass,
+                    )}
+                    title={`${evt.productName} - ${evt.userName}`}
+                  >
+                    {evt.productName}
+                  </div>
+                ))}
 
                 {dayEvents.length > 4 && (
                   <span className="text-[10px] text-gray-400 font-medium pl-1 dark:text-zinc-500">
@@ -266,8 +293,7 @@ export default function GlobalLoanCalendar({
                     format(selectedDay, "dd 'de' MMMM", { locale: ptBR })}
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {selectedDayEvents.length} itens emprestados ou reservados
-                  neste dia.
+                  {selectedDayEvents.length} empréstimos registrados neste dia.
                 </Dialog.Description>
               </div>
               <Dialog.Close asChild>
@@ -295,12 +321,10 @@ export default function GlobalLoanCalendar({
                       <span
                         className={cn(
                           "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide",
-                          evt.status.includes("ATRASADO")
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                            : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                          evt.badgeClass,
                         )}
                       >
-                        {evt.status.replace("AUDIOVISUAL_", "")}
+                        {evt.status}
                       </span>
                     </div>
 
@@ -311,7 +335,7 @@ export default function GlobalLoanCalendar({
                       </div>
 
                       <div className="flex-1">
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none mb-1">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none mb-1 max-w-[80%]">
                           {evt.productName}
                         </h4>
 
@@ -332,14 +356,16 @@ export default function GlobalLoanCalendar({
                               {format(evt.start, "dd/MM/yy 'às' HH:mm")}
                             </span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500 dark:text-gray-400">
-                              Devolução:
-                            </span>
-                            <span className="font-medium text-gray-900 dark:text-gray-200">
-                              {format(evt.end, "dd/MM/yy 'às' HH:mm")}
-                            </span>
-                          </div>
+                          {evt.end && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500 dark:text-gray-400">
+                                Previsão / Retorno:
+                              </span>
+                              <span className="font-medium text-gray-900 dark:text-gray-200">
+                                {format(evt.end, "dd/MM/yy 'às' HH:mm")}
+                              </span>
+                            </div>
+                          )}
 
                           {evt.observation && (
                             <div className="pt-2 mt-2 border-t border-gray-200/60 dark:border-zinc-700">

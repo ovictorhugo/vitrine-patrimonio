@@ -16,6 +16,7 @@ import { SignInModal } from "../modal/sign-in-modal";
 import SearchCodAtmModalExact from "../modal/search-modal-patrimonio-exact";
 import TransferModal from "../modal/transfer-modal";
 import DocumentModal from "../modal/document_modal";
+import AudiovisualModal from "../modal/catalog-modal-audiovisual";
 
 const ModalContent = () => {
   const { type } = useModal();
@@ -44,6 +45,8 @@ const ModalContent = () => {
       return <CatalogModal />;
     case "transfer-modal":
       return <TransferModal />;
+    case "audiovisual-modal":
+      return <AudiovisualModal />;
     case "document-signers":
       return <DocumentModal />;
     case "sign-in":
