@@ -725,58 +725,6 @@ export function Desfazimento() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-
-        {/* ===== Itens ===== */}
-        <Accordion type="single" collapsible defaultValue="item-1">
-          <AccordionItem value="item-1">
-            <div className="flex ">
-              <div className="flex gap-4 w-full justify-between items-center ">
-                <HeaderResultTypeHome
-                  title="Todos os itens"
-                  icon={<Package size={24} className="text-gray-400" />}
-                />
-
-                <div className="flex gap-3 mr-3 items-center h-full">
-                  <Button
-                    onClick={() => setTypeVisu("rows")}
-                    variant={typeVisu == "block" ? "ghost" : "outline"}
-                    size={"icon"}
-                  >
-                    <Rows size={16} className=" whitespace-nowrap" />
-                  </Button>
-
-                  <Button
-                    onClick={() => setTypeVisu("block")}
-                    variant={typeVisu == "block" ? "outline" : "ghost"}
-                    size={"icon"}
-                  >
-                    <SquaresFour size={16} className=" whitespace-nowrap" />
-                  </Button>
-                </div>
-              </div>
-
-              <AccordionTrigger />
-            </div>
-
-            <AccordionContent className="p-0">
-              {typeVisu === "block" ? (
-                <BlockItemsVitrine
-                  workflow="DESFAZIMENTO"
-                  selectedIds={selectedIds}
-                  onChangeSelected={setSelectedIds}
-                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
-                />
-              ) : (
-                <RowsItemsVitrine
-                  workflow="DESFAZIMENTO"
-                  selectedIds={selectedIds}
-                  onChangeSelected={setSelectedIds}
-                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
-                />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </DragDropContext>
 
       <AddToCollectionDrawer

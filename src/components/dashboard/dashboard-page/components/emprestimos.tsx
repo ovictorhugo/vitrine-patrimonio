@@ -43,6 +43,7 @@ export function Emprestimos() {
       });
       const json = await res.json();
 
+
       // O endpoint retorna { loanable_items: [...] }
       if (json && json.loanable_items) {
         setEmprestimos(json.loanable_items);

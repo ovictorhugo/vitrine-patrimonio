@@ -383,7 +383,7 @@ export function BlockItemsVitrine(props: Props) {
       initialFetchDone.current = true;
       runFetch("5", false);
     } else {
-      runFetch(undefined, false); 
+      runFetch(undefined, false);
     }
 
     return () => controller.abort();

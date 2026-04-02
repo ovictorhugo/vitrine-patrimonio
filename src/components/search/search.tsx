@@ -18,7 +18,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "../../hooks/use-mobile";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const first = (v: string | null) =>
-  v ? v.split(";").filter(Boolean)[0] ?? "" : ("" as string);
+  v ? (v.split(";").filter(Boolean)[0] ?? "") : ("" as string);
 type Picked = { kind: Kind; id: string; label: string };
 
 /** Tipagens mínimas **/
@@ -65,31 +65,31 @@ export function Search() {
 
   // Lê PLURAL da URL (vindo do modal)
   const [selectedMaterial, setSelectedMaterial] = useState(
-    first(queryUrl.get("material_ids"))
+    first(queryUrl.get("material_ids")),
   );
   const [selectedLegalGuardian, setSelectedLegalGuardian] = useState(
-    first(queryUrl.get("legal_guardian_ids"))
+    first(queryUrl.get("legal_guardian_ids")),
   );
   const [selectedLocation, setSelectedLocation] = useState(
-    first(queryUrl.get("location_ids"))
+    first(queryUrl.get("location_ids")),
   );
   const [selectedUnit, setSelectedUnit] = useState(
-    first(queryUrl.get("unit_ids"))
+    first(queryUrl.get("unit_ids")),
   );
   const [selectedAgency, setSelectedAgency] = useState(
-    first(queryUrl.get("agency_ids"))
+    first(queryUrl.get("agency_ids")),
   );
   const [selectedSector, setSelectedSector] = useState(
-    first(queryUrl.get("sector_ids"))
+    first(queryUrl.get("sector_ids")),
   );
 
   // paginação
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = useState<number>(
-    Number(queryUrl.get("offset") || "0")
+    Number(queryUrl.get("offset") || "0"),
   );
   const [limit, setLimit] = useState<number>(
-    Number(queryUrl.get("limit") || "12")
+    Number(queryUrl.get("limit") || "12"),
   );
 
   const [hasNavigated, setHasNavigated] = useState(false);
@@ -103,7 +103,7 @@ export function Search() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    doScroll = true
+    doScroll = true,
   ) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", String(newOffset));
@@ -163,8 +163,8 @@ export function Search() {
       const list: Material[] = Array.isArray(json?.materials)
         ? json.materials
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setMaterials(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -178,8 +178,8 @@ export function Search() {
       const list: LegalGuardian[] = Array.isArray(json?.legal_guardians)
         ? json.legal_guardians
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setGuardians(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -193,8 +193,8 @@ export function Search() {
       const list: LocationT[] = Array.isArray(json?.locations)
         ? json.locations
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setLocations(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -206,8 +206,8 @@ export function Search() {
       const list: Unit[] = Array.isArray(json?.units)
         ? json.units
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setUnits(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -219,8 +219,8 @@ export function Search() {
       const list: Agency[] = Array.isArray(json?.agencies)
         ? json.agencies
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setAgencies(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -232,8 +232,8 @@ export function Search() {
       const list: Sector[] = Array.isArray(json?.sectors)
         ? json.sectors
         : Array.isArray(json)
-        ? json
-        : [];
+          ? json
+          : [];
       setSectors(list);
     } catch {}
   }, [baseUrl, baseHeaders]);
@@ -284,29 +284,29 @@ export function Search() {
   /** ===== Nomes para chips ===== */
   const materialName = useMemo(
     () => materials.find((m) => m.id === selectedMaterial)?.material_name || "",
-    [materials, selectedMaterial]
+    [materials, selectedMaterial],
   );
   const guardianName = useMemo(
     () =>
       guardians.find((g) => g.id === selectedLegalGuardian)
         ?.legal_guardians_name || "",
-    [guardians, selectedLegalGuardian]
+    [guardians, selectedLegalGuardian],
   );
   const locationName = useMemo(
     () => locations.find((l) => l.id === selectedLocation)?.location_name || "",
-    [locations, selectedLocation]
+    [locations, selectedLocation],
   );
   const unitName = useMemo(
     () => units.find((u) => u.id === selectedUnit)?.unit_name || "",
-    [units, selectedUnit]
+    [units, selectedUnit],
   );
   const agencyName = useMemo(
     () => agencies.find((a) => a.id === selectedAgency)?.agency_name || "",
-    [agencies, selectedAgency]
+    [agencies, selectedAgency],
   );
   const sectorName = useMemo(
     () => sectors.find((s) => s.id === selectedSector)?.sector_name || "",
-    [sectors, selectedSector]
+    [sectors, selectedSector],
   );
 
   /** ===== Limpar ===== */
@@ -335,7 +335,7 @@ export function Search() {
   };
 
   const clearOne = (
-    key: "material" | "guardian" | "location" | "unit" | "agency" | "sector"
+    key: "material" | "guardian" | "location" | "unit" | "agency" | "sector",
   ) => {
     const sp = new URLSearchParams(location.search);
     if (key === "material") {
@@ -460,7 +460,7 @@ export function Search() {
                         className="cursor-pointer"
                       />
                     </div>
-                  )
+                  ),
               )}
             </div>
           )}
@@ -495,7 +495,7 @@ export function Search() {
         <Button
           variant="outline"
           className={`${BTN_COLOR(
-            activeKind
+            activeKind,
           )} text-white hover:text-white  border-0`}
           size="icon"
         >

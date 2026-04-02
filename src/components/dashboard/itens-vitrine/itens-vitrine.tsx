@@ -799,7 +799,6 @@ export function ItensVitrine() {
         if (locationId) params.set("location_id", locationId);
         if (debouncedQ) params.set("q", debouncedQ);
 
-        console.log(params.toString())
         const res = await fetch(
           `${urlGeral}catalog/cards?${params.toString()}`,
           {
