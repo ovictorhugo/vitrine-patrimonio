@@ -53,7 +53,7 @@ export function DownloadPdfButton({
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let baseUrl = `${urlGeral}${method}/pdf/`;
+      let baseUrl = `${urlGeral}${method}/pdf_play`;
       let downloadUrl = buildUrl(baseUrl, filters);
       if (method === "collections") {
         baseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
@@ -70,7 +70,10 @@ export function DownloadPdfButton({
       } else if (method === "loan_terms") {
         baseUrl = `${urlGeral}loans/terms_pdf/${id}`;
         downloadUrl = buildUrl(baseUrl, {});
-      }
+      }0
+           
+
+30
       const res = await fetch(downloadUrl, {
         headers: {
           Accept: "application/pdf",

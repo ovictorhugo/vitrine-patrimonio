@@ -169,7 +169,7 @@ export type WorkflowEvent = {
   detail?: Record<string, any>;
   workflow_status: string;
   created_at: string; // ISO
-  user: UserDTO,
+  user: UserDTO;
   transfer_requests?: TransferRequestDTO[];
 };
 
@@ -515,7 +515,7 @@ export function LoanItemPage() {
             <DownloadPdfButton
               filters={{}}
               id={loan.id}
-              label="Baixar Item"
+              label="Baixar Histórico"
               method={"loan_item"}
             />
           </div>

@@ -81,7 +81,7 @@ const shallowEqual = (a: any, b: any) => {
 
 const eqPesquisa = (
   a?: { value_item?: string; type?: "cod" | "atm" },
-  b?: { value_item?: string; type?: "cod" | "atm" }
+  b?: { value_item?: string; type?: "cod" | "atm" },
 ) =>
   (a?.value_item ?? "") === (b?.value_item ?? "") &&
   (a?.type ?? "") === (b?.type ?? "");
@@ -124,7 +124,7 @@ export function BuscaPatrimonio() {
         return shallowEqual(prev, next) ? prev : next;
       });
     },
-    []
+    [],
   );
 
   // Só atualiza wizard se conteúdo mudar de verdade
@@ -141,7 +141,7 @@ export function BuscaPatrimonio() {
         return next;
       });
     },
-    []
+    [],
   );
 
   const canGoNext = useMemo(() => {
@@ -154,7 +154,7 @@ export function BuscaPatrimonio() {
       if (targetIndex <= idx) return true;
       return STEPS.slice(0, targetIndex).every((s) => valid[s.key] === true);
     },
-    [idx, valid]
+    [idx, valid],
   );
 
   const goPrev = useCallback(() => {
@@ -167,10 +167,10 @@ export function BuscaPatrimonio() {
   const onValidityChangeFactory = useCallback(
     (key: StepKey) => (v: boolean) => {
       setValidIfChanged((prev) =>
-        prev[key] === v ? prev : { ...prev, [key]: v }
+        prev[key] === v ? prev : { ...prev, [key]: v },
       );
     },
-    [setValidIfChanged]
+    [setValidIfChanged],
   );
 
   const onStateChangePesquisa = useCallback(
@@ -183,14 +183,14 @@ export function BuscaPatrimonio() {
         },
       }));
     },
-    [setWizardIfChanged]
+    [setWizardIfChanged],
   );
 
   const onStateChangeFormulario = useCallback(
     (st: Patrimonio) => {
       setWizardIfChanged((prev) => ({ ...prev, formulario: st }));
     },
-    [setWizardIfChanged]
+    [setWizardIfChanged],
   );
 
   const handleBack = () => {
@@ -259,7 +259,7 @@ export function BuscaPatrimonio() {
   const [showNewSavedDot, setShowNewSavedDot] = useState(false);
 
   const canSaveCurrent = Boolean(
-    wizard.pesquisa?.value_item && wizard.pesquisa?.type && valid.pesquisa
+    wizard.pesquisa?.value_item && wizard.pesquisa?.type && valid.pesquisa,
   );
 
   // chave do item atual e verificação se já está salvo
@@ -269,9 +269,9 @@ export function BuscaPatrimonio() {
   const existingIndex = useMemo(
     () =>
       saved.findIndex(
-        (s) => `${s.pesquisa.type}::${s.pesquisa.value_item}` === currentKey
+        (s) => `${s.pesquisa.type}::${s.pesquisa.value_item}` === currentKey,
       ),
-    [saved, currentKey]
+    [saved, currentKey],
   );
   const isCurrentSaved = existingIndex >= 0;
 
@@ -404,7 +404,7 @@ export function BuscaPatrimonio() {
       setOpenSavedDialog(false);
       setResetKey((k) => k + 1);
     },
-    [wizard.formulario]
+    [wizard.formulario],
   );
 
   // excluir um salvo
@@ -587,7 +587,7 @@ export function BuscaPatrimonio() {
               value={active}
               onValueChange={(v) => {
                 const targetIndex = STEPS.findIndex(
-                  (s) => s.key === (v as StepKey)
+                  (s) => s.key === (v as StepKey),
                 );
                 if (targetIndex !== -1 && canActivateIndex(targetIndex))
                   setActive(v as StepKey);
@@ -626,34 +626,9 @@ export function BuscaPatrimonio() {
             </Tabs>
 
             {!isLast && (
-              <div
-                className={
-                  isMobile
-                    ? "flex items-center w-full justify-end"
-                    : "flex items-center"
-                }
-              >
-                {isMobile ? (
-                  <></>
-                ) : (
-                  <div>
-                    {STEPS.slice(0, idx + 1).map((s) => (
-                      <span
-                        key={s.key}
-                        className={cn(
-                          "mr-2",
-                          valid[s.key] ? "text-emerald-600" : "text-amber-600"
-                        )}
-                      >
-                        ●
-                      </span>
-                    ))}
-                  </div>
-                )}
-
+              <div className="flex items-center w-full justify-end">
                 <div className="flex items-center gap-2">
                   {/* Salvar/Remover atual */}
-
                   <div className="flex">
                     <Button
                       variant="outline"
@@ -688,7 +663,7 @@ export function BuscaPatrimonio() {
                         key={s.key}
                         className={cn(
                           "mr-2",
-                          valid[s.key] ? "text-emerald-600" : "text-amber-600"
+                          valid[s.key] ? "text-emerald-600" : "text-amber-600",
                         )}
                       >
                         ●

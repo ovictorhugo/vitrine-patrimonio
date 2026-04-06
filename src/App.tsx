@@ -1,29 +1,12 @@
 import { useEffect, useState } from "react";
-import { Home } from "./pages/Home";
 import {
   BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
 } from "react-router-dom";
-
 import { UserContext } from "../src/context/context";
-
 import DefaultLayout from "./layout/default-layout";
-import { Authentication } from "./pages/Authentication";
-import { Admin } from "./pages/Admin";
-
-import { Notification } from "./pages/notification";
 import LoadingWrapper from "./components/loading";
-
-import { AuthenticationToken } from "./pages/Authentication-token";
 import { FavoriteProvider } from "./context/favorite-context";
 import { CatalogResponseDTO } from "./components/item-page/item-page";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { Unauthorized } from "./components/errors/Unauthorized";
-import { Error404 } from "./components/errors/404";
-import { usePermissions } from "./components/permissions";
 import { AppRoutes } from "./AppRoutes";
 
 interface User {

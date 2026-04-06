@@ -84,6 +84,7 @@ import {
 } from "../../../ui/select";
 import { DownloadPdfButton } from "../../../download/download-pdf-button";
 import { useIsMobile } from "../../../../hooks/use-mobile";
+import { AddPatrimonioModal } from "../components/add-collection2";
 
 // ================== Types ==================
 type UUID = string;
@@ -1054,7 +1055,6 @@ export function CollectionPage() {
           content={`${collection?.name || ""} | Sistema Patrimônio`}
         />
       </Helmet>
-
       <main className="flex flex-col gap-8  flex-1 min-h-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
@@ -1566,7 +1566,6 @@ export function CollectionPage() {
           </div>
         </Tabs>
       </main>
-
       {/* Dialog EDITAR */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
@@ -1613,7 +1612,6 @@ export function CollectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Dialog DELETAR */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
@@ -1646,7 +1644,6 @@ export function CollectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Dialog: Descarte em lote */}
       <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <DialogContent>
@@ -1696,16 +1693,12 @@ export function CollectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Drawer Adicionar */}
-      <AddToCollectionDrawer
+      <AddPatrimonioModal
         open={openAdd}
-        onOpenChange={(o) => setOpenAdd(o)}
-        baseUrl={urlGeral}
-        headers={authHeaders}
-        collectionId={String(collection_id) || null}
-        onItemsAdded={handleItemsAdded}
-        type="SMAL"
+        onOpenChange={setOpenAdd}
+        addItem={handleItemsAdded}
+        collection={collection_id}
       />
     </div>
   );
