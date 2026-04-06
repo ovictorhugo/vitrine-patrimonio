@@ -782,8 +782,8 @@ export function AddToCollectionDrawer({
       <DialogContent
         className={
           isFullscreen
-            ? "w-[96vw] max-w-[96vw] h-[94vh]  overflow-hidden"
-            : "max-w-5xl"
+            ? "w-[96vw] max-w-[96vw] h-[94vh] overflow-hidden"
+            : "max-w-5xl h-[85vh]"
         }
       >
         <DialogHeader>
