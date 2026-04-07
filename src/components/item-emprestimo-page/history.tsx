@@ -10,7 +10,7 @@ import {
   Timer,
   X,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"; // Assumindo o caminho do seu Avatar
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { cn } from "../../lib";
 import { LoanableItemDTO, LoanDTO } from "../dashboard/audiovisual/audiovisual";
 
@@ -22,18 +22,13 @@ export default function HistoryTab({ item }: HistoryTabProps) {
   const { urlGeral } = useContext(UserContext);
 
   const loans = item?.loans || [];
-
   const reversed = loans.reverse();
 
-  // Função auxiliar para formatar datas (estilo 20/05/2024)
   const formatData = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-
     const date = new Date(dateStr);
     const dataFormatada = date.toLocaleDateString("pt-BR");
-    const hora = date.getHours(); // Pega apenas a hora (0 a 23)
-
-    // Retorna no formato "20/05/2024 às 14h"
+    const hora = date.getHours();
     return `${dataFormatada} às ${hora}h`;
   };
 
@@ -42,17 +37,41 @@ export default function HistoryTab({ item }: HistoryTabProps) {
     return new Date(loan.end_at) < new Date();
   };
 
-  // Nova função auxiliar para comparar datas sem horário
-  // Retorna true se dataB (retorno) é estritamente depois de dataA (prev. fim)
   const eDevolucaoAtrasada = (
     endAt: string | null,
     returnedAt: string | null,
   ): boolean => {
     if (!endAt || !returnedAt) return false;
-    // Cria objetos Date e zera o horário (setHours(0, 0, 0, 0)) para comparar apenas a data
     const dateEnd = new Date(new Date(endAt).setHours(0, 0, 0, 0));
     const dateReturned = new Date(new Date(returnedAt).setHours(0, 0, 0, 0));
     return dateReturned > dateEnd;
+  };
+
+  // Componente auxiliar para renderizar a badge de usuário de forma reutilizável
+  const UserBadge = ({ role, username }: { role: string; username: string | undefined }) => {
+    if (!username) return null; // Não renderiza se o usuário não existir
+    
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+          {role}
+        </p>
+        <div className="flex gap-2 items-center bg-zinc-50 dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
+          <Avatar className="rounded-md h-5 w-5">
+            <AvatarImage
+              className="rounded-md h-5 w-5 object-cover"
+              src={`${urlGeral}Researchercatalog/Image?name=${username}`}
+            />
+            <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
+              <User size={10} />
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+            {username}
+          </p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -66,32 +85,36 @@ export default function HistoryTab({ item }: HistoryTabProps) {
             Nenhum registro de empréstimo encontrado para este item.
           </div>
         ) : (
-          [...reversed].map((loan, idx) => {
+          [...reversed].map((loan: any, idx) => {
+            // Mapeamento dos usuários (incluindo os novos de auditoria)
             const requesterName = loan.requester?.username || "N/A";
             const guardianName = loan.temporary_guardian?.username || "N/A";
-            const atrasado = isAtrasado(loan);
+            
+            // Novos campos de auditoria
+            const confirmedByName = loan.confirmed_by?.username;
+            const executedByName = loan.executed_by?.username;
+            const returnedByName = loan.returned_by?.username;
 
-            // Nova lógica para devolução em atraso baseada apenas na data
+            const atrasado = isAtrasado(loan);
             const devolucaoAtrasada = eDevolucaoAtrasada(
               loan.end_at,
               loan.returned_at,
             );
 
-            // Definição da cor da barra lateral
             const statusColor = loan.is_maintenance
               ? "bg-amber-500"
               : loan.rejection_reason
-                ? "bg-blue-950" // Novo caso: Azul Escuro para Pedido Recusado com motivo
+                ? "bg-blue-950" 
                 : atrasado ||
                     devolucaoAtrasada ||
                     (loan.is_returned && !loan.is_confirmed)
-                  ? "bg-red-500" // Vermelho para Atrasado, Devolvido em atraso ou Recusado genericamente
+                  ? "bg-red-500" 
                   : loan.is_returned
-                    ? "bg-green-500" // Verde para Devolvido (sucesso)
-                    : "bg-eng-blue"; // Azul padrão para os demais casos (Pedido/Emprestado ativo)
+                    ? "bg-green-500" 
+                    : "bg-eng-blue"; 
+
             return (
               <div key={loan.id || idx} className="flex mb-3">
-                {/* Barra Lateral Colorida */}
                 <div
                   className={cn(
                     "w-2 min-w-2 rounded-l-md border border-neutral-200 border-r-0 dark:border-neutral-800",
@@ -99,7 +122,6 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                   )}
                 />
 
-                {/* Card Alert */}
                 <div className="flex flex-col flex-1 h-fit bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 rounded-r-md p-4 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
                   {/* Cabeçalho de Status */}
                   <div className="flex items-center justify-between mb-3">
@@ -120,14 +142,12 @@ export default function HistoryTab({ item }: HistoryTabProps) {
                         </div>
                       )}
 
-                      {/* Nova Badge para Devolução em Atraso */}
                       {devolucaoAtrasada && (
                         <div className="flex items-center gap-1.5 text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">
                           <AlertCircle size={12} /> Devolvido em atraso
                         </div>
                       )}
 
-                      {/* Nova lógica de Recusa com motivo (Prioridade Azul Escuro) */}
                       {loan.rejection_reason ? (
                         <div className="flex items-center gap-1.5 text-blue-900 bg-blue-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
                           <X size={12} /> Recusado
@@ -178,7 +198,6 @@ export default function HistoryTab({ item }: HistoryTabProps) {
 
                     {loan.returned_at && (
                       <div className="flex items-center gap-2">
-                        {/* Removida a lógica frágil de comparação de strings e simplificada a exibição do retorno */}
                         <CheckCircle2 className="size-4 text-gray-500 dark:text-gray-300" />
                         <p className="text-sm font-semibold uppercase text-gray-500 dark:text-gray-300">
                           Retorno:
@@ -192,45 +211,16 @@ export default function HistoryTab({ item }: HistoryTabProps) {
 
                   {/* Envolvidos */}
                   <div className="flex gap-3 flex-wrap">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                        Solicitante
-                      </p>
-                      <div className="flex gap-2 items-center bg-zinc-50 dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                        <Avatar className="rounded-md h-5 w-5">
-                          <AvatarImage
-                            className="rounded-md h-5 w-5 object-cover"
-                            src={`${urlGeral}Researchercatalog/Image?name=${requesterName}`}
-                          />
-                          <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                            <User size={10} />
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                          {requesterName}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                        Responsável
-                      </p>
-                      <div className="flex gap-2 items-center bg-zinc-50 dark:bg-zinc-800 px-2 py-1.5 rounded-md border dark:border-zinc-700 shadow-sm">
-                        <Avatar className="rounded-md h-5 w-5">
-                          <AvatarImage
-                            className="rounded-md h-5 w-5 object-cover"
-                            src={`${urlGeral}Researchercatalog/Image?name=${guardianName}`}
-                          />
-                          <AvatarFallback className="flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
-                            <User size={10} />
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                          {guardianName}
-                        </p>
-                      </div>
-                    </div>
+                    <UserBadge role="Solicitante" username={requesterName} />
+                    <UserBadge role="Responsável" username={guardianName} />
+                    
+                    {/* Renderiza dinamicamente as badges de auditoria caso os dados existam */}
+                    <UserBadge 
+                      role={loan.rejection_reason ? "Recusado por" : "Confirmado por"} 
+                      username={confirmedByName} 
+                    />
+                    <UserBadge role="Entregue por" username={executedByName} />
+                    <UserBadge role="Recebido por" username={returnedByName} />
                   </div>
 
                   {/* Detalhes do Empréstimo */}

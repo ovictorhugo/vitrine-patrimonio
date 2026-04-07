@@ -278,9 +278,6 @@ function AudiovisualCard(props: Props) {
     }
   };
 
-  console.log(props.column);
-  console.log(loan);
-
   return (
     <div className="flex cursor-pointer rounded-md bg-white dark:bg-zinc-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all">
       {/* Barra Lateral Colorida */}

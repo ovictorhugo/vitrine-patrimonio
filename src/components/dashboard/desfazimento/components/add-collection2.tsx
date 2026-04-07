@@ -18,20 +18,23 @@ import { CatalogEntry } from "../../itens-vitrine/itens-vitrine";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";
 import { is } from "date-fns/locale";
+import { CheckStep } from "./check";
 
-type StepKey = "pesquisa" | "formulario";
+type StepKey = "pesquisa" | "formulario" | "check";
 type StepDef = { key: StepKey; label: string };
 
 const STEPS: StepDef[] = [
   { key: "pesquisa", label: "Pesquisa" },
   { key: "formulario", label: "Formulário" },
+  { key: "check", label: "Check" },
 ];
 
 type ValidMap = Partial<Record<StepKey, boolean>>;
 
 type WizardState = {
   pesquisa?: { value_item?: string; type?: "cod" | "atm" };
-  formulario?: Patrimonio; // sua estrutura original; mapearemos para Asset ao salvar
+  formulario?: Patrimonio;
+  isChecked?: boolean;
 };
 
 const shallowEqual = (a: any, b: any) => {
@@ -124,7 +127,8 @@ export function AddPatrimonioModal({
         const next = producer(prev);
         if (
           eqPesquisa(prev.pesquisa, next.pesquisa) &&
-          prev.formulario === next.formulario
+          prev.formulario === next.formulario &&
+          prev.isChecked === next.isChecked
         ) {
           return prev;
         }
@@ -180,6 +184,13 @@ export function AddPatrimonioModal({
   const onStateChangeFormulario = useCallback(
     (st: Patrimonio) => {
       setWizardIfChanged((prev) => ({ ...prev, formulario: st }));
+    },
+    [setWizardIfChanged],
+  );
+
+  const onStateChangeCheck = useCallback(
+    (st) => {
+      setWizardIfChanged((prev) => ({ ...prev, isChecked: st }));
     },
     [setWizardIfChanged],
   );
@@ -294,7 +305,7 @@ export function AddPatrimonioModal({
           createdId ??
           globalThis.crypto?.randomUUID?.() ??
           `${catalogData.id}::temp`,
-        status: false,
+        status: wizard?.isChecked || false,
         comment: "",
         catalog: catalogData,
       };
@@ -372,6 +383,17 @@ export function AddPatrimonioModal({
                     initialData={wizard.formulario}
                     step={idx + 1}
                     showLocation={true}
+                  />
+                )}
+
+                {s.key === "check" && (
+                  <CheckStep
+                    key={`check-${resetKey}`}
+                    value={"check" as any}
+                    onValidityChange={onValidityChangeFactory("check")}
+                    onStateChange={onStateChangeCheck}
+                    initialData={wizard.isChecked}
+                    step={idx + 1}
                   />
                 )}
               </TabsContent>

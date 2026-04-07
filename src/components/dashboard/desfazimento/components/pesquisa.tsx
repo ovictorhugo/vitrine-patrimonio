@@ -17,6 +17,7 @@ export type StepBaseProps<K extends keyof StepPropsMap> = {
 
 export type StepPropsMap = {
   pesquisa: { value_item?: string; type?: string };
+  check: { isChecked?: boolean; };
 };
 
 export interface PatrimoniosSelecionados {

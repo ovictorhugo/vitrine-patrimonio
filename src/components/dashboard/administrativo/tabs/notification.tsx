@@ -260,7 +260,7 @@ export function Notification() {
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 

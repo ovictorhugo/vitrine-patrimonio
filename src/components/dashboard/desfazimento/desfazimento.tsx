@@ -102,7 +102,7 @@ export function Desfazimento() {
   // ===== paginação via querystring (padrão offset/limit)
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 
@@ -650,7 +650,7 @@ export function Desfazimento() {
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 "
               >
                 {loadingList ? (
-                  Array.from({ length: 8 }).map((_, i) => (
+                  Array.from({ length: 12 }).map((_, i) => (
                     <div key={i} className="w-full">
                       <Skeleton className="w-full aspect-square" />
                     </div>

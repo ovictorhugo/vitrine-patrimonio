@@ -153,7 +153,7 @@ export function UsersPage() {
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
 
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
@@ -164,14 +164,14 @@ export function UsersPage() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -186,7 +186,7 @@ export function UsersPage() {
     try {
       // padrão: /users/?offset=...&limit=...
       const url = `${urlGeral}users/?offset=${encodeURIComponent(
-        offset
+        offset,
       )}&limit=${encodeURIComponent(limit)}&q=${pesquisaInput}`;
 
       const resp = await fetch(url, {
@@ -200,7 +200,7 @@ export function UsersPage() {
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar usuários (HTTP ${resp.status}).`
+          text || `Falha ao carregar usuários (HTTP ${resp.status}).`,
         );
       }
 
@@ -246,7 +246,7 @@ export function UsersPage() {
 
   const handleFormChange = <K extends keyof PutUserPayload>(
     key: K,
-    value: PutUserPayload[K]
+    value: PutUserPayload[K],
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -291,8 +291,8 @@ export function UsersPage() {
 
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === selectedUserId ? ({ ...u, ...form } as APIUser) : u
-        )
+          u.id === selectedUserId ? ({ ...u, ...form } as APIUser) : u,
+        ),
       );
 
       setOpen(false);
@@ -356,7 +356,7 @@ export function UsersPage() {
 
   const deleteCheckValue = deleteTarget?.email?.trim()
     ? deleteTarget.email.trim()
-    : deleteTarget?.username?.trim() ?? "";
+    : (deleteTarget?.username?.trim() ?? "");
 
   const confirmEnabled =
     !!deleteTarget &&
@@ -683,7 +683,7 @@ export function UsersPage() {
                 <Masonry gutter="16px">
                   {users.map((u) => {
                     const bgImage = `${urlGeral}user/upload/${encodeURIComponent(
-                      u.id || ""
+                      u.id || "",
                     )}/icon`;
 
                     return (
