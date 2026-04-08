@@ -668,6 +668,7 @@ export type StepPropsMap = {
   };
   imagens: { imagens?: string[] };
   final: {};
+  check?: { isChecked?: boolean };
 };
 
 type WizardState = {

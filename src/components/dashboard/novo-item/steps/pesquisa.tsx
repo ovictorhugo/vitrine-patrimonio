@@ -41,14 +41,14 @@ export function PesquisaStep({
   step,
 }: StepBaseProps<"pesquisa">) {
   const [itemType, setItemType] = useState<"cod" | "atm">(
-    (type as any) ?? "cod"
+    (type as any) ?? "cod",
   );
   const [itemsSelecionadosPopUp, setItensSelecionadosPopUp] = useState<
     PatrimoniosSelecionados[]
   >(
     value_item && type
       ? [{ term: String(value_item), type: String(type) as "cod" | "atm" }]
-      : []
+      : [],
   );
   const [input, setInput] = useState("");
 
@@ -56,7 +56,7 @@ export function PesquisaStep({
   const { urlGeral, loggedIn } = useContext(UserContext);
   const API_SEARCH_BASE = `${String(urlGeral).replace(
     /\/$/,
-    ""
+    "",
   )}/assets/search`;
   const API_ADV_BASE = `${String(urlGeral).replace(/\/$/, "")}/assets/?q=`;
 
@@ -66,7 +66,7 @@ export function PesquisaStep({
   // ========= Helpers da API =========
   async function fetchArrayByKey(
     url: string,
-    key: "asset_identifier" | "atm_number"
+    key: "asset_identifier" | "atm_number",
   ): Promise<string[]> {
     try {
       const res = await fetch(url, { headers: { Accept: "application/json" } });
@@ -79,43 +79,34 @@ export function PesquisaStep({
     }
   }
 
-  async function fetchAssetsOnCatalog(): Promise<string[]> {
+  async function fetchAssetsOnCatalog() {
     try {
-      const res = await fetch(`${urlGeral}catalog/search/asset-identifier`, {
-        headers: {
-          "Access-Control-Allow-Methods": "GET",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Max-Age": "3600",
-          "Content-Type": "text/plain",
-        },
-      });
+      const res = await fetch(
+        `${urlGeral}catalog/search/asset-identifier?limit=10000&only_uncollected=true`,
+      );
       if (!res.ok) return [];
       const json = await res.json();
-      const arr = json?.catalogs;
-
-      const identifiers = arr.map(
-        (c: { asset_identifier: string }) => c.asset_identifier
-      );
-
-      return Array.isArray(identifiers) ? identifiers : [];
-    } catch {
-      return [];
+      const identifiers = json.catalogs.map((c) => c.asset_identifier);
+      setAssetsOnCatalog(identifiers);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao buscar itens catalogados");
     }
   }
 
   const searchAssetIdentifier = (q: string) =>
     fetchArrayByKey(
       `${API_SEARCH_BASE}/asset-identifier?q=${encodeURIComponent(
-        q.replace(/-/g, "")
+        q.replace(/-/g, ""),
       )}`,
-      "asset_identifier"
+      "asset_identifier",
     );
   const searchAtmNumber = (q: string) =>
     fetchArrayByKey(
       `${API_SEARCH_BASE}/atm-number?q=${encodeURIComponent(
-        q.replace(/-/g, "")
+        q.replace(/-/g, ""),
       )}`,
-      "atm_number"
+      "atm_number",
     );
 
   // ========= Busca avançada (GET /assets/q=) =========
@@ -218,7 +209,7 @@ export function PesquisaStep({
   // ========= Busca por input =========
   const runSearch = async (
     rawInput: string,
-    forceTreatAsCodFormatter = false
+    forceTreatAsCodFormatter = false,
   ) => {
     const input = normalizeInput(rawInput).trim();
     if (input.replace(/-/g, "").length < 1) {
@@ -402,8 +393,8 @@ export function PesquisaStep({
                       valor.type === "cod"
                         ? "bg-teal-600"
                         : valor.type === "atm"
-                        ? "bg-amber-600"
-                        : "bg-indigo-600"
+                          ? "bg-amber-600"
+                          : "bg-indigo-600"
                     } text-white border-0`}
                   >
                     {valor.term.replace(/[|;]/g, "")}

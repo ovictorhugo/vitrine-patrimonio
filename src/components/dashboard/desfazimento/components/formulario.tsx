@@ -172,11 +172,12 @@ export function FormularioStep({
   value_item,
   onValidityChange,
   onStateChange,
+  onCatalogChange,
   type,
-  step,
   initialData,
   showLocation,
 }: StepBaseProps<"formulario"> & {
+  onCatalogChange: (state: unknown) => void;
   initialData?: Patrimonio;
   showLocation?: boolean;
 }) {
@@ -184,6 +185,8 @@ export function FormularioStep({
   let catalog: CatalogEntry;
 
   const [loading, setLoading] = useState(false);
+  const [found, setFound] = useState(false);
+  const [catalog_item, setCatalog] = useState("");
   const [data, setData] = useState<Patrimonio>(
     initialData ? normalizeAsset(initialData as any) : blankPatrimonio(),
   );
@@ -230,6 +233,10 @@ export function FormularioStep({
     onStateChange?.(data);
   }, [data, onStateChange]);
 
+  useEffect(() => {
+    onCatalogChange?.(catalog_item);
+  }, [catalog_item, onCatalogChange]);
+
   const buildImgUrl = (p: string) => {
     const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
     return `${urlGeral}${cleanPath}`;
@@ -260,12 +267,14 @@ export function FormularioStep({
 
         const searchData = await searchResponse.json();
 
+        console.log(searchData,code)
         if (!searchData.catalogs || searchData.catalogs.length === 0) {
           toast.error("Nenhum patrimônio encontrado com esse código.");
-          return;
+          throw new Error(`Nenhum patrimônio encontrado com esse código`);
         }
 
         const catalogId = searchData.catalogs[0].catalog_id;
+
         const catalogResponse = await fetch(`${urlGeral}catalog/${catalogId}`);
 
         if (!catalogResponse.ok) {
@@ -276,6 +285,9 @@ export function FormularioStep({
         const catalogData = await catalogResponse.json();
 
         catalog = catalogData;
+
+        setCatalog(catalogData);
+        setFound(true);
 
         if (catalogData) {
           setData(normalizeAsset(catalogData.asset));
@@ -288,6 +300,7 @@ export function FormularioStep({
           abortRef.current = null;
         }
       } catch (err: any) {
+        setLoading(false);
         if (err?.name !== "AbortError") {
           console.error("Erro ao buscar patrimônio:", err);
         }
@@ -336,6 +349,7 @@ export function FormularioStep({
   );
 
   useEffect(() => {
+    setData(blankPatrimonio());
     let timeouts: NodeJS.Timeout[] = [];
 
     setLoadingMessage(
@@ -401,7 +415,7 @@ export function FormularioStep({
   if (loading) {
     if (isMobile) {
       return (
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center h-full">
           <div className="w-full flex flex-col items-center justify-center h-full">
             <div className="text-eng-blue mb-4 animate-pulse">
               <LoaderCircle size={54} className="animate-spin" />
@@ -414,7 +428,7 @@ export function FormularioStep({
       );
     } else
       return (
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center h-full">
           <div className="w-full flex flex-col items-center justify-center h-full">
             <div className="text-eng-blue mb-4 animate-pulse">
               <LoaderCircle size={108} className="animate-spin" />
@@ -425,6 +439,21 @@ export function FormularioStep({
           </div>
         </div>
       );
+  }
+
+  if (!found) {
+    return (
+      <div className="h-full bg-cover bg-center flex flex-col items-center justify-center">
+        <div className="w-[90%] flex flex-col items-center justify-center">
+          <p className="text-6xl text-[#719CB8] font-bold mb-16 animate-pulse">
+            U_U
+          </p>
+          <h1 className="text-center text-xl text-neutral-400 font-medium leading-tight tracking-tighter lg:leading-[1.1] ">
+            Item não encontrado
+          </h1>
+        </div>
+      </div>
+    );
   }
 
   return (

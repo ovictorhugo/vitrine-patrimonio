@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StepBaseProps } from "./pesquisa";
+import { StepBaseProps } from "../../novo-item/novo-item";
 import { ArrowRight } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { useIsMobile } from "../../../../hooks/use-mobile";
