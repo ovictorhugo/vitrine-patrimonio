@@ -184,8 +184,7 @@ export function FormularioStep({
   const { urlGeral, loggedIn } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(false);
-  const [catalog_item, setCatalog] = useState("");
-  const [catalog, setCatalogData] = useState<CatalogEntry>();
+  const [catalog, setCatalog] = useState<CatalogEntry>();
   const [data, setData] = useState<Patrimonio>(
     initialData ? normalizeAsset(initialData as any) : blankPatrimonio(),
   );
@@ -233,8 +232,8 @@ export function FormularioStep({
   }, [data, onStateChange]);
 
   useEffect(() => {
-    onCatalogChange?.(catalog_item);
-  }, [catalog_item, onCatalogChange]);
+    onCatalogChange?.(catalog);
+  }, [catalog]);
 
   const buildImgUrl = (p: string) => {
     const cleanPath = p?.startsWith("/") ? p.slice(1) : p;
@@ -282,10 +281,8 @@ export function FormularioStep({
 
         const catalogData = await catalogResponse.json();
 
-        setCatalogData(catalogData);
-        console.log(catalog)
-
         setCatalog(catalogData);
+
         setFound(true);
 
         if (catalogData) {
@@ -400,7 +397,7 @@ export function FormularioStep({
         title: img.id || `${index}-${img.file_path}`,
         src: buildImgUrl(img.file_path),
       })),
-    [data, buildImgUrl,catalog],
+    [data, buildImgUrl, catalog],
   );
 
   const cards = useMemo(

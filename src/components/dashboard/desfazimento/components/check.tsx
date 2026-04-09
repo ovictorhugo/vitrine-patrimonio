@@ -3,9 +3,10 @@ import { StepBaseProps } from "../../novo-item/novo-item";
 import { ArrowRight } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { useIsMobile } from "../../../../hooks/use-mobile";
+import { Input } from "../../../ui/input";
 
 type InicioProps = StepBaseProps<"check"> & {
-  initialData?: boolean;
+  initialData?: { isChecked: boolean; comment: string };
   onFlowChange?: (val: boolean) => void;
 };
 
@@ -16,64 +17,81 @@ export function CheckStep({
   initialData,
   step,
 }: InicioProps) {
-  const [checked, setChecked] = useState<boolean>(initialData ?? false);
+  const [checked, setChecked] = useState<boolean>(
+    initialData?.isChecked ?? false,
+  );
+  const [commentValue, setCommentValue] = useState<string>(
+    initialData?.comment ?? "",
+  );
 
   useEffect(() => {
     onValidityChange(true);
   }, [onValidityChange]);
 
-  // Ao montar: se o pai ainda NÃO tem nada salvo, persistir o valor inicial no pai
   useEffect(() => {
     if (initialData === undefined) {
-      onStateChange?.(false);
+      onStateChange?.({ isChecked: false, comment: "" });
       onFlowChange?.(false);
     }
   }, [initialData, onStateChange, onFlowChange]);
 
-  // Mudar imediatamente no pai quando o usuário clicar
-  const handleChange = (val: string) => {
-    // Evita que o usuário "desmarque" a opção clicando nela novamente (comportamento padrão do Radix)
+  const handleToggleChange = (val: string) => {
     if (!val) return;
 
-    // Transforma a string recebida de volta em booleano
     const newCheckedValue = val === "true";
 
     setChecked(newCheckedValue);
-    onStateChange?.(newCheckedValue);
+    onStateChange?.({ isChecked: newCheckedValue, comment: commentValue });
     onFlowChange?.(newCheckedValue);
   };
 
-  const isMobile = useIsMobile();
+  const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newComment = e.target.value;
+
+    setCommentValue(newComment);
+    onStateChange?.({ isChecked: checked, comment: newComment });
+  };
 
   return (
-    <div className={"mt-8 mx-auto flex flex-col justify-center"}>
-      <div className="flex gap-2">
+    <div className={"px-8 mx-auto flex flex-col justify-center h-full"}>
+      <div className="flex gap-3">
         <div className="flex justify-center items-center h-fit mt-2 w-8">
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1 className={"mb-8 text-4xl font-semibold"}>
+        <h1 className={"text-4xl font-semibold"}>
           Último passo! Este item já foi coletado?
         </h1>
       </div>
 
-      <div className="justify-center">
+      <div className="justify-center w-full flex flex-col h-full">
         <ToggleGroup
           type="single"
-          // Convertendo o estado booleano para string apenas para o ToggleGroup ler
           value={checked ? "true" : "false"}
-          onValueChange={handleChange}
+          onValueChange={handleToggleChange}
           className="gap-2 justify-center"
           variant="outline"
         >
-          {/* Values em formato de string correspondendo aos booleanos */}
-          <ToggleGroupItem value="true" aria-label="Coletado">
+          <ToggleGroupItem
+            value="true"
+            aria-label="Coletado"
+          >
             Sim, já foi coletado
           </ToggleGroupItem>
-          <ToggleGroupItem value="false" aria-label="Não coletado">
+          <ToggleGroupItem
+            value="false"
+            aria-label="Não coletado"
+          >
             Não, ainda terei que coletar
           </ToggleGroupItem>
         </ToggleGroup>
+
+        <Input
+          placeholder="Observações"
+          value={commentValue}
+          onChange={handleCommentChange}
+          className="my-8 justify-center"
+        />
       </div>
     </div>
   );

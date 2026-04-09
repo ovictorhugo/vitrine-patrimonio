@@ -35,7 +35,7 @@ type WizardState = {
   pesquisa?: { value_item?: string; type?: "cod" | "atm" };
   formulario?: Patrimonio;
   catalog?: CatalogEntry;
-  isChecked?: boolean;
+  check?: { isChecked: boolean; comment: string };
 };
 
 const shallowEqual = (a: any, b: any) => {
@@ -129,7 +129,8 @@ export function AddPatrimonioModal({
         if (
           eqPesquisa(prev.pesquisa, next.pesquisa) &&
           prev.formulario === next.formulario &&
-          prev.isChecked === next.isChecked
+          prev.check === next.check &&
+          prev.catalog === next.catalog
         ) {
           return prev;
         }
@@ -191,14 +192,15 @@ export function AddPatrimonioModal({
 
   const onStateChangeCheck = useCallback(
     (st) => {
-      setWizardIfChanged((prev) => ({ ...prev, isChecked: st }));
+      setWizardIfChanged((prev) => ({ ...prev, check: st }));
     },
     [setWizardIfChanged],
   );
 
-  const handleCatalogID = useCallback(
-    (st: string) => {
-      setWizardIfChanged((prev) => ({ ...prev, catalog_id: st }));
+  const onStateChangeCatalog = useCallback(
+    (st: CatalogEntry) => {
+      console.log(st);
+      setWizardIfChanged((prev) => ({ ...prev, catalog: st }));
     },
     [setWizardIfChanged],
   );
@@ -236,7 +238,9 @@ export function AddPatrimonioModal({
       return;
     }
 
-    if (!wizard.catalog) {
+    console.log(wizard);
+
+    if (!wizard?.catalog?.id) {
       toast.error("Código do patrimônio não informado.");
       return;
     }
@@ -244,7 +248,7 @@ export function AddPatrimonioModal({
     try {
       setLoading(true);
 
-      const isLFD = wizard.catalog.workflow_history.some(
+      const isLFD = wizard?.catalog?.workflow_history.some(
         (e) => e.workflow_status === "DESFAZIMENTO",
       );
 
@@ -286,10 +290,11 @@ export function AddPatrimonioModal({
           createdId ??
           globalThis.crypto?.randomUUID?.() ??
           `${wizard.catalog.id}::temp`,
-        status: wizard?.isChecked || false,
-        comment: "",
+        status: wizard?.check?.isChecked || false,
+        comment: wizard.check?.comment || "",
         catalog: wizard.catalog,
       };
+
 
       const createdItems: CollectionItem[] = [];
       createdItems.push(newItem);
@@ -309,7 +314,7 @@ export function AddPatrimonioModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={
-          "w-[96vw] min-w-[70vw] h-[80vh] overflow-hidden flex flex-col"
+          "w-[96vw] min-w-[70vw] h-[75vh] overflow-hidden flex flex-col"
         }
       >
         <Progress
@@ -360,7 +365,7 @@ export function AddPatrimonioModal({
                   value={"formulario" as any}
                   onValidityChange={onValidityChangeFactory("formulario")}
                   onStateChange={onStateChangeFormulario as any}
-                  onCatalogChange={handleCatalogID as any}
+                  onCatalogChange={onStateChangeCatalog as any}
                   value_item={wizard.pesquisa?.value_item}
                   type={wizard.pesquisa?.type}
                   initialData={wizard.formulario}
@@ -375,7 +380,7 @@ export function AddPatrimonioModal({
                   value={"check" as any}
                   onValidityChange={onValidityChangeFactory("check")}
                   onStateChange={onStateChangeCheck}
-                  initialData={wizard.isChecked}
+                  initialData={wizard.check}
                   step={idx + 1}
                 />
               )}
