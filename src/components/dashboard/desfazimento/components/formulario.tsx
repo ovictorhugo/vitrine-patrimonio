@@ -182,11 +182,10 @@ export function FormularioStep({
   showLocation?: boolean;
 }) {
   const { urlGeral, loggedIn } = useContext(UserContext);
-  let catalog: CatalogEntry;
-
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(false);
   const [catalog_item, setCatalog] = useState("");
+  const [catalog, setCatalogData] = useState<CatalogEntry>();
   const [data, setData] = useState<Patrimonio>(
     initialData ? normalizeAsset(initialData as any) : blankPatrimonio(),
   );
@@ -267,7 +266,6 @@ export function FormularioStep({
 
         const searchData = await searchResponse.json();
 
-        console.log(searchData,code)
         if (!searchData.catalogs || searchData.catalogs.length === 0) {
           toast.error("Nenhum patrimônio encontrado com esse código.");
           throw new Error(`Nenhum patrimônio encontrado com esse código`);
@@ -284,7 +282,8 @@ export function FormularioStep({
 
         const catalogData = await catalogResponse.json();
 
-        catalog = catalogData;
+        setCatalogData(catalogData);
+        console.log(catalog)
 
         setCatalog(catalogData);
         setFound(true);
@@ -401,7 +400,7 @@ export function FormularioStep({
         title: img.id || `${index}-${img.file_path}`,
         src: buildImgUrl(img.file_path),
       })),
-    [data, buildImgUrl],
+    [data, buildImgUrl,catalog],
   );
 
   const cards = useMemo(
@@ -566,7 +565,7 @@ export function FormularioStep({
             </div>
           </>
         )}
-        <div className="grid grid-cols-1 w-full min-h-[300px] h-full">
+        <div className="grid grid-cols-1 w-full my-4 min-h-[300px] h-full">
           <Carousel items={cards} />
         </div>
         <Separator className="my-8" />
