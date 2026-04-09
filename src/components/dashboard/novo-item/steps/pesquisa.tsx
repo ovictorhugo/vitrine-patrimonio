@@ -249,7 +249,7 @@ export function PesquisaStep({
 
     const assets = await fetchAssetsOnCatalog();
 
-    setAssetsOnCatalog(assets);
+    setAssetsOnCatalog(assets ?? []);
 
     setFilteredItems(Array.from(uniq.values()));
     setAdvancedResults([]);
