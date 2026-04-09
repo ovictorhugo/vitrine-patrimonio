@@ -20,6 +20,7 @@ import { useQuery } from "../authentication/signIn";
 import { StatusCount, WORKFLOWS } from "../dashboard/administrativo/admin";
 import { WorkflowAreaChart } from "../dashboard/graficos/workflow-area-chart";
 import { useIsMobile } from "../../hooks/use-mobile";
+import GeradorCodigoBarras from "../logoGeneration/logoGen";
 
 type Material = {
   material_code: string;
