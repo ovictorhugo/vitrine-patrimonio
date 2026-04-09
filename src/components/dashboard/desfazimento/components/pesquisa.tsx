@@ -8,16 +8,7 @@ import { toast } from "sonner";
 import { useQuery } from "../../../modal/search-modal-patrimonio";
 import { UserContext } from "../../../../context/context";
 import { useIsMobile } from "../../../../hooks/use-mobile";
-export type StepBaseProps<K extends keyof StepPropsMap> = {
-  value: K;
-  step: number;
-  onValidityChange: (valid: boolean) => void;
-  onStateChange?: (state: unknown) => void;
-} & StepPropsMap[K];
-
-export type StepPropsMap = {
-  pesquisa: { value_item?: string; type?: string };
-};
+import { StepBaseProps } from "../../novo-item/novo-item";
 
 export interface PatrimoniosSelecionados {
   term: string;
@@ -56,43 +47,59 @@ export function PesquisaStep({
   // ========= API base =========
   const { urlGeral } = useContext(UserContext);
 
-  // ========= Controle de busca avançada =========
-  const [advanced, setAdvanced] = useState(false);
-
   // ========= Helpers da API =========
-  async function fetchArray(): Promise<string[]> {
+  async function fetchArrayByKey(
+    url: string,
+    key: "asset_identifier" | "atm_number",
+  ): Promise<string[]> {
     try {
-      const res = await fetch(`${urlGeral}catalog/search/asset-identifier`, {
-        headers: {
-          "Access-Control-Allow-Methods": "GET",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Max-Age": "3600",
-          "Content-Type": "text/plain",
-        },
-      });
+      const res = await fetch(url);
       if (!res.ok) return [];
       const json = await res.json();
-      const arr = json?.catalogs;
-
-      const identifiers = arr.map(
-        (c: { asset_identifier: string }) => c.asset_identifier,
-      );
-
-      return Array.isArray(identifiers) ? identifiers : [];
+      const arr = json?.[key];
+      return Array.isArray(arr) ? arr.map(String) : [];
     } catch {
       return [];
     }
   }
 
-  // ========= Normalização de input =========
-  const normalizeInput = (value: string): string => {
-    value = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    value = value.replace(/[^A-Za-z0-9\s-]/g, ""); // permite 'X' para ATM também
-    return value;
-  };
+  async function fetchAssetsOnCatalog() {
+    try {
+      const res = await fetch(
+        `${urlGeral}catalog/search/asset-identifier?limit=10000&only_uncollected=true`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      const identifiers = json.catalogs.map((c) => c.asset_identifier);
+      setAssetsOnCatalog(identifiers);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao buscar itens catalogados");
+    }
+  }
+
+  const searchAssetIdentifier = (q: string) =>
+    fetchArrayByKey(
+      `${urlGeral}assets/search/asset-identifier?q=${encodeURIComponent(
+        q.replace(/-/g, ""),
+      )}`,
+      "asset_identifier",
+    );
+  const searchAtmNumber = (q: string) =>
+    fetchArrayByKey(
+      `${urlGeral}assets/search/atm-number?q=${encodeURIComponent(
+        q.replace(/-/g, ""),
+      )}`,
+      "atm_number",
+    );
 
   // Estados de resultados
   const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
+  const [assetsOnCatalog, setAssetsOnCatalog] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchAssetsOnCatalog();
+  }, []);
 
   // Rehidrata quando o Wizard já tem valor salvo
   useEffect(() => {
@@ -105,51 +112,48 @@ export function PesquisaStep({
     didHydrate.current = true;
   }, [value_item, type]);
 
-  useEffect(() => {
-    const has = itemsSelecionadosPopUp.length > 0;
-    onValidityChange(has);
-    if (has) {
-      const { type, term } = itemsSelecionadosPopUp[0];
-      onStateChange?.({ type, value_item: term });
-    }
-  }, [itemsSelecionadosPopUp, onValidityChange, onStateChange]);
-
   // ========= Busca por input =========
-  const runSearch = async (rawInput: string) => {
-    const input = normalizeInput(rawInput).trim();
-    const inputClean = input.replace(/-/g, ""); // remove o hífen do que o usuário digitou
 
-    if (inputClean.length < 1) {
-      setFilteredItems([]);
-      return;
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const runSearch = (rawInput: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
-    // Busca simples
-    const [assetIdentifiers] = await Promise.all([fetchArray()]);
+    debounceTimerRef.current = setTimeout(async () => {
+      let input = rawInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      input = input.replace(/[^A-Za-z0-9\s-]/g, "").trim();
 
-    // Filtra os asset_identifiers pelo que o usuário digitou
-    const filteredIds = (assetIdentifiers || []).filter((id) => {
-      const idStr = String(id); // ex: "1234567-8"
-      const [bem_cod, bem_dgv = ""] = idStr.split("-");
-      const idClean = `${bem_cod}${bem_dgv}`.replace(/-/g, ""); // "12345678"
-      return idClean.startsWith(inputClean); // ou .includes(inputClean) se quiser busca em qualquer posição
-    });
+      if (input.replace(/-/g, "").length < 1) {
+        setFilteredItems([]);
+        return;
+      }
 
-    // Mapeia só os que passaram no filtro
-    const codItems: SearchItem[] = filteredIds.map((id) => {
-      const [bem_cod, bem_dgv = ""] = String(id).split("-");
-      return { type: "cod", bem_cod, bem_dgv };
-    });
+      const [assetIdentifiers, atmNumbers] = await Promise.all([
+        searchAssetIdentifier(input),
+        searchAtmNumber(input),
+      ]);
 
-    const uniq = new Map<string, SearchItem>();
-    for (const it of codItems) {
-      const key = isAtm(it) ? it.bem_num_atm : `${it.bem_cod}-${it.bem_dgv}`;
-      if (!uniq.has(key)) uniq.set(key, it);
-    }
+      const codItems: SearchItem[] = (assetIdentifiers || []).map((id) => {
+        const [bem_cod, bem_dgv = ""] = String(id).split("-");
+        return { type: "cod", bem_cod, bem_dgv };
+      });
 
-    setFilteredItems(Array.from(uniq.values()));
+      const atmItems: SearchItem[] = (atmNumbers || []).map((atm) => ({
+        type: "atm",
+        bem_num_atm: String(atm),
+      }));
+
+      const uniq = new Map<string, SearchItem>();
+      for (const it of [...codItems, ...atmItems]) {
+        const key = isAtm(it) ? it.bem_num_atm : `${it.bem_cod}-${it.bem_dgv}`;
+        if (!uniq.has(key)) uniq.set(key, it);
+      }
+
+      setFilteredItems(Array.from(uniq.values()));
+    }, 500); // <-- Tempo do debounce em milissegundos (pode ajustar para 300 ou 400 se achar muito lento)
   };
-
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChangeInput = (value: string) => {
@@ -158,7 +162,8 @@ export function PesquisaStep({
   };
 
   const handleChangeInputCod = (value: string) => {
-    let cleanValue = value.replace(/[^a-zA-Z0-9]/g, "");
+    value = value.toUpperCase();
+    let cleanValue = value.replace(/[^A-Za-z0-9]/g, "");
 
     const originalValue = cleanValue;
     cleanValue = cleanValue.replace(/^0+/, "");
@@ -171,11 +176,11 @@ export function PesquisaStep({
     if (cleanValue.length > 1) {
       formattedValue = cleanValue.slice(0, -1) + "-" + cleanValue.slice(-1);
     }
+
     runSearch(formattedValue);
     setInput(formattedValue);
   };
 
-  // evita rehidratar várias vezes a partir das props
   const didHydrate = useRef(false);
 
   const handleRemoveItem = (index: number) => {
@@ -228,14 +233,18 @@ export function PesquisaStep({
     if (cod) setInput(cod);
   }, [cod]);
 
+  function hasAsset(cod) {
+    return assetsOnCatalog.find((a) => a.includes(cod));
+  }
+
   const isMobile = useIsMobile();
 
   return (
     <div
       className={
         isMobile
-          ? "max-w-[936px] mt-[100px] mx-auto flex flex-col"
-          : "max-w-[936px] mx-auto flex flex-col"
+          ? "max-w-[936px] h-full mx-auto flex flex-col"
+          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
       }
     >
       <div className="flex gap-2">
@@ -246,11 +255,11 @@ export function PesquisaStep({
         <h1
           className={
             isMobile
-              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
-              : "mb-16 text-4xl font-semibold max-w-[1000px]"
+              ? "mb-8 text-2xl font-semibold"
+              : "mb-16 text-4xl font-semibold"
           }
         >
-          Pesquise pelo identificador (código-dígito) do patrimônio:
+          Pesquise pelo identificador (código-dígito) ou ATM do patrimônio:
         </h1>
       </div>
 
@@ -289,7 +298,7 @@ export function PesquisaStep({
               {itemsSelecionadosPopUp.length === 0 && (
                 <Input
                   onChange={(e) => {
-                    if (!advanced && itemType === "cod") {
+                    if (itemType === "cod") {
                       handleChangeInputCod(e.target.value);
                     } else {
                       handleChangeInput(e.target.value);
@@ -299,7 +308,7 @@ export function PesquisaStep({
                   ref={inputRef}
                   value={input}
                   autoFocus={true}
-                  maxLength={20} // 👈 limite de 10 caracteres
+                  maxLength={20}
                   className="border-0 w-full bg-transparent max-h-[40px] h-[40px]  flex-1 p-0  inline-block"
                 />
               )}
@@ -319,39 +328,76 @@ export function PesquisaStep({
           </div>
         </Alert>
 
-        {/* MODO SIMPLES: duas sessões (cod/atm) */}
-        {!advanced &&
-          input.trim().length >= 1 &&
-          filteredItems.length !== 0 && (
-            <div className="w-full mt-4">
-              <div className="flex flex-col gap-8">
-                {filteredItems.some(isCod) && (
-                  <div>
-                    <p className="uppercase font-medium text-xs mb-3">
-                      Identificador (código-dígito)
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      {filteredItems
-                        .filter(isCod)
-                        .slice(0, 15)
-                        .map((props, index) => {
-                          const label = `${props.bem_cod}-${props.bem_dgv}`;
-                          return (
-                            <div
-                              key={index}
-                              onClick={() => handleSelectItemSimple(props)}
-                              className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-                            >
-                              {label}
-                            </div>
-                          );
-                        })}
-                    </div>
+        {filteredItems.length == 0 && (
+          <p className="mt-8 text-xs font-medium text-gray-500">
+            *Para códigos ATM que começam com "A", substituir por 19 ou 20
+          </p>
+        )}
+
+        {input.trim().length >= 1 && filteredItems.length !== 0 && (
+          <div className="w-full mt-4">
+            <div className="flex flex-col gap-8">
+              {filteredItems.some(isCod) && (
+                <div>
+                  <p className="uppercase font-medium text-xs mb-3">
+                    Identificador (código-dígito)
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {filteredItems
+                      .filter(isCod)
+                      .slice(0, 15)
+                      .map((props, index) => {
+                        const label = `${props.bem_cod}-${props.bem_dgv}`;
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => handleSelectItemSimple(props)}
+                            className={
+                              hasAsset(label)
+                                ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
+                                : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                            }
+                          >
+                            {label}
+                          </div>
+                        );
+                      })}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {filteredItems.some(isAtm) && (
+                <div>
+                  <p className="uppercase font-medium text-xs mb-3">
+                    Código ATM
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {filteredItems
+                      .filter(isAtm)
+                      .slice(0, 15)
+                      .map((props, index) => (
+                        <div
+                          key={index}
+                          onClick={() => handleSelectItemSimple(props)}
+                          className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                        >
+                          {props.bem_num_atm}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
+        <div className="flex gap-4 mt-8">
+          <div className="flex gap-1 items-center">
+            <div className="h-3 w-3 rounded-sm bg-eng-blue"></div>
+            <p className="text-sm font-medium text-gray-500">
+              Item já cadastrado no Sistema Patrimônio
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

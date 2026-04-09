@@ -10,6 +10,7 @@ import { UserContext } from "../../context/context";
 import { toast } from "sonner";
 import { useQuery } from "../authentication/signIn";
 import { Input } from "../ui/input";
+import { BlockItemsEmprestimo } from "../CardComponents/block-items-emprestimo";
 
 export function PedirEmprestimoAudiovisual() {
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ export function PedirEmprestimoAudiovisual() {
         </div>
 
         <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
-          <BlockItems
+          <BlockItemsEmprestimo
             workflow={["AUDIOVISUAL_ANUNCIADO"]}
             materialIdFilter={getMaterialSearch()}
           />

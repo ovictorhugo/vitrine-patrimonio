@@ -18,20 +18,24 @@ import { CatalogEntry } from "../../itens-vitrine/itens-vitrine";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";
 import { is } from "date-fns/locale";
+import { CheckStep } from "./check";
 
-type StepKey = "pesquisa" | "formulario";
+type StepKey = "pesquisa" | "formulario" | "check";
 type StepDef = { key: StepKey; label: string };
 
 const STEPS: StepDef[] = [
   { key: "pesquisa", label: "Pesquisa" },
   { key: "formulario", label: "Formulário" },
+  { key: "check", label: "Check" },
 ];
 
 type ValidMap = Partial<Record<StepKey, boolean>>;
 
 type WizardState = {
   pesquisa?: { value_item?: string; type?: "cod" | "atm" };
-  formulario?: Patrimonio; // sua estrutura original; mapearemos para Asset ao salvar
+  formulario?: Patrimonio;
+  catalog?: CatalogEntry;
+  isChecked?: boolean;
 };
 
 const shallowEqual = (a: any, b: any) => {
@@ -124,7 +128,8 @@ export function AddPatrimonioModal({
         const next = producer(prev);
         if (
           eqPesquisa(prev.pesquisa, next.pesquisa) &&
-          prev.formulario === next.formulario
+          prev.formulario === next.formulario &&
+          prev.isChecked === next.isChecked
         ) {
           return prev;
         }
@@ -184,6 +189,20 @@ export function AddPatrimonioModal({
     [setWizardIfChanged],
   );
 
+  const onStateChangeCheck = useCallback(
+    (st) => {
+      setWizardIfChanged((prev) => ({ ...prev, isChecked: st }));
+    },
+    [setWizardIfChanged],
+  );
+
+  const handleCatalogID = useCallback(
+    (st: string) => {
+      setWizardIfChanged((prev) => ({ ...prev, catalog_id: st }));
+    },
+    [setWizardIfChanged],
+  );
+
   const didInitFromURL = useRef(false);
   // Preenche automaticamente a pesquisa com base nos query params
   useEffect(() => {
@@ -217,42 +236,15 @@ export function AddPatrimonioModal({
       return;
     }
 
-    const assetCode = wizard.formulario?.asset_code;
-
-    // Verificação de segurança caso o código não exista no formulário
-    if (!assetCode) {
+    if (!wizard.catalog) {
       toast.error("Código do patrimônio não informado.");
       return;
     }
 
     try {
       setLoading(true);
-      const searchResponse = await fetch(
-        `${urlGeral}catalog/search/asset-identifier?q=${assetCode}`,
-      );
 
-      if (!searchResponse.ok) {
-        throw new Error("Falha na requisição de busca do identificador.");
-      }
-
-      const searchData = await searchResponse.json();
-
-      if (!searchData.catalogs || searchData.catalogs.length === 0) {
-        toast.error("Nenhum patrimônio encontrado com esse código.");
-        return;
-      }
-
-      const catalogId = searchData.catalogs[0].catalog_id;
-      const catalogResponse = await fetch(`${urlGeral}catalog/${catalogId}`);
-
-      if (!catalogResponse.ok) {
-        toast.error(`Falha ao buscar detalhes do catálogo: ${catalogId}`);
-        throw new Error(`Falha ao buscar detalhes do catálogo: ${catalogId}`);
-      }
-
-      const catalogData = await catalogResponse.json();
-
-      const isLFD = catalogData.workflow_history.some(
+      const isLFD = wizard.catalog.workflow_history.some(
         (e) => e.workflow_status === "DESFAZIMENTO",
       );
 
@@ -264,7 +256,7 @@ export function AddPatrimonioModal({
       }
 
       const payload = {
-        catalog_id: catalogData.id,
+        catalog_id: wizard.catalog.id,
         status: false,
         comment: "",
       };
@@ -293,10 +285,10 @@ export function AddPatrimonioModal({
         id:
           createdId ??
           globalThis.crypto?.randomUUID?.() ??
-          `${catalogData.id}::temp`,
-        status: false,
+          `${wizard.catalog.id}::temp`,
+        status: wizard?.isChecked || false,
         comment: "",
-        catalog: catalogData,
+        catalog: wizard.catalog,
       };
 
       const createdItems: CollectionItem[] = [];
@@ -316,13 +308,15 @@ export function AddPatrimonioModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={"w-[96vw] min-w-[70vw] h-[80vh] overflow-hidden"}
+        className={
+          "w-[96vw] min-w-[70vw] h-[80vh] overflow-hidden flex flex-col"
+        }
       >
         <Progress
           className="absolute top-0 left-0 rounded-b-none rounded-t-lg h-1 z-[5]"
           value={pct}
         />
-        <div className=" flex justify-end w-full">
+        <div className=" flex justify-end w-full max-h-[60px]">
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -334,96 +328,116 @@ export function AddPatrimonioModal({
             </Button>
           </div>
         </div>
-        <div className="flex flex-col h-full w-full gap-8">
-          <Tabs
-            key={resetKey}
-            value={active}
-            onValueChange={(v) => {
-              const targetIndex = STEPS.findIndex(
-                (s) => s.key === (v as StepKey),
-              );
-              if (targetIndex !== -1 && canActivateIndex(targetIndex))
-                setActive(v as StepKey);
-            }}
-            className="h-full"
-          >
-            {STEPS.map((s) => (
-              <TabsContent key={s.key} value={s.key} className="m-0 h-full">
-                {s.key === "pesquisa" && (
-                  <PesquisaStep
-                    key={`pesquisa-${resetKey}`}
-                    value={"pesquisa" as any}
-                    onValidityChange={onValidityChangeFactory("pesquisa")}
-                    onStateChange={onStateChangePesquisa as any}
-                    value_item={wizard.pesquisa?.value_item}
-                    type={wizard.pesquisa?.type}
-                    step={idx + 1}
-                  />
-                )}
+        <Tabs
+          key={resetKey}
+          value={active}
+          onValueChange={(v) => {
+            const targetIndex = STEPS.findIndex(
+              (s) => s.key === (v as StepKey),
+            );
+            if (targetIndex !== -1 && canActivateIndex(targetIndex))
+              setActive(v as StepKey);
+          }}
+          className="flex-1"
+        >
+          {STEPS.map((s) => (
+            <TabsContent key={s.key} value={s.key} className="m-0 h-full">
+              {s.key === "pesquisa" && (
+                <PesquisaStep
+                  key={`pesquisa-${resetKey}`}
+                  value={"pesquisa" as any}
+                  onValidityChange={onValidityChangeFactory("pesquisa")}
+                  onStateChange={onStateChangePesquisa as any}
+                  value_item={wizard.pesquisa?.value_item}
+                  type={wizard.pesquisa?.type}
+                  step={idx + 1}
+                />
+              )}
 
-                {s.key === "formulario" && (
-                  <FormularioStepView
-                    key={`formulario-${resetKey}`}
-                    value={"formulario" as any}
-                    onValidityChange={onValidityChangeFactory("formulario")}
-                    onStateChange={onStateChangeFormulario as any}
-                    value_item={wizard.pesquisa?.value_item}
-                    type={wizard.pesquisa?.type}
-                    initialData={wizard.formulario}
-                    step={idx + 1}
-                    showLocation={true}
-                  />
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
+              {s.key === "formulario" && (
+                <FormularioStepView
+                  key={`formulario-${resetKey}`}
+                  value={"formulario" as any}
+                  onValidityChange={onValidityChangeFactory("formulario")}
+                  onStateChange={onStateChangeFormulario as any}
+                  onCatalogChange={handleCatalogID as any}
+                  value_item={wizard.pesquisa?.value_item}
+                  type={wizard.pesquisa?.type}
+                  initialData={wizard.formulario}
+                  step={idx + 1}
+                  showLocation={true}
+                />
+              )}
 
-          {!isLast ? (
-            <div className="flex justify-end items-center h-fit">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  <Button
-                    size="lg"
-                    className="rounded"
-                    onClick={goNext}
-                    disabled={!canGoNext}
-                  >
-                    Próximo <ArrowRight size={16} />
-                  </Button>
-                </div>
+              {s.key === "check" && (
+                <CheckStep
+                  key={`check-${resetKey}`}
+                  value={"check" as any}
+                  onValidityChange={onValidityChangeFactory("check")}
+                  onStateChange={onStateChangeCheck}
+                  initialData={wizard.isChecked}
+                  step={idx + 1}
+                />
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {!isLast ? (
+          <div className="grid justify-end items-end max-h-[50px]">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                <Button
+                  size="lg"
+                  variant={"outline"}
+                  className="rounded-r-none"
+                  onClick={goPrev}
+                  disabled={active === "pesquisa"}
+                >
+                  <ArrowLeft size={16} />
+                  Voltar
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-l-none"
+                  onClick={goNext}
+                  disabled={!canGoNext}
+                >
+                  Próximo <ArrowRight size={16} />
+                </Button>
               </div>
             </div>
-          ) : (
-            <div className="flex justify-end items-center h-fit">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  <Button
-                    size="lg"
-                    variant={"outline"}
-                    className="rounded-r-none"
-                    onClick={goPrev}
-                  >
-                    <ArrowLeft size={16} />
-                    Voltar
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="rounded-l-none"
-                    onClick={handleAddItem}
-                    disabled={loading || blocked}
-                  >
-                    Adicionar à coleção{" "}
-                    {loading ? (
-                      <LoaderCircle size={16} className="animate-spin" />
-                    ) : (
-                      <ArrowRight size={16} />
-                    )}
-                  </Button>
-                </div>
+          </div>
+        ) : (
+          <div className="grid justify-end items-end max-h-[50px]">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                <Button
+                  size="lg"
+                  variant={"outline"}
+                  className="rounded-r-none"
+                  onClick={goPrev}
+                >
+                  <ArrowLeft size={16} />
+                  Voltar
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-l-none"
+                  onClick={handleAddItem}
+                  disabled={loading || blocked}
+                >
+                  Adicionar à coleção{" "}
+                  {loading ? (
+                    <LoaderCircle size={16} className="animate-spin" />
+                  ) : (
+                    <ArrowRight size={16} />
+                  )}
+                </Button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -149,6 +149,11 @@ export interface LoanDTO {
   loanable_item_id: UUID;
   requester_id: UUID | null;
   temporary_guardian_id: UUID;
+  
+  confirmed_by_id: UUID | null;
+  executed_by_id: UUID | null;
+  returned_by_id: UUID | null;
+  
   start_at: string;
   end_at: string | null;
   returned_at: string | null;
@@ -159,14 +164,21 @@ export interface LoanDTO {
   lend_detail: string | null;
   returned_detail: string | null;
   rejection_reason: string | null;
+  
   requester?: UserDTO;
   temporary_guardian?: UserDTO;
+  
+  confirmed_by?: UserDTO;
+  executed_by?: UserDTO;
+  returned_by?: UserDTO;
 }
+
 export interface LoanableItemDTO {
   id: UUID;
   catalog_id: UUID;
   legal_guardian_id: UUID;
   in_maintenance: boolean;
+  is_visible: boolean;
   owner_notes: string | null;
   catalog: CatalogResponseDTO;
   guardian: UserDTO;

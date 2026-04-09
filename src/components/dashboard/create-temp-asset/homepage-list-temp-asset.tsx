@@ -15,31 +15,6 @@ import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserContext } from "../../../context/context";
-import { Alert } from "../../ui/alert";
-import { SquaresFour, Rows } from "phosphor-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../../ui/accordion";
-import { HeaderResultTypeHome } from "../../header-result-type-home";
-import { useQuery } from "../../authentication/signIn";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
-import { Skeleton } from "../../ui/skeleton";
-import { PatrimonioItem } from "../../busca-patrimonio/patrimonio-item";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
-import { Search } from "../../search/search";
-import { Badge } from "../../ui/badge";
-import { useModal } from "../../hooks/use-modal-store";
-import { FiltersSheetAssets } from "./filters-sheet-assets";
-import { Switch } from "../../ui/switch";
 import { Patrimonios } from "../dashboard-page/tabs/patrimonios";
 import { useIsMobile } from "../../../hooks/use-mobile";
 

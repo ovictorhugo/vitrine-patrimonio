@@ -110,7 +110,7 @@ export function Inventario() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== navegação & paginação por querystring =====
@@ -118,7 +118,7 @@ export function Inventario() {
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
 
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
@@ -130,14 +130,14 @@ export function Inventario() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -155,7 +155,7 @@ export function Inventario() {
       // Se sua API aceita offset/limit na query, seguimos o padrão do exemplo:
       // /inventories/?offset=...&limit=...
       const url = `${urlGeral}inventories/?offset=${encodeURIComponent(
-        offset
+        offset,
       )}&limit=${encodeURIComponent(limit)}`;
 
       const res = await fetch(url, { method: "GET", headers: authHeaders });
@@ -163,7 +163,7 @@ export function Inventario() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar inventários (HTTP ${res.status}).`
+          text || `Falha ao carregar inventários (HTTP ${res.status}).`,
         );
       }
 
@@ -209,7 +209,7 @@ export function Inventario() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao criar inventário (HTTP ${res.status}).`
+          text || `Falha ao criar inventário (HTTP ${res.status}).`,
         );
       }
 
@@ -254,7 +254,7 @@ export function Inventario() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao excluir inventário (HTTP ${res.status}).`
+          text || `Falha ao excluir inventário (HTTP ${res.status}).`,
         );
       }
 
@@ -327,7 +327,7 @@ export function Inventario() {
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(
-          t || `Falha ao atualizar inventário (HTTP ${res.status}).`
+          t || `Falha ao atualizar inventário (HTTP ${res.status}).`,
         );
       }
       toast("Inventário atualizado", {
@@ -341,8 +341,8 @@ export function Inventario() {
         prev.map((i) =>
           i.id === (editTarget?.id ?? "")
             ? { ...i, key: editKey.trim(), avaliable: editAvailable }
-            : i
-        )
+            : i,
+        ),
       );
     } catch (e: any) {
       toast("Erro ao salvar alterações", {

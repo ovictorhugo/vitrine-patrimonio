@@ -100,13 +100,13 @@ export function Alienacao() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== paginação via querystring (padrão offset/limit)
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 
@@ -116,14 +116,14 @@ export function Alienacao() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -136,7 +136,7 @@ export function Alienacao() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // função registrada pela grade para remover itens após POST
   const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(
-    () => () => {}
+    () => () => {},
   );
 
   // ===== coleções (com paginação)
@@ -144,7 +144,7 @@ export function Alienacao() {
     try {
       setLoadingList(true);
       const url = `${urlGeral}collections/?type=COMPRAS&offset=${encodeURIComponent(
-        offset
+        offset,
       )}&limit=${encodeURIComponent(limit)}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok)
@@ -275,7 +275,7 @@ export function Alienacao() {
     }
 
     const targetCollection = collections.find(
-      (c) => c.id === targetCollectionId
+      (c) => c.id === targetCollectionId,
     );
     if (!targetCollection) {
       toast.message("Alvo não é uma coleção conhecida.");
@@ -302,8 +302,8 @@ export function Alienacao() {
             status: false,
             comment: "",
           }),
-        })
-      )
+        }),
+      ),
     );
 
     const okIds: string[] = [];
@@ -315,7 +315,7 @@ export function Alienacao() {
 
     if (okIds.length) {
       toast.success(
-        `${okIds.length} item(ns) adicionados em "${targetCollection.name}"`
+        `${okIds.length} item(ns) adicionados em "${targetCollection.name}"`,
       );
       removeFromGrid(okIds);
       setSelectedIds((prev) => {
@@ -338,12 +338,12 @@ export function Alienacao() {
   const [newName, setNewName] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
   const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(
-    null
+    null,
   );
 
   const currentCollection = useMemo(
     () => collections.find((c) => c.id === currentCollectionId) || null,
-    [collections, currentCollectionId]
+    [collections, currentCollectionId],
   );
 
   useEffect(() => {
@@ -379,8 +379,8 @@ export function Alienacao() {
         prev.map((c) =>
           c.id === currentCollectionId
             ? { ...c, name: newName, description: newDescription }
-            : c
-        )
+            : c,
+        ),
       );
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
@@ -404,7 +404,7 @@ export function Alienacao() {
         throw new Error(text || "Erro ao deletar a coleção.");
       }
       setCollections((prev) =>
-        prev.filter((c) => c.id !== currentCollectionId)
+        prev.filter((c) => c.id !== currentCollectionId),
       );
       toast.success("Coleção deletada.");
       setDeleteOpen(false);
@@ -435,7 +435,7 @@ export function Alienacao() {
               Accept: "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (!res.ok) throw new Error("Erro ao carregar estatísticas");
@@ -617,8 +617,8 @@ export function Alienacao() {
                 {item.status === "TRUE"
                   ? "Coletados"
                   : item.status === "FALSE"
-                  ? "Pendentes"
-                  : "Sem coleção"}
+                    ? "Pendentes"
+                    : "Sem coleção"}
               </CardTitle>
               {getIcon(item.status)}
             </CardHeader>

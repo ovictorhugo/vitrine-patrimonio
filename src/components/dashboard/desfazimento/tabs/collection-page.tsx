@@ -351,7 +351,7 @@ export function CollectionPage() {
   // ===== navegação & paginação por querystring (offset/limit) =====
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "24");
+  const initialLimit = Number(qs.get("limit") || "12");
 
   const [offset, setOffset] = useState<number>(
     Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0,

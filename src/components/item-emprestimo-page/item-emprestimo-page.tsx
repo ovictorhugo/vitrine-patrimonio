@@ -42,6 +42,7 @@ import { Files } from "../homepage/components/documents-tab-catalog";
 import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
 import MaintenanceTab from "./maintenance";
 import { usePermissions } from "../permissions";
+import { Switch } from "../ui/switch";
 
 /* ===================== Tipos DTO ===================== */
 interface UnitDTO {
@@ -370,12 +371,6 @@ export function LoanItemPage() {
     asset?.item_brand ||
     "Item sem nome";
 
-  const locCatalogoParts = chain(loan?.catalog?.location);
-
-  const visibleCatalogParts = !loggedIn
-    ? locCatalogoParts.slice(0, 2)
-    : locCatalogoParts;
-
   const locAssetParts = chain(asset?.location);
 
   const visibleParts = !loggedIn ? locAssetParts.slice(0, 2) : locAssetParts;
@@ -419,6 +414,40 @@ export function LoanItemPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  async function handleChangeVisibility(catalog_id: string) {
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${urlGeral}loans/changeVisibility/${encodeURIComponent(catalog_id)}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || "Falha ao alterar a visibilidade do item.",
+        );
+      }
+
+      const data = await response.json();
+
+      toast.success("Visibilidade alterada com sucesso!");
+
+      fetchLoan();
+    } catch (error: any) {
+      console.error("Erro ao alterar visibilidade:", error);
+      toast.error(
+        error.message || "Ocorreu um erro ao tentar alterar a visibilidade.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const [value, setValue] = useState("emprestimo");
 
   const isMobile = useIsMobile();
@@ -451,7 +480,7 @@ export function LoanItemPage() {
         </div>
       );
   }
-  if (!loan?.catalog) {
+  if (!loan?.catalog || (!hasAnunciarItem && !loan.is_visible)) {
     return (
       <div className="h-full bg-cover bg-center flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900">
         <div className="w-full flex flex-col items-center justify-center">
@@ -512,6 +541,11 @@ export function LoanItemPage() {
           </h1>
 
           <div className="hidden md:flex items-center gap-2">
+            Visibilidade
+            <Switch
+              checked={loan.is_visible}
+              onCheckedChange={() => handleChangeVisibility(loan.catalog_id)}
+            />
             <DownloadPdfButton
               filters={{}}
               id={loan.id}
