@@ -4,11 +4,22 @@ import { StepBaseProps } from "../../novo-item/novo-item";
 import {
   Archive,
   ArrowRight,
+  Calendar,
   CheckIcon,
+  Clock,
   HelpCircle,
   Hourglass,
+  Landmark,
+  ListTodo,
   LoaderCircle,
+  LucideIcon,
   MoveRight,
+  Recycle,
+  Store,
+  Trash,
+  Workflow,
+  Wrench,
+  XCircle,
   XIcon,
 } from "lucide-react";
 import { Input } from "../../../ui/input";
@@ -29,8 +40,15 @@ import { log } from "console";
 import { useModal } from "../../../hooks/use-modal-store";
 import { useIsMobile } from "../../../../hooks/use-mobile";
 import { toast } from "sonner";
-import { CatalogEntry } from "./item-patrimonio";
+import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
 import { Card, Carousel } from "../../../ui/apple-cards-carousel";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../ui/accordion";
+import { HeaderResultTypeHome } from "../../../header-result-type-home";
 
 /** ====== Tipos ====== */
 export interface Patrimonio {
@@ -102,6 +120,73 @@ function useDebounced<T>(value: T, delay = 400) {
   }, [value, delay]);
   return debounced;
 }
+
+const formatDateTimeBR = (iso?: string) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(d);
+  } catch {
+    return iso;
+  }
+};
+
+export const WORKFLOW_STATUS_META: Record<
+  string,
+  { Icon: LucideIcon; colorClass: string }
+> = {
+  // Vitrine
+  REVIEW_REQUESTED_VITRINE: { Icon: Hourglass, colorClass: "text-amber-500" },
+  ADJUSTMENT_VITRINE: { Icon: Wrench, colorClass: "text-blue-500" },
+  VITRINE: { Icon: Store, colorClass: "text-green-600" },
+  AGUARDANDO_TRANSFERENCIA: { Icon: Clock, colorClass: "text-indigo-500" },
+  TRANSFERIDOS: { Icon: Archive, colorClass: "text-zinc-500" },
+
+  // Desfazimento
+  REVIEW_REQUESTED_DESFAZIMENTO: {
+    Icon: Hourglass,
+    colorClass: "text-amber-500",
+  },
+  ADJUSTMENT_DESFAZIMENTO: { Icon: Wrench, colorClass: "text-blue-500" },
+  REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
+  REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
+  DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+  DESCARTADOS: { Icon: Recycle, colorClass: "text-zinc-500" },
+
+  ACERVO_HISTORICO: { Icon: Landmark, colorClass: "text-zinc-500" },
+};
+
+export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
+  STARTED: "Iniciado",
+  REVIEW_REQUESTED_VITRINE: "Avaliação S. Patrimônio - Vitrine",
+  ADJUSTMENT_VITRINE: "Ajustes - Vitrine",
+  VITRINE: "Anunciados",
+  AGUARDANDO_TRANSFERENCIA: "Aguardando Transferência",
+  TRANSFERIDOS: "Transferidos",
+
+  REVIEW_REQUESTED_DESFAZIMENTO: "Avaliação S. Patrimônio - Desfazimento",
+  ADJUSTMENT_DESFAZIMENTO: "Ajustes - Desfazimento",
+  REVIEW_REQUESTED_COMISSION: "LTD - Lista Temporária de Desfazimento",
+  REJEITADOS_COMISSAO: "Recusados",
+  DESFAZIMENTO: "LFD - Lista Final de Desfazimento",
+  DESCARTADOS: "Processo Finalizado",
+
+  ACERVO_HISTORICO: "Acervo Histórico",
+};
+
+type WorkflowStatus =
+  | "STARTED"
+  | "VALIDATION_VITRINE"
+  | "VALIDATION_UNDOING"
+  | "VALIDATION_REJECTED"
+  | "VALIDATION_APPROVED"
+  | "PUBLISHED"
+  | "ARCHIVED"
+  | string;
 
 /** ====== Normalizador da resposta (formato novo com nesting) ====== */
 function normalizeAsset(raw: any): Patrimonio {
@@ -281,6 +366,8 @@ export function FormularioStep({
 
         const catalogData = await catalogResponse.json();
 
+        console.log(catalogData);
+
         setCatalog(catalogData);
 
         setFound(true);
@@ -408,6 +495,17 @@ export function FormularioStep({
     [images],
   );
 
+  const historySortedDesc = useMemo(() => {
+    const hist = catalog?.workflow_history ?? [];
+    return [...hist].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }, [catalog?.workflow_history]);
+
+  const getStatusLabel = (status: WorkflowStatus) =>
+    WORKFLOW_STATUS_LABELS[status] ?? status;
+
   if (loading) {
     if (isMobile) {
       return (
@@ -460,7 +558,7 @@ export function FormularioStep({
         </h1>
       </div>
 
-      <div>
+      <div className="gap-4">
         {showCard && (
           <>
             <div
@@ -751,6 +849,100 @@ export function FormularioStep({
             )}
           </div>
         </div>
+        <Accordion type="single" collapsible>
+          <AccordionItem value="item-1">
+            <div className="flex ">
+              <HeaderResultTypeHome
+                title="Histórico na plataforma"
+                icon={<Workflow size={24} className="text-gray-400" />}
+              />
+              <AccordionTrigger />
+            </div>
+            <AccordionContent className="p-0">
+              <div className="flex flex-col ">
+                {historySortedDesc.length === 0 ? (
+                  <div className="text-sm text-muted-foreground px-1">
+                    Nenhum evento de workflow.
+                  </div>
+                ) : (
+                  // ✅ NÃO muta: copia antes do reverse
+                  [...historySortedDesc].map((ev, idx) => {
+                    const meta = WORKFLOW_STATUS_META[ev.workflow_status] ?? {
+                      Icon: HelpCircle,
+                      colorClass: "text-zinc-500",
+                    };
+
+                    const { Icon: EvIcon } = meta;
+                    const username =
+                      ev.user?.username ||
+                      ev.user?.email?.split("@")[0] ||
+                      "Usuário";
+
+                    const total = historySortedDesc.length;
+                    const isLast = idx === total - 1;
+
+                    return (
+                      <div key={ev.id} className="flex gap-2">
+                        <div className="flex flex-col items-center">
+                          <Alert className="flex w-14 h-14 items-center justify-center">
+                            <div>
+                              <EvIcon className={``} size={16} />
+                            </div>
+                          </Alert>
+
+                          {!isLast && (
+                            <Separator
+                              className="min-h-8"
+                              orientation="vertical"
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="text-lg font-medium">
+                            {getStatusLabel(ev.workflow_status)}
+                          </p>
+
+                          {ev.detail?.justificativa && (
+                            <p className="text-sm text-justify dark:text-gray-300 mt-2 mb-4 text-gray-500 font-normal">
+                              {ev.detail.justificativa}
+                            </p>
+                          )}
+
+                          <div className="flex gap-3 mt-2 flex-wrap mb-2 items-center justify-between">
+                            <div className="flex gap-1 items-center">
+                              <Avatar className="rounded-md h-5 w-5">
+                                {ev.user?.photo_url ? (
+                                  <AvatarImage
+                                    className="rounded-md h-5 w-5"
+                                    src={ev.user.photo_url}
+                                    alt={username}
+                                  />
+                                ) : (
+                                  <AvatarFallback className="flex items-center justify-center">
+                                    <User size={10} />
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <p className="text-sm text-gray-500 dark:text-gray-300 font-normal">
+                                {username}
+                              </p>
+                            </div>
+
+                            <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
+                              <Calendar size={16} />
+                              {formatDateTimeBR(ev.created_at)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   );
