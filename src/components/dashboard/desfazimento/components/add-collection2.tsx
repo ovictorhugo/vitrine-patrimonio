@@ -314,7 +314,7 @@ export function AddPatrimonioModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={
-          "w-[96vw] min-w-[70vw] h-[75vh] overflow-hidden flex flex-col"
+          "w-[96vw] min-w-[75vw] h-[80vh] overflow-hidden flex flex-col p-4"
         }
       >
         <Progress
