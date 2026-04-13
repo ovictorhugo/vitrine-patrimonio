@@ -84,6 +84,7 @@ export function AddPatrimonioModal({
   const [blocked, setBlocked] = useState(false);
   const [wizard, setWizard] = useState<WizardState>({});
   const [resetKey, setResetKey] = useState(0);
+  const [isLFD, setIsLFD] = useState(true);
 
   const idx = useMemo(() => STEPS.findIndex((s) => s.key === active), [active]);
   const total = STEPS.length;
@@ -142,8 +143,8 @@ export function AddPatrimonioModal({
 
   const canGoNext = useMemo(() => {
     const upto = STEPS.slice(0, idx + 1).every((s) => valid[s.key] === true);
-    return upto && idx < total - 1;
-  }, [idx, total, valid]);
+    return upto && idx < total - 1 && (isLFD || idx != 1);
+  }, [idx, total, valid, isLFD]);
 
   const canActivateIndex = useCallback(
     (targetIndex: number) => {
@@ -295,7 +296,6 @@ export function AddPatrimonioModal({
         catalog: wizard.catalog,
       };
 
-
       const createdItems: CollectionItem[] = [];
       createdItems.push(newItem);
 
@@ -309,6 +309,14 @@ export function AddPatrimonioModal({
       toast.error("Ocorreu um erro ao buscar os dados do patrimônio.");
     }
   }
+
+  useEffect(() => {
+    const isLFDHook = wizard?.catalog?.workflow_history.some(
+      (e) => e.workflow_status === "DESFAZIMENTO",
+    );
+    setIsLFD(isLFDHook ?? true);
+  }, [wizard?.catalog?.workflow_history]);
+
   // ========================= RENDER =========================
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
