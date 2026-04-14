@@ -168,19 +168,19 @@ export function TrocarLocalStep({
   // Objetos atuais (derivados das listas)
   const selectedUnitObj = useMemo(
     () => units.find((u) => u.id === selectedUnit) ?? null,
-    [units, selectedUnit]
+    [units, selectedUnit],
   );
   const selectedAgencyObj = useMemo(
     () => agencies.find((a) => a.id === selectedAgency) ?? null,
-    [agencies, selectedAgency]
+    [agencies, selectedAgency],
   );
   const selectedSectorObj = useMemo(
     () => sectors.find((s) => s.id === selectedSector) ?? null,
-    [sectors, selectedSector]
+    [sectors, selectedSector],
   );
   const selectedLocationObj = useMemo(
     () => locations.find((l) => l.id === selectedLocation) ?? null,
-    [locations, selectedLocation]
+    [locations, selectedLocation],
   );
 
   // ===== Labels readonly do formulário (não mudam com select) =====
@@ -288,7 +288,7 @@ export function TrocarLocalStep({
         setLoading((p) => ({ ...p, units: false }));
       }
     },
-    [baseUrl, token]
+    [baseUrl, token],
   );
 
   const fetchAgenciesByUnit = useCallback(
@@ -321,7 +321,7 @@ export function TrocarLocalStep({
           setLoading((p) => ({ ...p, agencies: false }));
       }
     },
-    [baseUrl, token]
+    [baseUrl, token],
   );
 
   const fetchSectorsByAgency = useCallback(
@@ -354,7 +354,7 @@ export function TrocarLocalStep({
           setLoading((p) => ({ ...p, sectors: false }));
       }
     },
-    [baseUrl, token]
+    [baseUrl, token],
   );
 
   const fetchLocationsBySector = useCallback(
@@ -387,7 +387,7 @@ export function TrocarLocalStep({
           setLoading((p) => ({ ...p, locations: false }));
       }
     },
-    [baseUrl, token]
+    [baseUrl, token],
   );
 
   // Montagem/Atualização: unidades conforme busca
@@ -485,7 +485,7 @@ export function TrocarLocalStep({
   useEffect(() => {
     if (!emitReadyRef.current) return;
     const isValid = Boolean(
-      selectedUnit && selectedAgency && selectedSector && selectedLocation
+      selectedUnit && selectedAgency && selectedSector && selectedLocation,
     );
     onValidityChange(!isOpen || isValid);
     onStateChange?.({
@@ -546,7 +546,7 @@ export function TrocarLocalStep({
     if (!selectedSector) return "Selecione um setor primeiro";
     if (selectedLocation) {
       const name = locations.find(
-        (l) => l.id === selectedLocation
+        (l) => l.id === selectedLocation,
       )?.location_name;
       return name ?? "Selecione um local";
     }
@@ -560,7 +560,7 @@ export function TrocarLocalStep({
       className={
         isMobile
           ? "max-w-[936px] mt-8 mx-auto flex flex-col justify-center"
-          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+          : "max-w-[936px] mx-auto flex flex-col justify-center"
       }
     >
       <div className="flex gap-2">
@@ -674,7 +674,7 @@ export function TrocarLocalStep({
                                 "mr-2 h-4 w-4",
                                 selectedUnit === u.id
                                   ? "opacity-100"
-                                  : "opacity-0"
+                                  : "opacity-0",
                               )}
                             />
                             <div className="flex flex-col">
@@ -736,7 +736,7 @@ export function TrocarLocalStep({
                                 "mr-2 h-4 w-4",
                                 selectedAgency === a.id
                                   ? "opacity-100"
-                                  : "opacity-0"
+                                  : "opacity-0",
                               )}
                             />
                             <div className="flex flex-col">
@@ -798,7 +798,7 @@ export function TrocarLocalStep({
                                 "mr-2 h-4 w-4",
                                 selectedSector === s.id
                                   ? "opacity-100"
-                                  : "opacity-0"
+                                  : "opacity-0",
                               )}
                             />
                             <div className="flex flex-col">
@@ -861,7 +861,7 @@ export function TrocarLocalStep({
                                 "mr-2 h-4 w-4",
                                 selectedLocation === l.id
                                   ? "opacity-100"
-                                  : "opacity-0"
+                                  : "opacity-0",
                               )}
                             />
                             <div className="flex flex-col">
