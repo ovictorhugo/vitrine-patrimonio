@@ -396,7 +396,7 @@ export function FormularioStep({
       className={
         isMobile
           ? "max-w-[936px] mt-8 mx-auto flex flex-col justify-center"
-          : "max-w-[936px] h-full mx-auto flex flex-col justify-center"
+          : "max-w-[936px] mx-auto flex flex-col justify-center"
       }
     >
       <div className="flex gap-2">
@@ -404,18 +404,12 @@ export function FormularioStep({
           <p className="text-lg">{step}</p>
           <ArrowRight size={16} />
         </div>
-        <h1
-          className={
-            isMobile
-              ? "mb-8 text-2xl font-semibold max-w-[1000px]"
-              : "mb-16 text-4xl font-semibold max-w-[1000px]"
-          }
-        >
+        <h1 className={"mb-16 text-4xl font-semibold max-w-[1000px]"}>
           Agora, confira se as informações estão corretas:
         </h1>
       </div>
 
-      <div className={isMobile ? "" : "ml-8"}>
+      <div className={"ml-8"}>
         {showCard && (
           <>
             <div
