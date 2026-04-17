@@ -340,9 +340,10 @@ export function FormularioStep({
       try {
         setLoading(true);
 
-        const searchResponse = await fetch(
-          `${urlGeral}catalog/search/asset-identifier?q=${code}`,
-        );
+        const searchUrl = type === "atm"
+          ? `${urlGeral}catalog/search/atm-number?q=${code}`
+          : `${urlGeral}catalog/search/asset-identifier?q=${code}`;
+        const searchResponse = await fetch(searchUrl);
 
         if (!searchResponse.ok) {
           throw new Error("Falha na requisição de busca do identificador.");
