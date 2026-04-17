@@ -65,13 +65,30 @@ export function PesquisaStep({
 
   async function fetchAssetsOnCatalog() {
     try {
-      const res = await fetch(
-        `${urlGeral}catalog/search/asset-identifier?limit=10000&only_uncollected=true`,
-      );
-      if (!res.ok) return [];
-      const json = await res.json();
-      const identifiers = json.catalogs.map((c) => c.asset_identifier);
-      setAssetsOnCatalog(identifiers);
+      const [resCod, resAtm] = await Promise.all([
+        fetch(
+          `${urlGeral}catalog/search/asset-identifier?limit=10000&only_uncollected=true`,
+        ),
+        fetch(
+          `${urlGeral}catalog/search/atm-number?limit=10000&only_uncollected=true`,
+        ),
+      ]);
+
+      let identifiers: string[] = [];
+
+      if (resCod.ok) {
+        const jsonCod = await resCod.json();
+        const cods = jsonCod.catalogs?.map((c: any) => c.asset_identifier) || [];
+        identifiers = [...identifiers, ...cods];
+      }
+
+      if (resAtm.ok) {
+        const jsonAtm = await resAtm.json();
+        const atms = jsonAtm.catalogs?.map((c: any) => c.atm_number) || [];
+        identifiers = [...identifiers, ...atms];
+      }
+
+      setAssetsOnCatalog(identifiers.filter(Boolean).map(String));
     } catch (e) {
       console.error(e);
       toast.error("Erro ao buscar itens catalogados");
@@ -237,6 +254,10 @@ export function PesquisaStep({
     return assetsOnCatalog.find((a) => a.includes(cod));
   }
 
+  function hasAtmAsset(atm) {
+    return assetsOnCatalog.find((a) => a.includes(atm));
+  }
+
   const isMobile = useIsMobile();
 
   return (
@@ -379,7 +400,11 @@ export function PesquisaStep({
                         <div
                           key={index}
                           onClick={() => handleSelectItemSimple(props)}
-                          className="flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                          className={
+                            hasAtmAsset(props.bem_num_atm)
+                              ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
+                              : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                          }
                         >
                           {props.bem_num_atm}
                         </div>

@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ArrowLeft, ArrowRight, LoaderCircle, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, LoaderCircle, Plus, X } from "lucide-react";
 import { Tabs, TabsContent } from "../../../ui/tabs";
 import { Progress } from "../../../ui/progress";
 import { Button } from "../../../ui/button";
@@ -85,6 +85,7 @@ export function AddPatrimonioModal({
   const [wizard, setWizard] = useState<WizardState>({});
   const [resetKey, setResetKey] = useState(0);
   const [isLFD, setIsLFD] = useState(true);
+  const [finished, setFinished] = useState(false);
 
   const idx = useMemo(() => STEPS.findIndex((s) => s.key === active), [active]);
   const total = STEPS.length;
@@ -262,8 +263,8 @@ export function AddPatrimonioModal({
 
       const payload = {
         catalog_id: wizard.catalog.id,
-        status: false,
-        comment: "",
+        status: wizard?.check?.isChecked || false,
+        comment: wizard.check?.comment || "",
       };
 
       const r = await fetch(
@@ -300,9 +301,9 @@ export function AddPatrimonioModal({
       createdItems.push(newItem);
 
       toast.success("Item adicionado à coleção.");
-      onOpenChange(false);
       addItem(createdItems);
       setLoading(false);
+      setFinished(true);
     } catch (error) {
       setLoading(false);
       console.error(error);
@@ -341,6 +342,46 @@ export function AddPatrimonioModal({
             </Button>
           </div>
         </div>
+        {finished ? (
+          <div className="max-w-[936px] mx-auto flex flex-col justify-center h-full w-full">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex gap-2 items-center pl-4">
+                <div className="flex justify-between items-center h-fit mt-2 w-8">
+                  <p className="text-lg">{idx + 1}</p>
+                  <ArrowRight size={16} />
+                </div>
+                <h1 className="text-2xl md:text-4xl font-semibold max-w-[1000px]">
+                  Parabéns, item adicionado com sucesso!
+                </h1>
+              </div>
+            </div>
+
+            <div className="ml-8 grid gap-4 justify-start">
+              <p className="text-xl text-neutral-600 dark:text-neutral-400 font-medium leading-tight tracking-tighter mb-4">
+                Deseja adicionar um novo item à coleção?
+              </p>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={() => {
+                    setWizard({});
+                    setActive("pesquisa");
+                    setFinished(false);
+                    setResetKey((k) => k + 1);
+                  }}
+                  className="max-w-[250px]"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Adicionar outro item
+                </Button>
+
+                <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         <Tabs
           key={resetKey}
           value={active}
@@ -450,6 +491,8 @@ export function AddPatrimonioModal({
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </DialogContent>
     </Dialog>

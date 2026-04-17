@@ -53,34 +53,39 @@ export function DownloadPdfButton({
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let baseUrl = `${urlGeral}${method}/pdf_play`;
-      let downloadUrl = buildUrl(baseUrl, filters);
+      let reqBaseUrl = method === "catalog" ? `${urlGeral}catalog/pdf_play` : `${urlGeral}${method}/pdf`;
+      let downloadUrl = buildUrl(reqBaseUrl, filters);
       if (method === "collections") {
-        baseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
-        downloadUrl = buildUrl(baseUrl, {});
+        reqBaseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
       } else if (method === "item") {
-        baseUrl = `${urlGeral}catalog/pdf/${id}`;
-        downloadUrl = buildUrl(baseUrl, {});
+        reqBaseUrl = `${urlGeral}catalog/pdf/${id}`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
       } else if (method === "loan_item") {
-        baseUrl = `${urlGeral}loans/pdf/${id}`;
-        downloadUrl = buildUrl(baseUrl, {});
+        reqBaseUrl = `${urlGeral}loans/pdf/${id}`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
       } else if (method === "loan_all") {
-        baseUrl = `${urlGeral}loans/all_pdf`;
-        downloadUrl = buildUrl(baseUrl, {});
+        reqBaseUrl = `${urlGeral}loans/all_pdf`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
       } else if (method === "loan_terms") {
-        baseUrl = `${urlGeral}loans/terms_pdf/${id}`;
-        downloadUrl = buildUrl(baseUrl, {});
-      }0
-           
-
-30
+        reqBaseUrl = `${urlGeral}loans/terms_pdf/${id}`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
+      }
+      
       const res = await fetch(downloadUrl, {
         headers: {
-          Accept: "application/pdf",
+          Accept: method === "catalog" ? "application/json" : "application/pdf",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      if (method === "catalog") {
+        setLoading(false);
+        toast.success("O relatório de itens será enviado por email. Por favor alguarde alguns minutos.");
+        return;
+      }
+
       const blob = await res.blob();
       const pdf = URL.createObjectURL(blob);
       setLoading(false);
@@ -93,7 +98,7 @@ export function DownloadPdfButton({
       toast.error("Falha ao buscar itens para o PDF.");
       setLoading(false);
     }
-  }, [baseUrl, token, filters]);
+  }, [baseUrl, token, filters, method, urlGeral, id]);
 
   return (
     <>
