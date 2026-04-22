@@ -46,7 +46,7 @@ interface Props {
 }
 
 const first = (v: string | null) =>
-  v ? v.split(";").filter(Boolean)[0] ?? "" : "";
+  v ? (v.split(";").filter(Boolean)[0] ?? "") : "";
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const setParamOrDelete = (sp: URLSearchParams, key: string, val?: string) => {
   if (val && val.trim().length > 0) sp.set(key, val);
@@ -82,20 +82,20 @@ export function BlockItemsVitrine({
   const [q, setQ] = useState(initialQ);
 
   const [materialId, setMaterialId] = useState(
-    first(queryUrl.get("material_ids"))
+    first(queryUrl.get("material_ids")),
   );
   const [legalGuardianId, setLegalGuardianId] = useState(
-    first(queryUrl.get("legal_guardian_ids"))
+    first(queryUrl.get("legal_guardian_ids")),
   );
   const [locationId, setLocationId] = useState(
-    first(queryUrl.get("location_ids"))
+    first(queryUrl.get("location_ids")),
   );
   const [unitId, setUnitId] = useState(first(queryUrl.get("unit_ids")));
   const [agencyId, setAgencyId] = useState(first(queryUrl.get("agency_ids")));
   const [sectorId, setSectorId] = useState(first(queryUrl.get("sector_ids")));
 
   const initialOffset = Number(queryUrl.get("offset") || "0");
-  const initialLimit = Number(queryUrl.get("limit") || "24");
+  const initialLimit = Number(queryUrl.get("limit") || "12");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 
@@ -116,7 +116,7 @@ export function BlockItemsVitrine({
     if (!ids?.length) return;
     setItems((prev) => prev.filter((it) => !ids.includes(it.id)));
     onChangeSelected(
-      new Set(Array.from(selectedIds).filter((id) => !ids.includes(id)))
+      new Set(Array.from(selectedIds).filter((id) => !ids.includes(id))),
     );
   };
   useEffect(() => {
@@ -126,7 +126,7 @@ export function BlockItemsVitrine({
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    doScroll = true
+    doScroll = true,
   ) => {
     const sp = new URLSearchParams(location.search);
     sp.set("offset", newOffset.toString());
@@ -194,7 +194,7 @@ export function BlockItemsVitrine({
         if (!res.ok) throw new Error(`Erro ao buscar catálogo (${res.status})`);
         const data: { catalog_entries: CatalogEntry[] } = await res.json();
         setItems(
-          Array.isArray(data.catalog_entries) ? data.catalog_entries : []
+          Array.isArray(data.catalog_entries) ? data.catalog_entries : [],
         );
         setLoading(false);
       } catch {
@@ -363,7 +363,7 @@ export function BlockItemsVitrine({
           itemRect.left - rect.left + grid.scrollLeft,
           itemRect.top - rect.top + grid.scrollTop,
           itemRect.width,
-          itemRect.height
+          itemRect.height,
         );
 
         if (rectIntersects(selectionRect, itemAbsRect)) {
@@ -409,7 +409,7 @@ export function BlockItemsVitrine({
 
       const clickedInsideGrid = grid.contains(e.target as Node);
       const clickedOnAlert = (e.target as HTMLElement).closest(
-        '[role="alert"]'
+        '[role="alert"]',
       );
 
       // Limpar seleção se clicou fora do grid e não no alert de seleção
@@ -465,7 +465,7 @@ export function BlockItemsVitrine({
       Array.from({ length: 12 }, (_, i) => (
         <Skeleton key={i} className="w-full rounded-md aspect-square" />
       )),
-    []
+    [],
   );
 
   return (

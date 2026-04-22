@@ -62,7 +62,7 @@ export function PesquisaStep({
   // ========= Helpers da API =========
   async function fetchArray(): Promise<string[]> {
     try {
-      const res = await fetch(`${urlGeral}catalog/search/asset-identifier`, {
+      const res = await fetch(`${urlGeral}catalog/search/asset-identifier?limit=10000`, {
         headers: {
           "Access-Control-Allow-Methods": "GET",
           "Access-Control-Allow-Headers": "Content-Type",

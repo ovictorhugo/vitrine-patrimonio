@@ -77,7 +77,7 @@ type AssetsResponse = { assets: Asset[] };
 
 const sanitizeBaseUrl = (u?: string) => (u || "").replace(/\/+$/, "");
 const first = (v: string | null) =>
-  v ? v.split(";").filter(Boolean)[0] ?? "" : "";
+  v ? (v.split(";").filter(Boolean)[0] ?? "") : "";
 
 const URL_KEY_STATUS = "asset_statuses";
 const URL_KEY_CSV = "csv_codes";
@@ -105,30 +105,30 @@ export function Patrimonios({ type }: Props) {
 
   // filtros vindos do modal (PLURAL na URL -> SINGULAR na API via first())
   const [selectedMaterial, setSelectedMaterial] = useState(
-    first(queryUrl.get("material_ids"))
+    first(queryUrl.get("material_ids")),
   );
   const [selectedLegalGuardian, setSelectedLegalGuardian] = useState(
-    first(queryUrl.get("legal_guardian_ids"))
+    first(queryUrl.get("legal_guardian_ids")),
   );
   const [selectedLocation, setSelectedLocation] = useState(
-    first(queryUrl.get("location_ids"))
+    first(queryUrl.get("location_ids")),
   );
   const [selectedUnit, setSelectedUnit] = useState(
-    first(queryUrl.get("unit_ids"))
+    first(queryUrl.get("unit_ids")),
   );
   const [selectedAgency, setSelectedAgency] = useState(
-    first(queryUrl.get("agency_ids"))
+    first(queryUrl.get("agency_ids")),
   );
   const [selectedSector, setSelectedSector] = useState(
-    first(queryUrl.get("sector_ids"))
+    first(queryUrl.get("sector_ids")),
   );
 
   // filtros do sheet (PLURAL na URL)
   const [statusList, setStatusList] = useState<string[]>(
-    queryUrl.get(URL_KEY_STATUS)?.split(";").filter(Boolean) || []
+    queryUrl.get(URL_KEY_STATUS)?.split(";").filter(Boolean) || [],
   );
   const [csvList, setCsvList] = useState<string[]>(
-    queryUrl.get(URL_KEY_CSV)?.split(";").filter(Boolean) || []
+    queryUrl.get(URL_KEY_CSV)?.split(";").filter(Boolean) || [],
   );
 
   // Switch is_official (default true)
@@ -140,10 +140,10 @@ export function Patrimonios({ type }: Props) {
   // paginação
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = useState<number>(
-    Number(queryUrl.get("offset") || "0")
+    Number(queryUrl.get("offset") || "0"),
   );
   const [limit, setLimit] = useState<number>(
-    Number(queryUrl.get("limit") || "24")
+    Number(queryUrl.get("limit") || "12"),
   );
   const [items, setItems] = useState<Asset[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -161,7 +161,7 @@ export function Patrimonios({ type }: Props) {
       ...json.map((item) =>
         header
           .map((fieldName) => JSON.stringify(item[fieldName], replacer))
-          .join(";")
+          .join(";"),
       ),
     ].join("\r\n");
     return csv;
@@ -199,7 +199,7 @@ export function Patrimonios({ type }: Props) {
       isOfficial: boolean;
       offset: number;
       limit: number;
-    }>
+    }>,
   ) => {
     // 🔧 Começa clonando os parâmetros atuais para preservar os "desconhecidos" (ex: loc_id)
     const sp = new URLSearchParams(location.search);
@@ -260,14 +260,14 @@ export function Patrimonios({ type }: Props) {
       isOfficial: boolean;
       offset: number;
       limit: number;
-    }>
+    }>,
   ) => {
     const newSearch = buildSearchString(overrides);
     const current = location.search.replace(/^\?/, "");
     if (newSearch !== current) {
       navigate(
         { pathname: location.pathname, search: newSearch },
-        { replace: true }
+        { replace: true },
       );
     }
   };
@@ -291,7 +291,7 @@ export function Patrimonios({ type }: Props) {
     setIsOfficial(offStr === null ? true : offStr === "true");
 
     setOffset(Number(sp.get("offset") || "0"));
-    setLimit(Number(sp.get("limit") || "24"));
+    setLimit(Number(sp.get("limit") || "12"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
@@ -342,7 +342,7 @@ export function Patrimonios({ type }: Props) {
         if (type == "user")
           url.searchParams.set(
             "legal_guardian_id",
-            String(user?.system_identity.legal_guardian.id)
+            String(user?.system_identity.legal_guardian.id),
           );
 
         url.searchParams.set("offset", String(offset));

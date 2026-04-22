@@ -162,7 +162,7 @@ export function BuscaCatalogo() {
   );
 
   async function goToAsset() {
-    const endpoint = `${urlGeral}catalog/search/asset-identifier`;
+    const endpoint = `${urlGeral}catalog/search/asset-identifier?limit=10000`;
     const response = await fetch(endpoint, {
       mode: "cors",
       headers: {
