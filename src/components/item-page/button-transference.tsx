@@ -228,19 +228,19 @@ export function ButtonTransference({ catalog }: Props) {
           <div className="grid gap-3 w-full">
             <Label htmlFor="loc_nom">Minhas salas</Label>
 
-            <Popover open={open} onOpenChange={setOpen} modal={true}>
+            <Popover open={open} onOpenChange={setOpen} modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between mb-4 z-[99]"
+                  className="w-full justify-between mb-4"
                   disabled={!loggedIn && !canTransfer}
                 >
                   <span className="truncate">
                     {loadingLoc ? (
-                      <span className="flex items-center gap-2 z-[99]">
+                      <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Carregando locais...
                       </span>
@@ -248,11 +248,12 @@ export function ButtonTransference({ catalog }: Props) {
                       selectedLoc?.location_name || "Selecione um local"
                     )}
                   </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0 z-[9999]" />
+                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[9999]">
+              {/* z-50 é o padrão do shadcn para Popovers. Geralmente é o suficiente. */}
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-50">
                 <Command>
                   <CommandInput placeholder="Buscar por sala, setor, unidade..." />
                   <CommandList>
@@ -266,11 +267,11 @@ export function ButtonTransference({ catalog }: Props) {
                             const trail = getTrail(loc);
                             return (
                               <CommandItem
-                                className="z-[9999]"
                                 key={loc.id}
                                 value={`${loc.location_name} ${trail}`}
+                                // 1. Adicionamos cursor-pointer para a setinha do mouse mudar corretamente
+                                className="cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
                                 onSelect={() => {
-                                  if (!canTransfer) return;
                                   const newId =
                                     loc.id === locationId ? null : loc.id;
                                   setLocationId(newId);
@@ -278,17 +279,19 @@ export function ButtonTransference({ catalog }: Props) {
                                   setOpen(false);
                                 }}
                               >
-                                <div className="flex items-start gap-2 w-full z-[9999]">
+                                {/* 2. Removemos todos os z-index e adicionamos pointer-events-none */}
+                                {/* Isso garante que clicar no texto ou no ícone seja considerado um clique no CommandItem */}
+                                <div className="flex items-start gap-2 w-full pointer-events-none">
                                   <Check
                                     className={cn(
-                                      "h-4 w-4 mt-0.5 z-[9999]",
+                                      "h-4 w-4 mt-0.5",
                                       locationId === loc.id
                                         ? "opacity-100"
                                         : "opacity-0",
                                     )}
                                   />
-                                  <div className="flex flex-col z-[9999]">
-                                    <span className="font-medium leading-tight z-[9999]">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium leading-tight">
                                       {loc.location_name}
                                     </span>
                                   </div>

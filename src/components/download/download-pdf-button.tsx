@@ -53,7 +53,7 @@ export function DownloadPdfButton({
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let reqBaseUrl = method === "catalog" ? `${urlGeral}catalog/pdf_play` : `${urlGeral}${method}/pdf`;
+      let reqBaseUrl = method === "catalog" ? `${urlGeral}catalog/playwright` : `${urlGeral}${method}/pdf`;
       let downloadUrl = buildUrl(reqBaseUrl, filters);
       if (method === "collections") {
         reqBaseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
