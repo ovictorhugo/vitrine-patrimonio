@@ -141,7 +141,7 @@ export function Statistics({ statsMap, baseUrl, authHeaders }: Props) {
         setLoadingMaterials(true);
         const params = new URLSearchParams();
         if (search) params.set("q", search);
-        const res = await fetch(`${baseUrl}/materials/?${params.toString()}`, {
+        const res = await fetch(`${baseUrl}/materials?${params.toString()}`, {
           headers: authHeaders,
         });
         if (!res.ok) throw new Error();

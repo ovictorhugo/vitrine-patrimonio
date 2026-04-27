@@ -289,16 +289,16 @@ export function VisaoGeralUser() {
                     {user?.username}
                   </h1>
 
-                  <p className="max-w-[750px] text-lg font-light text-foreground">
-                    <div className="flex flex-wrap gap-4 ">
+                  <div className="flex flex-wrap gap-4 ">
+                    <p className="max-w-[750px] text-lg font-light text-foreground">
                       {user?.email && (
                         <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                           <MailIcon size={12} />
                           {user?.email}
                         </div>
                       )}
-                    </div>
-                  </p>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

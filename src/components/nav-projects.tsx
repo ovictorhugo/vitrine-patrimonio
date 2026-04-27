@@ -4,7 +4,7 @@ import {
   MoreHorizontal,
   Trash2,
   type LucideIcon,
-} from "lucide-react"
+} from "lucide-react";
 
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
+} from "./ui/dropdown-menu";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -21,25 +21,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "./ui/sidebar"
-import { Link, useLocation } from "react-router-dom"
-import { useContext } from "react"
-import { UserContext } from "../context/context"
+} from "./ui/sidebar";
+import { Link, useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { UserContext } from "../context/context";
 
 export function NavProjects({
   projects,
 }: {
   projects: {
-    name: string
-    url: string
-    icon: LucideIcon
-  }[]
+    name: string;
+    url: string;
+    icon: LucideIcon;
+  }[];
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile } = useSidebar();
 
-  const location = useLocation()
+  const location = useLocation();
 
-  const {itemsSelecionados, setItensSelecionados} = useContext(UserContext)
+  const { itemsSelecionados, setItensSelecionados } = useContext(UserContext);
 
   return (
     <SidebarGroup className="">
@@ -47,9 +47,14 @@ export function NavProjects({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton tooltip={item.name} onClick={() => {
-             setItensSelecionados([])
-            }} asChild className={`${item.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
+            <SidebarMenuButton
+              tooltip={item.name}
+              onClick={() => {
+                setItensSelecionados([]);
+              }}
+              asChild
+              className={`${item.url == location.pathname ? "bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white" : "cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"}`}
+            >
               <Link to={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
@@ -57,8 +62,7 @@ export function NavProjects({
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
-       
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }
