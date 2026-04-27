@@ -1,7 +1,7 @@
 export function LogoConectee() {
   return (
     <svg
-      height="full"
+      className="h-full w-auto"
       viewBox="0 0 947 1532"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

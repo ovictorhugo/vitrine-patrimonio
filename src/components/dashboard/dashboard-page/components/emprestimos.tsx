@@ -43,7 +43,6 @@ export function Emprestimos() {
       });
       const json = await res.json();
 
-
       // O endpoint retorna { loanable_items: [...] }
       if (json && json.loanable_items) {
         setEmprestimos(json.loanable_items);
@@ -58,7 +57,7 @@ export function Emprestimos() {
   }, [urlGeral]);
 
   return (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible defaultValue="item">
       <AccordionItem value="item">
         <AccordionTrigger>
           <HeaderResultTypeHome
@@ -171,86 +170,90 @@ export function Emprestimos() {
                                         </span>
                                       </div>
                                     </div>
-                                    { emAberto ? <DownloadPdfButton
-                                      filters={{}}
-                                      id={loan?.id}
-                                      label="Baixar termo"
-                                      method={"loan_terms"}
-                                    />: <></> }
+                                    {emAberto ? (
+                                      <DownloadPdfButton
+                                        filters={{}}
+                                        id={loan?.id}
+                                        label="Baixar termo"
+                                        method={"loan_terms"}
+                                      />
+                                    ) : (
+                                      <></>
+                                    )}
                                   </div>
 
                                   {/* Envolvidos (Solicitante e Guardião Temporário) */}
                                   <div className="flex gap-3 mb-4">
-                      <div className="flex flex-col gap-1.5">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                          Solicitante
-                        </p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(
-                                  `/user?id=${loan.requester?.id}`,
-                                  "_blank",
-                                );
-                              }}
-                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
-                            >
-                              <Avatar className="rounded-md h-5 w-5 shrink-0">
-                                <AvatarImage
-                                  src={`${urlGeral}user/upload/${loan.requester?.id}/icon`}
-                                />
-                                <AvatarFallback>
-                                  <UserIcon size={10} />
-                                </AvatarFallback>
-                              </Avatar>
-                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
-                                {requesterName}
-                              </p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{requesterName}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                                        Solicitante
+                                      </p>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(
+                                                `/user?id=${loan.requester?.id}`,
+                                                "_blank",
+                                              );
+                                            }}
+                                            className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                                          >
+                                            <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                              <AvatarImage
+                                                src={`${urlGeral}user/upload/${loan.requester?.id}/icon`}
+                                              />
+                                              <AvatarFallback>
+                                                <UserIcon size={10} />
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                              {requesterName}
+                                            </p>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{requesterName}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
-                          Responsável
-                        </p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(
-                                  `/user?id=${loan.requester?.id}`,
-                                  "_blank",
-                                );
-                              }}
-                              className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
-                            >
-                              <Avatar className="rounded-md h-5 w-5 shrink-0">
-                                <AvatarImage
-                                  src={`${urlGeral}user/upload/${loan.temporary_guardian?.id}/icon`}
-                                />
-                                <AvatarFallback>
-                                  <UserIcon size={10} />
-                                </AvatarFallback>
-                              </Avatar>
-                              <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
-                                {guardianName}
-                              </p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{guardianName}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground ml-1">
+                                        Responsável
+                                      </p>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(
+                                                `/user?id=${loan.requester?.id}`,
+                                                "_blank",
+                                              );
+                                            }}
+                                            className="flex gap-2 items-center bg-white dark:bg-zinc-800 px-2 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                                          >
+                                            <Avatar className="rounded-md h-5 w-5 shrink-0">
+                                              <AvatarImage
+                                                src={`${urlGeral}user/upload/${loan.temporary_guardian?.id}/icon`}
+                                              />
+                                              <AvatarFallback>
+                                                <UserIcon size={10} />
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">
+                                              {guardianName}
+                                            </p>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{guardianName}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -260,6 +263,8 @@ export function Emprestimos() {
                     </div>
                   );
                 })}
+
+                {emprestimos.length == 0 ? <div className="text-xl">Você ainda não tem empréstimos.</div> : <></>}
               </>
             ) : (
               <div className="mt-4">

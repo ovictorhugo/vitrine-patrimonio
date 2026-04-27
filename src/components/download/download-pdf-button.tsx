@@ -82,7 +82,7 @@ export function DownloadPdfButton({
 
       if (method === "catalog") {
         setLoading(false);
-        toast.success("O relatório de itens será enviado por email. Por favor alguarde alguns minutos.");
+        toast.success("O relatório será gerado e enviado por email. Por favor alguarde alguns minutos.");
         return;
       }
 

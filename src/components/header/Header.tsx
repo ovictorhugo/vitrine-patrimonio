@@ -42,23 +42,16 @@ export function Header() {
     return (
       <div className={"top-0  absolut w-full "}>
         <header
-          className={`h-[110px] px-2 gap-1 flex justify-between dark:bg-black items-center`}
+          className={`h-[110px] px-2 gap-1 flex justify-around dark:bg-black items-center`}
         >
           <div className="flex flex-col-reverse w-[400px] px-2 gap-2">
             <Link to={"/"} onClick={() => handleClick()}>
               {theme == "dark" ? <LogoVitrineWhite /> : <LogoVitrine />}
             </Link>
-            <Link to={""} target="_blank" className=" whitespace-nowrap ">
-              <img
-                src={theme == "dark" ? logo_4_white : logo_4}
-                alt=""
-                className="whitespace-nowrap flex flex-1 h-[35px]"
-              />
-            </Link>
-          </div>
+            </div>
           <div className="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800" />
 
-          <div className="flex m-auto w-[250px] pl-2">
+          <div className="flex justify-center m-auto w-[250px] gap-1">
             <Link to={"/informacoes"}>
               <Button variant="outline" size="icon" className="h-8 w-8">
                 <Info className="h-4 w-4" />

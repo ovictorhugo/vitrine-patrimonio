@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  BrowserRouter as Router,
-} from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
 import { UserContext } from "../src/context/context";
 import DefaultLayout from "./layout/default-layout";
 import LoadingWrapper from "./components/loading";

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery } from "../authentication/signIn";
 import { Input } from "../ui/input";
 import { BlockItemsEmprestimo } from "../CardComponents/block-items-emprestimo";
+const DEFAULT_WORKFLOW = ["AUDIOVISUAL_ANUNCIADO"];
 
 export function PedirEmprestimoAudiovisual() {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ export function PedirEmprestimoAudiovisual() {
 
         <div className=" w-full md:px-8 gap-8 flex flex-col px-4 mb-4 md:mb-8">
           <BlockItemsEmprestimo
-            workflow={["AUDIOVISUAL_ANUNCIADO"]}
+            workflow={DEFAULT_WORKFLOW}
             materialIdFilter={getMaterialSearch()}
           />
         </div>

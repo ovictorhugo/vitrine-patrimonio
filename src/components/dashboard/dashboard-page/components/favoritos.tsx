@@ -67,7 +67,7 @@ export function Favoritos() {
           {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal,
-          }
+          },
         );
         if (!cancelled && res.status === 200) {
           setFavorites(normalizeFavorites(res.data));
@@ -202,7 +202,7 @@ export function Favoritos() {
                   ) : favorites.length === 0 ? (
                     <div className="w-full">
                       <Alert variant="default">
-                        Você ainda não tem favoritos.
+                        <div className="text-xl">Você ainda não tem favoritos.</div>
                       </Alert>
                     </div>
                   ) : (

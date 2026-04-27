@@ -62,7 +62,7 @@ export function PesquisaStep({
   // ========= Helpers da API =========
   async function fetchArray(): Promise<string[]> {
     try {
-      const res = await fetch(`${urlGeral}catalog/search/asset-identifier?limit=10000`, {
+      const res = await fetch(`${urlGeral}catalog/search/asset-identifier?limit=20000`, {
         headers: {
           "Access-Control-Allow-Methods": "GET",
           "Access-Control-Allow-Headers": "Content-Type",
@@ -153,12 +153,12 @@ export function PesquisaStep({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChangeInput = (value: string) => {
-    runSearch(value);
-    setInput(value);
+    runSearch(value.toUpperCase());
+    setInput(value.toUpperCase());
   };
 
   const handleChangeInputCod = (value: string) => {
-    let cleanValue = value.replace(/[^a-zA-Z0-9]/g, "");
+    let cleanValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
     const originalValue = cleanValue;
     cleanValue = cleanValue.replace(/^0+/, "");

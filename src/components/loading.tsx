@@ -29,7 +29,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
   // ========= A) token em estado =========
   const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("jwt_token")
+    localStorage.getItem("jwt_token"),
   );
 
   const {
@@ -55,7 +55,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
   const delay = useCallback(
     (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
-    []
+    [],
   );
 
   const clearLogoutTimer = () => {
@@ -111,7 +111,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
 
       return fetch(url, options);
     },
-    [delay]
+    [delay],
   );
 
   // ========= busca usuário (logout só em 401/403) =========
@@ -176,7 +176,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
       handleLogout,
       fetchWithRetry,
       delay,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -199,7 +199,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(
         "token-change",
-        onTokenChange as EventListener
+        onTokenChange as EventListener,
       );
     };
   }, []);
@@ -254,26 +254,37 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({ children }) => {
   }, [token, fetchUser, handleLogout, setSessionExpMs]);
 
   const isMobile = useIsMobile();
-  const sizeReduction = isMobile ? 2 : 1;
+
+  // Em vez de fazer conta, defina as classes exatas para o Tailwind encontrar
+  const symbolHeightClass = isMobile ? "h-8" : "h-16"; // 16 / 2 = 8
+  const logoHeightClass = isMobile ? "h-5" : "h-10"; // 10 / 2 = 5
 
   return loading ? (
     <main className="h-screen w-full flex items-center justify-center">
       <div className="animate-pulse">
         {theme === "dark" ? (
           <div className="flex items-center gap-2">
-            <div className={`h-${16 / sizeReduction} flex items-center gap-2`}>
+            <div
+              className={`${symbolHeightClass} flex items-center justify-center`}
+            >
               <SymbolEEWhite />
             </div>
-            <div className={`h-${10 / sizeReduction} flex items-center gap-2`}>
+            <div
+              className={`${logoHeightClass} flex items-center justify-center`}
+            >
               <LogoVitrineWhite />
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className={`h-${16 / sizeReduction} flex items-center gap-2`}>
+            <div
+              className={`${symbolHeightClass} flex items-center justify-center`}
+            >
               <SymbolEE />
             </div>
-            <div className={`h-${10 / sizeReduction} flex items-center gap-2`}>
+            <div
+              className={`${logoHeightClass} flex items-center justify-center`}
+            >
               <LogoVitrine />
             </div>
           </div>

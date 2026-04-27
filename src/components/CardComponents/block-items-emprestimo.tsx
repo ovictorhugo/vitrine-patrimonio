@@ -84,6 +84,8 @@ export function BlockItemsEmprestimo(props: Props) {
     navigate({ pathname: location.pathname, search: currentSp.toString() });
   };
 
+  const workflowStr = JSON.stringify(props.workflow);
+
   useEffect(() => {
     const controller = new AbortController();
     const sp = new URLSearchParams(location.search);
@@ -166,7 +168,7 @@ export function BlockItemsEmprestimo(props: Props) {
     }
 
     return () => controller.abort();
-  }, [location.search, baseUrl, baseHeaders, props.workflow]);
+  }, [location.search, baseUrl, baseHeaders, workflowStr]);
 
   const skeletons = useMemo(
     () =>

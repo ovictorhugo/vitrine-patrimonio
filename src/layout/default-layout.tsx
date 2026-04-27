@@ -8,7 +8,7 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <body className={cn(" bg-neutral-50 dark:bg-neutral-900 ")}>
+    <main className={cn(" bg-neutral-50 dark:bg-neutral-900 ")}>
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
@@ -18,6 +18,6 @@ export default function DefaultLayout({
         <ModalProvider />
         {children}
       </ThemeProvider>
-    </body>
+    </main>
   );
 }

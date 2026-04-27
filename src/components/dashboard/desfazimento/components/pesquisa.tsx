@@ -67,28 +67,38 @@ export function PesquisaStep({
     try {
       const [resCod, resAtm] = await Promise.all([
         fetch(
-          `${urlGeral}catalog/search/asset-identifier?limit=10000&only_uncollected=true`,
+          `${urlGeral}catalog/search/asset-identifier?limit=20000`,
         ),
         fetch(
-          `${urlGeral}catalog/search/atm-number?limit=10000&only_uncollected=true`,
+          `${urlGeral}catalog/search/atm-number?limit=20000`,
         ),
       ]);
 
-      let identifiers: string[] = [];
+      let fetchedAssets: { id: string; collected: boolean }[] = [];
 
       if (resCod.ok) {
         const jsonCod = await resCod.json();
-        const cods = jsonCod.catalogs?.map((c: any) => c.asset_identifier) || [];
-        identifiers = [...identifiers, ...cods];
+        const cods = (jsonCod.catalogs || [])
+          .filter((c: any) => c.asset_identifier)
+          .map((c: any) => ({
+            id: String(c.asset_identifier),
+            collected: !!c.collected,
+          }));
+        fetchedAssets = [...fetchedAssets, ...cods];
       }
 
       if (resAtm.ok) {
         const jsonAtm = await resAtm.json();
-        const atms = jsonAtm.catalogs?.map((c: any) => c.atm_number) || [];
-        identifiers = [...identifiers, ...atms];
+        const atms = (jsonAtm.catalogs || [])
+          .filter((c: any) => c.atm_number)
+          .map((c: any) => ({
+            id: String(c.atm_number),
+            collected: !!c.collected,
+          }));
+        fetchedAssets = [...fetchedAssets, ...atms];
       }
 
-      setAssetsOnCatalog(identifiers.filter(Boolean).map(String));
+      setAssetsOnCatalog(fetchedAssets);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao buscar itens catalogados");
@@ -112,7 +122,7 @@ export function PesquisaStep({
 
   // Estados de resultados
   const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
-  const [assetsOnCatalog, setAssetsOnCatalog] = useState<string[]>([]);
+  const [assetsOnCatalog, setAssetsOnCatalog] = useState<{id: string; collected: boolean}[]>([]);
 
   useEffect(() => {
     fetchAssetsOnCatalog();
@@ -250,12 +260,12 @@ export function PesquisaStep({
     if (cod) setInput(cod);
   }, [cod]);
 
-  function hasAsset(cod) {
-    return assetsOnCatalog.find((a) => a.includes(cod));
+  function hasAsset(cod: string) {
+    return assetsOnCatalog.find((a) => a.id.includes(cod));
   }
 
-  function hasAtmAsset(atm) {
-    return assetsOnCatalog.find((a) => a.includes(atm));
+  function hasAtmAsset(atm: string) {
+    return assetsOnCatalog.find((a) => a.id.includes(atm));
   }
 
   const isMobile = useIsMobile();
@@ -369,13 +379,16 @@ export function PesquisaStep({
                       .slice(0, 15)
                       .map((props, index) => {
                         const label = `${props.bem_cod}-${props.bem_dgv}`;
+                        const assetStatus = hasAsset(label);
                         return (
                           <div
                             key={index}
                             onClick={() => handleSelectItemSimple(props)}
                             className={
-                              hasAsset(label)
-                                ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
+                              assetStatus
+                                ? assetStatus.collected
+                                  ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-red-600 text-white hover:bg-red-700 items-center p-2 px-3 rounded-md text-xs"
+                                  : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
                                 : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
                             }
                           >
@@ -396,19 +409,24 @@ export function PesquisaStep({
                     {filteredItems
                       .filter(isAtm)
                       .slice(0, 15)
-                      .map((props, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleSelectItemSimple(props)}
-                          className={
-                            hasAtmAsset(props.bem_num_atm)
-                              ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
-                              : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
-                          }
-                        >
-                          {props.bem_num_atm}
-                        </div>
-                      ))}
+                      .map((props, index) => {
+                        const atmStatus = hasAtmAsset(props.bem_num_atm);
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => handleSelectItemSimple(props)}
+                            className={
+                              atmStatus
+                                ? atmStatus.collected
+                                  ? "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-red-600 text-white hover:bg-red-700 items-center p-2 px-3 rounded-md text-xs"
+                                  : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-eng-blue text-white hover:bg-eng-dark-blue dark:hover:bg-eng-dark-blue dark:bg-eng-blue items-center p-2 px-3 rounded-md text-xs"
+                                : "flex gap-2 h-8 capitalize cursor-pointer transition-all bg-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-900 dark:bg-neutral-800 items-center p-2 px-3 rounded-md text-xs"
+                            }
+                          >
+                            {props.bem_num_atm}
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
@@ -419,7 +437,13 @@ export function PesquisaStep({
           <div className="flex gap-1 items-center">
             <div className="h-3 w-3 rounded-sm bg-eng-blue"></div>
             <p className="text-sm font-medium text-gray-500">
-              Item já cadastrado no Sistema Patrimônio
+              Item já cadastrado
+            </p>
+          </div>
+          <div className="flex gap-1 items-center">
+            <div className="h-3 w-3 rounded-sm bg-red-600"></div>
+            <p className="text-sm font-medium text-gray-500">
+              Item já coletado
             </p>
           </div>
         </div>

@@ -14,7 +14,7 @@ import {
   LoaderCircle,
   Plus,
   Bookmark,
-  BookmarkPlus,
+  AlertCircle,
   Trash2,
 } from "lucide-react";
 import React, {
@@ -1675,10 +1675,19 @@ export function NovoItem() {
               </ToggleGroupItem>
             </ToggleGroup>
           )}
+          <div className="flex gap-3 items-start animate-shake-gentle">
+            {/* Ícone com cor de destaque */}
+            <AlertCircle className="text-amber-600 mt-0.5 shrink-0" size={24} />
 
+            <div className="space-y-1">
+              <p className="font-bold text-amber-800 text-sm">
+                Atenção: Salve o numero da plaqueta ou baixe o PDF!
+              </p>
+            </div>
+          </div>
           {/* Card de Plaqueta */}
           {canShowPlaqueta && (
-            <Alert className="flex items-center gap-8">
+            <Alert className=" flex items-center bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r shadow-sm animate-shake-gentle">
               <div className="flex gap-2 flex-1">
                 <Barcode size={24} />
                 <div className="space-y-2">
