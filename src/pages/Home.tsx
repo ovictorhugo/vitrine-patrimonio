@@ -29,6 +29,8 @@ export function Home() {
       onOpen("assinar-transferência");
     } else if (location.pathname == "/validar-pdf") {
       onOpen("validar-pdf");
+    } else if (location.pathname == "/download-pdf-by") {
+      onOpen("download-pdf-by");
     } else if (location.pathname == "/pedir-emprestimo-audiovisual") {
       onOpen("pedir-emprestimo-audiovisual");
     }

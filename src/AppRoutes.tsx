@@ -40,6 +40,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       <Route path="/item" element={<Home />} />
       <Route path="/item-emprestimo" element={<Home />} />
       <Route path="/informacoes" element={<Home />} />
+      <Route path="/download-pdf-by" element={<Home />} />
 
       {/* Rotas de dashboard (livres ou públicas dentro do painel) */}
       <Route path="/dashboard" element={<Admin />} />

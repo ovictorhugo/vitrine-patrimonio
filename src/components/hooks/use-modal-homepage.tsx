@@ -27,6 +27,7 @@ export type ModalType =
   | "pedir-emprestimo-audiovisual"
   | "buscar-catalogo"
   | "assinar-transferência"
+  | "download-pdf-by"
   | "validar-pdf";
 
 interface ModalStore {

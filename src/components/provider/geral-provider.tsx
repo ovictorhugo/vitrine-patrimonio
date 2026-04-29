@@ -13,6 +13,7 @@ import { PedirEmprestimoAudiovisual } from "../pedir-emprestimo-audiovisual/pedi
 import { BuscaCatalogo } from "../buscar-catalogo/buscar-catalogo";
 import { AssinarTransferencia } from "../assinar-transferencia/assinar-transferencia";
 import { ValidarPDF } from "../validar-pdf/validar-pdf";
+import DownloadTempFilePage from "../download-pdf-by/download-pdf-by";
 
 const ModalContent = () => {
   const { type } = useModalHomepage();
@@ -34,6 +35,8 @@ const ModalContent = () => {
       return <AssinarTransferencia />;
     case "validar-pdf":
       return <ValidarPDF />;
+    case "download-pdf-by":
+      return <DownloadTempFilePage />;
     case "pedir-emprestimo-audiovisual":
       return <PedirEmprestimoAudiovisual />;
     default:
