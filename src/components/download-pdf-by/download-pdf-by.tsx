@@ -8,8 +8,6 @@ import { Button } from "../ui/button";
 
 export function DownloadTempFilePage() {
   const { urlGeral } = useContext(UserContext);
-
-  const [loading, setLoading] = useState<boolean>(false);
   const useQuery = () => {
     const { search } = useLocation();
     return useMemo(() => new URLSearchParams(search), [search]);
@@ -18,40 +16,35 @@ export function DownloadTempFilePage() {
   const tokenFromUrl = query.get("token");
 
   useEffect(() => {
-    //openDoc();
-  }, [urlGeral]);
+    openDoc();
+  }, [tokenFromUrl]);
 
   async function openDoc() {
-    if (tokenFromUrl) {
-      const fetchByToken = async () => {
-        try {
-          const res = await fetch(
-            `${urlGeral}temporary_files/download-by-token/${tokenFromUrl}`,
-            {
-              headers: {
-                Accept: "application/pdf",
-              },
-            },
-          );
+    if (!tokenFromUrl) {
+      return;
+    }
 
-          if (!res.ok) throw new Error("Erro ao buscar dados do token");
+    try {
+      const res = await fetch(
+        `${urlGeral}temporary_files/download-by-token/${tokenFromUrl}`,
+        {
+          headers: {
+            Accept: "application/pdf",
+          },
+        },
+      );
 
-          const blob = await res.blob();
-          const pdf = URL.createObjectURL(blob);
-          window.open(pdf, "_blank");
-          if ((pdf ?? []).length === 0) {
-            toast.error("Nada encontrado para gerar o PDF.");
-          }
-        } catch (error) {
-          console.error(error);
-          toast.error("Link inválido ou expirado.");
-        } finally {
-          setLoading(false);
-        }
-      };
+      if (!res.ok) throw new Error("Erro ao buscar dados do token");
 
-      fetchByToken();
-    } else {
+      const blob = await res.blob();
+      const pdf = URL.createObjectURL(blob);
+      window.open(pdf, "_blank");
+      if ((pdf ?? []).length === 0) {
+        toast.error("Nada encontrado para gerar o PDF.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Link inválido ou expirado.");
     }
   }
 

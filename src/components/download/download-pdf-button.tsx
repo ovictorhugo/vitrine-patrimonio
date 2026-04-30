@@ -3,6 +3,13 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { UserContext } from "../../context/context";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../ui/dialog";
 
 function buildUrl(base: string, params: Record<string, string | undefined>) {
   const url = new URL(base, window.location.origin);
@@ -48,12 +55,16 @@ export function DownloadPdfButton({
   );
 
   const [loading, setLoading] = useState(false);
+  const [openEmailDialog, setOpenEmailDialog] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!baseUrl || !filters) return;
     try {
       setLoading(true);
-      let reqBaseUrl = method === "catalog" ? `${urlGeral}catalog/playwright` : `${urlGeral}${method}/pdf`;
+      let reqBaseUrl =
+        method === "catalog"
+          ? `${urlGeral}catalog/playwright`
+          : `${urlGeral}${method}/pdf`;
       let downloadUrl = buildUrl(reqBaseUrl, filters);
       if (method === "collections") {
         reqBaseUrl = `${urlGeral}${method}/${filters.collection_id}/items/pdf`;
@@ -71,7 +82,7 @@ export function DownloadPdfButton({
         reqBaseUrl = `${urlGeral}loans/terms_pdf/${id}`;
         downloadUrl = buildUrl(reqBaseUrl, {});
       }
-      
+
       const res = await fetch(downloadUrl, {
         headers: {
           Accept: method === "catalog" ? "application/json" : "application/pdf",
@@ -82,7 +93,7 @@ export function DownloadPdfButton({
 
       if (method === "catalog") {
         setLoading(false);
-        toast.success("O relatório será gerado e enviado por email. Por favor alguarde alguns minutos.");
+        setOpenEmailDialog(true);
         return;
       }
 
@@ -118,6 +129,27 @@ export function DownloadPdfButton({
         )}
         {label}
       </Button>
+      {method === "catalog" && (
+        <Dialog open={openEmailDialog} onOpenChange={setOpenEmailDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Envio por email</DialogTitle>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-gray-600 dark:text-gray-300">
+                O relatório será gerado pelo sistema e um link enviado por
+                email. Por favor aguarde alguns minutos até a geração completa
+                do seu documento.
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button onClick={() => setOpenEmailDialog(false)}>Ok</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
