@@ -10,9 +10,9 @@ node_modules/
 dist
 dist-ssr
 *.local
-.env
 nginx.conf
 Dockerfile
+.env
 
 # Editor directories and files
 .vscode/*
@@ -24,4 +24,3 @@ Dockerfile
 *.njsproj
 *.sln
 *.sw?
-*.env
