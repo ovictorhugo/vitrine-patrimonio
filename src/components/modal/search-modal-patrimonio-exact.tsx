@@ -226,7 +226,7 @@ export default function SearchCodAtmModalExact() {
     setInput("");
   };
 
-  // ========= Ação principal: navegar para /buscar-patrimonio =========
+  // ========= Ação principal: navegar para /busca-patrimonio =========
   const handleGoToBuscarPatrimonio = () => {
     // Regra: exige um COD (código-dígito)
     let label: string | undefined;
@@ -251,7 +251,7 @@ export default function SearchCodAtmModalExact() {
       return;
     }
 
-    navigate(`/buscar-patrimonio?bem_cod=${encodeURIComponent(bem_cod)}&bem_dgv=${encodeURIComponent(bem_dgv)}`);
+    navigate(`/busca-patrimonio?bem_cod=${encodeURIComponent(bem_cod)}&bem_dgv=${encodeURIComponent(bem_dgv)}`);
     onClose();
   };
 

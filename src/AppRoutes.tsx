@@ -33,7 +33,7 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
     <Routes>
       {/* Rotas públicas */}
       <Route path="/" element={<Home />} />
-      <Route path="/buscar-patrimonio" element={<Home />} />
+      <Route path="/busca-patrimonio" element={<Home />} />
       <Route path="/buscar-catalogo" element={<Home />} />
       <Route path="/assinar-transferencia/" element={<Home />} />
       <Route path="/validar-pdf" element={<Home />} />

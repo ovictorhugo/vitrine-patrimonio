@@ -781,7 +781,7 @@ export function CatalogModal() {
   const qrUrlFrom = (d: CatalogResponseDTO) => {
     const code = fullCodeFrom(d);
     return code
-      ? `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
+      ? `https://sistemapatrimonio.eng.ufmg.br/busca-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
       : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
   };
 

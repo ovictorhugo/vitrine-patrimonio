@@ -76,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         name: "Buscar patrimônio",
-        url: "/buscar-patrimonio",
+        url: "/busca-patrimonio",
         icon: SearchCheck,
       },
     ],

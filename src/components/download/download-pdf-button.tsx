@@ -141,9 +141,11 @@ export function DownloadPdfButton({
                 O relatório será gerado pelo sistema e um link enviado por
                 email. Por favor aguarde alguns minutos até a geração completa
                 do seu documento.
+                <br />
+                <br /> Não clique várias vezes para baixar o PDF!
               </p>
             </div>
-            
+
             <DialogFooter>
               <Button onClick={() => setOpenEmailDialog(false)}>Ok</Button>
             </DialogFooter>

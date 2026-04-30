@@ -727,7 +727,7 @@ export function ItemPage() {
   const qrUrlFrom = (d: CatalogResponseDTO) => {
     const code = fullCodeFrom(d);
     return code
-      ? `https://sistemapatrimonio.eng.ufmg.br/buscar-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
+      ? `https://sistemapatrimonio.eng.ufmg.br/busca-patrimonio?bem_cod=${d?.asset?.asset_code}&bem_dgv=${d?.asset?.asset_check_digit}`
       : d?.asset?.atm_number || d?.id || "Sistema Patrimônio";
   };
 
@@ -1903,7 +1903,7 @@ export function ItemPage() {
               </Link>
 
               <Link
-                to={`/buscar-patrimonio?bem_cod=${asset?.asset_code}&bem_dgv=${asset?.asset_check_digit}`}
+                to={`/busca-patrimonio?bem_cod=${asset?.asset_code}&bem_dgv=${asset?.asset_check_digit}`}
               >
                 <div className={`flex   `}>
                   <div className="w-2 min-w-2 rounded-l-md  border dark:border-neutral-800  border-r-0 bg-eng-blue min-h-full" />

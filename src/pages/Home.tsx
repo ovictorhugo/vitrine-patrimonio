@@ -15,7 +15,7 @@ export function Home() {
   useEffect(() => {
     if (location.pathname == "/") {
       onOpen("initial-home");
-    } else if (location.pathname == "/buscar-patrimonio") {
+    } else if (location.pathname == "/busca-patrimonio") {
       onOpen("busca-patrimonio");
     } else if (location.pathname == "/buscar-catalogo") {
       onOpen("buscar-catalogo");

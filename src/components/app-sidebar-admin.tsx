@@ -130,12 +130,12 @@ export function AppSidebarAdmin({
                 ]
               : []),
             {
-              title: "Busca patrimônio",
-              url: "/buscar-patrimonio",
+              title: "Buscar patrimônio",
+              url: "/busca-patrimonio",
               icon: SearchCheck,
             },
             {
-              title: "Busca catálogo",
+              title: "Buscar no catálogo",
               url: "/buscar-catalogo",
               icon: PackageSearch,
             },
