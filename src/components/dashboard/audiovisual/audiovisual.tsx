@@ -214,7 +214,7 @@ export function Audiovisual() {
 
   const fetchColumns = useCallback(async () => {
     try {
-      const res = await fetch(`${urlGeral}loans/`, {
+      const res = await fetch(`${urlGeral}loans/cards`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

@@ -384,7 +384,7 @@ export function HomeInicial() {
           </Tabs>
         </div>
 
-        <BlockItemsVitrine workflow={workflows} />
+        <BlockItemsVitrine workflow={[tab.toLocaleUpperCase()]} />
       </div>
     </div>
   );

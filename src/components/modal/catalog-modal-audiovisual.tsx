@@ -236,7 +236,55 @@ export function AudiovisualModal() {
   const token = localStorage.getItem("jwt_token") || "";
 
   // CORREÇÃO AQUI: Cast duplo para extrair o objeto perfeitamente
-  const loanItem = data as unknown as LoanableItemDTO | null;
+  const initialLoanItem = data as unknown as LoanableItemDTO | null;
+
+  const [loanItem, setLoanItem] = useState<LoanableItemDTO | null>(
+    initialLoanItem,
+  );
+
+  useEffect(() => {
+    if (isOpen && initialLoanItem) {
+      setLoanItem(initialLoanItem);
+    }
+  }, [isOpen, initialLoanItem]);
+
+  useEffect(() => {
+    if (!isOpen || !initialLoanItem?.id) return;
+
+    let isMounted = true;
+
+    const fetchUpdatedLoanItem = async () => {
+      try {
+        console.log(initialLoanItem.id);
+        const res = await fetch(`${urlGeral}loans/item/${initialLoanItem.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const updatedData = await res.json();
+
+        if (isMounted) {
+          setLoanItem(updatedData.loanable_items[0]);
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao atualizar item audiovisual em background:",
+          error,
+        );
+      }
+    };
+
+    fetchUpdatedLoanItem();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, initialLoanItem?.id, urlGeral, token]);
+
   const catalog = loanItem?.catalog;
 
   const images = useMemo(() => {

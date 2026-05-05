@@ -2294,8 +2294,10 @@ export function ItensVitrine() {
               const items = board[expandedColumn] || [];
               const slice = items.slice(0, expandedVisible);
               const totalForCol = statusCounts[expandedColumn] ?? items.length;
+              const found = Object.values(WORKFLOWS)
+                .flat()
+                .find((item) => item.key === expandedColumn);
 
-              // Reutilizando a função de mapeamento de meta-dados
               const getColumnMeta = (name: string) => {
                 switch (name) {
                   case "Disponível":
@@ -2351,7 +2353,7 @@ export function ItensVitrine() {
                               : "text-lg font-semibold"
                           }
                         >
-                          {expandedColumn}
+                          {found?.name ?? "Não encontrado"}
                         </h2>
                       </div>
                       <Badge

@@ -1,45 +1,18 @@
-"use client"
-
-import * as React from "react"
-
-import { cn } from "../../lib/utils"
-
-import { UserContext } from "../../context/context"
+"use client";
+import { UserContext } from "../../context/context";
 
 interface AccountSwitcherProps {
-  isCollapsed: boolean
-
+  isCollapsed: boolean;
 }
 
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "../../components/ui/dropdown-menu"
-
-import {  ChevronsUpDown, GalleryVerticalEnd, User} from "lucide-react"
-
-import { useTheme } from "next-themes"
-import { SymbolEEWhite } from "../svg/SymbolEEWhite"
-import { SymbolEE } from "../svg/SymbolEE"
-import { useLocation, useNavigate } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { TeamSwitcher } from "../team-switcher"
-  
+import { useTheme } from "next-themes";
+import { TeamSwitcher } from "../team-switcher";
+import { useContext } from "react";
 
 export function AccountSwitcher() {
+  const { user } = useContext(UserContext);
 
-  const {user,  setPermission,  setRole, role, loggedIn} = React.useContext(UserContext)
-  const { theme } = useTheme()
-
-
-
-
-
-  const teams = (
+  const teams =
     Array.isArray(user?.roles) && user.roles.length > 0
       ? user.roles
           .filter((rola) => rola?.id && rola?.id) // evita valores null/undefined
@@ -48,13 +21,7 @@ export function AccountSwitcher() {
             id: rola.id,
             plan: "Administrativo",
           }))
-      : [
+      : [];
 
-        ]
-  );
-  
-  
-  return (
-    <TeamSwitcher teams={teams} />
-  )
+  return <TeamSwitcher teams={teams} />;
 }
