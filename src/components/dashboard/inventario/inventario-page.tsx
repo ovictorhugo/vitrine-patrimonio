@@ -125,7 +125,7 @@ type InventoryAssetsResponse = { assets: AssetDTO[] } | AssetDTO[];
 async function getInventoryDetail(
   baseUrl: string,
   inventoryId: string,
-  token?: string | null
+  token?: string | null,
 ): Promise<InventoryDTO> {
   const res = await fetch(`${baseUrl}inventories/${inventoryId}`, {
     headers: {
@@ -154,7 +154,7 @@ async function putInventory(
   baseUrl: string,
   inventoryId: string,
   payload: { key: string; available: boolean },
-  token?: string | null
+  token?: string | null,
 ) {
   const res = await fetch(`${baseUrl}inventories/${inventoryId}`, {
     method: "PUT",
@@ -174,7 +174,7 @@ async function putInventory(
 async function deleteInventory(
   baseUrl: string,
   inventoryId: string,
-  token?: string | null
+  token?: string | null,
 ) {
   const res = await fetch(`${baseUrl}inventories/${inventoryId}`, {
     method: "DELETE",
@@ -192,7 +192,7 @@ async function deleteInventory(
 
 async function getMyLocations(
   baseUrl: string,
-  token?: string | null
+  token?: string | null,
 ): Promise<LocationMy[]> {
   const res = await fetch(`${baseUrl}locations/my`, {
     headers: {
@@ -212,25 +212,25 @@ async function getInventoryAssetsByLocation(
   baseUrl: string,
   inventoryId: string,
   locationId: string,
-  token?: string | null
+  token?: string | null,
 ): Promise<AssetDTO[]> {
   const res = await fetch(
     `${baseUrl}inventories/${inventoryId}/assets?location_id=${encodeURIComponent(
-      locationId
+      locationId,
     )}`,
     {
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-    }
+    },
   );
   if (!res.ok) {
     const t = await res.text().catch(() => "");
     throw new Error(`Falha ao buscar itens (${res.status}): ${t}`);
   }
-  const js: InventoryAssetsResponse = await res.json();
-  return Array.isArray(js) ? js : js.assets || [];
+  const js = await res.json();
+  return Array.isArray(js) ? js : js.inventoried_asset || [];
 }
 
 /* ============== Página ============== */
@@ -247,6 +247,7 @@ export function InventarioPage() {
 
   const [isOn, setIsOn] = useState(true);
   const queryUrl = useQuery();
+  const isMobile = useIsMobile();
   const tab = queryUrl.get("tab");
   const inv_id = queryUrl.get("inv_id") || ""; // ← INVENTORY_ID vem da URL
   const [value, setValue] = useState(tab || tabs[0].id);
@@ -283,7 +284,7 @@ export function InventarioPage() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== Estatísticas (independentes)
@@ -298,7 +299,7 @@ export function InventarioPage() {
         {
           method: "GET",
           headers: authHeaders,
-        }
+        },
       );
       if (!res.ok)
         throw new Error(`Falha ao carregar estatísticas (HTTP ${res.status}).`);
@@ -330,30 +331,30 @@ export function InventarioPage() {
 
   /* ===== LOADING MESSAGES (estilo exemplo) ===== */
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
   useEffect(() => {
     const t1 = setTimeout(
       () => setLoadingMessage("Estamos quase lá, continue aguardando..."),
-      5000
+      5000,
     );
     const t2 = setTimeout(
       () => setLoadingMessage("Só mais um pouco..."),
-      10000
+      10000,
     );
     const t3 = setTimeout(
       () =>
         setLoadingMessage(
-          "Está demorando mais que o normal... estamos tentando encontrar tudo."
+          "Está demorando mais que o normal... estamos tentando encontrar tudo.",
         ),
-      15000
+      15000,
     );
     const t4 = setTimeout(
       () =>
         setLoadingMessage(
-          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco",
         ),
-      20000
+      20000,
     );
     return () => {
       clearTimeout(t1);
@@ -365,7 +366,7 @@ export function InventarioPage() {
 
   /* ===== Inventário atual (1º fetch) ===== */
   const [currentInventory, setCurrentInventory] = useState<InventoryDTO | null>(
-    null
+    null,
   );
   const [loadingInventory, setLoadingInventory] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
@@ -387,7 +388,7 @@ export function InventarioPage() {
       } catch (e: any) {
         if (!active) return;
         setInventoryError(
-          e?.message || "Não foi possível carregar o inventário."
+          e?.message || "Não foi possível carregar o inventário.",
         );
         setCurrentInventory(null);
       } finally {
@@ -410,10 +411,10 @@ export function InventarioPage() {
         urlGeral,
         currentInventory.id,
         { key: currentInventory.key, available: next },
-        token
+        token,
       );
       setCurrentInventory((prev) =>
-        prev ? { ...prev, available: next } : prev
+        prev ? { ...prev, available: next } : prev,
       );
       toast("Disponibilidade atualizada", {
         description: `Inventário ${
@@ -478,10 +479,10 @@ export function InventarioPage() {
         urlGeral,
         currentInventory.id,
         { key: editKey, available: editAvailable },
-        token
+        token,
       );
       setCurrentInventory((prev) =>
-        prev ? { ...prev, key: editKey, available: editAvailable } : prev
+        prev ? { ...prev, key: editKey, available: editAvailable } : prev,
       );
       toast("Inventário atualizado", {
         description: "Alterações salvas com sucesso.",
@@ -542,7 +543,7 @@ export function InventarioPage() {
           urlGeral,
           currentInventory.id,
           room.id,
-          token
+          token,
         );
         setAssetsPreview((prev) => ({ ...prev, [room.id]: assets }));
         toast("Sala carregada", {
@@ -554,7 +555,7 @@ export function InventarioPage() {
         });
       }
     },
-    [currentInventory, token, urlGeral]
+    [currentInventory, token, urlGeral],
   );
 
   /* ===== Voltar (usa o mesmo padrão do seu exemplo) ===== */
@@ -586,8 +587,6 @@ export function InventarioPage() {
 
   /* ===== Telas de Loading / Not Found (para o INVENTÁRIO) ===== */
   if (loadingInventory) {
-    const isMobile = useIsMobile();
-
     if (isMobile) {
       return (
         <div className="flex justify-center items-center h-full">
@@ -861,7 +860,7 @@ export function InventarioPage() {
                       <ChevronLeft size={16} />
                     </Button>
 
-                    <div className=" mx-10 ">
+                    <div className="mx-10">
                       <div
                         ref={scrollAreaRef}
                         className="overflow-x-auto scrollbar-hide scrollbar-hide"
@@ -914,9 +913,6 @@ export function InventarioPage() {
                   </div>
                 </div>
 
-                <div className="hidden xl:flex xl:flex-nowrap gap-2">
-                  <div className="md:flex md:flex-nowrap gap-2">i</div>
-                </div>
               </div>
             </div>
           </div>

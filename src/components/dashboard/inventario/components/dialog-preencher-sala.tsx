@@ -9,23 +9,46 @@ import {
 } from "../../../ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../ui/tabs";
 import { Label } from "../../../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../ui/select";
 import { Button } from "../../../ui/button";
 import { Separator } from "../../../ui/separator";
 import { Alert } from "../../../ui/alert";
 import { Badge } from "../../../ui/badge";
-import { Loader2, Home, Hash, ArrowRight } from "lucide-react";
+import { Loader2, Home, Hash, ArrowRight, X } from "lucide-react";
 import { toast } from "sonner";
-import { PatrimonioItem } from "../../sala/components/patrimonio-item-inventario";
 import { ArrowUUpLeft } from "phosphor-react";
 import { ScrollArea } from "../../../ui/scroll-area";
+import Masonry from "react-responsive-masonry";
+import { PatrimonioItem } from "../../../busca-patrimonio/patrimonio-item";
+import { PatrimonioItemSmall } from "./patrimonioItemSmall";
 
 /* ================= Tipos ================= */
 type UUID = string;
 
-type Unit = { id: UUID; unit_name: string; unit_code: string; unit_siaf: string };
-type Agency = { id: UUID; agency_name: string; agency_code: string; unit_id: UUID };
-type Sector = { id: UUID; sector_name: string; sector_code: string; agency_id: UUID };
+type Unit = {
+  id: UUID;
+  unit_name: string;
+  unit_code: string;
+  unit_siaf: string;
+};
+type Agency = {
+  id: UUID;
+  agency_name: string;
+  agency_code: string;
+  unit_id: UUID;
+};
+type Sector = {
+  id: UUID;
+  sector_name: string;
+  sector_code: string;
+  agency_id: UUID;
+};
 type LocationMy = {
   id: UUID;
   location_name: string;
@@ -51,7 +74,7 @@ type DialogPreencherSalaProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   invId: UUID;
-  baseUrl: string;     // ex.: https://api/...  (com ou sem / no final)
+  baseUrl: string; // ex.: https://api/...  (com ou sem / no final)
   token?: string | null;
 };
 
@@ -63,7 +86,10 @@ export default function DialogPreencherSala({
   token,
 }: DialogPreencherSalaProps) {
   // Normaliza baseUrl para SEMPRE terminar com "/"
-  const urlGeral = useMemo(() => (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"), [baseUrl]);
+  const urlGeral = useMemo(
+    () => (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"),
+    [baseUrl],
+  );
 
   const headers = useMemo<HeadersInit>(
     () => ({
@@ -71,7 +97,7 @@ export default function DialogPreencherSala({
       Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // Abas/Etapas
@@ -109,7 +135,9 @@ export default function DialogPreencherSala({
         setUnits(json?.units ?? json?.results ?? json?.data ?? []);
       } catch (e: any) {
         setUnits([]);
-        toast("Erro ao carregar Unidades (Units).", { description: e?.message || "Tente novamente." });
+        toast("Erro ao carregar Unidades (Units).", {
+          description: e?.message || "Tente novamente.",
+        });
       } finally {
         setLoadingUnits(false);
       }
@@ -120,42 +148,51 @@ export default function DialogPreencherSala({
     async (uid: UUID | null) => {
       if (!uid) return setAgencies([]);
       try {
-        const res = await fetch(`${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`, { headers });
+        const res = await fetch(
+          `${urlGeral}agencies/?unit_id=${encodeURIComponent(uid)}`,
+          { headers },
+        );
         const json = await res.json();
         setAgencies(json?.agencies ?? json?.results ?? json?.data ?? []);
       } catch {
         setAgencies([]);
       }
     },
-    [urlGeral, headers]
+    [urlGeral, headers],
   );
 
   const fetchSectors = useCallback(
     async (aid: UUID | null) => {
       if (!aid) return setSectors([]);
       try {
-        const res = await fetch(`${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`, { headers });
+        const res = await fetch(
+          `${urlGeral}sectors/?agency_id=${encodeURIComponent(aid)}`,
+          { headers },
+        );
         const json = await res.json();
         setSectors(json?.sectors ?? json?.results ?? json?.data ?? []);
       } catch {
         setSectors([]);
       }
     },
-    [urlGeral, headers]
+    [urlGeral, headers],
   );
 
   const fetchLocations = useCallback(
     async (sid: UUID | null) => {
       if (!sid) return setLocations([]);
       try {
-        const res = await fetch(`${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`, { headers });
+        const res = await fetch(
+          `${urlGeral}locations/?sector_id=${encodeURIComponent(sid)}`,
+          { headers },
+        );
         const json = await res.json();
         setLocations(json?.locations ?? json?.results ?? json?.data ?? []);
       } catch {
         setLocations([]);
       }
     },
-    [urlGeral, headers]
+    [urlGeral, headers],
   );
 
   // Cascata (exatamente como seu modelo)
@@ -205,7 +242,7 @@ export default function DialogPreencherSala({
       setAssets([]);
       const res = await fetch(
         `${urlGeral}assets/?location_id=${encodeURIComponent(locationId)}`,
-        { headers }
+        { headers },
       );
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -215,9 +252,13 @@ export default function DialogPreencherSala({
       const list: AssetDTO[] = js?.assets ?? [];
       setAssets(list);
       setTab("itens");
-      toast("Sala carregada", { description: `${list.length} item(ns) encontrados.` });
+      toast("Sala carregada", {
+        description: `${list.length} item(ns) encontrados.`,
+      });
     } catch (e: any) {
-      toast("Erro ao buscar itens da sala", { description: e?.message || "Tente novamente." });
+      toast("Erro ao buscar itens da sala", {
+        description: e?.message || "Tente novamente.",
+      });
     } finally {
       setLoadingAssets(false);
     }
@@ -233,13 +274,18 @@ export default function DialogPreencherSala({
             Preencher inventário de sala
           </DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Selecione a sala navegando por Unidade → Órgão → Setor → Sala e visualize os itens em inventário.
+            Selecione a sala navegando por Unidade → Órgão → Setor → Sala e
+            visualize os itens em inventário.
           </DialogDescription>
         </DialogHeader>
 
-        <Separator className="my-4" />
+        <Separator />
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as any)}
+          className="w-full"
+        >
           <TabsContent value="selecionar" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Unit */}
@@ -251,9 +297,19 @@ export default function DialogPreencherSala({
                   disabled={loadingUnits}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingUnits ? "Carregando..." : "Selecione a unidade"} />
+                    <SelectValue
+                      placeholder={
+                        loadingUnits ? "Carregando..." : "Selecione a unidade"
+                      }
+                    />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                  <SelectContent
+                    position="popper"
+                    className="z-[99999]"
+                    align="start"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     {units.map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.unit_name}
@@ -272,9 +328,21 @@ export default function DialogPreencherSala({
                   disabled={!unitId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={!unitId ? "Selecione a unidade primeiro" : "Selecione o órgão"} />
+                    <SelectValue
+                      placeholder={
+                        !unitId
+                          ? "Selecione a unidade primeiro"
+                          : "Selecione o órgão"
+                      }
+                    />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                  <SelectContent
+                    position="popper"
+                    className="z-[99999]"
+                    align="start"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     {agencies.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
                         {a.agency_name}
@@ -293,9 +361,21 @@ export default function DialogPreencherSala({
                   disabled={!agencyId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={!agencyId ? "Selecione o órgão primeiro" : "Selecione o setor"} />
+                    <SelectValue
+                      placeholder={
+                        !agencyId
+                          ? "Selecione o órgão primeiro"
+                          : "Selecione o setor"
+                      }
+                    />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                  <SelectContent
+                    position="popper"
+                    className="z-[99999]"
+                    align="start"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     {sectors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.sector_name}
@@ -314,9 +394,21 @@ export default function DialogPreencherSala({
                   disabled={!sectorId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={!sectorId ? "Selecione o setor primeiro" : "Selecione a sala"} />
+                    <SelectValue
+                      placeholder={
+                        !sectorId
+                          ? "Selecione o setor primeiro"
+                          : "Selecione a sala"
+                      }
+                    />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[99999]" align="start" side="bottom" sideOffset={6}>
+                  <SelectContent
+                    position="popper"
+                    className="z-[99999]"
+                    align="start"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     {locations.map((l) => (
                       <SelectItem key={l.id} value={l.id}>
                         {l.location_name}
@@ -340,31 +432,34 @@ export default function DialogPreencherSala({
               <div className="grid gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">{assets.length}</Badge>
-                    <span className="text-sm text-muted-foreground">item(ns) encontrados</span>
+                    <span className="text-sm text-muted-foreground">
+                      {assets.length} item(ns) encontrados
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  
-                    <span>Sala selecionada</span>
-                    <Hash size={14} />
-                    <span>{locations.find((x) => x.id === (locationId ?? ""))?.location_name || "—"}</span>
+                    <span>
+                      {locations.find((x) => x.id === (locationId ?? ""))
+                        ?.location_name || "—"}
+                    </span>
                   </div>
                 </div>
 
-               <ScrollArea className="h-[320px]">
-                 {assets.map((asset) => (
-                 <div className="flex flex-col gap-4">
-                  
-                 </div>
-                ))}
-               </ScrollArea>
+                <ScrollArea className="h-[320px]">
+                  <div className="flex flex-col gap-4">
+                    <Masonry gutter="8px">
+                      {assets.map((asset) => (
+                        <PatrimonioItemSmall key={asset.id} {...asset} />
+                      ))}
+                    </Masonry>
+                  </div>
+                </ScrollArea>
               </div>
             )}
           </TabsContent>
         </Tabs>
 
         {/* Footer com navegação */}
-        <DialogFooter className="w-full flex justify-between">
+        <DialogFooter className="w-full flex justify-start">
           <div>
             {tab === "itens" && (
               <Button variant="ghost" onClick={() => setTab("selecionar")}>
@@ -374,12 +469,13 @@ export default function DialogPreencherSala({
           </div>
 
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              <ArrowUUpLeft size={16} /> Cancelar
-            </Button>
             {tab === "selecionar" && (
               <Button onClick={goToItens} disabled={!canNext || loadingAssets}>
-                {loadingAssets ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight size={16} />}
+                {loadingAssets ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight size={16} />
+                )}
                 Próximo
               </Button>
             )}

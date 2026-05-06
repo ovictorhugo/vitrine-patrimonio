@@ -82,7 +82,6 @@ type InventoriesResponse = {
 
 // Asset mínimo usado na UI (ajuste se precisar de mais campos)
 
-
 // resposta do GET /inventories/:id/assets
 type InventoryAssetsResponse = {
   assets: AssetDTO[];
@@ -94,17 +93,24 @@ type InventoryAssetsResponse = {
 
 export function Inventario() {
   const { urlGeral } = useContext(UserContext);
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
 
   const { data, onOpen, type, isOpen, resetData } = useModal();
 
   const [inventories, setInventories] = useState<InventoryCore[]>([]);
   const [loadingList, setLoadingList] = useState(false);
 
-  const [expandedInventoryId, setExpandedInventoryId] = useState<string | null>(null);
+  const [expandedInventoryId, setExpandedInventoryId] = useState<string | null>(
+    null,
+  );
   const [loadingAssets, setLoadingAssets] = useState(false);
-  const [assetsByInventory, setAssetsByInventory] = useState<Record<string, AssetDTO[]>>({});
-  const [addedByInventory, setAddedByInventory] = useState<Record<string, AssetDTO[]>>({}); // itens adicionados manualmente
+  const [assetsByInventory, setAssetsByInventory] = useState<
+    Record<string, AssetDTO[]>
+  >({});
+  const [addedByInventory, setAddedByInventory] = useState<
+    Record<string, AssetDTO[]>
+  >({}); // itens adicionados manualmente
   const [visibleCount, setVisibleCount] = useState(30);
 
   const headers = useMemo(
@@ -113,10 +119,13 @@ export function Inventario() {
       Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
-  const baseUrl = useMemo(() => String(urlGeral || "").replace(/\/+$/, ""), [urlGeral]);
+  const baseUrl = useMemo(
+    () => String(urlGeral || "").replace(/\/+$/, ""),
+    [urlGeral],
+  );
 
   /* ===========
      Fetch list
@@ -127,7 +136,9 @@ export function Inventario() {
       const res = await fetch(`${baseUrl}/inventories/`, { headers });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
-        throw new Error(t || `Falha ao carregar inventários (HTTP ${res.status}).`);
+        throw new Error(
+          t || `Falha ao carregar inventários (HTTP ${res.status}).`,
+        );
       }
       const js: InventoriesResponse = await res.json();
       setInventories(Array.isArray(js?.inventories) ? js.inventories : []);
@@ -158,10 +169,11 @@ export function Inventario() {
       }
       const js: InventoryAssetsResponse = await res.json();
       return (js.assets || []).filter(
-        (a) => !["BX", "NI"].includes(String(a.asset_status || "").toUpperCase())
+        (a) =>
+          !["BX", "NI"].includes(String(a.asset_status || "").toUpperCase()),
       );
     },
-    [baseUrl, headers]
+    [baseUrl, headers],
   );
 
   // ao expandir, se ainda não tiver cache, busca
@@ -172,7 +184,10 @@ export function Inventario() {
       try {
         setLoadingAssets(true);
         const assets = await fetchInventoryAssets(expandedInventoryId);
-        setAssetsByInventory((prev) => ({ ...prev, [expandedInventoryId]: assets }));
+        setAssetsByInventory((prev) => ({
+          ...prev,
+          [expandedInventoryId]: assets,
+        }));
       } catch (e) {
         console.error(e);
         toast("Erro ao carregar patrimônios", {
@@ -194,17 +209,20 @@ export function Inventario() {
   const fetchAssetsByParams = useCallback(
     async (params: { asset_identifier?: string; atm_number?: string }) => {
       const q = new URLSearchParams();
-      if (params.asset_identifier) q.set("asset_identifier", params.asset_identifier);
+      if (params.asset_identifier)
+        q.set("asset_identifier", params.asset_identifier);
       if (params.atm_number) q.set("atm_number", params.atm_number);
       const url = `${baseUrl}/assets/?${q.toString()}`;
       const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error("Falha ao buscar patrimônio pelo identificador.");
+      if (!res.ok)
+        throw new Error("Falha ao buscar patrimônio pelo identificador.");
       const js: { assets: AssetDTO[] } = await res.json();
       return (js.assets || []).filter(
-        (a) => !["BX", "NI"].includes(String(a.asset_status || "").toUpperCase())
+        (a) =>
+          !["BX", "NI"].includes(String(a.asset_status || "").toUpperCase()),
       );
     },
-    [baseUrl, headers]
+    [baseUrl, headers],
   );
 
   useEffect(() => {
@@ -217,21 +235,20 @@ export function Inventario() {
     const key = atm_number
       ? `atm:${atm_number}`
       : asset_code
-      ? `cod:${asset_code}-${asset_check_digit || ""}`
-      : "";
+        ? `cod:${asset_code}-${asset_check_digit || ""}`
+        : "";
 
     if (!key || key === lastPickedRef.current) return;
 
     (async () => {
       try {
-        const params =
-          key.startsWith("atm:")
-            ? { atm_number }
-            : {
-                asset_identifier: asset_check_digit
-                  ? `${asset_code}-${asset_check_digit}`
-                  : asset_code,
-              };
+        const params = key.startsWith("atm:")
+          ? { atm_number }
+          : {
+              asset_identifier: asset_check_digit
+                ? `${asset_code}-${asset_check_digit}`
+                : asset_code,
+            };
 
         const found = await fetchAssetsByParams(params);
         if (found.length === 0) {
@@ -271,7 +288,15 @@ export function Inventario() {
         lastPickedRef.current = key;
       }
     })();
-  }, [data, isOpen, type, expandedInventoryId, assetsByInventory, fetchAssetsByParams, resetData]);
+  }, [
+    data,
+    isOpen,
+    type,
+    expandedInventoryId,
+    assetsByInventory,
+    fetchAssetsByParams,
+    resetData,
+  ]);
 
   /* ============
      Utilitários
@@ -302,7 +327,8 @@ export function Inventario() {
   /* =======
      Render
      ======= */
-  const isLoadingSkeleton = loadingList || (expandedInventoryId && loadingAssets);
+  const isLoadingSkeleton =
+    loadingList || (expandedInventoryId && loadingAssets);
 
   return (
     <div className="flex flex-col gap-4 p-8 pt-0">
@@ -321,9 +347,11 @@ export function Inventario() {
         </div>
       )}
 
-      {!isLoadingSkeleton && !expandedInventoryId && inventories.length === 0 && (
-        <Alert className="text-sm">Nenhum inventário encontrado.</Alert>
-      )}
+      {!isLoadingSkeleton &&
+        !expandedInventoryId &&
+        inventories.length === 0 && (
+          <Alert className="text-sm">Nenhum inventário encontrado.</Alert>
+        )}
 
       {/* Lista de inventários */}
       {!expandedInventoryId && inventories.length > 0 && (
@@ -339,7 +367,9 @@ export function Inventario() {
                 }}
               >
                 <div className="flex items-center justify-between mb-8">
-                  <span className="font-medium text-lg truncate">{inv.key}</span>
+                  <span className="font-medium text-lg truncate">
+                    {inv.key}
+                  </span>
                   <Badge variant={inv.avaliable ? "default" : "outline"}>
                     {inv.avaliable ? "Disponível" : "Indisponível"}
                   </Badge>
@@ -376,14 +406,16 @@ export function Inventario() {
       )}
 
       {/* Inventário expandido */}
-      {expandedInventoryId && (
+      {expandedInventoryId &&
         (() => {
           const inv = inventories.find((x) => x.id === expandedInventoryId);
           if (!inv) return null;
 
           const base = assetsByInventory[inv.id] || [];
           const baseIds = new Set(base.map((a) => a.id));
-          const added = (addedByInventory[inv.id] || []).filter((a) => !baseIds.has(a.id));
+          const added = (addedByInventory[inv.id] || []).filter(
+            (a) => !baseIds.has(a.id),
+          );
           const combined = [...base, ...added];
 
           return (
@@ -416,7 +448,9 @@ export function Inventario() {
                 </Alert>
 
                 {combined.slice(0, visibleCount).map((asset) => {
-                  const isAdded = (addedByInventory[inv.id] || []).some((a) => a.id === asset.id);
+                  const isAdded = (addedByInventory[inv.id] || []).some(
+                    (a) => a.id === asset.id,
+                  );
 
                   return (
                     <div key={`${inv.id}:${asset.id}`} className="relative">
@@ -458,8 +492,7 @@ export function Inventario() {
               )}
             </div>
           );
-        })()
-      )}
+        })()}
     </div>
   );
 }

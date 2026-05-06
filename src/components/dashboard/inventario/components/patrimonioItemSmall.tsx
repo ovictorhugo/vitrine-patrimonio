@@ -1,4 +1,4 @@
-import { Alert } from "../ui/alert";
+import { Alert } from "../../../ui/alert";
 import {
   Archive,
   HelpCircle,
@@ -9,14 +9,12 @@ import {
   X,
   Check,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
+import { Badge } from "../../../ui/badge";
 import { useContext, useState } from "react";
-import { useModal } from "../hooks/use-modal-store";
-import { UserContext } from "../../context/context";
-import { Asset } from "../homepage/components/item-patrimonio";
-import { useIsMobile } from "../../hooks/use-mobile";
+import { useModal } from "../../../hooks/use-modal-store";
+import { UserContext } from "../../../../context/context";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",
@@ -34,7 +32,7 @@ export const csvCodToText: Record<string, string> = {
   RE: "Recuperável",
 };
 
-export function PatrimonioItem(props: any) {
+export function PatrimonioItemSmall(props: any) {
   if (!props) return null;
 
   const csvCodTrimmed = (props.csv_code || "").toString().trim();
@@ -42,7 +40,7 @@ export function PatrimonioItem(props: any) {
 
   const conectee = import.meta.env.VITE_BACKEND_CONECTEE || "";
   const { onOpen } = useModal();
-  const { urlGeral, loggedIn } = useContext(UserContext);
+  const { loggedIn } = useContext(UserContext);
 
   const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
     NO: { text: "Normal", icon: <Check size={12} /> },
@@ -68,7 +66,7 @@ export function PatrimonioItem(props: any) {
   if (isMobile) {
     return (
       <div
-        className="flex group cursor-pointer"
+        className="flex cursor-pointer"
         onClick={(event) => {
           event.stopPropagation();
           onOpen("patrimonio", { ...props }); // envia o Asset direto para o modal
@@ -167,7 +165,7 @@ export function PatrimonioItem(props: any) {
                       <AvatarImage
                         className="rounded-md h-5 w-5"
                         src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                          legalGuardianName
+                          legalGuardianName,
                         )}`}
                       />
                       <AvatarFallback className="flex items-center justify-center">
@@ -266,7 +264,7 @@ export function PatrimonioItem(props: any) {
                       <AvatarImage
                         className="rounded-md h-5 w-5"
                         src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                          legalGuardianName
+                          legalGuardianName,
                         )}`}
                       />
                       <AvatarFallback className="flex items-center justify-center">

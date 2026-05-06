@@ -124,7 +124,7 @@ export function Admin() {
 
   const baseUrl = useMemo(
     () => (urlGeral || "").replace(/\/+$/, ""),
-    [urlGeral]
+    [urlGeral],
   );
 
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
@@ -430,7 +430,7 @@ export function Admin() {
                                     {label}
                                   </Button>
                                 </div>
-                              )
+                              ),
                           )}
                         </div>
                       </div>
