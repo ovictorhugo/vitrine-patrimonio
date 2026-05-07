@@ -1,11 +1,6 @@
-import { useEffect, useState } from "react";
-import { Label } from "../../../ui/label";
-import { FlowMode, StepBaseProps } from "../novo-item";
-import { Toggle } from "../../../ui/toggle";
-import { Badge } from "../../../ui/badge";
+import { useEffect } from "react";
+import { StepBaseProps } from "../novo-item";
 import { ArrowRight, Bell, FileDown } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
-import { BackgroundLines } from "../../../ui/background-lines";
 import { useIsMobile } from "../../../../hooks/use-mobile";
 
 export function FinalStep({

@@ -1,11 +1,4 @@
-import {
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
+import { useContext, useEffect, useState, useMemo } from "react";
 import { UserContext } from "../../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -17,7 +10,6 @@ import {
 } from "../ui/select";
 import { ItemPatrimonio } from "../homepage/components/item-patrimonio";
 import { Skeleton } from "../ui/skeleton";
-import { CatalogEntry } from "../dashboard/itens-vitrine/card-item-dropdown";
 import { LoanableItemDTO } from "../dashboard/audiovisual/audiovisual";
 
 /* ===== Resposta da API ===== */
@@ -56,10 +48,7 @@ export function BlockItemsEmprestimo(props: Props) {
   const location = useLocation();
   const sp = new URLSearchParams(location.search);
 
-  // ===== Lê PLURAL OU SINGULAR na URL =====
-  const offset = Number(sp.get("offset") || "0");
   const limit = Number(sp.get("limit") || "10");
-  const initialFetchDone = useRef(false);
 
   const [items, setItems] = useState<LoanableItemDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,8 +63,6 @@ export function BlockItemsEmprestimo(props: Props) {
     if (token) h.Authorization = `Bearer ${token}`;
     return h;
   }, []);
-
-  // ===== Atualiza URL (mantendo PLURAL do modal) e scroll =====
 
   const handleNavigate = (newOffset: number, newLimit: number) => {
     const currentSp = new URLSearchParams(location.search);
@@ -100,13 +87,10 @@ export function BlockItemsEmprestimo(props: Props) {
       "material_id",
     );
 
-    const runFetch = async (overrideLimit?: string, isSilent = false) => {
+    const runFetch = async () => {
       try {
-        // Só mostra Skeleton se NÃO for uma busca silenciosa
-        if (!isSilent) {
-          setLoading(true);
-          setError(null);
-        }
+        setLoading(true);
+        setError(null);
 
         const workflowsToFetch = Array.isArray(props.workflow)
           ? props.workflow
@@ -120,13 +104,15 @@ export function BlockItemsEmprestimo(props: Props) {
           url.searchParams.set("is_visible", "true");
 
           if (wfStatus) url.searchParams.set("workflow_status", wfStatus);
-
           if (currentQ) url.searchParams.set("q", currentQ);
-          if (currentMaterialId)
+
+          // Correção aplicada: enviando material_ids no plural para o backend
+          if (currentMaterialId) {
             url.searchParams.set("material_id", currentMaterialId);
+          }
 
           url.searchParams.set("offset", currentOffset);
-          url.searchParams.set("limit", overrideLimit || currentLimit);
+          url.searchParams.set("limit", currentLimit);
 
           const res = await fetch(url.toString(), {
             method: "GET",
@@ -144,28 +130,19 @@ export function BlockItemsEmprestimo(props: Props) {
           Array.isArray(data.loanable_items) ? data.loanable_items : [],
         );
 
+        console.log("Itens carregados:", combinedItems);
         setItems(combinedItems);
-        if (!isSilent) setLoading(false);
-
-        if (overrideLimit === "5" && currentOffset === "0") {
-          runFetch(currentLimit, true); // true = isSilent
-        }
+        setLoading(false);
       } catch (e: any) {
         if (e.name !== "AbortError") {
           setError(e?.message || "Erro inesperado ao carregar itens.");
           setItems([]);
-          if (!isSilent) setLoading(false);
+          setLoading(false);
         }
       }
     };
 
-    // ✅ REGRA DE DISPARO: É a primeira vez abrindo a tela? Busca 4. Senão, busca normal.
-    if (!initialFetchDone.current && currentOffset === "0") {
-      initialFetchDone.current = true;
-      runFetch("5", false);
-    } else {
-      runFetch(undefined, false);
-    }
+    runFetch();
 
     return () => controller.abort();
   }, [location.search, baseUrl, baseHeaders, workflowStr]);

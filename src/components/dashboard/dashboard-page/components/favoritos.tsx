@@ -202,7 +202,11 @@ export function Favoritos() {
                   ) : favorites.length === 0 ? (
                     <div className="w-full">
                       <Alert variant="default">
-                        <div className="text-xl">Você ainda não tem favoritos.</div>
+                        <div className="text-xl">
+                          <h1 className="text-2xl font-bold">
+                            Você ainda não tem favoritos
+                          </h1>
+                        </div>
                       </Alert>
                     </div>
                   ) : (

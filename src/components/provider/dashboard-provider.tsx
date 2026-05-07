@@ -11,8 +11,6 @@ import { useModalDashboard } from "../hooks/use-modal-dashboard";
 
 import { CreateBarCode } from "../dashboard/create-etiqueta/create-bar-code";
 
-import { Assinaturee } from "../dashboard/assinaturee";
-
 import { EditItemVitrine } from "../dashboard/edit-item/edit-item";
 import { CreateTempAsset } from "../dashboard/create-temp-asset/create-temp-asset";
 import { HomepageListTempAsset } from "../dashboard/create-temp-asset/homepage-list-temp-asset";
@@ -45,8 +43,6 @@ const ModalContent = () => {
       return <ItensVitrine />;
     case "create-bar-bode":
       return <CreateBarCode />;
-    case "assinar-documento":
-      return <Assinaturee />;
     case "editar-item":
       return <EditItemVitrine />;
     case "create-temp-asset":

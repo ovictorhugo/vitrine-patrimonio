@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "../../lib/utils";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import React from "react";
 
 export const BackgroundLines = ({
@@ -15,12 +15,7 @@ export const BackgroundLines = ({
   };
 }) => {
   return (
-    <div
-      className={cn(
-        " w-full  ",
-        className
-      )}
-    >
+    <div className={cn(" w-full  ", className)}>
       <SVG svgOptions={svgOptions} />
       {children}
     </div>

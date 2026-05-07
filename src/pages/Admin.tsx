@@ -28,7 +28,6 @@ export function Admin() {
     "/dashboard/painel": "painel",
     "/dashboard/cargos-funcoes": "cargos-funcoes",
     "/dashboard/desfazimento": "desfazimento",
-    "/dashboard/assinaturee": "assinar-documento",
     "/dashboard/transferencias": "transferencia",
     "/dashboard/editar-item": "editar-item",
     "/dashboard/criar-patrimonio-temporario": "create-temp-asset",

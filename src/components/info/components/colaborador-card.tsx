@@ -1,7 +1,7 @@
 import { Buildings, LinkSimple } from "phosphor-react";
 import { Alert } from "../../ui/alert";
 import { Link } from "react-router-dom";
-import { LinkedinIcon, Mail, User } from "lucide-react";
+import { Mail, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useIsMobile } from "../../../hooks/use-mobile";
 
@@ -53,7 +53,7 @@ export function ColaboradorCard({ colaborador, className = "" }) {
               rel="noreferrer"
               className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center"
             >
-              <LinkedinIcon size={12} />
+              <User size={12} />
               LinkedIn
             </a>
           )}
