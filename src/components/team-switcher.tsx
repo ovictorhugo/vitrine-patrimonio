@@ -79,6 +79,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
       navigate("/");
 
       const data = await response.json();
+
       if (data) {
         // aplica primeiro as permissões, depois o papel (evita corrida visual)
         setPermission(data);

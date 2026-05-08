@@ -194,7 +194,7 @@ export function HomeInicial() {
         <meta name="robots" content="index, follow" />
       </Helmet>
 
-      <div className="absolute top-0 left-0 flex min-h-screen w-full z-[0] " />
+      <div className="absolute top-0 left-0 flex min-h-screen w-full z-[0]" />
       <WorkflowAreaChart
         tab={tab as "vitrine" | "desfazimento"}
         statsMap={statsMap}
