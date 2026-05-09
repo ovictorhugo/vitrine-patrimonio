@@ -16,15 +16,13 @@ interface ImageProps {
   // outras props que você desejar adicionar
 }
 import { cn } from "../../lib";
-import { AnimatePresence, motion } from "framer-motion";
-
-import { useOutsideClick } from "./use-outside-click";
+import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogTrigger } from "./dialog";
 
 interface CarouselProps {
-  items: JSX.Element[];
+  items: React.ReactNode[];
   initialScroll?: number;
 }
 
@@ -104,34 +102,31 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         >
           <div
             className={cn(
-              "absolute right-0 h-auto w-[5%] overflow-hidden bg-gradient-to-l"
+              "absolute right-0 h-auto w-[5%] overflow-hidden bg-gradient-to-l",
             )}
           ></div>
 
           <div
             className={cn(
               "flex flex-row justify-start gap-4",
-              "w-full" // remove max-w-4xl if you want the carousel to span the full width of its container
+              "w-full", // remove max-w-4xl if you want the carousel to span the full width of its container
             )}
           >
             {items.map((item, index) => (
               <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
-                animate={{
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{
                   opacity: 1,
                   y: 0,
                   transition: {
                     duration: 0.5,
                     delay: 0.2 * index,
                     ease: "easeOut",
-                    once: true,
                   },
                 }}
+                viewport={{ once: true }} 
                 key={"card" + index}
-                className="last:pr-[5%] md:last:pr-[33%]  rounded-3xl"
+                className="last:pr-[5%] md:last:pr-[33%] rounded-3xl"
               >
                 {item}
               </motion.div>
@@ -239,7 +234,7 @@ export const BlurImage = ({
       className={cn(
         "transition duration-300 h-full w-full",
         isLoading ? "blur-sm" : "blur-0",
-        className
+        className,
       )}
       onLoad={() => setLoading(false)}
       src={src}

@@ -21,7 +21,7 @@ import {
 } from "../../../ui/table";
 import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
 import { Textarea } from "../../../ui/textarea";
-import { useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import { UserContext } from "../../../../context/context";
 // ajuste o caminho se necessário
 import { Input } from "../../../ui/input";
@@ -45,7 +45,7 @@ export const csvCodToText: Record<string, string> = {
   RE: "Recuperável",
 };
 
-const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
   NO: { text: "Normal", icon: <Check size={12} /> },
   NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
   CA: { text: "Cadastrado", icon: <Archive size={12} /> },

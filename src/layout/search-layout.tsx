@@ -3,12 +3,6 @@ import { Header } from "../components/header/Header";
 import { NavigationSidebar } from "../components/navigation/navigation-sidebar";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useModalHomepage } from "../components/hooks/use-modal-homepage";
-import { TooltipProvider } from "../components/ui/tooltip";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "../components/ui/resizable";
 import { cn } from "../lib";
 import { Link, useLocation } from "react-router-dom";
 

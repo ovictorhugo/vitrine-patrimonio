@@ -180,7 +180,7 @@ export function FormularioStep({
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Patrimonio>(
-    initialData ? normalizeAsset(initialData as any) : blankPatrimonio()
+    initialData ? normalizeAsset(initialData as any) : blankPatrimonio(),
   );
   // Debounce do valor vindo do passo anterior
   const debouncedValue = useDebounced(value_item ?? "", 500);
@@ -296,7 +296,7 @@ export function FormularioStep({
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any }, // HelpCircle (phosphor) opcional
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -313,42 +313,42 @@ export function FormularioStep({
   const showCard = Boolean(data.asset_code);
 
   const [loadingMessage, setLoadingMessage] = useState(
-    "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+    "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
   );
 
   useEffect(() => {
     let timeouts: NodeJS.Timeout[] = [];
 
     setLoadingMessage(
-      "Estamos procurando todas as informações no nosso banco de dados, aguarde."
+      "Estamos procurando todas as informações no nosso banco de dados, aguarde.",
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Estamos quase lá, continue aguardando...");
-      }, 5000)
+      }, 5000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage("Só mais um pouco...");
-      }, 10000)
+      }, 10000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Está demorando mais que o normal... estamos tentando encontrar tudo."
+          "Está demorando mais que o normal... estamos tentando encontrar tudo.",
         );
-      }, 15000)
+      }, 15000),
     );
 
     timeouts.push(
       setTimeout(() => {
         setLoadingMessage(
-          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco"
+          "Estamos empenhados em achar todos os dados, aguarde só mais um pouco",
         );
-      }, 15000)
+      }, 15000),
     );
 
     return () => {

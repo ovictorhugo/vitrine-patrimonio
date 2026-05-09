@@ -21,7 +21,7 @@ import { Alert } from "../ui/alert";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import QRCode from "react-qr-code";
-import { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../../context/context";
 import { GaleriaImagens } from "./galeria-images";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
@@ -43,7 +43,7 @@ function formatCurrencyBR(value?: string | number) {
 // status do bem (campo asset_status)
 const statusMap: Record<
   string,
-  { text: string; icon: JSX.Element }
+  { text: string; icon: React.ReactNode }
 > = {
   NO: { text: "Normal", icon: <Check size={12} /> },
   NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },

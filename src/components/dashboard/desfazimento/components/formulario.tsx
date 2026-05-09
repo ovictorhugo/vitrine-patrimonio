@@ -340,9 +340,10 @@ export function FormularioStep({
       try {
         setLoading(true);
 
-        const searchUrl = type === "atm"
-          ? `${urlGeral}catalog/search/atm-number?q=${code}`
-          : `${urlGeral}catalog/search/asset-identifier?q=${code}`;
+        const searchUrl =
+          type === "atm"
+            ? `${urlGeral}catalog/search/atm-number?q=${code}`
+            : `${urlGeral}catalog/search/asset-identifier?q=${code}`;
         const searchResponse = await fetch(searchUrl);
 
         if (!searchResponse.ok) {
@@ -412,7 +413,7 @@ export function FormularioStep({
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any }, // HelpCircle (phosphor) opcional
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },

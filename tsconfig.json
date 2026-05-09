@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": false,
     "skipLibCheck": true,
 
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "esnext",
 
     "allowSyntheticDefaultImports": true

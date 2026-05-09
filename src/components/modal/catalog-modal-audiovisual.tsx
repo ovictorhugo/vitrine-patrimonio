@@ -1,4 +1,4 @@
-import {
+import React, {
   useContext,
   useMemo,
   useState,
@@ -395,7 +395,7 @@ export function AudiovisualModal() {
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },

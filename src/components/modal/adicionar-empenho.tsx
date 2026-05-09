@@ -19,7 +19,6 @@ import {
 import { useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { UserContext } from "../../context/context";
-import * as XLSX from "xlsx";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { Input } from "../ui/input";

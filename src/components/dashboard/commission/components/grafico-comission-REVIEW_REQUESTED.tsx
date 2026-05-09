@@ -10,13 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "../../../ui/chart";
-import {
-  BarChart,
-  Bar,
-  ResponsiveContainer,
-  XAxis,
-  LabelList,
-} from "recharts";
+import { BarChart, Bar, ResponsiveContainer, XAxis, LabelList } from "recharts";
 import { Skeleton } from "../../../ui/skeleton";
 import { toast } from "sonner";
 import { UserContext } from "../../../../context/context";

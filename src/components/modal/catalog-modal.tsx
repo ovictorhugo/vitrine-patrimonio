@@ -1,5 +1,5 @@
 // src/components/modals/catalog-modal.tsx
-import {
+import React, {
   useContext,
   useMemo,
   useState,
@@ -440,7 +440,7 @@ type ConservationStatus =
 
 const CONSERVATION_MAP: Record<
   ConservationStatus,
-  { icon: JSX.Element; title: string; description: string }
+  { icon: React.ReactNode; title: string; description: string }
 > = {
   "Excelente estado": {
     icon: <CheckCircle className="size-5 " />,
@@ -747,7 +747,7 @@ export function CatalogModal() {
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },

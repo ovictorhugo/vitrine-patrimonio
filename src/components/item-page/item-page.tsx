@@ -1,5 +1,5 @@
 // src/pages/item/index.tsx
-import {
+import React, {
   useContext,
   useEffect,
   useMemo,
@@ -544,7 +544,7 @@ export function ItemPage() {
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any }, // HelpCircle (phosphor) opcional
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -645,7 +645,7 @@ export function ItemPage() {
 
   const CONSERVATION_MAP: Record<
     ConservationStatus,
-    { icon: JSX.Element; title: string; description: string }
+    { icon: React.ReactNode; title: string; description: string }
   > = {
     "Excelente estado": {
       icon: <CheckCircle className="size-5 " />,

@@ -1959,7 +1959,9 @@ export function ItensVitrine() {
                       return (
                         <Alert
                           key={col.key}
-                          ref={(el) => (colRefs.current[col.key] = el)}
+                          ref={(el) => {
+                            colRefs.current[col.key] = el;
+                          }}
                           className="min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden mb-8"
                         >
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
@@ -2129,7 +2131,9 @@ export function ItensVitrine() {
                       return (
                         <Alert
                           key={col.key}
-                          ref={(el) => (colRefs.current[col.key] = el)}
+                          ref={(el) => {
+                            colRefs.current[col.key] = el;
+                          }}
                           className="w-[320px] min-w-[320px] h-full flex flex-col min-h-0 overflow-hidden"
                         >
                           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">

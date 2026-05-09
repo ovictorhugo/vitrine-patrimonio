@@ -67,7 +67,7 @@ export function ItemPatrimonioRows(props: Props) {
 
   const bemStaTrimmed = (asset.asset_status || "").toString().trim();
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <Check size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -257,7 +257,7 @@ export function ItemPatrimonioRows(props: Props) {
                             )}
                           </div>
                         </CarouselItem>
-                      )
+                      ),
                     )}
                   </CarouselContent>
                   <div onClick={stop}>
@@ -401,7 +401,7 @@ export function ItemPatrimonioRows(props: Props) {
                             )}
                           </div>
                         </CarouselItem>
-                      )
+                      ),
                     )}
                   </CarouselContent>
 

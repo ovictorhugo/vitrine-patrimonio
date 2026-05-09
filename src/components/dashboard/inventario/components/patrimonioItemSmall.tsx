@@ -42,7 +42,7 @@ export function PatrimonioItemSmall(props: any) {
   const { onOpen } = useModal();
   const { loggedIn } = useContext(UserContext);
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <Check size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },

@@ -113,7 +113,7 @@ export function PatrimonioItemCollection({
     string,
     {
       text: string;
-      icon: JSX.Element;
+      icon: React.ReactNode;
     }
   > = {
     NO: { text: "Normal", icon: <Check size={12} /> },

@@ -11,13 +11,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Badge } from "../../../ui/badge";
-import {
-  useContext,
-  useMemo,
-  useState,
-  MouseEvent,
-  useCallback,
-} from "react";
+import { useContext, useMemo, useState, MouseEvent, useCallback } from "react";
 import { useModal } from "../../../hooks/use-modal-store";
 import { UserContext } from "../../../../context/context";
 import {
@@ -90,7 +84,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
   const csvCodTrimmed = (asset.csv_code || "").toString().trim();
   const bemStaTrimmed = (asset.asset_status || "").toString().trim();
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <Check size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -133,7 +127,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
   // urls das imagens
   const imageUrls = useMemo(
     () => (entry.images || []).map((img) => buildImgUrl(img.file_path)),
-    [entry.images, urlGeral]
+    [entry.images, urlGeral],
   );
 
   // =========== Dialog workflow (aceitar/recusar) ===========
@@ -160,7 +154,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
       const texto = p.build(entry);
       setJustTxt(texto); // sobrescreve sempre com o texto padrão do modelo
     },
-    [entry, wfTarget]
+    [entry, wfTarget],
   );
 
   const handleClickAction = (target: WorkflowTarget) => {
@@ -202,7 +196,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
       toast.success(
         wfTarget === "DESFAZIMENTO"
           ? "Item aceito e movido para DESFAZIMENTO."
-          : "Item recusado e movido para REJEITADOS_COMISSAO."
+          : "Item recusado e movido para REJEITADOS_COMISSAO.",
       );
 
       // remove da lista sem refetch
@@ -294,7 +288,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
                           <AvatarImage
                             className="rounded-md h-5 w-5"
                             src={`${conectee}ResearcherData/Image?name=${encodeURIComponent(
-                              legalGuardianName
+                              legalGuardianName,
                             )}`}
                           />
                           <AvatarFallback className="flex items-center justify-center">
@@ -348,7 +342,7 @@ export function PatrimonioItemComission({ entry, onRemove }: Props) {
                             )}
                           </div>
                         </CarouselItem>
-                      )
+                      ),
                     )}
                   </CarouselContent>
 

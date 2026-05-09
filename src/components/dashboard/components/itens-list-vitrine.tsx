@@ -1,5 +1,4 @@
 import { ComponentProps, useContext, useEffect, useState } from "react";
-import formatDistanceToNow from "date-fns/formatDistanceToNow";
 import { ScrollArea } from "../../ui/scroll-area";
 import { Badge } from "../../ui/badge";
 import { cn } from "../../../lib";

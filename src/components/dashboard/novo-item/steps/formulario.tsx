@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "../../../ui/label";
 import { StepBaseProps } from "../novo-item";
 import {
@@ -297,7 +297,7 @@ export function FormularioStep({
     RE: "Recuperável",
   };
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <CheckIcon size={12} /> },
     NI: { text: "Não inventariado", icon: (<HelpCircle size={12} />) as any }, // HelpCircle (phosphor) opcional
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },

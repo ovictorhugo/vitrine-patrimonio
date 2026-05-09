@@ -1,9 +1,21 @@
 // src/pages/desfazimento/components/item-patrimonio-rows-select.tsx
 import React, { useContext } from "react";
-import { Archive, Check, HelpCircle, Hourglass, MoveRight, User, X } from "lucide-react";
+import {
+  Archive,
+  Check,
+  HelpCircle,
+  Hourglass,
+  MoveRight,
+  User,
+  X,
+} from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import {
-  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
 } from "../../../ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
 import { Badge } from "../../../ui/badge";
@@ -22,7 +34,7 @@ export interface CatalogEntry {
 
 type Props = CatalogEntry & {
   selected?: boolean;
-  onDoubleClick?: (e: React.MouseEvent) => void;  
+  onDoubleClick?: (e: React.MouseEvent) => void;
   onClick?: (e: React.MouseEvent) => void; // apenas clique simples, sem double
 };
 
@@ -48,13 +60,11 @@ export function ItemPatrimonioRowsSelect(props: Props) {
 
   const asset = props.asset ?? ({} as Props["asset"]);
   const materialName =
-    asset?.material?.material_name ||
-    asset?.asset_description ||
-    "Item";
+    asset?.material?.material_name || asset?.asset_description || "Item";
 
   const bemStaTrimmed = (asset.asset_status || "").toString().trim();
 
-  const statusMap: Record<string, { text: string; icon: JSX.Element }> = {
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
     NO: { text: "Normal", icon: <Check size={12} /> },
     NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
     CA: { text: "Cadastrado", icon: <Archive size={12} /> },
@@ -110,20 +120,29 @@ export function ItemPatrimonioRowsSelect(props: Props) {
 
       {/* Card */}
       <div className="w-full">
-        <Alert className={`rounded-l-none items-center p-0 flex w-full ${props.selected && ('')}`}>
+        <Alert
+          className={`rounded-l-none items-center p-0 flex w-full ${props.selected && ""}`}
+        >
           {/* Coluna info */}
           <div className="flex-1 min-w-0">
             {/* HEADER */}
             <div className="flex items-center gap-3 p-4 pb-0">
               <div className="flex items-center gap-2 mb-4 min-w-0 w-full">
                 <p className="font-semibold text-left whitespace-nowrap shrink-0">
-                  {asset.asset_code?.toString().trim()} {asset.asset_check_digit ? `- ${asset.asset_check_digit}` : ""}
+                  {asset.asset_code?.toString().trim()}{" "}
+                  {asset.asset_check_digit
+                    ? `- ${asset.asset_check_digit}`
+                    : ""}
                 </p>
 
                 {/* ATM placeholder */}
                 {false && (
                   <div className="min-w-0 flex-1">
-                    <Badge variant="outline" className="truncate min-w-0" title={""}>
+                    <Badge
+                      variant="outline"
+                      className="truncate min-w-0"
+                      title={""}
+                    >
                       ATM:
                     </Badge>
                   </div>
@@ -192,31 +211,33 @@ export function ItemPatrimonioRowsSelect(props: Props) {
                 </div>
 
                 <CarouselContent>
-                  {(imageUrls.length ? imageUrls : [undefined]).map((url, index) => (
-                    <CarouselItem
-                      key={url ?? index}
-                      className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
-                    >
-                      <div
-                        className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
-                        onClick={stop}
+                  {(imageUrls.length ? imageUrls : [undefined]).map(
+                    (url, index) => (
+                      <CarouselItem
+                        key={url ?? index}
+                        className="w-full sm:basis-full lg:basis-1/2 xl:basis-1/3"
                       >
-                        {url ? (
-                          <Alert
-                            style={{ backgroundImage: `url(${url})` }}
-                            className="absolute inset-0 h-full w-full object-cover bg-center bg-cover bg-no-repeat"
-                            draggable={false}
-                          >
-                            <CardContent className="p-0 m-0" />
-                          </Alert>
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-                            Sem imagens
-                          </div>
-                        )}
-                      </div>
-                    </CarouselItem>
-                  ))}
+                        <div
+                          className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
+                          onClick={stop}
+                        >
+                          {url ? (
+                            <Alert
+                              style={{ backgroundImage: `url(${url})` }}
+                              className="absolute inset-0 h-full w-full object-cover bg-center bg-cover bg-no-repeat"
+                              draggable={false}
+                            >
+                              <CardContent className="p-0 m-0" />
+                            </Alert>
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                              Sem imagens
+                            </div>
+                          )}
+                        </div>
+                      </CarouselItem>
+                    ),
+                  )}
                 </CarouselContent>
 
                 <div onClick={stop}>

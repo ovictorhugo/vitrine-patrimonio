@@ -1702,7 +1702,9 @@ export function AdmComission() {
                       return (
                         <Alert
                           key={col.key}
-                          ref={(el) => (colRefs.current[col.key] = el)}
+                          ref={(el) => {
+                            colRefs.current[col.key] = el;
+                          }}
                           className={
                             isMobile
                               ? "h-[320px] min-h-[320px] w-full flex flex-col min-w-0 overflow-hidden"

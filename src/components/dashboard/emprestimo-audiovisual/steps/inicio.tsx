@@ -54,8 +54,8 @@ export function InicioStep({
     }
   };
 
-  const generateBars = (): JSX.Element[] => {
-    const bars: JSX.Element[] = [];
+  const generateBars = (): React.ReactNode[] => {
+    const bars: React.ReactNode[] = [];
     const widths = [1, 2, 3]; // larguras das barras em pixels
 
     for (let i = 0; i < 80; i++) {
