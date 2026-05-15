@@ -1,6 +1,13 @@
 import { useContext } from "react";
 import { UserContext } from "../../../context/context"; // Ajuste o caminho se necessário
-import { Calendar, ChevronLeft, Clock, Cog, CornerDownLeft, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  Clock,
+  Cog,
+  CornerDownLeft,
+  Loader2,
+} from "lucide-react";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
@@ -230,7 +237,7 @@ export default function VistoriaTab({
                           <CarouselContent>
                             {firstImg ? (
                               <CarouselItem>
-                                <Alert className="rounded border-b-0 border-x-0 border-t-0 p-0">
+                                <Alert className="rounded border-b-0 border-x-0 border-0 p-0">
                                   <CardContent className="aspect-square justify-end p-0">
                                     <LazyLoadImage
                                       src={firstImgSrc}

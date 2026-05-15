@@ -56,7 +56,7 @@ export function SearchModal() {
   const { urlGeral } = useContext(UserContext);
   const baseUrl = useMemo(
     () => (urlGeral || "").replace(/\/+$/, ""),
-    [urlGeral]
+    [urlGeral],
   );
   const { onClose, isOpen, type } = useModal();
   const navigate = useNavigate();
@@ -95,52 +95,52 @@ export function SearchModal() {
             headers: baseHeaders,
           }).then((r) => r.json()),
           fetch(`${baseUrl}/legal-guardians/`, { headers: baseHeaders }).then(
-            (r) => r.json()
+            (r) => r.json(),
           ),
           fetch(`${baseUrl}/locations/`, { headers: baseHeaders }).then((r) =>
-            r.json()
+            r.json(),
           ),
           fetch(`${baseUrl}/units/`, { headers: baseHeaders }).then((r) =>
-            r.json()
+            r.json(),
           ),
           fetch(`${baseUrl}/agencies/`, { headers: baseHeaders }).then((r) =>
-            r.json()
+            r.json(),
           ),
           fetch(`${baseUrl}/sectors/`, { headers: baseHeaders }).then((r) =>
-            r.json()
+            r.json(),
           ),
         ]);
 
         const _materials: Material[] = Array.isArray(mres?.materials)
           ? mres.materials
           : Array.isArray(mres)
-          ? mres
-          : [];
+            ? mres
+            : [];
         const _guards: LegalGuardian[] = Array.isArray(gres?.legal_guardians)
           ? gres.legal_guardians
           : Array.isArray(gres)
-          ? gres
-          : [];
+            ? gres
+            : [];
         const _locs: LocationT[] = Array.isArray(lres?.locations)
           ? lres.locations
           : Array.isArray(lres)
-          ? lres
-          : [];
+            ? lres
+            : [];
         const _units: Unit[] = Array.isArray(ures?.units)
           ? ures.units
           : Array.isArray(ures)
-          ? ures
-          : [];
+            ? ures
+            : [];
         const _agencies: Agency[] = Array.isArray(ares?.agencies)
           ? ares.agencies
           : Array.isArray(ares)
-          ? ares
-          : [];
+            ? ares
+            : [];
         const _sectors: Sector[] = Array.isArray(sres?.sectors)
           ? sres.sectors
           : Array.isArray(sres)
-          ? sres
-          : [];
+            ? sres
+            : [];
 
         setMaterials(_materials);
         setGuardians(_guards);
@@ -216,7 +216,7 @@ export function SearchModal() {
       id: string | undefined,
       list: T[],
       get: (t: T) => { id: string; label: string },
-      kind: Kind
+      kind: Kind,
     ) => {
       if (!id) return false;
       const found = (list as any[]).find((x) => (x as any).id === id);
@@ -240,7 +240,7 @@ export function SearchModal() {
         mid,
         materials,
         (m: any) => ({ id: m.id, label: m.material_name }),
-        "material"
+        "material",
       )
     )
       return;
@@ -249,7 +249,7 @@ export function SearchModal() {
         gid,
         guardians,
         (g: any) => ({ id: g.id, label: g.legal_guardians_name }),
-        "guardian"
+        "guardian",
       )
     )
       return;
@@ -258,7 +258,7 @@ export function SearchModal() {
         lid,
         locations,
         (l: any) => ({ id: l.id, label: l.location_name }),
-        "location"
+        "location",
       )
     )
       return;
@@ -271,7 +271,7 @@ export function SearchModal() {
         aid,
         agencies,
         (a: any) => ({ id: a.id, label: a.agency_name }),
-        "agency"
+        "agency",
       )
     )
       return;
@@ -280,7 +280,7 @@ export function SearchModal() {
         sid,
         sectors,
         (s: any) => ({ id: s.id, label: s.sector_name }),
-        "sector"
+        "sector",
       )
     )
       return;
@@ -309,11 +309,11 @@ export function SearchModal() {
             .filter(
               (m) =>
                 norm(m.material_name).includes(term) ||
-                norm(m.material_code).includes(term)
+                norm(m.material_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [materials, term, showSuggestions]
+    [materials, term, showSuggestions],
   );
   const guardsView = useMemo(
     () =>
@@ -322,11 +322,11 @@ export function SearchModal() {
             .filter(
               (g) =>
                 norm(g.legal_guardians_name).includes(term) ||
-                norm(g.legal_guardians_code).includes(term)
+                norm(g.legal_guardians_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [guardians, term, showSuggestions]
+    [guardians, term, showSuggestions],
   );
   const locsView = useMemo(
     () =>
@@ -335,11 +335,11 @@ export function SearchModal() {
             .filter(
               (l) =>
                 norm(l.location_name).includes(term) ||
-                norm(l.location_code).includes(term)
+                norm(l.location_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [locations, term, showSuggestions]
+    [locations, term, showSuggestions],
   );
   const unitsView = useMemo(
     () =>
@@ -348,11 +348,11 @@ export function SearchModal() {
             .filter(
               (u) =>
                 norm(u.unit_name).includes(term) ||
-                norm(u.unit_code).includes(term)
+                norm(u.unit_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [units, term, showSuggestions]
+    [units, term, showSuggestions],
   );
   const agenciesView = useMemo(
     () =>
@@ -361,11 +361,11 @@ export function SearchModal() {
             .filter(
               (a) =>
                 norm(a.agency_name).includes(term) ||
-                norm(a.agency_code).includes(term)
+                norm(a.agency_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [agencies, term, showSuggestions]
+    [agencies, term, showSuggestions],
   );
   const sectorsView = useMemo(
     () =>
@@ -374,11 +374,11 @@ export function SearchModal() {
             .filter(
               (s) =>
                 norm(s.sector_name).includes(term) ||
-                norm(s.sector_code).includes(term)
+                norm(s.sector_code).includes(term),
             )
             .slice(0, 30)
         : [],
-    [sectors, term, showSuggestions]
+    [sectors, term, showSuggestions],
   );
 
   // selecionar (troca qualquer seleção anterior — mantém sempre 1 item/1 tipo)
@@ -403,14 +403,14 @@ export function SearchModal() {
         picked.kind === "material"
           ? "material_ids"
           : picked.kind === "guardian"
-          ? "legal_guardian_ids"
-          : picked.kind === "location"
-          ? "location_ids"
-          : picked.kind === "unit"
-          ? "unit_ids"
-          : picked.kind === "agency"
-          ? "agency_ids"
-          : "sector_ids";
+            ? "legal_guardian_ids"
+            : picked.kind === "location"
+              ? "location_ids"
+              : picked.kind === "unit"
+                ? "unit_ids"
+                : picked.kind === "agency"
+                  ? "agency_ids"
+                  : "sector_ids";
       sp.set(param, picked.id);
       sp.set("offset", "0");
     }
@@ -501,7 +501,7 @@ export function SearchModal() {
 
         {/* Sugestões – só quando 3+ letras */}
         {showSuggestions && (
-          <Alert className="w-full border-t-0">
+          <Alert className="w-full border-0">
             <ResponsiveMasonry
               columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 2, 1200: 3 }}
             >

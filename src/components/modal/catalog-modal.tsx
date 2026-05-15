@@ -1343,7 +1343,7 @@ export function CatalogModal() {
                     </p>
 
                     <Tabs defaultValue="visao_geral" value={value} className="">
-                      <div className="mb-4 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
+                      <div className="mb-4 bg-white dark:bg-neutral-950 border border-neutral-200 rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
                         <div className="relative grid grid-cols-1 w-full ">
                           <Button
                             variant="outline"

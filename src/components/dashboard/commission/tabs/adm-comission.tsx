@@ -722,7 +722,7 @@ export function AdmComission() {
         if (locationId) params.set("location_id", locationId);
         if (q) params.set("q", q);
 
-        const res = await fetch(`${urlGeral}catalog/?${params.toString()}`, {
+        const res = await fetch(`${urlGeral}catalog/cards/?${params.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

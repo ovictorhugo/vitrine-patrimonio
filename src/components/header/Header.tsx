@@ -48,7 +48,7 @@ export function Header() {
             <Link to={"/"} onClick={() => handleClick()}>
               {theme == "dark" ? <LogoVitrineWhite /> : <LogoVitrine />}
             </Link>
-            </div>
+          </div>
           <div className="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800" />
 
           <div className="flex justify-center m-auto w-[250px] gap-1">

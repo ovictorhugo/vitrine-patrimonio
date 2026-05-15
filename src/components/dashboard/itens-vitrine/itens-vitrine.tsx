@@ -708,7 +708,7 @@ export function ItensVitrine() {
 
   // Paginação - agora com offset por coluna
   // Paginação
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 8;
   const [totalByCol, setTotalByCol] = useState<Record<string, number>>({});
   const [expandedVisible, setExpandedVisible] = useState<number>(PAGE_SIZE);
 

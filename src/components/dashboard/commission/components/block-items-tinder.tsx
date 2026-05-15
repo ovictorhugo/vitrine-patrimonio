@@ -167,7 +167,8 @@ export const JUSTIFICATIVAS_REJEICAO: JustPreset[] = [
     id: "MSG1",
     label:
       "Bens com menos de 10 anos – necessidade de laudo ou orçamento (completa)",
-    build: () => `Como o item possui menos de 10 anos de uso, não é possível considerar que tenha atingido 100% de depreciação, conforme os parâmetros da Instrução Normativa RFB nº 1.700/2017 (Anexo III). Dessa forma, para que o bem seja incluído no processo de desfazimento, é necessário apresentar laudo técnico ou orçamento que comprove que o custo de reparo supera 50% do valor atual do bem, conforme o disposto no art. 4º, inciso II, do Decreto nº 9.373/2018. O responsável pela inclusão do bem no sistema deve, portanto, optar por uma das seguintes alternativas:
+    build:
+      () => `Como o item possui menos de 10 anos de uso, não é possível considerar que tenha atingido 100% de depreciação, conforme os parâmetros da Instrução Normativa RFB nº 1.700/2017 (Anexo III). Dessa forma, para que o bem seja incluído no processo de desfazimento, é necessário apresentar laudo técnico ou orçamento que comprove que o custo de reparo supera 50% do valor atual do bem, conforme o disposto no art. 4º, inciso II, do Decreto nº 9.373/2018. O responsável pela inclusão do bem no sistema deve, portanto, optar por uma das seguintes alternativas:
 a) Enviar laudo ou orçamento indicando que o custo de reparo é superior a 50% do valor atual do bem;
 b) Aguardar até que o bem atinja o prazo de obsolescência máxima (10 anos), podendo então reenviá-lo em uma NOVA chamada de desfazimento;
 c) Reclassificar o item como “Recuperável” no Sistema Patrimônio, para que seja divulgado na Vitrine Patrimônio por um período determinado, buscando seu reaproveitamento por outro setor da UFMG.
@@ -187,7 +188,8 @@ Nos termos do art. 22 da Lei nº 9.784/1999, que regula o processo administrativ
     id: "MSG2",
     label:
       "Menos de 10 anos – laudo/orçamento ou evidências de tentativas de reparo",
-    build: () => `Como o item possui menos de 10 anos de uso, não é possível considerar que tenha atingido 100% de depreciação, conforme os parâmetros da Instrução Normativa RFB nº 1.700/2017 (Anexo III). Dessa forma, para que o bem seja incluído no processo de desfazimento, é necessário apresentar laudo técnico ou orçamento que comprove que o custo de reparo supera 50% do valor atual do bem, conforme o disposto no art. 4º, inciso II, do Decreto nº 9.373/2018. O responsável pela inclusão do bem no sistema deve, portanto, optar por uma das seguintes alternativas:
+    build:
+      () => `Como o item possui menos de 10 anos de uso, não é possível considerar que tenha atingido 100% de depreciação, conforme os parâmetros da Instrução Normativa RFB nº 1.700/2017 (Anexo III). Dessa forma, para que o bem seja incluído no processo de desfazimento, é necessário apresentar laudo técnico ou orçamento que comprove que o custo de reparo supera 50% do valor atual do bem, conforme o disposto no art. 4º, inciso II, do Decreto nº 9.373/2018. O responsável pela inclusão do bem no sistema deve, portanto, optar por uma das seguintes alternativas:
 a) Enviar laudo ou orçamento indicando que o custo de reparo é superior a 50% do valor atual do bem;
 b) Aguardar até que o bem atinja o prazo de obsolescência máxima (10 anos), podendo então reenviá-lo em uma NOVA chamada de desfazimento;
 
@@ -197,19 +199,22 @@ Laudo Técnico ou Orçamento do Reparo: para que o item possa prosseguir no proc
     id: "MSG3",
     label:
       "Reclassificação para Bom Estado (Ocioso) – não é antieconômico/irrecuperável",
-    build: () => `O item não se enquadra como antieconômico ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Dessa forma, solicita-se sua reclassificação como “Bom Estado (Ocioso)”, para que o Sistema realize automaticamente sua publicação na Vitrine Patrimônio, possibilitando o reaproveitamento por outros setores da Escola ou de outras unidades da UFMG. Ressalta-se que essa etapa de divulgação é obrigatória, nos termos do art. 5º, §1º, inciso I, do Decreto nº 9.373/2018, e constitui condição prévia para que o bem se torne elegível em outros processos de desfazimento (como leilão ou outras formas de alienação) caso não haja manifestação de interesse institucional durante o período de exposição.`,
+    build: () =>
+      `O item não se enquadra como antieconômico ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Dessa forma, solicita-se sua reclassificação como “Bom Estado (Ocioso)”, para que o Sistema realize automaticamente sua publicação na Vitrine Patrimônio, possibilitando o reaproveitamento por outros setores da Escola ou de outras unidades da UFMG. Ressalta-se que essa etapa de divulgação é obrigatória, nos termos do art. 5º, §1º, inciso I, do Decreto nº 9.373/2018, e constitui condição prévia para que o bem se torne elegível em outros processos de desfazimento (como leilão ou outras formas de alienação) caso não haja manifestação de interesse institucional durante o período de exposição.`,
   },
   {
     id: "MSG4",
     label:
       "Reclassificação para Bom Estado (Ocioso) – texto alternativo resumido",
-    build: () => `Este item não se enquadra nas categorias de bem antieconômico ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Dessa forma, solicita-se sua reclassificação como “Bom Estado (Ocioso)”, para que o Sistema Patrimônio realize automaticamente sua publicação na Vitrine Patrimônio, possibilitando o reaproveitamento por outros setores da Escola ou de outras unidades da UFMG. Ressalta-se que essa etapa de divulgação é obrigatória, nos termos do art. 5º, §1º, inciso I, do Decreto nº 9.373/2018, e constitui condição prévia para que o bem se torne elegível em outros processos de desfazimento (como leilão ou outras formas de alienação) caso não haja manifestação de interesse institucional durante o período de exposição.`,
+    build: () =>
+      `Este item não se enquadra nas categorias de bem antieconômico ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Dessa forma, solicita-se sua reclassificação como “Bom Estado (Ocioso)”, para que o Sistema Patrimônio realize automaticamente sua publicação na Vitrine Patrimônio, possibilitando o reaproveitamento por outros setores da Escola ou de outras unidades da UFMG. Ressalta-se que essa etapa de divulgação é obrigatória, nos termos do art. 5º, §1º, inciso I, do Decreto nº 9.373/2018, e constitui condição prévia para que o bem se torne elegível em outros processos de desfazimento (como leilão ou outras formas de alienação) caso não haja manifestação de interesse institucional durante o período de exposição.`,
   },
   {
     id: "MSG5",
     label:
       "Mais de 10 anos – ainda funcional / necessidade de justificativa técnica",
-    build: () => `Este item possui mais de 10 anos de uso, mas parece estar em funcionamento e em bom estado de conservação, não sendo possível classificá-lo imediatamente como inservível ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Embora esteja 100% depreciado, segundo a Instrução Normativa RFB nº 1.700/2017 (Anexo III), o bem não apresenta alto grau de obsolescência tecnológica, podendo ainda ser funcional em contextos com menor demanda técnica.
+    build:
+      () => `Este item possui mais de 10 anos de uso, mas parece estar em funcionamento e em bom estado de conservação, não sendo possível classificá-lo imediatamente como inservível ou irrecuperável, conforme o art. 4º do Decreto nº 9.373/2018. Embora esteja 100% depreciado, segundo a Instrução Normativa RFB nº 1.700/2017 (Anexo III), o bem não apresenta alto grau de obsolescência tecnológica, podendo ainda ser funcional em contextos com menor demanda técnica.
 
 Caso o item realmente não esteja funcionando, a CPD orienta que a CAL solicite ao guardião legal uma descrição detalhada dos defeitos ou inconformidades observadas, bem como o registro de todos os testes realizados que comprovem que a funcionalidade do bem não pode ser restabelecida por meio de intervenções simples, como a substituição de cabos de energia, de comunicação, fontes externas, entre outros. Essas informações deverão constar no campo de justificativa do sistema e servirão como elemento probatório para eventual enquadramento do item como antieconômico, conforme o Decreto nº 9.373/2018.
 
@@ -372,7 +377,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
     async (
       entry: CatalogEntry,
       status: string,
-      detail: Record<string, any>
+      detail: Record<string, any>,
     ) => {
       try {
         const res = await fetch(`${urlGeral}catalog/${entry.id}/workflow`, {
@@ -395,13 +400,13 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
         return false;
       }
     },
-    [token, urlGeral]
+    [token, urlGeral],
   );
 
   /* Abre modal definindo destino; NÃO mexe na fila aqui */
   const openMove = (
     entry: CatalogEntry,
-    dest: "DESFAZIMENTO" | "REJEITADOS_COMISSAO"
+    dest: "DESFAZIMENTO" | "REJEITADOS_COMISSAO",
   ) => {
     setTarget(entry);
     setToKey(dest);
@@ -487,9 +492,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
   /* Novo comportamento do “Pular”:
      - Empurra o topo para o final da fila, sem abrir modal */
   const skipToEnd = () => {
-    setQueue((prev) =>
-      prev.length > 1 ? [...prev.slice(1), prev[0]] : prev
-    );
+    setQueue((prev) => (prev.length > 1 ? [...prev.slice(1), prev[0]] : prev));
   };
 
   /* Pré-preencher justificativa ao escolher preset (aprovar OU recusar) */
@@ -556,12 +559,8 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
                 {diff.months > 0
                   ? `${diff.months} ${
                       diff.months === 1 ? "mês" : "meses"
-                    } e ${diff.days} ${
-                      diff.days === 1 ? "dia" : "dias"
-                    }`
-                  : `${diff.days} ${
-                      diff.days === 1 ? "dia" : "dias"
-                    }`}
+                    } e ${diff.days} ${diff.days === 1 ? "dia" : "dias"}`
+                  : `${diff.days} ${diff.days === 1 ? "dia" : "dias"}`}
               </Badge>
             </div>
           )}
@@ -602,7 +601,7 @@ export function BlockItemsComissionScroll({ catalogs, onRemove }: Props) {
         </Alert>
 
         <div
-          className={`h-2 min-h-2 rounded-b-lg border border-t-0 ${
+          className={`h-2 min-h-2 rounded-b-lg border border-0 ${
             qualisColor[csvCodTrimmed as keyof typeof qualisColor] ||
             "bg-zinc-300"
           }`}

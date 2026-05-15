@@ -2,7 +2,14 @@
 import { Helmet } from "react-helmet";
 import { Button } from "../../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowRight,
   Check,
@@ -127,17 +134,22 @@ export function Alienacao() {
     );
   };
 
-  useEffect(() => {
-    handleNavigate(offset, limit, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, limit]);
+  // Quando for mudar de página, chame esta função
+  const changePage = (newOffset: number, newLimit: number) => {
+    setOffset(newOffset);
+    setLimit(newLimit);
+    handleNavigate(newOffset, newLimit, true);
+  };
 
   // seleção da grade
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  // função registrada pela grade para remover itens após POST
   const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(
     () => () => {},
   );
+
+  const handleRegisterRemove = useCallback((fn: (ids: string[]) => void) => {
+    setRemoveFromGrid(() => fn);
+  }, []);
 
   // ===== coleções (com paginação)
   const fetchInventories = async () => {
@@ -159,10 +171,32 @@ export function Alienacao() {
       setLoadingList(false);
     }
   };
-  useEffect(() => {
-    fetchInventories(); /* eslint-disable-next-line */
-  }, [urlGeral, offset, limit]);
 
+  useEffect(() => {
+    const fetchInventories = async () => {
+      try {
+        setLoadingList(true);
+        const url = `${urlGeral}collections/?type=COMPRAS&offset=${encodeURIComponent(
+          offset,
+        )}&limit=${encodeURIComponent(limit)}`;
+        const res = await fetch(url, { method: "GET", headers: authHeaders });
+        if (!res.ok)
+          throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
+        const data: CollectionResponse = await res.json();
+        setCollections(
+          Array.isArray(data?.collections) ? data.collections : [],
+        );
+      } catch (e: any) {
+        toast.error("Erro ao carregar coleções", {
+          description: e?.message || String(e),
+        });
+      } finally {
+        setLoadingList(false);
+      }
+    };
+
+    fetchInventories();
+  }, [urlGeral, offset, limit, authHeaders]); // Agora authHeaders também entra de forma segura
   // criar coleção
   const [isOpen, setIsOpen] = useState(false);
   const handleSubmit = async () => {
@@ -438,17 +472,20 @@ export function Alienacao() {
           },
         );
 
-        if (!res.ok) throw new Error("Erro ao carregar estatísticas");
+        if (!res.ok) toast.error("Erro ao carregar estatísticas");
+        else {
+          const data: StatusCount[] = await res.json();
 
-        const data: StatusCount[] = await res.json();
+          console.log(data);
 
-        const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
-        const normalized = expectedStatuses.map((status) => {
-          const found = data.find((d) => d.status === status);
-          return { status, count: found ? found.count : 0 };
-        });
+          const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
+          const normalized = expectedStatuses.map((status) => {
+            const found = data.find((d) => d.status === status);
+            return { status, count: found ? found.count : 0 };
+          });
 
-        setStats(normalized);
+          setStats(normalized);
+        }
       } catch (err) {
         console.error(err);
         setStats([
@@ -767,14 +804,14 @@ export function Alienacao() {
                   workflow="ALIENACAO"
                   selectedIds={selectedIds}
                   onChangeSelected={setSelectedIds}
-                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
+                  registerRemove={handleRegisterRemove} // ✅ Correção aqui
                 />
               ) : (
                 <RowsItemsVitrine
                   workflow="ALIENACAO"
                   selectedIds={selectedIds}
                   onChangeSelected={setSelectedIds}
-                  registerRemove={(fn) => setRemoveFromGrid(() => fn)}
+                  registerRemove={handleRegisterRemove} // ✅ E aqui
                 />
               )}
             </AccordionContent>

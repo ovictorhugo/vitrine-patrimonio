@@ -150,7 +150,7 @@ export function ItemPatrimonio(props: Props) {
       </Alert>
 
       <div
-        className={`${qualisColor[props.asset.csv_code] || "bg-neutral-300"} h-2 border rounded-b-md border-t-0`}
+        className={`${qualisColor[props.asset.csv_code] || "bg-neutral-300"} h-2 border rounded-b-md border-0`}
       />
     </div>
   );

@@ -37,10 +37,10 @@ const isCod = (i: SearchItem): i is Extract<SearchItem, { kind: "cod" }> =>
 const isAtm = (i: SearchItem): i is Extract<SearchItem, { kind: "atm" }> =>
   i.kind === "atm";
 const isMaterial = (
-  i: SearchItem
+  i: SearchItem,
 ): i is Extract<SearchItem, { kind: "material" }> => i.kind === "material";
 const isGuardian = (
-  i: SearchItem
+  i: SearchItem,
 ): i is Extract<SearchItem, { kind: "guardian" }> => i.kind === "guardian";
 
 /* ========= Helpers ========= */
@@ -390,7 +390,7 @@ export function SearchModalVitrine() {
 
         {/* Sugestões – como no primeiro: só quando 3+ letras */}
         {showSuggestions && (
-          <Alert className="w-full border-t-0">
+          <Alert className="w-full border-0">
             <ResponsiveMasonry
               columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 2, 1200: 3 }}
             >

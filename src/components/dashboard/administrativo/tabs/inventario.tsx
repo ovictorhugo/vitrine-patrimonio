@@ -437,8 +437,8 @@ export function Inventario() {
               <div className="grid gap-4 ">
                 {inventories.map((inv) => (
                   <div key={inv.id} className="relative group flex">
-                    <div className="w-2 min-w-2 rounded-l-md border dark:border-neutral-800 bg-eng-blue" />
-                    <Alert className="rounded-l-none items-center flex justify-between border-l-0 w-full cursor-pointer hover:shadow-sm transition">
+                    <div className="w-2 min-w-2 rounded-l-md bg-eng-blue" />
+                    <Alert className="rounded-l-none items-center flex justify-between  w-full cursor-pointer hover:shadow-sm transition">
                       <Link
                         to={`/dashboard/inventario?inv_id=${inv.id}`}
                         className="flex-1 min-w-0"

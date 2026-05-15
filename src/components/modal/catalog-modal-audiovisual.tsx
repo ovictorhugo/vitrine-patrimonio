@@ -225,6 +225,39 @@ const formatDateTimeBR = (iso?: string) => {
   }
 };
 
+
+  const qualisColor: Record<string, string> = {
+    BM: "bg-green-500",
+    AE: "bg-red-500",
+    IR: "bg-yellow-500",
+    OC: "bg-blue-500",
+    RE: "bg-purple-500",
+  };
+  const csvCodToText: Record<string, string> = {
+    BM: "Bom",
+    AE: "Anti-Econômico",
+    IR: "Irrecuperável",
+    OC: "Ocioso",
+    RE: "Recuperável",
+  };
+
+  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
+    NO: { text: "Normal", icon: <CheckIcon size={12} /> },
+    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
+    CA: { text: "Cadastrado", icon: <Archive size={12} /> },
+    TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
+    MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
+    BX: { text: "Baixado", icon: <XIcon size={12} /> },
+  };
+
+
+  let tabs = [
+    { id: "emprestimo", label: "Empréstimo", icon: Info },
+    { id: "historico", label: "Histórico", icon: History },
+    { id: "calendario", label: "Calendário", icon: CalendarIcon },
+    { id: "maintenance", label: "Manutenção", icon: Wrench },
+  ];
+
 /* ===================== Componente Principal ===================== */
 export function AudiovisualModal() {
   const isMobile = useIsMobile();
@@ -255,7 +288,6 @@ export function AudiovisualModal() {
 
     const fetchUpdatedLoanItem = async () => {
       try {
-        console.log(initialLoanItem.id);
         const res = await fetch(`${urlGeral}loans/item/${initialLoanItem.id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -308,6 +340,7 @@ export function AudiovisualModal() {
     [images],
   );
 
+  
   const handleBack = () => onClose();
   const handleVoltar = () => onClose();
 
@@ -380,43 +413,13 @@ export function AudiovisualModal() {
   const isSameLocation =
     locCatalogoParts.join(" > ") === locAssetParts.join(" > ");
 
-  const qualisColor: Record<string, string> = {
-    BM: "bg-green-500",
-    AE: "bg-red-500",
-    IR: "bg-yellow-500",
-    OC: "bg-blue-500",
-    RE: "bg-purple-500",
-  };
-  const csvCodToText: Record<string, string> = {
-    BM: "Bom",
-    AE: "Anti-Econômico",
-    IR: "Irrecuperável",
-    OC: "Ocioso",
-    RE: "Recuperável",
-  };
-
-  const statusMap: Record<string, { text: string; icon: React.ReactNode }> = {
-    NO: { text: "Normal", icon: <CheckIcon size={12} /> },
-    NI: { text: "Não inventariado", icon: <HelpCircle size={12} /> },
-    CA: { text: "Cadastrado", icon: <Archive size={12} /> },
-    TS: { text: "Aguardando aceite", icon: <Hourglass size={12} /> },
-    MV: { text: "Movimentado", icon: <MoveRight size={12} /> },
-    BX: { text: "Baixado", icon: <XIcon size={12} /> },
-  };
 
   const csvCodTrimmed = (asset?.csv_code || "").trim();
   const bemStaTrimmed = (asset?.asset_status || "").trim();
   const status = statusMap[bemStaTrimmed];
   const colorClassStr = qualisColor[csvCodTrimmed] || "bg-zinc-300";
   const borderColorClass = colorClassStr.replace("bg-", "border-");
-
-  let tabs = [
-    { id: "emprestimo", label: "Empréstimo", icon: Info },
-    { id: "historico", label: "Histórico", icon: History },
-    { id: "calendario", label: "Calendário", icon: CalendarIcon },
-    { id: "maintenance", label: "Manutenção", icon: Wrench },
-  ];
-
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -593,52 +596,6 @@ export function AudiovisualModal() {
     return newDate;
   };
 
-  async function submit() {
-    if (!dateFrom || !dateTo) return;
-    const timestampFrom = mergeDateAndTime(dateFrom, hourFrom);
-    const timestampTo = mergeDateAndTime(dateTo, hourTo);
-
-    if (timestampTo <= timestampFrom) {
-      toast.error(
-        "Horário inválido! A hora final deve ser maior que a inicial.",
-      );
-      return;
-    }
-
-    const res = await fetch(`${urlGeral}loans/request`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        loanable_item_id: loanItem?.id, // ID CORRETO VINDO DO LOANABLE ITEM
-        start_at: timestampFrom,
-        end_at: timestampTo,
-        requester_id: user?.id,
-        temporary_guardian_id: selectedUserId,
-        is_maintenance: false,
-        lend_detail: observation,
-      }),
-    });
-
-    if (!res.ok) {
-      let message = "Erro ao solicitar empréstimo";
-      try {
-        const err = await res.json();
-        if (err?.detail) {
-          message = Array.isArray(err.detail)
-            ? err.detail[0]?.msg || JSON.stringify(err.detail)
-            : err.detail;
-        }
-      } catch {}
-      toast.error(message);
-    } else {
-      toast.success("Solicitação de empréstimo realizada com sucesso!");
-      if (onClose) onClose();
-    }
-  }
 
   // =============== Render JSX ===============
   const content = () => {
@@ -740,7 +697,7 @@ export function AudiovisualModal() {
                   </p>
 
                   <Tabs defaultValue="visao_geral" value={tabOpen} className="">
-                    <div className="mb-8 bg-white dark:bg-neutral-950 border rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
+                    <div className="mb-8 bg-white dark:bg-neutral-950 border border-neutral-200 rounded-md p-2 px-4 pb-0 dark:border-neutral-800">
                       <div className="relative grid grid-cols-1 w-full ">
                         <Button
                           variant="outline"

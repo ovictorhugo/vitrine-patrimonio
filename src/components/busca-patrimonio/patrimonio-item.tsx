@@ -208,7 +208,7 @@ export function PatrimonioItem(props: any) {
             qualisColor[csvCodTrimmed] || "bg-neutral-300"
           } min-h-full relative`}
         />
-        <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
+        <Alert className="flex flex-col h-fit rounded-l-none p-0">
           {/* HEADER */}
           <div className="flex items-center gap-3 p-4 pb-0">
             {/* Código + dígito (sempre juntos e sem quebrar) */}

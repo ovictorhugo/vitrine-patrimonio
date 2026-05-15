@@ -517,7 +517,7 @@ export function ListaFinalDesfazimento() {
       const params = buildParams();
       params.set("workflow_status", "DESFAZIMENTO");
 
-      const url = `${baseUrl}catalog/?${params.toString()}`;
+      const url = `${baseUrl}catalog/cards/?${params.toString()}`;
 
       const res = await fetch(url, { headers: authHeaders });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

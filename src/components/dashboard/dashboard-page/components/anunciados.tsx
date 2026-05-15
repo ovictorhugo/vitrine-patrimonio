@@ -1147,7 +1147,7 @@ export function Anunciados(props: {
         setLoadingPageByStatus((prev) => ({ ...prev, [statusKey]: append }));
 
         const params = buildParamsForStatus(statusKey, offset, PAGE_SIZE);
-        const url = `${baseUrl}/catalog/?${params.toString()}`;
+        const url = `${baseUrl}/catalog/cards/?${params.toString()}`;
         const res = await fetch(url, { headers: authHeaders });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: CatalogResponse = await res.json();

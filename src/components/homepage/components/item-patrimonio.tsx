@@ -506,7 +506,7 @@ function ItemPatrimonioBase(props: Props) {
       )}
 
       <div
-        className={`h-2 border rounded-b-md border-t-0 ${
+        className={`h-2 border rounded-b-md border-0 ${
           qualisColor[csvCodTrimmed as keyof typeof qualisColor] ||
           "bg-zinc-300"
         }`}

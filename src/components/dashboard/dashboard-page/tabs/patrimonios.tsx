@@ -609,7 +609,7 @@ export function Patrimonios({ type }: Props) {
                           1700: 5,
                         }}
                       >
-                        <Masonry gutter="16px">
+                        <Masonry gutter="8px">
                           {filteredItems.map((asset) => (
                             <PatrimonioItem key={asset.id} {...asset} />
                           ))}

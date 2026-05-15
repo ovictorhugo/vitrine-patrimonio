@@ -1,13 +1,9 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import { UserContext } from "../../context/context";
-
 import { ArrowRight } from "phosphor-react";
-
 import { Info, Store, Trash } from "lucide-react";
-
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -43,7 +39,6 @@ export function HomeInicial() {
     const fetchData = async () => {
       try {
         const response = await fetch(urlPalavrasChaves, {
-          mode: "cors",
           headers: {
             "Content-Type": "application/json",
           },

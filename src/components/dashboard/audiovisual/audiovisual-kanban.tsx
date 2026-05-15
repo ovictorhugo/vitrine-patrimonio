@@ -189,7 +189,7 @@ export function AudiovisualKanban(props: Props) {
       </Alert>
 
       {/* Linha Azul na base */}
-      <div className="h-2 border rounded-b-md border-t-0 bg-eng-blue" />
+      <div className="h-2 border rounded-b-md border-0 bg-eng-blue" />
     </div>
   );
 }
