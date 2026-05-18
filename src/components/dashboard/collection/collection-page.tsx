@@ -159,6 +159,9 @@ export interface CollectionDTO {
   user_id: UUID;
   created_at: ISODateString;
   items: CollectionItemDTO[];
+  sei_process?: string;
+  document_path?: string;
+  parecer?: string;
 }
 
 export function CollectionPage() {

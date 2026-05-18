@@ -33,6 +33,7 @@ export function Admin() {
     "/dashboard/criar-patrimonio-temporario": "create-temp-asset",
     "/dashboard/comissao-permanente": "commission",
     "/dashboard/alienacao": "alienacao",
+    "/dashboard/remocao": "remocao",
     "/dashboard/setor-departamento": "departamento",
     "/dashboard/comissao-apoio-local": "comissao-apoio-local",
     "/user": "user-public-page",

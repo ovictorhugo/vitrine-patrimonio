@@ -1,8 +1,40 @@
-
 import { create } from "zustand";
 
-export type ModalType = "general" | "visao-geral-user" | 'atualizar-dados' | 'gerenciar-usuarios' | 'configuracoes' | 'lista-patrimonio' | 'visao-sala' | 'novo-item' | 'itens-vitrine' | 'empenhos' | 'create-bar-bode' | 'painel' | 'assinar-documento' | 'itens-desfazimento' | 'transferencia' | 'editar-item' | 'create-temp-asset' | 'temp-asset' | 'commission' | 'administrativo-page' | 'inventario' | 'desfazimento' | 'cargos-funcoes' | 'alienacao' | 'departamento' | 'comissao-apoio-local' | 'user-public-page' | 'finalizados' | 'audiovisual' | 'emprestimo-audiovisual' | 'salas' | 'acervo-historico' | 'solicitar-transferencia'
-
+export type ModalType =
+  | "general"
+  | "visao-geral-user"
+  | "atualizar-dados"
+  | "gerenciar-usuarios"
+  | "configuracoes"
+  | "lista-patrimonio"
+  | "visao-sala"
+  | "novo-item"
+  | "itens-vitrine"
+  | "empenhos"
+  | "create-bar-bode"
+  | "painel"
+  | "assinar-documento"
+  | "itens-desfazimento"
+  | "transferencia"
+  | "editar-item"
+  | "create-temp-asset"
+  | "temp-asset"
+  | "commission"
+  | "administrativo-page"
+  | "inventario"
+  | "desfazimento"
+  | "cargos-funcoes"
+  | "alienacao"
+  | "departamento"
+  | "comissao-apoio-local"
+  | "user-public-page"
+  | "finalizados"
+  | "audiovisual"
+  | "emprestimo-audiovisual"
+  | "salas"
+  | "acervo-historico"
+  | "remocao"
+  | "solicitar-transferencia";
 
 interface ModalStore {
   type: ModalType | null;
@@ -11,10 +43,10 @@ interface ModalStore {
   onClose: () => void;
 }
 
-export const useModalDashboard = create<ModalStore>((set:any) => ({
+export const useModalDashboard = create<ModalStore>((set: any) => ({
   type: null,
   data: {},
   isOpen: false,
-  onOpen: (type: any) => set({ isOpen: true, type}),
-  onClose: () => set({ type: null, isOpen: false })
+  onOpen: (type: any) => set({ isOpen: true, type }),
+  onClose: () => set({ type: null, isOpen: false }),
 }));

@@ -176,6 +176,13 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       />
 
       <Route
+        path="/dashboard/remocao"
+        element={
+          <ProtectedRoute element={<Admin />} hasPermission={hasMovimentacao} />
+        }
+      />
+
+      <Route
         path="/dashboard/administrativo"
         element={
           <ProtectedRoute

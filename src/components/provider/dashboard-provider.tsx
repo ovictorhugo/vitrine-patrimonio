@@ -28,6 +28,7 @@ import { Audiovisual } from "../dashboard/audiovisual/audiovisual";
 import { AllSalas } from "../dashboard/salas/all-salas";
 import { AcervoHistorico } from "../dashboard/acervo-historico/acervo-historico";
 import { EmprestimoAudiovisual } from "../dashboard/emprestimo-audiovisual/emprestimo-audiovisual";
+import { Remocao } from "../dashboard/remocao/remocao";
 
 const ModalContent = () => {
   const { type } = useModalDashboard();
@@ -75,6 +76,8 @@ const ModalContent = () => {
       return <EmprestimoAudiovisual />;
     case "salas":
       return <AllSalas />;
+    case "remocao":
+      return <Remocao />;
     case "acervo-historico":
       return <AcervoHistorico />;
     default:

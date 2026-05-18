@@ -38,7 +38,7 @@ export function DownloadPdfButton({
   label = "Baixar PDF",
   method = "catalog",
   id = "",
-  size = "sm",
+  size = "default",
 }: DownloadPdfButtonProps) {
   const { urlGeral } = useContext(UserContext);
 
@@ -123,7 +123,7 @@ export function DownloadPdfButton({
         size={size}
       >
         {loading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 animate-spin" />
         ) : (
           <Download size={16} className="mr-2" />
         )}

@@ -27,6 +27,7 @@ import {
   CalendarCheck,
   Calendar,
   BookMarked,
+  Trash2,
 } from "lucide-react";
 import {
   Select,
@@ -1544,6 +1545,18 @@ export function ItensVitrine() {
             }
           >
             <div className="flex gap-2 items-center">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  navigate("/dashboard/remocao", {
+                    replace: true,
+                  })
+                }
+              >
+                <Trash2 size={16} />
+                Remoção de itens
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
