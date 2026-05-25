@@ -416,7 +416,7 @@ export function CollectionPage() {
       if (value == "finalizados") params.set("workflow_status", "DESCARTADOS");
       if (value == "lfd") params.set("workflow_status", "DESFAZIMENTO");
 
-      const url = `${urlGeral}collections/${collection_id}/items/${params.toString() ? `?${params.toString()}` : ""}`;
+      const url = `${urlGeral}collection_items/${collection_id}${params.toString() ? `?${params.toString()}` : ""}`;
 
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok) {

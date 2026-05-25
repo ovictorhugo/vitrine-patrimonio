@@ -35,7 +35,6 @@ import { Skeleton } from "../../ui/skeleton";
 import { CollectionDTO } from "../collection/collection-page";
 import { useQuery } from "../../authentication/signIn";
 import { CollectionPage } from "./collection-page";
-import { AddToCollectionDrawer } from "./components/add-collection";
 import { CollectionItem } from "./components/collection-item";
 import { Alert } from "../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
@@ -267,8 +266,6 @@ export function Remocao() {
         if (!res.ok) throw new Error("Erro ao carregar estatísticas");
 
         const data: StatusCount[] = await res.json();
-
-        console.log(data);
 
         const expectedStatuses = [
           "TOTAL_DESFAZIMENTO",
@@ -505,17 +502,7 @@ export function Remocao() {
           </Button>
         </div>
       </div>
-
-      <AddToCollectionDrawer
-        type={"SMAL"}
-        open={openAdd}
-        onOpenChange={(o) => setOpenAdd(o)}
-        baseUrl={urlGeral}
-        headers={authHeaders}
-        collectionId={null}
-        onItemsAdded={handleItemsAdded}
-      />
-
+      
       {/* =================== Dialog EDITAR =================== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>

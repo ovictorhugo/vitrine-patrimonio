@@ -11,7 +11,7 @@ export function usePermissions() {
   // util genérica
   const has = useCallback(
     (code: string) => perms.some((p) => p.code === code),
-    [perms]
+    [perms],
   );
 
   const hasCriarEtiqueta = useMemo(() => has("CRIAR_ETIQUETA"), [has]);
@@ -24,12 +24,12 @@ export function usePermissions() {
   const hasAdministrativo = useMemo(() => has("ADMINISTRATIVO"), [has]);
   const hasComissaoPermanente = useMemo(
     () => has("COMISSAO_PERMANENTE"),
-    [has]
+    [has],
   );
   const hasPermissoes = useMemo(() => has("PERMISSOES"), [has]);
   const hasAdministracaoDaComissao = useMemo(
     () => has("ADMINISTRACAO_DA_COMISSAO"),
-    [has]
+    [has],
   );
   const hasColecoes = useMemo(() => has("COLECOES"), [has]);
   const hasUsuarios = useMemo(() => has("USUARIOS"), [has]);
@@ -39,13 +39,16 @@ export function usePermissions() {
   const hasDepartamento = useMemo(() => has("DEPARTAMENTO_SETOR"), [has]);
   const hasComissaoApoioLocal = useMemo(
     () => has("COMISSAO_DE_APOIO_LOCAL"),
-    [has]
+    [has],
   );
   const hasSalas = useMemo(() => has("SALAS"), [has]);
   const hasInventario = useMemo(() => has("INVENTARIO"), [has]);
   const hasFinalizados = useMemo(() => has("FINALIZADOS"), [has]);
   const hasAudiovisual = useMemo(() => has("AUDIOVISUAL"), [has]);
-  const hasEmprestimoAudiovisual = useMemo(() => has("EMPRESTIMO_AUDIOVISUAL"), [has]);
+  const hasEmprestimoAudiovisual = useMemo(
+    () => has("EMPRESTIMO_AUDIOVISUAL"),
+    [has],
+  );
   const hasAcervoHistorico = useMemo(() => has("ACERVO_HISTORICO"), [has]);
 
   return {

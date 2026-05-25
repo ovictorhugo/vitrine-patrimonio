@@ -36,7 +36,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "../../../ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "../../../ui/toggle-group";
+import { Checkbox } from "../../../ui/checkbox";
 import { Input } from "../../../ui/input";
 import { Button } from "../../../ui/button";
 import { toast } from "sonner";
@@ -66,8 +66,8 @@ type Props = {
   entry: CatalogEntry;
 
   // novos props para operações da collection
-  collectionId: string; // /collections/{collection_id}
-  itemId: string; // /collections/{collection_id}/items/{item_id}
+  collectionId: string;
+  itemId: string;
 
   // valores iniciais vindos do pai
   sel: string; // "true" | "false"
@@ -78,8 +78,10 @@ type Props = {
   // callback para atualizar o item no estado do pai sem refetch
   onUpdated?: (patch: { status?: boolean; comment?: string }) => void;
 
-  // callback para o pai remover o item da lista, após DELETE com sucesso (passa o id deletado)
   onDeleted?: (deletedId: string) => void;
+
+  selected?: boolean;
+  onItemClick?: (id: string) => void;
 
   // legados (não usados mais, mantidos por compat se houver chamadas antigas)
   onStatusChange?: (value: string) => void;
@@ -95,6 +97,8 @@ export function PatrimonioItemCollection({
   isLocked,
   onUpdated,
   onDeleted,
+  selected,
+  onItemClick,
 }: Props) {
   const { onOpen } = useModal();
   const { urlGeral } = useContext(UserContext);
@@ -194,9 +198,9 @@ export function PatrimonioItemCollection({
           comment: commentValue ?? "",
         };
 
-        const url = `${urlGeral}collections/${encodeURIComponent(
+        const url = `${urlGeral}collection_items/${encodeURIComponent(
           collectionId,
-        )}/items/${encodeURIComponent(itemId)}`;
+        )}/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "PUT",
           headers,
@@ -245,9 +249,9 @@ export function PatrimonioItemCollection({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
 
-        const url = `${urlGeral}collections/${encodeURIComponent(
+        const url = `${urlGeral}collection_items/${encodeURIComponent(
           collectionId,
-        )}/items/${encodeURIComponent(itemId)}`;
+        )}/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "DELETE",
           headers,
@@ -279,23 +283,53 @@ export function PatrimonioItemCollection({
   if (isMobile) {
     return (
       <>
-        <div className="grid w-full group cursor-pointer" onClick={handleOpen}>
-          {/* Barra colorida */}
-          <div
-            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-              qualisColor[csvCodTrimmed] || "bg-neutral-300"
-            } min-h-full relative`}
-          />
+        <div 
+          className={`group cursor-pointer rounded-lg relative transition-all duration-200 border-2 ${
+            selected ? "border-eng-blue" : "border-transparent"
+          }`}
+          onClick={(e) => {
+             if (onItemClick) {
+                 e.stopPropagation();
+                 onItemClick(itemId);
+             } else {
+                 handleOpen(e);
+             }
+          }}
+        >
+          <div className="absolute top-2 right-2 z-10 flex gap-2 items-center" onClick={stop}>
+            <Checkbox 
+              checked={selected} 
+              onCheckedChange={() => onItemClick?.(itemId)}
+              className="h-5 w-5 bg-white data-[state=checked]:bg-eng-blue data-[state=checked]:text-white"
+            />
+          </div>
 
-          {/* Card */}
           <div>
-            <Alert className="rounded-l-none items-center p-0 flex w-full flex-1 rounded-b-none border-b-0">
+            <Alert className="items-center p-0 flex w-full flex-1 border-0">
               {/* Coluna info */}
 
               <div className="w-full">
                 {/* HEADER */}
                 <div className="flex items-center gap-3 p-4 pb-0">
                   <div className="flex items-center gap-2 text-sm min-w-0 w-full">
+                    {hasColecoes && (
+                      <Button
+                        variant="destructive"
+                        onClick={(e) => {
+                          stop(e);
+                          setDeleteOpen(true);
+                        }}
+                        disabled={isLocked || deleting}
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                      >
+                        {deleting ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Trash size={14} />
+                        )}
+                      </Button>
+                    )}
                     <p className="font-semibold text-left  whitespace-nowrap shrink-0">
                       {asset.asset_code?.toString().trim()}{" "}
                       {asset.asset_check_digit
@@ -433,90 +467,6 @@ export function PatrimonioItemCollection({
             </Alert>
 
             {/* Barra de edição (status/comment + atualizar + deletar) */}
-            <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
-              <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
-                <div className="flex justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <p>Coleta:</p>
-                    <ToggleGroup
-                      type="single"
-                      value={statusValue}
-                      onValueChange={(v) =>
-                        v && setStatusValue(v as "true" | "false")
-                      }
-                      className="flex gap-2"
-                      variant="outline"
-                    >
-                      <ToggleGroupItem
-                        onClick={stop}
-                        value="true"
-                        aria-label="OK"
-                        className="
-                    w-10 h-10 border
-                    data-[state=on]:bg-green-700 data-[state=on]:text-white
-                    dark:data-[state=on]:bg-green-700
-                    hover:bg-muted/40 transition
-                  "
-                      >
-                        <Check size={16} />
-                      </ToggleGroupItem>
-
-                      <ToggleGroupItem
-                        onClick={stop}
-                        value="false"
-                        aria-label="Com problema"
-                        className="
-                    w-10 h-10 border
-                    data-[state=on]:bg-red-600 data-[state=on]:text-white
-                    dark:data-[state=on]:bg-red-700
-                    hover:bg-muted/40 transition
-                  "
-                      >
-                        <X size={16} />
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                  {hasColecoes && (
-                    <Button
-                      variant="destructive"
-                      onClick={(e) => {
-                        stop(e);
-                        setDeleteOpen(true);
-                      }}
-                      disabled={isLocked || deleting}
-                      size="icon"
-                    >
-                      {deleting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Trash size={16} />
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <Input
-                  placeholder="Observações"
-                  value={commentValue}
-                  onChange={(e) => setCommentValue(e.target.value)}
-                  className="min-w-[220px] flex-1"
-                  disabled={isLocked}
-                  onClick={stop}
-                />
-
-                <Button
-                  onClick={handleUpdate}
-                  disabled={updating || isLocked}
-                  variant="outline"
-                >
-                  {updating ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <RefreshCcw size={16} />
-                  )}
-                  Atualizar
-                </Button>
-              </div>
-            </Alert>
           </div>
         </div>
 
@@ -579,22 +529,52 @@ export function PatrimonioItemCollection({
   } else {
     return (
       <>
-        <div className="grid w-full group cursor-pointer" onClick={handleOpen}>
-          {/* Barra colorida */}
-          <div
-            className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
-              qualisColor[csvCodTrimmed] || "bg-neutral-300"
-            } min-h-full relative`}
-          />
+        <div 
+          className={`group cursor-pointer rounded-lg relative transition-all duration-200 border-2 ${
+            selected ? "border-eng-blue" : "border-transparent"
+          }`}
+          onClick={(e) => {
+             if (onItemClick) {
+                 e.stopPropagation();
+                 onItemClick(itemId);
+             } else {
+                 handleOpen(e);
+             }
+          }}
+        >
+          <div className="absolute top-2 right-2 z-10 flex gap-2 items-center" onClick={stop}>
+            <Checkbox 
+              checked={selected} 
+              onCheckedChange={() => onItemClick?.(itemId)}
+              className="h-5 w-5 bg-white data-[state=checked]:bg-eng-blue border-eng-blue border-2 data-[state=checked]:text-white"
+            />
+          </div>
 
-          {/* Card */}
           <div className="w-full">
-            <Alert className="rounded-l-none items-center p-0 flex flex-1 w-full rounded-b-none border-b-0">
+            <Alert className="items-center p-0 flex flex-1 w-full border-0">
               {/* Coluna info */}
               <div className="flex-1 min-w-0">
                 {/* HEADER */}
                 <div className="flex items-center gap-3 p-4 pb-0">
                   <div className="flex items-center gap-2 mb-4 min-w-0 w-full">
+                    {hasColecoes && (
+                      <Button
+                        variant="destructive"
+                        onClick={(e) => {
+                          stop(e);
+                          setDeleteOpen(true);
+                        }}
+                        disabled={isLocked || deleting}
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                      >
+                        {deleting ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Trash size={14} />
+                        )}
+                      </Button>
+                    )}
                     <p className="font-semibold text-left whitespace-nowrap shrink-0">
                       {asset.asset_code?.toString().trim()} -{" "}
                       {asset.asset_check_digit}
@@ -725,91 +705,6 @@ export function PatrimonioItemCollection({
                     </div>
                   </Carousel>
                 </div>
-              </div>
-            </Alert>
-
-            {/* Barra de edição (status/comment + atualizar + deletar) */}
-            <Alert className="rounded-t-none rounded-l-none dark:bg-neutral-800/50 bg-neutral-100/50">
-              <div className="flex gap-2 items-center h-full whitespace-nowrap flex-wrap">
-                <p>Coleta:</p>
-
-                <ToggleGroup
-                  type="single"
-                  value={statusValue}
-                  onValueChange={(v) =>
-                    v && setStatusValue(v as "true" | "false")
-                  }
-                  className="flex gap-2"
-                  variant="outline"
-                >
-                  <ToggleGroupItem
-                    onClick={stop}
-                    value="true"
-                    aria-label="OK"
-                    className="
-                    w-10 h-10 border
-                    data-[state=on]:bg-green-700 data-[state=on]:text-white
-                    dark:data-[state=on]:bg-green-700
-                    hover:bg-muted/40 transition
-                  "
-                  >
-                    <Check size={16} />
-                  </ToggleGroupItem>
-
-                  <ToggleGroupItem
-                    onClick={stop}
-                    value="false"
-                    aria-label="Com problema"
-                    className="
-                    w-10 h-10 border
-                    data-[state=on]:bg-red-600 data-[state=on]:text-white
-                    dark:data-[state=on]:bg-red-700
-                    hover:bg-muted/40 transition
-                  "
-                  >
-                    <X size={16} />
-                  </ToggleGroupItem>
-                </ToggleGroup>
-
-                <Input
-                  placeholder="Observações"
-                  value={commentValue}
-                  onChange={(e) => setCommentValue(e.target.value)}
-                  className="min-w-[220px] flex-1"
-                  disabled={isLocked}
-                  onClick={stop}
-                />
-
-                <Button
-                  onClick={handleUpdate}
-                  disabled={updating || isLocked}
-                  variant="outline"
-                >
-                  {updating ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <RefreshCcw size={16} />
-                  )}
-                  Atualizar
-                </Button>
-
-                {hasColecoes && (
-                  <Button
-                    variant="destructive"
-                    onClick={(e) => {
-                      stop(e);
-                      setDeleteOpen(true);
-                    }}
-                    disabled={isLocked || deleting}
-                    size="icon"
-                  >
-                    {deleting ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Trash size={16} />
-                    )}
-                  </Button>
-                )}
               </div>
             </Alert>
           </div>

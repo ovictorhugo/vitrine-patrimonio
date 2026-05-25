@@ -268,7 +268,7 @@ export function AddPatrimonioModal({
       };
 
       const r = await fetch(
-        `${urlGeral}collections/${encodeURIComponent(collection)}/items/`,
+        `${urlGeral}collection_items/${encodeURIComponent(collection)}/`,
         {
           method: "POST",
           headers: authHeaders,

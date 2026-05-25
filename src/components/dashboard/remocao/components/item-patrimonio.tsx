@@ -1,16 +1,18 @@
 // src/pages/desfazimento/components/item-patrimonio.tsx
-import React, { useContext, useEffect, useRef } from "react";
-import { Eye, User, Barcode } from "lucide-react";
+import React, { useContext } from "react";
+import { User, Barcode } from "lucide-react";
 import { Alert } from "../../../ui/alert";
 import {
-  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
 } from "../../../ui/carousel";
 import { CardContent } from "../../../ui/card";
 import { UserContext } from "../../../../context/context";
-import { Badge } from "../../../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
-// ⬇️ hook do seu modal
-import { useModal } from "../../../hooks/use-modal-store";
+import { Checkbox } from "../../../ui/checkbox";
 
 export interface CatalogEntry {
   id: string;
@@ -31,12 +33,11 @@ export interface CatalogEntry {
 
 type Props = CatalogEntry & {
   selected?: boolean;
-  onItemClick?: (e: React.MouseEvent) => void; // seleção no clique simples (pai controla)
+  onItemClick?: (id: string) => void;
 };
 
 export function ItemPatrimonio(props: Props) {
   const { urlGeral } = useContext(UserContext);
-  const { onOpen } = useModal();
 
   const materialNome =
     props.asset?.material?.material_name ??
@@ -59,34 +60,6 @@ export function ItemPatrimonio(props: Props) {
     RE: "bg-purple-500",
   };
 
-  // ======= Clique simples x duplo clique =======
-  const clickTimerRef = useRef<number | null>(null);
-  const CLICK_DELAY = 200; // ajuste fino se quiser
-
-  const handleRootClick: React.MouseEventHandler = (e) => {
-    if (clickTimerRef.current !== null) {
-      // Double-click: cancela single e abre modal
-      window.clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      onOpen("catalog-modal", { ...props });
-      return;
-    }
-    // Single-click: agenda seleção
-    clickTimerRef.current = window.setTimeout(() => {
-      clickTimerRef.current = null;
-      props.onItemClick?.(e);
-    }, CLICK_DELAY);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (clickTimerRef.current !== null) {
-        window.clearTimeout(clickTimerRef.current);
-        clickTimerRef.current = null;
-      }
-    };
-  }, []);
-
   const stop: React.MouseEventHandler = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -94,9 +67,19 @@ export function ItemPatrimonio(props: Props) {
 
   return (
     <div
-      className={`group cursor-pointer rounded-lg relative ${props.selected ? "border-2 border-eng-blue" : ""}`}
-      onClick={handleRootClick}
+      className={`group cursor-pointer rounded-lg relative transition-all duration-200 border-3 ${
+        props.selected ? "border-eng-blue" : "border-transparent"
+      }`}
+      onClick={() => props.onItemClick?.(props.id)}
     >
+      <div className="absolute top-2 right-2 z-10" onClick={stop}>
+        <Checkbox
+          checked={props.selected}
+          onCheckedChange={() => props.onItemClick?.(props.id)}
+          className="h-5 w-5 bg-white data-[state=checked]:bg-eng-blue data-[state=checked]:text-white border-eng-blue border-2"
+        />
+      </div>
+
       <div className="relative">
         {/* Imagens */}
         <Carousel className="w-full flex items-center">
@@ -138,14 +121,13 @@ export function ItemPatrimonio(props: Props) {
               {materialNome}
             </p>
             <p className="text-sm flex items-center gap-1 whitespace-nowrap shrink-0">
-              <Barcode size={16} /> {assetCode}{assetDgv ? `-${assetDgv}` : ""}
+              <Barcode size={16} /> {assetCode}
+              {assetDgv ? `-${assetDgv}` : ""}
             </p>
-            <Avatar className="h-6 w-6 rounded-md shrink-0">
-              <AvatarImage src={`${urlGeral}user/upload/${props.user.id}/icon`} />
-              <AvatarFallback><User size={12} /></AvatarFallback>
-            </Avatar>
           </div>
-          <p className="text-sm line-clamp-1 text-gray-500">{props.description}</p>
+          <p className="text-sm line-clamp-1 text-gray-500">
+            {props.description}
+          </p>
         </div>
       </Alert>
 

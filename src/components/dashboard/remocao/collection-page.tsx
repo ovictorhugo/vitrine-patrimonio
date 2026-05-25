@@ -19,6 +19,12 @@ import {
   CheckCircle,
   Download,
   List,
+  FileArchive,
+  PlusCircle,
+  Check,
+  SlidersHorizontal,
+  LayoutGrid,
+  CheckSquare,
 } from "lucide-react";
 import {
   useCallback,
@@ -62,20 +68,15 @@ import { Input } from "../../ui/input";
 import { Alert } from "../../ui/alert";
 import { Separator } from "../../ui/separator";
 import { useQuery } from "../../authentication/signIn";
-import { PatrimonioItemCollection } from "./components/patrimonio-item-inventario";
 import { CardHeader, CardTitle, CardContent } from "../../ui/card";
 import { CollectionDTO } from "../collection/collection-page";
-import {
-  AddToCollectionDrawer,
-  CollectionItem,
-} from "./components/add-collection";
+
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
 import { ArrowUUpLeft } from "phosphor-react";
 import { usePermissions } from "../../permissions";
-import { Badge } from "../../ui/badge";
 import { Tabs, TabsContent } from "../../ui/tabs";
-import { ItemPatrimonio } from "../../homepage/components/item-patrimonio";
+import { ItemPatrimonio } from "./components/item-patrimonio";
 import {
   Select,
   SelectContent,
@@ -85,7 +86,9 @@ import {
 } from "../../ui/select";
 import { DownloadPdfButton } from "../../download/download-pdf-button";
 import { useIsMobile } from "../../../hooks/use-mobile";
-import { AddPatrimonioModal } from "./components/add-collection2";
+import { InCollectionTab } from "./tabs/in-collection";
+import { AdministratorTab } from "./tabs/administrator";
+import { CollectionItem } from "../desfazimento/components/add-collection";
 
 // ================== Types ==================
 type UUID = string;
@@ -227,6 +230,7 @@ type Catalog = {
   images?: CatalogImage[];
   workflow_history?: WorkflowHistoryItem[];
   created_at: string;
+  current_workflow_status: string;
 };
 
 type CollectionItemsResponse = { collection_items: CollectionItem[] };
@@ -328,6 +332,16 @@ export function CollectionPage() {
   const collection_id = queryUrl.get("collection_id");
 
   const [items, setItems] = useState<CollectionItem[]>([]);
+  const [lfdItems, setLfdItems] = useState<Catalog[]>([]);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+  const [selectedLfdItems, setSelectedLfdItems] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedCollectionItems, setSelectedCollectionItems] = useState<
+    Set<string>
+  >(new Set());
+  const [addingToCollection, setAddingToCollection] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // loading da coleção (nome, descrição, etc.)
   const [loadingCollection, setLoadingCollection] = useState(false);
@@ -352,13 +366,13 @@ export function CollectionPage() {
   // ===== navegação & paginação por querystring (offset/limit) =====
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "12");
+  const initialLimit = Number(qs.get("limit") || "10");
 
   const [offset, setOffset] = useState<number>(
     Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0,
   );
   const [limit, setLimit] = useState<number>(
-    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 24,
+    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 10,
   );
 
   const isFirstPage = offset === 0;
@@ -447,9 +461,15 @@ export function CollectionPage() {
     })();
   }, [urlGeral, authHeaders]);
 
+  const { hasAdministrativo } = usePermissions();
+
   const tabs = [
     { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
+    { id: "in-collection", label: "Itens da coleção", icon: Package },
     { id: "finalizados", label: "Processos finalizados", icon: Recycle },
+    ...(hasAdministrativo
+      ? [{ id: "administrator", label: "Administrador", icon: Package }]
+      : []),
   ];
 
   const [value, setValue] = useState(tabs[0].id);
@@ -468,28 +488,46 @@ export function CollectionPage() {
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
       if (value === "finalizados") params.set("workflow_status", "DESCARTADOS");
-      if (value === "lfd") params.set("workflow_status", "DESFAZIMENTO");
 
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
-      const url = `${urlGeral}collections/${collection_id}/items/${
-        params.toString() ? `?${params.toString()}` : ""
-      }`;
+      if (value === "lfd") {
+        params.set("workflow_status", "DESFAZIMENTO");
+        const url = `${urlGeral}catalog/cards${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
 
-      const res = await fetch(url, { method: "GET", headers: authHeaders });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(
-          text || `Falha ao carregar coleção (HTTP ${res.status}).`,
-        );
+        const res = await fetch(url, { method: "GET", headers: authHeaders });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(
+            text || `Falha ao carregar itens da LFD (HTTP ${res.status}).`,
+          );
+        }
+
+        const data = await res.json();
+
+        setLfdItems(data.catalog_entries);
+      } else {
+        const url = `${urlGeral}collection_items/${collection_id}/${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
+
+        const res = await fetch(url, { method: "GET", headers: authHeaders });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(
+            text || `Falha ao carregar coleção (HTTP ${res.status}).`,
+          );
+        }
+
+        const data: CollectionItemsResponse = await res.json();
+        const list = Array.isArray((data as any)?.collection_items)
+          ? (data as any).collection_items
+          : [];
+        setItems(list);
       }
-
-      const data: CollectionItemsResponse = await res.json();
-      const list = Array.isArray((data as any)?.collection_items)
-        ? (data as any).collection_items
-        : [];
-      setItems(list);
     } catch (e: any) {
       toast("Erro ao carregar coleção de desfazimento", {
         description: e?.message || String(e),
@@ -522,7 +560,7 @@ export function CollectionPage() {
   const fetchStatistics = useCallback(async () => {
     if (!collection_id) return;
     try {
-      const url = `${urlGeral}statistics/catalog/count-by-collection-status?workflow_status=DESFAZIMENTO&collection_id=${encodeURIComponent(
+      const url = `${urlGeral}collections/stats/${encodeURIComponent(
         collection_id,
       )}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
@@ -534,40 +572,8 @@ export function CollectionPage() {
       }
 
       const json = await res.json();
-      const arr: any[] = Array.isArray(json)
-        ? json
-        : Array.isArray(json?.results)
-          ? json.results
-          : Array.isArray(json?.data)
-            ? json.data
-            : [];
-
-      let coletados = 0;
-      let pendentes = 0;
-
-      for (const row of arr) {
-        const statusVal = (row as any).status;
-        const countVal = Number((row as any).count ?? 0) || 0;
-
-        if (
-          statusVal === true ||
-          statusVal === "true" ||
-          statusVal === 1 ||
-          statusVal === "COLETADO"
-        ) {
-          coletados += countVal;
-        } else if (
-          statusVal === false ||
-          statusVal === "false" ||
-          statusVal === 0 ||
-          statusVal === "PENDENTE"
-        ) {
-          pendentes += countVal;
-        }
-      }
-
-      setCountDesfazimento(coletados);
-      setCountNaoDesfazimento(pendentes);
+      setCountDesfazimento(json?.total ?? 0);
+      setCountNaoDesfazimento(json?.approved ?? 0);
     } catch (e) {
       console.error("Erro ao buscar estatísticas da coleção:", e);
     }
@@ -716,15 +722,85 @@ export function CollectionPage() {
     setOffset(0);
   };
 
-  // Drawer adicionar
-  const [openAdd, setOpenAdd] = useState(false);
-
-  const handleItemsAdded = (newItems: CollectionItem[]) => {
-    setItems((prev) => {
-      const ids = new Set(prev.map((p) => p.id));
-      const filtered = newItems.filter((ni) => !ids.has(ni.id));
-      return [...filtered, ...prev];
+  const toggleLfdItem = (id: string) => {
+    setSelectedLfdItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
+  };
+
+  const toggleCollectionItem = (id: string) => {
+    setSelectedCollectionItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleAddSelectedToCollection = async () => {
+    if (selectedLfdItems.size === 0) return;
+    try {
+      setAddingToCollection(true);
+      const res = await fetch(
+        `${urlGeral}collection_items/add_new/${collection_id}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ catalog_ids: Array.from(selectedLfdItems) }),
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erro ao adicionar itens à coleção");
+      }
+      toast.success("Itens adicionados com sucesso!");
+      setSelectedLfdItems(new Set());
+      fetchCollectionItems();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao adicionar itens");
+    } finally {
+      setAddingToCollection(false);
+      fetchStatistics();
+    }
+  };
+
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [approving, setApproving] = useState(false);
+
+  const handleApproveSelected = async () => {
+    if (selectedCollectionItems.size === 0) return;
+    try {
+      setApproving(true);
+      const catalog_ids = Array.from(selectedCollectionItems)
+        .map((id) => items.find((i) => i.id === id)?.catalog?.id)
+        .filter(Boolean);
+
+      const res = await fetch(
+        `${urlGeral}collection_items/approved/${collection_id}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ catalog_ids }),
+        },
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erro ao aprovar itens");
+      }
+      toast.success("Itens aprovados com sucesso!");
+      setSelectedCollectionItems(new Set());
+      setApproveOpen(false);
+      fetchCollectionItems();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao aprovar itens");
+    } finally {
+      setApproving(false);
+      fetchStatistics();
+    }
   };
 
   const fmt = (n: number) => n.toLocaleString("pt-BR");
@@ -733,7 +809,7 @@ export function CollectionPage() {
   const type_search = queryUrl.get("collection_id");
   const [collection, setCollection] = useState<CollectionDTO | null>(null);
 
-  const fetchInventories = async () => {
+  const fetchCollection = async () => {
     try {
       setLoadingCollection(true);
       const res = await fetch(`${urlGeral}collections/${type_search}`, {
@@ -749,7 +825,6 @@ export function CollectionPage() {
       }
 
       const data: CollectionDTO = await res.json();
-      console.log(data);
       setCollection(data);
     } catch (e: any) {
       toast("Erro ao carregar coleção", {
@@ -762,7 +837,7 @@ export function CollectionPage() {
   };
 
   useEffect(() => {
-    fetchInventories();
+    fetchCollection();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlGeral]);
 
@@ -832,6 +907,125 @@ export function CollectionPage() {
   const [newName, setNewName] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
 
+  const [seiOpen, setSeiOpen] = useState(false);
+  const [seiProcess, setSeiProcess] = useState("");
+  const [seiLoading, setSeiLoading] = useState(false);
+
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [addingByFilter, setAddingByFilter] = useState(false);
+
+  const handleAddByFilter = async () => {
+    try {
+      setAddingByFilter(true);
+      const params = new URLSearchParams();
+      if (qMain) params.set("q", qMain);
+      if (materialIdMain) params.set("material_id", materialIdMain);
+      if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
+      if (unitId) params.set("unit_id", unitId);
+      if (agencyId) params.set("agency_id", agencyId);
+      if (sectorId) params.set("sector_id", sectorId);
+      if (locationId) params.set("location_id", locationId);
+
+      const res = await fetch(
+        `${urlGeral}collection_items/add_by_filters/${collection_id}?${params.toString()}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erro ao adicionar itens por filtro");
+      }
+      toast.success("Itens adicionados com sucesso!");
+      setFilterOpen(false);
+      fetchCollectionItems();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao adicionar itens");
+    } finally {
+      setAddingByFilter(false);
+      fetchStatistics();
+    }
+  };
+
+  const [removeFilterOpen, setRemoveFilterOpen] = useState(false);
+  const [removingByFilter, setRemovingByFilter] = useState(false);
+
+  const handleRemoveByFilter = async () => {
+    try {
+      setRemovingByFilter(true);
+      const params = new URLSearchParams();
+      if (qMain) params.set("q", qMain);
+      if (materialIdMain) params.set("material_id", materialIdMain);
+      if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
+      if (unitId) params.set("unit_id", unitId);
+      if (agencyId) params.set("agency_id", agencyId);
+      if (sectorId) params.set("sector_id", sectorId);
+      if (locationId) params.set("location_id", locationId);
+
+      const res = await fetch(
+        `${urlGeral}collection_items/remove_by_filters/${collection_id}?${params.toString()}`,
+        {
+          method: "DELETE",
+          headers: authHeaders,
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erro ao remover itens por filtro");
+      }
+      toast.success("Itens removidos com sucesso!");
+      setRemoveFilterOpen(false);
+      fetchCollectionItems();
+      fetchStatistics();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao remover itens");
+    } finally {
+      setRemovingByFilter(false);
+      fetchStatistics();
+    }
+  };
+
+  const handleSaveSei = async () => {
+    if (!seiProcess.trim()) {
+      toast.error("Por favor, digite o texto do processo.");
+      return;
+    }
+
+    try {
+      setSeiLoading(true);
+      const res = await fetch(
+        `${urlGeral}collections/add-sei/${collection_id}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ sei_process: seiProcess }),
+        },
+      );
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error || data?.message || "Erro ao adicionar processo SEI.",
+        );
+      }
+
+      toast.success(data?.message || "Processo SEI adicionado com sucesso!");
+
+      setCollection((prev) =>
+        prev ? { ...prev, sei_process: seiProcess } : prev,
+      );
+      setSeiOpen(false);
+      setSeiProcess("");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao adicionar processo SEI.");
+    } finally {
+      setSeiLoading(false);
+      fetchCollection();
+    }
+  };
+
   useEffect(() => {
     if (collection) {
       setNewName(collection.name ?? "");
@@ -882,26 +1076,18 @@ export function CollectionPage() {
       setDeleteLoading(false);
     }
   };
-
-  // remoção de item
-  const handleItemDeleted = useCallback(
-    (deletedId: UUID) => {
-      setItems((prev) => {
-        const next = prev.filter((it) => it.id !== deletedId);
-        if (next.length === prev.length) {
-          fetchCollectionItems();
-        }
-        return next;
-      });
-      // aqui não sabemos o status anterior, então não mexemos nos contadores
-      // (se quiser, pode ajustar o filho para informar o status antes de deletar)
-    },
-    [fetchCollectionItems],
-  );
+  function handleItemDeleted(item_id: string) {
+    const itemToDelete = items.find((i) => i.id === item_id);
+    if (itemToDelete) {
+      setCountDesfazimento((prev) => (prev > 0 ? prev - 1 : 0));
+      if (itemToDelete.status === true) {
+        setCountNaoDesfazimento((prev) => (prev > 0 ? prev - 1 : 0));
+      }
+    }
+    setItems((prev) => prev.filter((item) => item.id !== item_id));
+  }
 
   const { hasColecoes } = usePermissions();
-
-  const [isOn, setIsOn] = useState(true);
 
   const skeletons = useMemo(
     () =>
@@ -1019,17 +1205,15 @@ export function CollectionPage() {
                 <Button
                   className="flex-1"
                   variant="outline"
-                  onClick={() => setEditOpen(true)}
+                  disabled={!!collection.sei_process}
+                  onClick={() => setSeiOpen(true)}
                 >
-                  <Pencil size={16} />
+                  <FileArchive size={16} />
+                  {collection.sei_process
+                    ? collection.sei_process
+                    : "Adicionar processo sei"}
                 </Button>
-                <Button
-                  className="flex-1"
-                  variant="destructive"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash size={16} />
-                </Button>
+
                 {collection.sei_process ? (
                   <DownloadPdfButton
                     filters={{ collection_id: collection_id || undefined }}
@@ -1045,54 +1229,65 @@ export function CollectionPage() {
                     <Download size={16} className="mr-2" /> Baixar PDF
                   </Button>
                 )}
-
-                <Button onClick={() => setOpenAdd(true)} className="w-full">
-                  <Plus size={16} className="mr-2" /> Adicionar item
+                <Button
+                  className="flex-1"
+                  variant="outline"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil size={16} />
+                </Button>
+                <Button
+                  className="flex-1"
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash size={16} />
                 </Button>
               </div>
             </div>
           )}
         </div>
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 ">
+          <div className="justify-center px-4 md:px-8 w-full mx-auto flex flex-col items-center gap-2 mt-4">
+            <h3 className="z-[2] text-center text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+              {collection.name}
+            </h3>
+            <div className="mt-2 flex flex-wrap justify-center  gap-3 text-sm text-gray-500 items-center">
+              <span className="text-muted-foreground text-justify">
+                {collection.description}
+              </span>
+            </div>
+          </div>
+          {/* Cards de status (usando estatísticas agregadas) */}
+          <div className="flex flex-col sm:flex-row justify-center gap-8 px-8">
+            <Alert className="p-0 w-[50%]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Itens na coleção
+                </CardTitle>
+                <List className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {fmt(countDesfazimento)}
+                </div>
+              </CardContent>
+            </Alert>
 
-        <div className="justify-center px-4 md:px-8 w-full mx-auto flex flex-col items-center gap-2 mt-4">
-          <h3 className="z-[2] text-center text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-            {collection.name}
-          </h3>
-          <div className="mt-2 flex flex-wrap justify-center  gap-3 text-sm text-gray-500 items-center">
-            <span className="text-muted-foreground text-justify">
-              {collection.description}
-            </span>
+            <Alert className="p-0  w-[50%]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
+                <CheckCircle className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {fmt(countNaoDesfazimento)}
+                </div>
+              </CardContent>
+            </Alert>
           </div>
         </div>
-
-        {/* Cards de status (usando estatísticas agregadas) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 px-8">
-          <Alert className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Itens na coleção
-              </CardTitle>
-              <List className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{fmt(countDesfazimento)}</div>
-            </CardContent>
-          </Alert>
-
-          <Alert className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
-              <CheckCircle className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {fmt(countNaoDesfazimento)}
-              </div>
-            </CardContent>
-          </Alert>
-        </div>
-
-        <Tabs defaultValue="inventario" value={value}>
+        <Tabs defaultValue="in-collection" value={value}>
           {/* header das tabs */}
           <div className="dark:bg-neutral-900/60 bg-neutral-50/60 px-4 border-b border-b-neutral-200 dark:border-b-neutral-800">
             <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
@@ -1124,232 +1319,333 @@ export function CollectionPage() {
             </div>
           </div>
 
-          {/* Barra de filtros da lista principal */}
-          <div className="p-8 pb-4">
-            <div className="relative grid grid-cols-1 ">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute left-0 z-10 h-10 ${
-                  isMobile ? "w-5" : "w-10"
-                } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
-                onClick={scrollLeft}
-                disabled={!canScrollLeft}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-
-              <div className={isMobile ? "mx-8" : "mx-14"}>
-                <div
-                  ref={scrollAreaRef}
-                  className="overflow-x-auto scrollbar-hide"
-                  onScroll={checkScrollability}
+          {value != "administrator" && (
+            <>
+              <div className="flex justify-start gap-4 mb-4 px-8 pt-4">
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() =>
+                    setViewMode((prev) => (prev === "list" ? "grid" : "list"))
+                  }
                 >
-                  <div className="flex gap-3 items-center">
-                    {/* Pesquisa */}
-                    <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                      <div>
-                        <Search size={16} className="text-gray-500" />
-                      </div>
-                      <div className="relative w-full">
-                        <Input
-                          className="border-0 p-0 h-9 flex flex-1 w-full"
-                          value={qMain}
-                          onChange={(e) => {
-                            setQMain(e.target.value);
-                            setOffset(0);
-                          }}
-                          placeholder="Buscar por código, descrição, material, marca, modelo..."
-                        />
-                      </div>
-                    </Alert>
+                  {viewMode === "list" ? (
+                    <List size={16} className="mr-2" />
+                  ) : (
+                    <LayoutGrid size={16} className="mr-2" />
+                  )}
+                  {viewMode === "list" ? "Lista" : "Grade"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (value === "in-collection") {
+                      const allIds = new Set(items.map((i) => i.id));
+                      if (
+                        selectedCollectionItems.size === allIds.size &&
+                        allIds.size > 0
+                      ) {
+                        setSelectedCollectionItems(new Set());
+                      } else {
+                        setSelectedCollectionItems(allIds);
+                      }
+                    } else if (value === "lfd") {
+                      const allIds = new Set(lfdItems.map((i) => i.id));
+                      if (
+                        selectedLfdItems.size === allIds.size &&
+                        allIds.size > 0
+                      ) {
+                        setSelectedLfdItems(new Set());
+                      } else {
+                        setSelectedLfdItems(allIds);
+                      }
+                    }
+                  }}
+                >
+                  <CheckSquare size={16} className="mr-2" />
+                  Selecionar todos
+                </Button>
 
-                    {/* Material e Responsável */}
-                    <Combobox
-                      items={materialItemsMain}
-                      value={materialIdMain}
-                      onChange={(v) => {
-                        setMaterialIdMain(v);
-                        setOffset(0);
-                      }}
-                      placeholder="Material"
-                    />
-                    <Combobox
-                      items={guardianItemsMain}
-                      value={guardianIdMain}
-                      onChange={(v) => {
-                        setGuardianIdMain(v);
-                        setOffset(0);
-                      }}
-                      placeholder="Responsável"
-                    />
+                {value === "lfd" && (
+                  <Button
+                    onClick={handleAddSelectedToCollection}
+                    disabled={addingToCollection || selectedLfdItems.size === 0}
+                    className="h-9"
+                  >
+                    {addingToCollection ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    {selectedLfdItems.size > 0
+                      ? `Adicionar ${selectedLfdItems.size} ${selectedLfdItems.size === 1 ? "item" : "itens"} à coleção`
+                      : "Adicionar à coleção"}
+                  </Button>
+                )}
+                {value === "in-collection" && (
+                  <Button
+                    className="px-3 min-w-fit h-9 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => setApproveOpen(true)}
+                    title="Aprovar selecionados"
+                    disabled={selectedCollectionItems.size === 0}
+                  >
+                    <Check size={16} className="mr-2" /> Aprovar itens
+                  </Button>
+                )}
 
-                    <Separator className="h-8" orientation="vertical" />
-
-                    {/* SELECTS EM CADEIA */}
-                    <Combobox
-                      items={(units ?? []).map((u) => ({
-                        id: u.id,
-                        code: u.unit_code,
-                        label: u.unit_name || u.unit_code,
-                      }))}
-                      value={unitId}
-                      onChange={(v) => {
-                        setUnitId(v);
-                        setOffset(0);
-                      }}
-                      placeholder="Unidade"
-                    />
-
-                    <Combobox
-                      items={(agencies ?? []).map((a) => ({
-                        id: a.id,
-                        code: a.agency_code,
-                        label: a.agency_name || a.agency_code,
-                      }))}
-                      value={agencyId}
-                      onChange={(v) => {
-                        setAgencyId(v);
-                        setOffset(0);
-                      }}
-                      placeholder={"Organização"}
-                      disabled={!unitId}
-                    />
-
-                    <Combobox
-                      items={(sectors ?? []).map((s) => ({
-                        id: s.id,
-                        code: s.sector_code,
-                        label: s.sector_name || s.sector_code,
-                      }))}
-                      value={sectorId}
-                      onChange={(v) => {
-                        setSectorId(v);
-                        setOffset(0);
-                      }}
-                      placeholder={"Setor"}
-                      disabled={!agencyId}
-                    />
-
-                    <Combobox
-                      items={(locations ?? []).map((l) => ({
-                        id: l.id,
-                        code: l.location_code,
-                        label: l.location_name || l.location_code,
-                      }))}
-                      value={locationId}
-                      onChange={(v) => {
-                        setLocationId(v);
-                        setOffset(0);
-                      }}
-                      placeholder="Local de guarda"
-                      disabled={!sectorId}
-                    />
-
-                    <Button variant="outline" size="sm" onClick={clearFilters}>
-                      <Trash size={16} /> Limpar filtros
-                    </Button>
-                  </div>
+                <div className="ml-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowFilters((s) => !s)}
+                  >
+                    <SlidersHorizontal size={16} className="mr-2" />
+                    {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+                  </Button>
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className={`absolute right-0 z-10 h-10 ${
-                  isMobile ? "w-5" : "w-10"
-                } p-0 rounded-md ${
-                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                }`}
-                onClick={scrollRight}
-                disabled={!canScrollRight}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-          </div>
+              {/* Barra de filtros da lista principal */}
+              {showFilters && (
+                <div className="p-8 pt-0 pb-4">
+                  <div className="relative grid grid-cols-1 ">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute left-0 z-10 h-10 ${
+                        isMobile ? "w-5" : "w-10"
+                      } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      onClick={scrollLeft}
+                      disabled={!canScrollLeft}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+
+                    <div className={isMobile ? "mx-8" : "mx-14"}>
+                      <div
+                        ref={scrollAreaRef}
+                        className="overflow-x-auto scrollbar-hide"
+                        onScroll={checkScrollability}
+                      >
+                        <div className="flex gap-3 items-center">
+                          {value === "lfd" && (
+                            <Button
+                              variant="default"
+                              className="px-3 min-w-fit h-10"
+                              onClick={() => setFilterOpen(true)}
+                              title="Adicionar por filtros"
+                            >
+                              <PlusCircle size={16} />
+                            </Button>
+                          )}
+                          {value === "in-collection" && (
+                            <Button
+                              variant="destructive"
+                              className="px-3 min-w-fit h-10"
+                              onClick={() => setRemoveFilterOpen(true)}
+                              title="Remover por filtros"
+                            >
+                              <Trash size={16} />
+                            </Button>
+                          )}
+                          {/* Pesquisa */}
+                          <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                            <div>
+                              <Search size={16} className="text-gray-500" />
+                            </div>
+                            <div className="relative w-full">
+                              <Input
+                                className="border-0 p-0 h-9 flex flex-1 w-full"
+                                value={qMain}
+                                onChange={(e) => {
+                                  setQMain(e.target.value);
+                                  setOffset(0);
+                                }}
+                                placeholder="Buscar por código, descrição, material, marca, modelo..."
+                              />
+                            </div>
+                          </Alert>
+
+                          {/* Material e Responsável */}
+                          <Combobox
+                            items={materialItemsMain}
+                            value={materialIdMain}
+                            onChange={(v) => {
+                              setMaterialIdMain(v);
+                              setOffset(0);
+                            }}
+                            placeholder="Material"
+                          />
+                          <Combobox
+                            items={guardianItemsMain}
+                            value={guardianIdMain}
+                            onChange={(v) => {
+                              setGuardianIdMain(v);
+                              setOffset(0);
+                            }}
+                            placeholder="Responsável"
+                          />
+
+                          <Separator className="h-8" orientation="vertical" />
+
+                          {/* SELECTS EM CADEIA */}
+                          <Combobox
+                            items={(units ?? []).map((u) => ({
+                              id: u.id,
+                              code: u.unit_code,
+                              label: u.unit_name || u.unit_code,
+                            }))}
+                            value={unitId}
+                            onChange={(v) => {
+                              setUnitId(v);
+                              setOffset(0);
+                            }}
+                            placeholder="Unidade"
+                          />
+
+                          <Combobox
+                            items={(agencies ?? []).map((a) => ({
+                              id: a.id,
+                              code: a.agency_code,
+                              label: a.agency_name || a.agency_code,
+                            }))}
+                            value={agencyId}
+                            onChange={(v) => {
+                              setAgencyId(v);
+                              setOffset(0);
+                            }}
+                            placeholder={"Organização"}
+                            disabled={!unitId}
+                          />
+
+                          <Combobox
+                            items={(sectors ?? []).map((s) => ({
+                              id: s.id,
+                              code: s.sector_code,
+                              label: s.sector_name || s.sector_code,
+                            }))}
+                            value={sectorId}
+                            onChange={(v) => {
+                              setSectorId(v);
+                              setOffset(0);
+                            }}
+                            placeholder={"Setor"}
+                            disabled={!agencyId}
+                          />
+
+                          <Combobox
+                            items={(locations ?? []).map((l) => ({
+                              id: l.id,
+                              code: l.location_code,
+                              label: l.location_name || l.location_code,
+                            }))}
+                            value={locationId}
+                            onChange={(v) => {
+                              setLocationId(v);
+                              setOffset(0);
+                            }}
+                            placeholder="Local de guarda"
+                            disabled={!sectorId}
+                          />
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearFilters}
+                          >
+                            <Trash size={16} /> Limpar filtros
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`absolute right-0 z-10 h-10 ${
+                        isMobile ? "w-5" : "w-10"
+                      } p-0 rounded-md ${
+                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                      }`}
+                      onClick={scrollRight}
+                      disabled={!canScrollRight}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* TAB ITENS DA COLEÇÃO */}
+          <InCollectionTab
+            loadingItems={loadingItems}
+            items={items}
+            collection_id={collection_id}
+            setCountDesfazimento={setCountDesfazimento}
+            setCountNaoDesfazimento={setCountNaoDesfazimento}
+            setItems={setItems}
+            handleItemDeleted={handleItemDeleted}
+            viewMode={viewMode}
+            selectedItems={selectedCollectionItems}
+            toggleItem={toggleCollectionItem}
+          />
+
+          <AdministratorTab
+            loadingItems={loadingItems}
+            items={items}
+            collection_id={collection_id}
+            setCountDesfazimento={setCountDesfazimento}
+            setCountNaoDesfazimento={setCountNaoDesfazimento}
+            setItems={setItems}
+            handleItemDeleted={handleItemDeleted}
+            viewMode={viewMode}
+            selectedItems={selectedCollectionItems}
+            toggleItem={toggleCollectionItem}
+            reload={fetchCollection}
+          />
 
           {/* TAB LFD */}
           <TabsContent value="lfd">
             <div className="p-8 pt-0">
-              <Accordion type="single" collapsible defaultValue="item-1">
-                <AccordionItem value="item-1">
-                  <AccordionTrigger className="px-0">
-                    <HeaderResultTypeHome
-                      title={"Todos os itens"}
-                      icon={<Package size={24} className="text-gray-400" />}
+              {loadingItems ? (
+                <div
+                  className={
+                    viewMode === "list"
+                      ? "grid sm:grid-cols-2 gap-4"
+                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+                  }
+                >
+                  {skeletons.map((item, index) => (
+                    <div className="w-full" key={index}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              ) : lfdItems.length === 0 ? (
+                <div className="items-center justify-center w-full flex text-center pt-6">
+                  Nenhum item adicionado.
+                </div>
+              ) : (
+                <div
+                  className={
+                    viewMode === "list"
+                      ? "grid sm:grid-cols-2 gap-4"
+                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+                  }
+                >
+                  {lfdItems.map((item) => (
+                    <ItemPatrimonio
+                      key={item.id}
+                      {...item}
+                      selected={selectedLfdItems.has(item.id)}
+                      onItemClick={toggleLfdItem}
                     />
-                  </AccordionTrigger>
-
-                  <AccordionContent className="p-0">
-                    {loadingItems ? (
-                      <div className="flex gap-4 flex-col">
-                        <Skeleton className="w-full h-32" />
-                        <Skeleton className="w-full h-32" />
-                        <Skeleton className="w-full h-32" />
-                      </div>
-                    ) : items.length === 0 ? (
-                      <div className="items-center justify-center w-full flex text-center pt-6">
-                        Nenhum item adicionado.
-                      </div>
-                    ) : (
-                      <div className="grid gap-4">
-                        {items.map((ci) => (
-                          <PatrimonioItemCollection
-                            key={ci.id}
-                            invId={ci.catalog?.id ?? ci.id}
-                            entry={ci.catalog as any}
-                            collectionId={String(collection_id)}
-                            itemId={ci.id}
-                            sel={ci.status ? "true" : "false"}
-                            comm={ci.comment ?? ""}
-                            onUpdated={(patch) => {
-                              const prevStatus = ci.status;
-                              const hasNewStatus =
-                                typeof patch.status === "boolean";
-
-                              if (hasNewStatus && patch.status !== prevStatus) {
-                                if (patch.status === true) {
-                                  // pendente -> coletado
-                                  setCountDesfazimento((prev) => prev + 1);
-                                  setCountNaoDesfazimento((prev) =>
-                                    prev > 0 ? prev - 1 : prev,
-                                  );
-                                } else {
-                                  // coletado -> pendente
-                                  setCountDesfazimento((prev) =>
-                                    prev > 0 ? prev - 1 : prev,
-                                  );
-                                  setCountNaoDesfazimento((prev) => prev + 1);
-                                }
-                              }
-
-                              setItems((prev) =>
-                                prev.map((it) =>
-                                  it.id === ci.id
-                                    ? {
-                                        ...it,
-                                        status:
-                                          typeof patch.status === "boolean"
-                                            ? patch.status
-                                            : it.status,
-                                        comment:
-                                          typeof patch.comment === "string"
-                                            ? patch.comment
-                                            : it.comment,
-                                      }
-                                    : it,
-                                ),
-                              );
-                            }}
-                            onDeleted={handleItemDeleted}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -1391,52 +1687,60 @@ export function CollectionPage() {
             </div>
           </TabsContent>
 
-          {/* ===== Paginação (offset/limit) ===== */}
-          <div className="hidden md:flex md:justify-end mt-5 items-center gap-2 px-8 pb-4">
-            <span className="text-sm text-muted-foreground">
-              Itens por página:
-            </span>
-            <Select
-              value={limit.toString()}
-              onValueChange={(value) => {
-                const newLimit = parseInt(value);
-                setOffset(0);
-                setLimit(newLimit);
-                handleNavigate(0, newLimit);
-              }}
-            >
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Itens" />
-              </SelectTrigger>
-              <SelectContent>
-                {[12, 24, 36, 48, 84, 162].map((val) => (
-                  <SelectItem key={val} value={val.toString()}>
-                    {val}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {value != "administrator" && (
+            <>
+              {/* ===== Paginação (offset/limit) ===== */}
+              <div className="hidden md:flex md:justify-end mt-5 items-center gap-2 px-8 pb-4">
+                <span className="text-sm text-muted-foreground">
+                  Itens por página:
+                </span>
+                <Select
+                  value={limit.toString()}
+                  onValueChange={(value) => {
+                    const newLimit = parseInt(value);
+                    setOffset(0);
+                    setLimit(newLimit);
+                    handleNavigate(0, newLimit);
+                  }}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Itens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 40, 80, 160].map((val) => (
+                      <SelectItem key={val} value={val.toString()}>
+                        {val}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="w-full flex justify-center items-center gap-10 mt-4 pb-8">
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-                disabled={isFirstPage}
-              >
-                <ChevronLeft size={16} className="mr-2" />
-                Anterior
-              </Button>
-              <Button
-                onClick={() => !isLastPage && setOffset((prev) => prev + limit)}
-                disabled={isLastPage}
-              >
-                Próximo
-                <ChevronRight size={16} className="ml-2" />
-              </Button>
-            </div>
-          </div>
+              <div className="w-full flex justify-center items-center gap-10 mt-4 pb-8">
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setOffset((prev) => Math.max(0, prev - limit))
+                    }
+                    disabled={isFirstPage}
+                  >
+                    <ChevronLeft size={16} className="mr-2" />
+                    Anterior
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      !isLastPage && setOffset((prev) => prev + limit)
+                    }
+                    disabled={isLastPage}
+                  >
+                    Próximo
+                    <ChevronRight size={16} className="ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </Tabs>
       </main>
 
@@ -1518,13 +1822,255 @@ export function CollectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Drawer Adicionar */}
-      <AddPatrimonioModal
-        open={openAdd}
-        onOpenChange={setOpenAdd}
-        addItem={handleItemsAdded}
-        collection={collection_id}
-      />
+      {/* Dialog SEI */}
+      <Dialog open={seiOpen} onOpenChange={setSeiOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar Processo SEI
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Esse processo não é reversível
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
+              <Label>Nome do processo</Label>
+              <Input
+                value={seiProcess}
+                onChange={(e) => setSeiProcess(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSeiOpen(false)}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button onClick={handleSaveSei} disabled={seiLoading}>
+              {seiLoading ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Dialog Filtro */}
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Adicionar por filtro
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Observação: Alguns itens que já estejam em outras coleções podem
+              não ser adicionados
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p>Os seguintes filtros selecionados serão aplicados:</p>
+            {qMain && (
+              <p>
+                <strong>Busca:</strong> {qMain}
+              </p>
+            )}
+            {materialIdMain && (
+              <p>
+                <strong>Material:</strong>{" "}
+                {materialItemsMain.find((m) => m.id === materialIdMain)
+                  ?.label || materialIdMain}
+              </p>
+            )}
+            {guardianIdMain && (
+              <p>
+                <strong>Responsável:</strong>{" "}
+                {guardianItemsMain.find((g) => g.id === guardianIdMain)
+                  ?.label || guardianIdMain}
+              </p>
+            )}
+            {unitId && (
+              <p>
+                <strong>Unidade:</strong>{" "}
+                {units?.find((u) => u.id === unitId)?.unit_code || unitId}
+              </p>
+            )}
+            {agencyId && (
+              <p>
+                <strong>Organização:</strong>{" "}
+                {agencies?.find((a) => a.id === agencyId)?.agency_code ||
+                  agencyId}
+              </p>
+            )}
+            {sectorId && (
+              <p>
+                <strong>Setor:</strong>{" "}
+                {sectors?.find((s) => s.id === sectorId)?.sector_code ||
+                  sectorId}
+              </p>
+            )}
+            {locationId && (
+              <p>
+                <strong>Local de guarda:</strong>{" "}
+                {locations?.find((l) => l.id === locationId)?.location_code ||
+                  locationId}
+              </p>
+            )}
+            {!qMain &&
+              !materialIdMain &&
+              !guardianIdMain &&
+              !unitId &&
+              !agencyId &&
+              !sectorId &&
+              !locationId && (
+                <p>
+                  Nenhum filtro aplicado. Todos os itens disponíveis serão
+                  adicionados.
+                </p>
+              )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFilterOpen(false)}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button onClick={handleAddByFilter} disabled={addingByFilter}>
+              {addingByFilter ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : null}
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Dialog Remover por Filtro */}
+      <Dialog open={removeFilterOpen} onOpenChange={setRemoveFilterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
+              Remover por filtro
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Observação: Isso removerá os itens desta coleção baseando-se nos
+              filtros selecionados.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p>
+              Os seguintes filtros selecionados serão aplicados para remoção:
+            </p>
+            {qMain && (
+              <p>
+                <strong>Busca:</strong> {qMain}
+              </p>
+            )}
+            {materialIdMain && (
+              <p>
+                <strong>Material:</strong>{" "}
+                {materialItemsMain.find((m) => m.id === materialIdMain)
+                  ?.label || materialIdMain}
+              </p>
+            )}
+            {guardianIdMain && (
+              <p>
+                <strong>Responsável:</strong>{" "}
+                {guardianItemsMain.find((g) => g.id === guardianIdMain)
+                  ?.label || guardianIdMain}
+              </p>
+            )}
+            {unitId && (
+              <p>
+                <strong>Unidade:</strong>{" "}
+                {units?.find((u) => u.id === unitId)?.unit_code || unitId}
+              </p>
+            )}
+            {agencyId && (
+              <p>
+                <strong>Organização:</strong>{" "}
+                {agencies?.find((a) => a.id === agencyId)?.agency_code ||
+                  agencyId}
+              </p>
+            )}
+            {sectorId && (
+              <p>
+                <strong>Setor:</strong>{" "}
+                {sectors?.find((s) => s.id === sectorId)?.sector_code ||
+                  sectorId}
+              </p>
+            )}
+            {locationId && (
+              <p>
+                <strong>Local de guarda:</strong>{" "}
+                {locations?.find((l) => l.id === locationId)?.location_code ||
+                  locationId}
+              </p>
+            )}
+            {!qMain &&
+              !materialIdMain &&
+              !guardianIdMain &&
+              !unitId &&
+              !agencyId &&
+              !sectorId &&
+              !locationId && (
+                <p className="text-red-500 font-medium">
+                  Cuidado: Nenhum filtro aplicado. Todos os itens disponíveis
+                  nesta visão serão removidos da coleção.
+                </p>
+              )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRemoveFilterOpen(false)}>
+              <ArrowUUpLeft size={16} /> Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRemoveByFilter}
+              disabled={removingByFilter}
+            >
+              {removingByFilter ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : null}
+              Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Aprovar Itens */}
+      <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar Itens Selecionados</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja aprovar {selectedCollectionItems.size}{" "}
+              item(ns)? Esta é uma ação irreversível.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              disabled={approving}
+              variant="outline"
+              onClick={() => setApproveOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={approving}
+              onClick={handleApproveSelected}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {approving ? (
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+              ) : null}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

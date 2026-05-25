@@ -452,7 +452,6 @@ export function CollectionPage() {
   ];
 
   const tab = queryUrl.get("tab");
-  const inv_id = queryUrl.get("inv_id") || "";
   const [value, setValue] = useState(tab || tabs[0].id);
 
   // ===== GET /collection_items/ (com filtros + offset/limit) =====
@@ -474,7 +473,7 @@ export function CollectionPage() {
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
-      const url = `${urlGeral}collections/${collection_id}/items/${
+      const url = `${urlGeral}collection_items/${collection_id}${
         params.toString() ? `?${params.toString()}` : ""
       }`;
 

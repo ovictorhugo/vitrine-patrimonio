@@ -66,8 +66,8 @@ type Props = {
   entry: CatalogEntry;
 
   // novos props para operações da collection
-  collectionId: string; // /collections/{collection_id}
-  itemId: string; // /collections/{collection_id}/items/{item_id}
+  collectionId: string;
+  itemId: string; 
 
   // valores iniciais vindos do pai
   sel: string; // "true" | "false"
@@ -194,9 +194,9 @@ export function PatrimonioItemCollection({
           comment: commentValue ?? "",
         };
 
-        const url = `${urlGeral}collections/${encodeURIComponent(
+        const url = `${urlGeral}collection_items/${encodeURIComponent(
           collectionId,
-        )}/items/${encodeURIComponent(itemId)}`;
+        )}/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "PUT",
           headers,
@@ -245,9 +245,9 @@ export function PatrimonioItemCollection({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
 
-        const url = `${urlGeral}collections/${encodeURIComponent(
+        const url = `${urlGeral}collection_items/${encodeURIComponent(
           collectionId,
-        )}/items/${encodeURIComponent(itemId)}`;
+        )}/${encodeURIComponent(itemId)}`;
         const res = await fetch(url, {
           method: "DELETE",
           headers,
