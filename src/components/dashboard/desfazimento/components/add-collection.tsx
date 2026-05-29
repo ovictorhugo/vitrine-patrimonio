@@ -187,6 +187,7 @@ export type CollectionItem = {
   status: boolean;
   comment: string;
   catalog: CatalogEntry;
+  is_approved?: boolean;
 };
 
 type CollectionsListResponse = {
@@ -363,7 +364,7 @@ export function AddToCollectionDrawer({
           (data?.collections ?? []).map((c) => ({
             id: c.id,
             label: c.name || c.id,
-          }))
+          })),
         );
       } catch (e: any) {
         toast("Erro ao listar coleções", {
@@ -387,7 +388,7 @@ export function AddToCollectionDrawer({
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   const [units, setUnits] = useState<Unit[]>([]);
@@ -429,7 +430,7 @@ export function AddToCollectionDrawer({
             id: m.id,
             code: m.material_code,
             label: m.material_name || m.material_code,
-          }))
+          })),
         );
 
         setGuardianItems(
@@ -437,7 +438,7 @@ export function AddToCollectionDrawer({
             id: g.id,
             code: g.legal_guardians_code,
             label: g.legal_guardians_name || g.legal_guardians_code,
-          }))
+          })),
         );
 
         setUnits(unitsJson?.units ?? []);
@@ -457,7 +458,7 @@ export function AddToCollectionDrawer({
           {
             method: "GET",
             headers: authHeaders, // ✅ token
-          }
+          },
         );
         const json = await res.json();
         setAgenciesP(json?.agencies ?? []);
@@ -465,7 +466,7 @@ export function AddToCollectionDrawer({
         setAgenciesP([]);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   const fetchSectorsP = useCallback(
@@ -477,7 +478,7 @@ export function AddToCollectionDrawer({
           {
             method: "GET",
             headers: authHeaders, // ✅ token
-          }
+          },
         );
         const json = await res.json();
         setSectorsP(json?.sectors ?? []);
@@ -485,7 +486,7 @@ export function AddToCollectionDrawer({
         setSectorsP([]);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   const fetchLocationsP = useCallback(
@@ -497,7 +498,7 @@ export function AddToCollectionDrawer({
           {
             method: "GET",
             headers: authHeaders, // ✅ token
-          }
+          },
         );
         const json = await res.json();
         setLocationsP(json?.locations ?? []);
@@ -505,7 +506,7 @@ export function AddToCollectionDrawer({
         setLocationsP([]);
       }
     },
-    [baseUrl, authHeaders]
+    [baseUrl, authHeaders],
   );
 
   useEffect(() => {
@@ -569,7 +570,7 @@ export function AddToCollectionDrawer({
       setLimit(newLimit);
       setSelectedIds(new Set());
     },
-    [limit]
+    [limit],
   );
 
   const toggleSelect = (id: UUID) => {
@@ -614,7 +615,7 @@ export function AddToCollectionDrawer({
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          text || `Falha ao carregar catálogo (HTTP ${res.status}).`
+          text || `Falha ao carregar catálogo (HTTP ${res.status}).`,
         );
       }
 
@@ -622,10 +623,10 @@ export function AddToCollectionDrawer({
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.catalog_entries)
-        ? (data as any).catalog_entries
-        : Array.isArray((data as any)?.results)
-        ? (data as any).results
-        : [];
+          ? (data as any).catalog_entries
+          : Array.isArray((data as any)?.results)
+            ? (data as any).results
+            : [];
 
       // ✅ tenta pegar total, se existir na API
       const guessedTotal =
@@ -704,7 +705,7 @@ export function AddToCollectionDrawer({
               method: "POST",
               headers,
               body: JSON.stringify(payload),
-            }
+            },
           );
 
           if (!r.ok) {
@@ -728,7 +729,7 @@ export function AddToCollectionDrawer({
             catalog: cat,
           };
           createdItems.push(newItem);
-        })
+        }),
       );
 
       toast.success("Itens adicionados à coleção.");
@@ -1000,7 +1001,7 @@ export function AddToCollectionDrawer({
                             e.preventDefault();
                             e.stopPropagation();
                             const el = document.getElementById(
-                              id
+                              id,
                             ) as HTMLInputElement | null;
                             if (el) el.click();
                           }}

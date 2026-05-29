@@ -14,6 +14,7 @@ import { BuscaCatalogo } from "../buscar-catalogo/buscar-catalogo";
 import { AssinarTransferencia } from "../assinar-transferencia/assinar-transferencia";
 import { ValidarPDF } from "../validar-pdf/validar-pdf";
 import DownloadTempFilePage from "../download-pdf-by/download-pdf-by";
+import { Removiveis } from "../removiveis/removiveis";
 
 const ModalContent = () => {
   const { type } = useModalHomepage();
@@ -39,6 +40,8 @@ const ModalContent = () => {
       return <DownloadTempFilePage />;
     case "pedir-emprestimo-audiovisual":
       return <PedirEmprestimoAudiovisual />;
+    case "removiveis":
+      return <Removiveis />;
     default:
       return null;
   }

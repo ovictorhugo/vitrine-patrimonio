@@ -476,7 +476,6 @@ export function Alienacao() {
         else {
           const data: StatusCount[] = await res.json();
 
-          console.log(data);
 
           const expectedStatuses = ["TRUE", "FALSE", "NOT_IN_COLLECTION"];
           const normalized = expectedStatuses.map((status) => {

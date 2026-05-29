@@ -25,6 +25,7 @@ export type ModalType =
   | "informacoes"
   | "emprestimo-audiovisual"
   | "pedir-emprestimo-audiovisual"
+  | "removiveis"
   | "buscar-catalogo"
   | "assinar-transferência"
   | "download-pdf-by"

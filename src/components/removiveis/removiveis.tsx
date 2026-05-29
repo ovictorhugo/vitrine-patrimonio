@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet";
-import { Button } from "../../ui/button";
+import { Button } from "../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -23,29 +23,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../ui/dialog";
-import { Label } from "../../ui/label";
-import { Input } from "../../ui/input";
-import { Separator } from "../../ui/separator";
+} from "../ui/dialog";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Separator } from "../ui/separator";
 import { ArrowUUpLeft } from "phosphor-react";
-import { UserContext } from "../../../context/context";
+import { UserContext } from "../../context/context";
 import { toast } from "sonner";
-import { Textarea } from "../../ui/textarea";
-import { Skeleton } from "../../ui/skeleton";
-import { CollectionDTO } from "../collection/collection-page";
-import { useQuery } from "../../authentication/signIn";
+import { Textarea } from "../ui/textarea";
+import { Skeleton } from "../ui/skeleton";
+import { CollectionDTO } from "../dashboard/collection/collection-page";
+import { useQuery } from "../authentication/signIn";
 import { CollectionPage } from "./collection-page";
 import { CollectionItem } from "./components/collection-item";
-import { Alert } from "../../ui/alert";
-import { CardContent, CardHeader, CardTitle } from "../../ui/card";
-import { usePermissions } from "../../permissions";
+import { Alert } from "../ui/alert";
+import { CardContent, CardHeader, CardTitle } from "../ui/card";
+import { usePermissions } from "../permissions";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
+} from "../ui/select";
 
 type CollectionResponse = { collections: CollectionDTO[] };
 
@@ -54,7 +54,7 @@ type StatusCount = {
   count: number;
 };
 
-export function Remocao() {
+export function Removiveis() {
   const navigate = useNavigate();
   const location = useLocation();
   const { urlGeral } = useContext(UserContext);
@@ -104,9 +104,9 @@ export function Remocao() {
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const url = `${urlGeral}collections/?type=REMOCAO&offset=${encodeURIComponent(
+      const url = `${urlGeral}collections/?type=REMOCAO_DISPONIVEIS&offset=${encodeURIComponent(
         offset,
-      )}&limit=${encodeURIComponent(limit)}&admin=${hasAdministrativo}`;
+      )}&limit=${encodeURIComponent(limit)}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok)
         throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
@@ -123,7 +123,7 @@ export function Remocao() {
   useEffect(() => {
     fetchInventories();
   }, [urlGeral, offset, limit]);
-
+  const { hasAdministrativo } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const handleSubmit = async () => {
     try {
@@ -132,10 +132,10 @@ export function Remocao() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${urlGeral}collections/`, {
+      const res = await fetch(`${urlGeral}collections/?admin=${hasAdministrativo}`, {
         method: "POST",
         headers: authHeaders,
-        body: JSON.stringify({ description, name: key, type: "REMOCAO" }),
+        body: JSON.stringify({ description, name: key, type: "REMOCAO_DISPONIVEIS" }),
       });
       if (!res.ok) throw new Error(`Falha ao criar (HTTP ${res.status})`);
       await res.json().catch(() => null);
@@ -158,7 +158,6 @@ export function Remocao() {
 
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
-    const { hasAdministrativo } = usePermissions();
 
   /* ========= EDIT/DELETE COLLECTION ========= */
   const [editOpen, setEditOpen] = useState(false);
@@ -248,72 +247,12 @@ export function Remocao() {
     }
   };
 
-  const [stats, setStats] = useState<StatusCount[]>([
-    { status: "TOTAL_DESFAZIMENTO", count: 0 },
-    { status: "EM_ANALISE", count: 0 },
-    { status: "APROVADOS", count: 0 },
-  ]);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch(`${urlGeral}statistics/remocao`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Erro ao carregar estatísticas");
-
-        const data: StatusCount[] = await res.json();
-
-        const expectedStatuses = [
-          "TOTAL_DESFAZIMENTO",
-          "EM_ANALISE",
-          "APROVADOS",
-        ];
-        const normalized = expectedStatuses.map((status) => {
-          const found = data.find((d) => d.status === status);
-          return { status, count: found ? found.count : 0 };
-        });
-
-        setStats(normalized);
-      } catch (err) {
-        console.error(err);
-        setStats([
-          { status: "TOTAL_DESFAZIMENTO", count: 0 },
-          { status: "EM_ANALISE", count: 0 },
-          { status: "APROVADOS", count: 0 },
-        ]);
-      } finally {
-      }
-    }
-
-    fetchStats();
-  }, [urlGeral, token]);
-
-  const getIcon = (status: string) => {
-    switch (status) {
-      case "TRUE":
-        return <CheckCircle className="h-4 w-4 " />;
-      case "FALSE":
-        return <XCircle className="h-4 w-4 " />;
-      case "NOT_IN_COLLECTION":
-        return <Inbox className="h-4 w-4 " />;
-      default:
-        return <XCircle className="h-4 w-4 " />;
-    }
-  };
-
-  const { hasColecoes } = usePermissions();
-
   if (type_search) return <CollectionPage />;
 
   return (
     <div className="p-4 md:p-8 gap-8 flex flex-col h-full">
       <Helmet>
-        <title>Remoção | Sistema Patrimônio</title>
+        <title>Disponíveis Remoção | Sistema Patrimônio</title>
       </Helmet>
 
       {/* HEADER */}
@@ -338,26 +277,25 @@ export function Remocao() {
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
-          <h1 className="text-xl font-semibold tracking-tight">Remoção</h1>
+          <h1 className="text-xl font-semibold tracking-tight">
+            Disponíveis Remoção
+          </h1>
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            {hasColecoes && (
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus size={16} /> Adicionar coleção
-                </Button>
-              </DialogTrigger>
-            )}
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus size={16} /> Adicionar coleção
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
                   Adicionar coleção
                 </DialogTitle>
                 <DialogDescription className="text-zinc-500 ">
-                  Crie uma coleção e agrupe dos Itens da Lista Final de
-                  Desfazimento (LFD)
+                  Crie uma coleção e agrupe itens
                 </DialogDescription>
               </DialogHeader>
               <Separator className="my-4" />
@@ -397,43 +335,23 @@ export function Remocao() {
       {/* HERO + BUSCA */}
       <div className="justify-center w-full mx-auto flex flex-col items-center gap-2 py-8">
         <Link
-          to={"/dashboard/remocao"}
+          to={"/removiveis"}
           className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"
         >
           <Info size={12} />
           <div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-          Aqui você verá os itens a serem descartados
+          Aqui você verá os itens pronto para serem removidos
         </Link>
 
-        <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-          Agrupe os itens da lista de desfazimento para realizar o{" "}
+        <h1 className="z-[2] text-center max-w-[800px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
+          Agrupe os itens para criar a sua lista de{" "}
           <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
-            descarte
+            remoção
           </strong>
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
       </div>
 
-      <div className="grid gap-8 sm:grid-cols-3">
-        {stats?.map((item) => (
-          <Alert key={item.status} className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {item.status === "APROVADOS"
-                  ? "Aprovados para remoção"
-                  : item.status === "EM_ANALISE"
-                    ? "Pendentes de aprovação PRA"
-                    : "Itens sem coleção"}
-              </CardTitle>
-              {getIcon(item.status)}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{item.count}</div>
-              <p className="text-xs text-muted-foreground">registrados</p>
-            </CardContent>
-          </Alert>
-        ))}
-      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {loadingList ? (
@@ -451,7 +369,7 @@ export function Remocao() {
             <CollectionItem
               key={c.id}
               props={c}
-              type="REMOÇÃO"
+              type="Disponíveis Remoção"
               onEdit={() => openEditFor(c.id)}
               onDelete={() => openDeleteFor(c.id)}
             />
@@ -503,7 +421,7 @@ export function Remocao() {
           </Button>
         </div>
       </div>
-      
+
       {/* =================== Dialog EDITAR =================== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>

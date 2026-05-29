@@ -1,8 +1,8 @@
-import { TabsContent } from "../../../ui/tabs";
-import { Skeleton } from "../../../ui/skeleton";
+import { TabsContent } from "../../ui/tabs";
+import { Skeleton } from "../../ui/skeleton";
 import { PatrimonioItemCollection } from "../components/patrimonio-item-inventario";
 import React from "react";
-import { CollectionItem } from "../../desfazimento/components/add-collection";
+import { CollectionItem } from "../../dashboard/desfazimento/components/add-collection";
 import { ItemPatrimonio } from "../components/item-patrimonio";
 
 interface InCollectionTabProps {

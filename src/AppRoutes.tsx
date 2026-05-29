@@ -121,6 +121,11 @@ export function AppRoutes({ loggedIn }: { loggedIn: boolean }) {
       />
 
       <Route
+        path="/removiveis"
+        element={<ProtectedRoute element={<Home />} hasPermission={loggedIn} />}
+      />
+
+      <Route
         path="/dashboard/busca-avancada"
         element={
           <ProtectedRoute

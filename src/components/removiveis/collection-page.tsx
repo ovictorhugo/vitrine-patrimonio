@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../../ui/button";
+import { Button } from "../ui/button";
 import { Helmet } from "react-helmet";
 import {
   ChevronDown,
@@ -39,12 +39,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { UserContext } from "../../../context/context";
-import { Skeleton } from "../../ui/skeleton";
+import { UserContext } from "../../context/context";
+import { Skeleton } from "../ui/skeleton";
 import { toast } from "sonner";
 
 // shadcn/ui
-import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -53,7 +53,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "../../ui/command";
+} from "../ui/command";
 import {
   Dialog,
   DialogContent,
@@ -61,19 +61,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../ui/dialog";
-import { Input } from "../../ui/input";
-import { Alert } from "../../ui/alert";
-import { Separator } from "../../ui/separator";
-import { useQuery } from "../../authentication/signIn";
-import { CardHeader, CardTitle, CardContent } from "../../ui/card";
-import { CollectionDTO } from "../collection/collection-page";
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Alert } from "../ui/alert";
+import { Separator } from "../ui/separator";
+import { useQuery } from "../authentication/signIn";
+import { CardHeader, CardTitle, CardContent } from "../ui/card";
+import { CollectionDTO } from "../dashboard/collection/collection-page";
 
-import { Label } from "../../ui/label";
-import { Textarea } from "../../ui/textarea";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import { ArrowUUpLeft } from "phosphor-react";
-import { usePermissions } from "../../permissions";
-import { Tabs, TabsContent } from "../../ui/tabs";
+import { usePermissions } from "../permissions";
+import { Tabs, TabsContent } from "../ui/tabs";
 import { ItemPatrimonio } from "./components/item-patrimonio";
 import {
   Select,
@@ -81,14 +81,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../ui/select";
-import { DownloadPdfButton } from "../../download/download-pdf-button";
-import { useIsMobile } from "../../../hooks/use-mobile";
+} from "../ui/select";
+import { DownloadPdfButton } from "../download/download-pdf-button";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { InCollectionTab } from "./tabs/in-collection";
-import { ApprovedTab } from "./tabs/approved";
-import { ParecerTab } from "./tabs/parecer";
+import { DocumentacaoTab } from "./tabs/parecer";
 import { AdministratorTab } from "./tabs/administrator";
-import { CollectionItem } from "../desfazimento/components/add-collection";
+import { CollectionItem } from "../dashboard/desfazimento/components/add-collection";
 import { PatrimonioItemCollection } from "./components/patrimonio-item-inventario";
 
 // ================== Types ==================
@@ -465,10 +464,9 @@ export function CollectionPage() {
   const { hasAdministrativo } = usePermissions();
 
   const tabs = [
-    { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
+    { id: "available", label: "Disponíveis para remoção", icon: Trash },
     { id: "in-collection", label: "Itens da coleção", icon: Package },
-    { id: "aprovados", label: "Itens aprovados", icon: BookmarkCheck },
-    { id: "parecer", label: "Parecer", icon: FileText },
+    { id: "docs", label: "Documentação", icon: FileText },
     ...(hasAdministrativo
       ? [{ id: "administrator", label: "Administrador", icon: Package }]
       : []),
@@ -493,8 +491,8 @@ export function CollectionPage() {
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
-      if (value === "lfd") {
-        params.set("workflow_status", "DESFAZIMENTO");
+      if (value === "available") {
+        params.set("workflow_status", "EM_REMOCAO");
         const url = `${urlGeral}catalog/cards${
           params.toString() ? `?${params.toString()}` : ""
         }`;
@@ -864,38 +862,6 @@ export function CollectionPage() {
     }
   };
 
-  const handleApproveSelected = async () => {
-    if (selectedCollectionItems.size === 0) return;
-    try {
-      setApproving(true);
-      const res = await fetch(
-        `${urlGeral}collection_items/approved/${collection_id}`,
-        {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify({
-            catalog_ids: Array.from(selectedCollectionItems),
-          }),
-        },
-      );
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao aprovar itens");
-      }
-      toast.success("Itens aprovados com sucesso!");
-      setSelectedCollectionItems(new Set());
-      setApproveOpen(false);
-      fetchCollectionItems();
-    } catch (e: any) {
-      toast.error(e?.message || "Erro ao aprovar itens");
-    } finally {
-      setApproving(false);
-      fetchStatistics();
-      fetchCollection();
-    }
-  };
-
   const fmt = (n: number) => n.toLocaleString("pt-BR");
 
   // GET COLLECTION
@@ -905,10 +871,13 @@ export function CollectionPage() {
   const fetchCollection = async () => {
     try {
       setLoadingCollection(true);
-      const res = await fetch(`${urlGeral}collections/${type_search}`, {
-        method: "GET",
-        headers: authHeaders,
-      });
+      const res = await fetch(
+        `${urlGeral}collections/${type_search}?admin=${hasAdministrativo}`,
+        {
+          method: "GET",
+          headers: authHeaders,
+        },
+      );
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -1101,11 +1070,13 @@ export function CollectionPage() {
 
       if (!res.ok) {
         throw new Error(
-          data?.error || data?.message || "Erro ao adicionar processo SEI.",
+          data?.error || data?.message || "Erro ao adicionar nome do processo.",
         );
       }
 
-      toast.success(data?.message || "Processo SEI adicionado com sucesso!");
+      toast.success(
+        data?.message || "Nome do processo adicionado com sucesso!",
+      );
 
       setCollection((prev) =>
         prev ? { ...prev, sei_process: seiProcess } : prev,
@@ -1113,7 +1084,7 @@ export function CollectionPage() {
       setSeiOpen(false);
       setSeiProcess("");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar processo SEI.");
+      toast.error(e?.message || "Erro ao adicionar nome do processo.");
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1170,6 +1141,7 @@ export function CollectionPage() {
       setDeleteLoading(false);
     }
   };
+
   function handleItemDeleted(item_id: string) {
     const itemToDelete = items.find((i) => i.id === item_id);
     if (itemToDelete) {
@@ -1283,7 +1255,7 @@ export function CollectionPage() {
             </Button>
 
             <h1 className="text-xl font-semibold tracking-tight">
-              Coleção de desfazimento
+              Resgate de itens
             </h1>
           </div>
 
@@ -1305,23 +1277,33 @@ export function CollectionPage() {
                   <FileArchive size={16} />
                   {collection.sei_process
                     ? collection.sei_process
-                    : "Adicionar processo sei"}
+                    : "Travar coleção"}
                 </Button>
 
                 {collection.sei_process ? (
-                  <DownloadPdfButton
-                    filters={{ collection_id: collection_id || undefined }}
-                    id={collection_id || undefined}
-                    label="Baixar PDF"
-                    method="colecao_remocao"
-                  />
+                  collection.parecer_pdf ? (
+                    <Button
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={true}
+                      variant="outline"
+                    >
+                      Processo finalizado
+                    </Button>
+                  ) : (
+                    <DownloadPdfButton
+                      filters={{ collection_id: collection_id || undefined }}
+                      id={collection_id || undefined}
+                      label="Baixar documentação"
+                      method="colecao_removiveis"
+                    />
+                  )
                 ) : (
                   <Button
                     onClick={(e) => e.stopPropagation()}
                     disabled={true}
                     variant="outline"
                   >
-                    <Download size={16} className="mr-2" /> Baixar PDF
+                    <Download size={16} className="mr-2" /> Baixar documentação
                   </Button>
                 )}
                 <Button
@@ -1354,8 +1336,8 @@ export function CollectionPage() {
             </div>
           </div>
           {/* Cards de status (usando estatísticas agregadas) */}
-          <div className="flex flex-col sm:flex-row justify-center gap-8 px-8">
-            <Alert className="p-0 w-[50%]">
+          <div className="flex flex-col sm:flex-row justify-end gap-8 px-8">
+            <Alert className="p-0 w-[30%]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Itens na coleção
@@ -1368,26 +1350,12 @@ export function CollectionPage() {
                 </div>
               </CardContent>
             </Alert>
-
-            <Alert className="p-0  w-[50%]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Itens aprovados
-                </CardTitle>
-                <CheckCircle className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {fmt(countNaoDesfazimento)}
-                </div>
-              </CardContent>
-            </Alert>
           </div>
         </div>
         <Tabs defaultValue="in-collection" value={value}>
           {/* header das tabs */}
           <div className="dark:bg-neutral-900/60 bg-neutral-50/60 px-4 border-b border-b-neutral-200 dark:border-b-neutral-800">
-            <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent align-center">
+            <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
               {tabs.map(({ id, label, icon: Icon }) => (
                 <div
                   key={id}
@@ -1413,13 +1381,12 @@ export function CollectionPage() {
                   </Button>
                 </div>
               ))}
-
               <div className="ml-auto pr-4 flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setTipsOpen(true)}
-                  title="Regras de remoção"
+                  title="Regras do resgate de itens"
                 >
                   <Info size={20} className="text-muted-foreground" />
                 </Button>
@@ -1427,7 +1394,7 @@ export function CollectionPage() {
             </div>
           </div>
 
-          {value !== "administrator" && value !== "parecer" && (
+          {value !== "administrator" && value !== "docs" && (
             <>
               <div className="flex justify-start gap-4 mb-4 px-8 pt-4">
                 <Button
@@ -1458,7 +1425,7 @@ export function CollectionPage() {
                       } else {
                         setSelectedCollectionItems(allIds);
                       }
-                    } else if (value === "lfd") {
+                    } else if (value === "available") {
                       const allIds = new Set(lfdItems.map((i) => i.id));
                       if (
                         selectedLfdItems.size === allIds.size &&
@@ -1475,7 +1442,7 @@ export function CollectionPage() {
                   Selecionar todos
                 </Button>
 
-                {value === "lfd" && (
+                {value === "available" && (
                   <Button
                     onClick={handleAddSelectedToCollection}
                     disabled={
@@ -1509,7 +1476,7 @@ export function CollectionPage() {
                       onClick={() => setRemoveSelectedOpen(true)}
                       title={
                         !!collection?.parecer_pdf || !!collection?.sei_process
-                          ? "Ações desabilitadas: Parecer técnico ou Processo SEI já enviado"
+                          ? "Ações desabilitadas: Parecer técnico ou nome do processo já enviado"
                           : "Remover selecionados da coleção"
                       }
                       disabled={
@@ -1519,36 +1486,6 @@ export function CollectionPage() {
                       }
                     >
                       <Trash2 size={16} className="mr-2" /> Remover itens
-                    </Button>
-                    <Button
-                      className="px-3 min-w-fit h-9 bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => setRefuseOpen(true)}
-                      title={
-                        !collection?.parecer_pdf
-                          ? "Adicione um parecer técnico antes de recusar itens"
-                          : "Recusar selecionados"
-                      }
-                      disabled={
-                        selectedCollectionItems.size === 0 ||
-                        !collection?.parecer_pdf
-                      }
-                    >
-                      <X size={16} className="mr-2" /> Recusar itens
-                    </Button>
-                    <Button
-                      className="px-3 min-w-fit h-9 bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => setApproveOpen(true)}
-                      title={
-                        !collection?.parecer_pdf
-                          ? "Adicione um parecer técnico antes de aprovar itens"
-                          : "Aprovar selecionados"
-                      }
-                      disabled={
-                        selectedCollectionItems.size === 0 ||
-                        !collection?.parecer_pdf
-                      }
-                    >
-                      <Check size={16} className="mr-2" /> Aprovar itens
                     </Button>
                   </div>
                 )}
@@ -1588,7 +1525,7 @@ export function CollectionPage() {
                         onScroll={checkScrollability}
                       >
                         <div className="flex gap-3 items-center">
-                          {value === "lfd" && (
+                          {value === "available" && (
                             <Button
                               variant="default"
                               className="px-3 min-w-fit h-10"
@@ -1769,7 +1706,7 @@ export function CollectionPage() {
           />
 
           {/* TAB LFD */}
-          <TabsContent value="lfd">
+          <TabsContent value="available">
             <div className="p-8 pt-0">
               {loadingItems ? (
                 <div
@@ -1824,29 +1761,14 @@ export function CollectionPage() {
             </div>
           </TabsContent>
 
-          {/* TAB aprovados */}
-          <ApprovedTab
-            loadingItems={loadingItems}
-            items={items}
-            collection_id={collection_id ?? null}
-            setCountDesfazimento={setCountDesfazimento}
-            setCountNaoDesfazimento={setCountNaoDesfazimento}
-            setItems={setItems}
-            handleItemDeleted={handleItemDeleted}
-            viewMode={viewMode}
-            selectedItems={selectedCollectionItems}
-            toggleItem={toggleCollectionItem}
-            collection={collection}
-          />
-
           {/* TAB PARECER */}
-          <ParecerTab
+          <DocumentacaoTab
             collection_id={collection_id ?? null}
             collection={collection}
             reload={fetchCollection}
           />
 
-          {value !== "administrator" && value !== "parecer" && (
+          {value !== "administrator" && value !== "docs" && (
             <>
               {/* ===== Paginação (offset/limit) ===== */}
               <div className="hidden md:flex md:justify-end mt-5 items-center gap-2 px-8 pb-4">
@@ -1988,10 +1910,11 @@ export function CollectionPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-2xl mb-2 font-medium max-w-[450px]">
-              Adicionar Processo SEI
+              Travar coleção
             </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Esse processo não é reversível
+              Adicione um nome para este processo para travar a coleção. Esse
+              processo não é reversível
             </DialogDescription>
           </DialogHeader>
 
@@ -2234,36 +2157,6 @@ export function CollectionPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Regras de remoção */}
-      <Dialog open={tipsOpen} onOpenChange={setTipsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Regras de remoção</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm mt-2 text-justify">
-            <p>
-              A coleção de itens a serem removidos fica aberta para alterações
-              até que o Processo SEI ou o parecer seja adicionado à coleção.
-            </p>
-            <p>
-              Quando o Processo SEI é adicionado, não será mais possível
-              adicionar ou remover itens desta coleção.
-            </p>
-            <p>
-              Quando o parecer é adicionado, é liberado para o usuário definir
-              se os itens foram aprovados ou recusados pela PRA.{" "}
-            </p>
-            <p>
-              Os itens recusados voltarão ao fluxo de desfazimento, enquanto os
-              aprovados serão definidos como prontos para remoção.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setTipsOpen(false)}>Entendi</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Dialog Recusar Itens */}
       <Dialog open={refuseOpen} onOpenChange={setRefuseOpen}>
         <DialogContent>
@@ -2296,34 +2189,28 @@ export function CollectionPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Aprovar Itens */}
-      <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
+      {/* Dialog Regras de remoção */}
+      <Dialog open={tipsOpen} onOpenChange={setTipsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aprovar Itens Selecionados</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja aprovar {selectedCollectionItems.size}{" "}
-              item(ns)? Esta é uma ação irreversível.
-            </DialogDescription>
+            <DialogTitle>Regras do resgate de itens</DialogTitle>
           </DialogHeader>
+          <div className="space-y-4 text-sm mt-2 text-justify">
+            <p>
+              A coleção de itens a serem resgatados fica aberta para alterações
+              até que um nome para o processo seja adicionado à coleção.
+            </p>
+            <p>
+              Assim que o nome é adicionado, é possível gerar o pdf com a
+              documentação a ser preenchida e assinada.
+            </p>
+            <p>
+              Deve ser feito upload da documentação após assinada para a
+              finalização do processo.
+            </p>
+          </div>
           <DialogFooter>
-            <Button
-              disabled={approving}
-              variant="outline"
-              onClick={() => setApproveOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              disabled={approving}
-              onClick={handleApproveSelected}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {approving ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-              ) : null}
-              Confirmar
-            </Button>
+            <Button onClick={() => setTipsOpen(false)}>Entendi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

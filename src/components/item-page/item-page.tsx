@@ -73,7 +73,7 @@ import {
 import { HeaderResultTypeHome } from "../header-result-type-home";
 import { ButtonTransference } from "./button-transference";
 import { useModal } from "../hooks/use-modal-store";
-import QRCode from "react-qr-code";
+import { QRCode } from "react-qr-code";
 import { Barcode128SVG } from "../dashboard/create-etiqueta/steps/etiqueta";
 import { LikeButton } from "./like-button";
 import {
@@ -1905,7 +1905,7 @@ export function ItemPage() {
               <Link
                 to={`/busca-patrimonio?bem_cod=${asset?.asset_code}&bem_dgv=${asset?.asset_check_digit}`}
               >
-                <div className={`flex   `}>
+                <div className={`flex`}>
                   <div className="w-2 min-w-2 rounded-l-md  border dark:border-neutral-800  border-r-0 bg-eng-blue min-h-full" />
                   <Alert className=" border  rounded-l-none items-center flex gap-4 p-8 rounded-r-md">
                     <div className="w-fit">

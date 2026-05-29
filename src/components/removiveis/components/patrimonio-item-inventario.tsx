@@ -1,5 +1,5 @@
 // src/pages/desfazimento/components/PatrimonioItemCollection.tsx
-import { Alert } from "../../../ui/alert";
+import { Alert } from "../../ui/alert";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
@@ -15,11 +15,11 @@ import {
   RefreshCcw,
   Trash,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../ui/avatar";
-import { Badge } from "../../../ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Badge } from "../../ui/badge";
 import { useContext, useMemo, useState, useCallback } from "react";
-import { useModal } from "../../../hooks/use-modal-store";
-import { UserContext } from "../../../../context/context";
+import { useModal } from "../../hooks/use-modal-store";
+import { UserContext } from "../../../context/context";
 
 import {
   Carousel,
@@ -27,7 +27,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "../../../ui/carousel";
+} from "../../ui/carousel";
 import {
   Dialog,
   DialogContent,
@@ -35,15 +35,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "../../../ui/dialog";
-import { Checkbox } from "../../../ui/checkbox";
-import { Input } from "../../../ui/input";
-import { Button } from "../../../ui/button";
+} from "../../ui/dialog";
+import { Checkbox } from "../../ui/checkbox";
+import { Button } from "../../ui/button";
 import { toast } from "sonner";
 import { ArrowUUpLeft } from "phosphor-react";
-import { CatalogEntry } from "../../itens-vitrine/card-item-dropdown";
-import { usePermissions } from "../../../permissions";
-import { useIsMobile } from "../../../../hooks/use-mobile";
+import { CatalogEntry } from "../../dashboard/itens-vitrine/card-item-dropdown";
+import { usePermissions } from "../../permissions";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 export const qualisColor: Record<string, string> = {
   BM: "bg-green-500",

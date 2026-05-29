@@ -1,13 +1,10 @@
-import { TabsContent } from "../../../ui/tabs";
-import { Skeleton } from "../../../ui/skeleton";
-import { PatrimonioItemCollection } from "../components/patrimonio-item-inventario";
+import { TabsContent } from "../../ui/tabs";
 import React from "react";
-import { CollectionItem } from "../../desfazimento/components/add-collection";
-import { ItemPatrimonio } from "../components/item-patrimonio";
-import { usePermissions } from "../../../permissions";
-import { UserContext } from "../../../../context/context";
+import { CollectionItem } from "../../dashboard/desfazimento/components/add-collection";
+import { usePermissions } from "../../permissions";
+import { UserContext } from "../../../context/context";
 import { toast } from "sonner";
-import { Button } from "../../../ui/button";
+import { Button } from "../../ui/button";
 import { useContext, useState } from "react";
 import { Loader2, Trash2, FileMinus, FileX, Undo } from "lucide-react";
 
@@ -65,12 +62,12 @@ export function AdministratorTab({
         },
       );
 
-      if (!res.ok) throw new Error("Erro ao limpar processo SEI");
+      if (!res.ok) throw new Error("Erro ao limpar processo");
 
-      toast.success("Processo SEI limpo com sucesso!");
+      toast.success("Nome do processo limpo com sucesso!");
       reload();
     } catch (e: any) {
-      toast.error(e.message || "Erro inesperado ao limpar SEI");
+      toast.error(e.message || "Erro inesperado ao limpar processo");
     } finally {
       setClearingSei(false);
     }
@@ -114,21 +111,21 @@ export function AdministratorTab({
       <div className="p-8 pt-0">
         <div className="m-6 ml-0 text-sm font-medium text-neutral-600 dark:text-neutral-300">
           {collection?.parecer_pdf
-            ? "Parecer adicionado"
-            : "Parecer não adicionado"}
+            ? "Documentação adicionada"
+            : "Documentação não adicionada"}
         </div>
         <div className="flex flex-col flex-wrap gap-4 mb-6 max-w-[300px]">
           <Button
             variant="destructive"
             onClick={handleClearSei}
-            disabled={clearingSei || !collection_id || collection?.sei_process === null }
+            disabled={clearingSei || !collection_id}
           >
             {clearingSei ? (
               <Loader2 size={16} className="mr-2 animate-spin" />
             ) : (
               <FileMinus size={16} className="mr-2" />
             )}
-            Apagar processo SEI
+            Desbloquear coleção
           </Button>
 
           <Button
@@ -141,20 +138,7 @@ export function AdministratorTab({
             ) : (
               <Trash2 size={16} className="mr-2" />
             )}
-            Remover itens não aprovados
-          </Button>
-
-          <Button
-            variant="destructive"
-            onClick={() => handleAdminAction(2)}
-            disabled={actionLoading === 2 || !collection_id}
-          >
-            {actionLoading === 2 ? (
-              <Loader2 size={16} className="mr-2 animate-spin" />
-            ) : (
-              <Undo size={16} className="mr-2" />
-            )}
-            Desfazer aprovação de itens
+            Remover itens
           </Button>
 
           <Button
@@ -169,7 +153,7 @@ export function AdministratorTab({
             ) : (
               <FileX size={16} className="mr-2" />
             )}
-            Apagar parecer
+            Apagar documentação
           </Button>
         </div>
       </div>

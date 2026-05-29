@@ -33,6 +33,8 @@ export function Home() {
       onOpen("download-pdf-by");
     } else if (location.pathname == "/pedir-emprestimo-audiovisual") {
       onOpen("pedir-emprestimo-audiovisual");
+    } else if (location.pathname == "/removiveis") {
+      onOpen("removiveis");
     }
   }, [location]);
 

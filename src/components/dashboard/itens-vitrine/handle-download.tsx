@@ -193,7 +193,6 @@ export async function handleDownloadXlsx({
     const allowReviewer =
       latestStatus === WF_DESFAZIMENTO || latestStatus === WF_REJEITADOS_COMISSAO || latestStatus === WF_REVIEW_REQUESTED_COMISSION;
 
-    // parecer: só quando o status final é DESFAZIMENTO
     const parecer = latestStatus === WF_DESFAZIMENTO || latestStatus === WF_REJEITADOS_COMISSAO
       ? safe(latest?.detail?.justificativa) || safe(latest?.detail?.observation?.text)
       : "";

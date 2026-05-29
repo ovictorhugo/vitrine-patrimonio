@@ -52,7 +52,6 @@ export default function ItemLoanCalendar({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  console.log(item);
 
   // 1. Processamento Otimizado (Gera Map indexado por YYYY-MM-DD)
   const eventsByDate = useMemo(() => {

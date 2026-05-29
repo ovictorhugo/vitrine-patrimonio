@@ -164,6 +164,8 @@ type Props = CatalogEntry & {
   noImages?: boolean; // não renderiza imagens (clone do DnD)
   /** Seleção visual externa (coluna/expandido) */
   selected?: boolean;
+  isApproved?: boolean;
+  onItemClick?: (id: string) => void;
 };
 
 /** Util: datas BR */
@@ -284,11 +286,19 @@ function ItemPatrimonioBase(props: Props) {
   }
   const isMobile = useIsMobile();
 
+  let borderClass = selectedClass;
+  if (props.isApproved) borderClass = "ring-2 ring-green-500";
+
   return (
     <div
-      className={`group cursor-pointer rounded-md overflow-hidden ${selectedClass}`}
+      className={`group cursor-pointer rounded-md overflow-hidden ${borderClass}`}
       onClick={() => {
-        onOpen("catalog-modal", { ...props });
+        if (props.isApproved) return;
+        if (props.onItemClick) {
+          props.onItemClick(props.id);
+        } else {
+          onOpen("catalog-modal", { ...props });
+        }
       }}
     >
       <div className="relative">

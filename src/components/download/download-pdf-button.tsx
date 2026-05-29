@@ -81,6 +81,12 @@ export function DownloadPdfButton({
       } else if (method === "loan_terms") {
         reqBaseUrl = `${urlGeral}loans/terms_pdf/${id}`;
         downloadUrl = buildUrl(reqBaseUrl, {});
+      } else if (method === "colecao_remocao") {
+        reqBaseUrl = `${urlGeral}collections/remocao_pdf/${id}`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
+      } else if (method === "colecao_removiveis") {
+        reqBaseUrl = `${urlGeral}collections/removiveis_pdf/${id}`;
+        downloadUrl = buildUrl(reqBaseUrl, {});
       }
 
       const res = await fetch(downloadUrl, {
@@ -94,6 +100,12 @@ export function DownloadPdfButton({
       if (method === "catalog") {
         setLoading(false);
         setOpenEmailDialog(true);
+        return;
+      }
+
+      if (method === "colecao_remocao" || method === "colecao_removiveis") {
+        toast.success("Processamento do PDF iniciado. Você receberá um e-mail em breve com o arquivo.");
+        setLoading(false);
         return;
       }
 

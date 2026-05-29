@@ -30,6 +30,8 @@ import {
   ArrowRightToLine,
   FileSignature,
   FileCheck,
+  MonitorCheck,
+  MonitorX,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -108,6 +110,15 @@ export function AppSidebarAdmin({
                     title: "Solicitar empréstimo",
                     url: "/pedir-emprestimo-audiovisual",
                     icon: PackageCheck,
+                  },
+                ]
+              : []),
+            ...(loggedIn
+              ? [
+                  {
+                    title: "Remoção de itens",
+                    url: "/removiveis",
+                    icon: MonitorX,
                   },
                 ]
               : []),
