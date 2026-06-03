@@ -45,7 +45,7 @@ export function InCollectionTab({
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="items-center justify-center w-full flex text-center pt-6">
-            Nenhum item pendente de aprovação.
+            Nenhum item presente nesta coleção.
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">

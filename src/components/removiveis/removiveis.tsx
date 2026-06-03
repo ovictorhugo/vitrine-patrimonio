@@ -104,7 +104,7 @@ export function Removiveis() {
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const url = `${urlGeral}collections/?type=REMOCAO_DISPONIVEIS&offset=${encodeURIComponent(
+      const url = `${urlGeral}collections?type=REMOCAO_DISPONIVEIS&offset=${encodeURIComponent(
         offset,
       )}&limit=${encodeURIComponent(limit)}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
@@ -132,7 +132,7 @@ export function Removiveis() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${urlGeral}collections/?admin=${hasAdministrativo}`, {
+      const res = await fetch(`${urlGeral}collections?admin=${hasAdministrativo}`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ description, name: key, type: "REMOCAO_DISPONIVEIS" }),

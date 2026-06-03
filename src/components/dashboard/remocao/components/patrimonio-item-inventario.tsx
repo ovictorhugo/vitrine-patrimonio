@@ -89,6 +89,7 @@ type Props = {
 };
 
 export function PatrimonioItemCollection({
+  invId,
   entry,
   collectionId,
   itemId,

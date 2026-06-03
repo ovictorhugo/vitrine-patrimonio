@@ -104,7 +104,7 @@ export function Remocao() {
   const fetchInventories = async () => {
     try {
       setLoadingList(true);
-      const url = `${urlGeral}collections/?type=REMOCAO&offset=${encodeURIComponent(
+      const url = `${urlGeral}collections?type=REMOCAO&offset=${encodeURIComponent(
         offset,
       )}&limit=${encodeURIComponent(limit)}&admin=${hasAdministrativo}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });

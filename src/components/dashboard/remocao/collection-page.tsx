@@ -495,9 +495,8 @@ export function CollectionPage() {
 
       if (value === "lfd") {
         params.set("workflow_status", "DESFAZIMENTO");
-        const url = `${urlGeral}catalog/cards${
-          params.toString() ? `?${params.toString()}` : ""
-        }`;
+        const url = `${urlGeral}catalog/cards${params.toString() ? `?${params.toString()}` : ""
+          }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
@@ -511,9 +510,8 @@ export function CollectionPage() {
 
         setLfdItems(data.catalog_entries);
       } else {
-        const url = `${urlGeral}collection_items/${collection_id}/${
-          params.toString() ? `?${params.toString()}` : ""
-        }`;
+        const url = `${urlGeral}collection_items/${collection_id}/${params.toString() ? `?${params.toString()}` : ""
+          }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
@@ -532,7 +530,8 @@ export function CollectionPage() {
     } catch (e: any) {
       toast("Erro ao carregar coleção de desfazimento", {
         description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => {} },
+        action: { label: "Fechar", onClick: () => { } },
+        duration: 12000,
       });
     } finally {
       setLoadingItems(false);
@@ -757,11 +756,15 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao adicionar itens à coleção");
       }
-      toast.success("Itens adicionados com sucesso!");
+      toast.success("Itens adicionados com sucesso!", {
+        duration: 12000,
+      });
       setSelectedLfdItems(new Set());
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens");
+      toast.error(e?.message || "Erro ao adicionar itens", {
+        duration: 12000,
+      });
     } finally {
       setAddingToCollection(false);
       fetchStatistics();
@@ -793,12 +796,16 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao recusar itens");
       }
-      toast.success("Itens recusados com sucesso!");
+      toast.success("Itens recusados com sucesso!", {
+        duration: 12000,
+      });
       setSelectedCollectionItems(new Set());
       setRefuseOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao recusar itens");
+      toast.error(e?.message || "Erro ao recusar itens", {
+        duration: 12000,
+      });
     } finally {
       setRefusing(false);
       fetchStatistics();
@@ -849,14 +856,18 @@ export function CollectionPage() {
           `${successCount} itens removidos, mas ${failCount} falharam.`,
         );
       } else {
-        toast.success("Itens removidos com sucesso!");
+        toast.success("Itens removidos com sucesso!", {
+          duration: 12000,
+        });
       }
 
       setSelectedCollectionItems(new Set());
       setRemoveSelectedOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens");
+      toast.error(e?.message || "Erro ao remover itens", {
+        duration: 12000,
+      });
     } finally {
       setRemovingSelected(false);
       fetchStatistics();
@@ -883,12 +894,16 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao aprovar itens");
       }
-      toast.success("Itens aprovados com sucesso!");
+      toast.success("Itens aprovados com sucesso!", {
+        duration: 12000,
+      });
       setSelectedCollectionItems(new Set());
       setApproveOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao aprovar itens");
+      toast.error(e?.message || "Erro ao aprovar itens", {
+        duration: 12000,
+      });
     } finally {
       setApproving(false);
       fetchStatistics();
@@ -922,7 +937,8 @@ export function CollectionPage() {
     } catch (e: any) {
       toast("Erro ao carregar coleção", {
         description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => {} },
+        action: { label: "Fechar", onClick: () => { } },
+        duration: 12000,
       });
     } finally {
       setLoadingCollection(false);
@@ -1031,11 +1047,15 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao adicionar itens por filtro");
       }
-      toast.success("Itens adicionados com sucesso!");
+      toast.success("Itens adicionados com sucesso!", {
+        duration: 12000,
+      });
       setFilterOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens");
+      toast.error(e?.message || "Erro ao adicionar itens", {
+        duration: 12000,
+      });
     } finally {
       setAddingByFilter(false);
       fetchStatistics();
@@ -1068,12 +1088,16 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erro ao remover itens por filtro");
       }
-      toast.success("Itens removidos com sucesso!");
+      toast.success("Itens removidos com sucesso!", {
+        duration: 12000,
+      });
       setRemoveFilterOpen(false);
       fetchCollectionItems();
       fetchStatistics();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens");
+      toast.error(e?.message || "Erro ao remover itens", {
+        duration: 12000,
+      });
     } finally {
       setRemovingByFilter(false);
       fetchStatistics();
@@ -1082,7 +1106,9 @@ export function CollectionPage() {
 
   const handleSaveSei = async () => {
     if (!seiProcess.trim()) {
-      toast.error("Por favor, digite o texto do processo.");
+      toast.error("Por favor, digite o texto do processo.", {
+        duration: 12000,
+      });
       return;
     }
 
@@ -1105,7 +1131,9 @@ export function CollectionPage() {
         );
       }
 
-      toast.success(data?.message || "Processo SEI adicionado com sucesso!");
+      toast.success(data?.message || "Processo SEI adicionado com sucesso!", {
+        duration: 12000,
+      });
 
       setCollection((prev) =>
         prev ? { ...prev, sei_process: seiProcess } : prev,
@@ -1113,7 +1141,9 @@ export function CollectionPage() {
       setSeiOpen(false);
       setSeiProcess("");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar processo SEI.");
+      toast.error(e?.message || "Erro ao adicionar processo SEI.", {
+        duration: 12000,
+      });
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1142,10 +1172,14 @@ export function CollectionPage() {
       setCollection((prev) =>
         prev ? { ...prev, name: newName, description: newDescription } : prev,
       );
-      toast.success("Coleção atualizada com sucesso!");
+      toast.success("Coleção atualizada com sucesso!", {
+        duration: 12000,
+      });
       setEditOpen(false);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar a coleção.");
+      toast.error(e?.message || "Falha ao atualizar a coleção.", {
+        duration: 12000,
+      });
     } finally {
       setUpdateLoading(false);
     }
@@ -1162,10 +1196,14 @@ export function CollectionPage() {
         const text = await res.text().catch(() => "");
         throw new Error(text || "Falha ao deletar a coleção.");
       }
-      toast.success("Coleção deletada com sucesso.");
+      toast.success("Coleção deletada com sucesso.", {
+        duration: 12000,
+      });
       navigate("/dashboard/desfazimento");
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao deletar a coleção.");
+      toast.error(e?.message || "Falha ao deletar a coleção.", {
+        duration: 12000,
+      });
     } finally {
       setDeleteLoading(false);
     }
@@ -1391,9 +1429,8 @@ export function CollectionPage() {
               {tabs.map(({ id, label, icon: Icon }) => (
                 <div
                   key={id}
-                  className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
-                    value === id ? "border-b-[#719CB8]" : "border-b-transparent"
-                  }`}
+                  className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-[#719CB8]" : "border-b-transparent"
+                    }`}
                   onClick={() => {
                     setValue(id);
                     setOffset(0);
@@ -1572,9 +1609,8 @@ export function CollectionPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute left-0 z-10 h-10 ${
-                        isMobile ? "w-5" : "w-10"
-                      } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      className={`absolute left-0 z-10 h-10 ${isMobile ? "w-5" : "w-10"
+                        } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
                       onClick={scrollLeft}
                       disabled={!canScrollLeft}
                     >
@@ -1722,11 +1758,9 @@ export function CollectionPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute right-0 z-10 h-10 ${
-                        isMobile ? "w-5" : "w-10"
-                      } p-0 rounded-md ${
-                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                      }`}
+                      className={`absolute right-0 z-10 h-10 ${isMobile ? "w-5" : "w-10"
+                        } p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                        }`}
                       onClick={scrollRight}
                       disabled={!canScrollRight}
                     >
@@ -1813,7 +1847,7 @@ export function CollectionPage() {
                     ) : (
                       <ItemPatrimonio
                         key={item.id}
-                        {...item}
+                        {...(item as any)}
                         selected={selectedLfdItems.has(item.id)}
                         onItemClick={toggleLfdItem}
                       />
@@ -1997,11 +2031,12 @@ export function CollectionPage() {
 
           <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label>Nome do processo</Label>
+              <Label>Número do processo</Label>
               <Input
                 value={seiProcess}
                 onChange={(e) => setSeiProcess(e.target.value)}
                 maxLength={50}
+                type="number"
               />
             </div>
           </div>
@@ -2242,19 +2277,19 @@ export function CollectionPage() {
           </DialogHeader>
           <div className="space-y-4 text-sm mt-2 text-justify">
             <p>
-              A coleção de itens a serem removidos fica aberta para alterações
+              • A coleção de itens a serem removidos fica aberta para alterações
               até que o Processo SEI ou o parecer seja adicionado à coleção.
             </p>
             <p>
-              Quando o Processo SEI é adicionado, não será mais possível
+              • Quando o Processo SEI é adicionado, não será mais possível
               adicionar ou remover itens desta coleção.
             </p>
             <p>
-              Quando o parecer é adicionado, é liberado para o usuário definir
+              • Quando o parecer é adicionado, é liberado para o usuário definir
               se os itens foram aprovados ou recusados pela PRA.{" "}
             </p>
             <p>
-              Os itens recusados voltarão ao fluxo de desfazimento, enquanto os
+              • Os itens recusados voltarão ao fluxo de desfazimento, enquanto os
               aprovados serão definidos como prontos para remoção.
             </p>
           </div>

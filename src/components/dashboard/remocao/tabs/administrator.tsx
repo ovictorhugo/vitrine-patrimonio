@@ -120,34 +120,8 @@ export function AdministratorTab({
         <div className="flex flex-col flex-wrap gap-4 mb-6 max-w-[300px]">
           <Button
             variant="destructive"
-            onClick={handleClearSei}
-            disabled={clearingSei || !collection_id || collection?.sei_process === null }
-          >
-            {clearingSei ? (
-              <Loader2 size={16} className="mr-2 animate-spin" />
-            ) : (
-              <FileMinus size={16} className="mr-2" />
-            )}
-            Apagar processo SEI
-          </Button>
-
-          <Button
-            variant="destructive"
-            onClick={() => handleAdminAction(1)}
-            disabled={actionLoading === 1 || !collection_id}
-          >
-            {actionLoading === 1 ? (
-              <Loader2 size={16} className="mr-2 animate-spin" />
-            ) : (
-              <Trash2 size={16} className="mr-2" />
-            )}
-            Remover itens não aprovados
-          </Button>
-
-          <Button
-            variant="destructive"
             onClick={() => handleAdminAction(2)}
-            disabled={actionLoading === 2 || !collection_id}
+            disabled={actionLoading === 2 || !collection_id || !items.some((item) => item.is_approved === true)}
           >
             {actionLoading === 2 ? (
               <Loader2 size={16} className="mr-2 animate-spin" />
@@ -161,7 +135,10 @@ export function AdministratorTab({
             variant="destructive"
             onClick={() => handleAdminAction(4)}
             disabled={
-              actionLoading === 4 || !collection_id || !collection?.parecer_pdf
+              actionLoading === 4 ||
+              !collection_id ||
+              items.some((item) => item.is_approved === true) ||
+              !collection?.parecer_pdf
             }
           >
             {actionLoading === 4 ? (
@@ -170,6 +147,37 @@ export function AdministratorTab({
               <FileX size={16} className="mr-2" />
             )}
             Apagar parecer
+          </Button>
+
+          <Button
+            variant="destructive"
+            onClick={handleClearSei}
+            disabled={
+              clearingSei ||
+              !collection_id ||
+              !!collection?.parecer_pdf ||
+              !collection?.sei_process
+            }
+          >
+            {clearingSei ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <FileMinus size={16} className="mr-2" />
+            )}
+            Apagar processo SEI
+          </Button>
+
+          <Button
+            variant="destructive"
+            onClick={() => handleAdminAction(1)}
+            disabled={actionLoading === 1 || !collection_id || !!collection?.sei_process}
+          >
+            {actionLoading === 1 ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Trash2 size={16} className="mr-2" />
+            )}
+            Remover itens não aprovados
           </Button>
         </div>
       </div>
