@@ -328,7 +328,7 @@ export function Alienacao() {
 
     const responses = await Promise.allSettled(
       ids.map((catalogId) =>
-        fetch(`${urlGeral}collection_items/${targetCollection.id}/`, {
+        fetch(`${urlGeral}collection_items/${targetCollection.id}`, {
           method: "POST",
           headers,
           body: JSON.stringify({

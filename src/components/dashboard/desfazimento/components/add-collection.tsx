@@ -700,7 +700,7 @@ export function AddToCollectionDrawer({
           const payload = { catalog_id: cat.id, status: false, comment: "" };
 
           const r = await fetch(
-            `${baseUrl}collection_items/${encodeURIComponent(cid)}/`,
+            `${baseUrl}collection_items/${encodeURIComponent(cid)}`,
             {
               method: "POST",
               headers,

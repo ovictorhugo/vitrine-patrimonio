@@ -508,7 +508,7 @@ export function CollectionPage() {
 
         setLfdItems(data.catalog_entries);
       } else {
-        const url = `${urlGeral}collection_items/${collection_id}/${params.toString() ? `?${params.toString()}` : ""
+        const url = `${urlGeral}collection_items/${collection_id}${params.toString() ? `?${params.toString()}` : ""
           }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
