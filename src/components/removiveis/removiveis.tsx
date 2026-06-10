@@ -222,6 +222,11 @@ export function Removiveis() {
 
   const handleDeleteCollection = async () => {
     if (!currentCollectionId) return;
+
+    if (currentCollection?.sei_process || currentCollection?.document_path) {
+      toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+      return;
+    }
     try {
       setDeleteLoading(true);
       const res = await fetch(`${urlGeral}collections/${currentCollectionId}`, {

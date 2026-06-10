@@ -1224,6 +1224,11 @@ export function CollectionPage() {
 
   const handleDeleteCollection = async () => {
     try {
+
+      if (collection?.sei_process || collection?.document_path) {
+        toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+        return;
+      }
       setDeleteLoading(true);
       const res = await fetch(`${urlGeral}collections/${collection_id}`, {
         method: "DELETE",
