@@ -110,7 +110,7 @@ export function AdministratorTab({
     <TabsContent value="administrator">
       <div className="p-8 pt-0">
         <div className="m-6 ml-0 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-          {collection?.parecer_pdf
+          {collection?.document_path
             ? "Documentação adicionada"
             : "Documentação não adicionada"}
         </div>
@@ -118,7 +118,7 @@ export function AdministratorTab({
           <Button
             variant="destructive"
             onClick={handleClearSei}
-            disabled={clearingSei || !collection_id}
+            disabled={clearingSei || !collection_id || !!collection?.document_path}
           >
             {clearingSei ? (
               <Loader2 size={16} className="mr-2 animate-spin" />
@@ -131,7 +131,7 @@ export function AdministratorTab({
           <Button
             variant="destructive"
             onClick={() => handleAdminAction(1)}
-            disabled={actionLoading === 1 || !collection_id}
+            disabled={actionLoading === 1 || !collection_id || !!collection?.sei_process}
           >
             {actionLoading === 1 ? (
               <Loader2 size={16} className="mr-2 animate-spin" />
@@ -145,7 +145,7 @@ export function AdministratorTab({
             variant="destructive"
             onClick={() => handleAdminAction(4)}
             disabled={
-              actionLoading === 4 || !collection_id || !collection?.parecer_pdf
+              actionLoading === 4 || !collection_id || !collection?.document_path
             }
           >
             {actionLoading === 4 ? (

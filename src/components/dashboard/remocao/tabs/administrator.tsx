@@ -113,7 +113,7 @@ export function AdministratorTab({
     <TabsContent value="administrator">
       <div className="p-8 pt-0">
         <div className="m-6 ml-0 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-          {collection?.parecer_pdf
+          {collection?.document_path
             ? "Parecer adicionado"
             : "Parecer não adicionado"}
         </div>
@@ -138,7 +138,7 @@ export function AdministratorTab({
               actionLoading === 4 ||
               !collection_id ||
               items.some((item) => item.is_approved === true) ||
-              !collection?.parecer_pdf
+              !collection?.document_path
             }
           >
             {actionLoading === 4 ? (
@@ -155,7 +155,7 @@ export function AdministratorTab({
             disabled={
               clearingSei ||
               !collection_id ||
-              !!collection?.parecer_pdf ||
+              !!collection?.document_path ||
               !collection?.sei_process
             }
           >

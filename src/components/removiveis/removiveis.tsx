@@ -393,7 +393,7 @@ export function Removiveis() {
             <SelectValue placeholder="Itens" />
           </SelectTrigger>
           <SelectContent>
-            {[12, 24, 36, 48, 84, 162].map((val) => (
+            {[10, 20, 40, 80, 160, 320].map((val) => (
               <SelectItem key={val} value={val.toString()}>
                 {val}
               </SelectItem>

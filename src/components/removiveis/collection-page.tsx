@@ -30,6 +30,7 @@ import {
   X,
   Trash2,
   Info,
+  ShieldCheck,
 } from "lucide-react";
 import {
   useCallback,
@@ -250,6 +251,8 @@ function Combobox({
   emptyText = "Nenhum item encontrado",
   triggerClassName,
   disabled = false,
+  onSearch,
+  isLoading = false,
 }: {
   items: ComboboxItem[];
   value?: UUID | null;
@@ -258,6 +261,8 @@ function Combobox({
   emptyText?: string;
   triggerClassName?: string;
   disabled?: boolean;
+  onSearch?: (term: string) => void;
+  isLoading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((i) => i.id === value) || null;
@@ -284,8 +289,11 @@ function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0">
         <Command>
-          <CommandInput />
-          <CommandEmpty>{emptyText}</CommandEmpty>
+          <CommandInput
+            placeholder={placeholder}
+            onValueChange={(v) => onSearch?.(v)}
+          />
+          <CommandEmpty>{isLoading ? "Carregando..." : emptyText}</CommandEmpty>
           <CommandList className="gap-2 flex flex-col ">
             <CommandGroup className="gap-2 flex flex-col ">
               <CommandItem
@@ -342,6 +350,7 @@ export function CollectionPage() {
   >(new Set());
   const [addingToCollection, setAddingToCollection] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [excludeNI, setExcludeNI] = useState(false);
 
   // loading da coleção (nome, descrição, etc.)
   const [loadingCollection, setLoadingCollection] = useState(false);
@@ -407,38 +416,44 @@ export function CollectionPage() {
   const [sectorId, setSectorId] = useState<UUID | null>(null);
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
+  // ====== helper de debounce ======
+  function useDebounced<T>(value: T, delay = 300) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+      const id = setTimeout(() => setDebounced(value), delay);
+      return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+  }
+
   // pesquisa, material e responsável (para a LISTA principal)
   const [qMain, setQMain] = useState("");
-  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>(
-    [],
-  );
-  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>(
-    [],
-  );
+  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>([]);
+  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>([]);
   const [materialIdMain, setMaterialIdMain] = useState<UUID | null>(null);
   const [guardianIdMain, setGuardianIdMain] = useState<UUID | null>(null);
 
-  // carregar materiais e responsáveis para filtros principais
+  const [materialQ, setMaterialQ] = useState("");
+  const [guardianQ, setGuardianQ] = useState("");
+  const materialQd = useDebounced(materialQ);
+  const guardianQd = useDebounced(guardianQ);
+
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [loadingGuardians, setLoadingGuardians] = useState(false);
+
+  // carregar materiais
   useEffect(() => {
     (async () => {
       try {
-        const [matRes, guardRes] = await Promise.all([
-          fetch(`${urlGeral}materials/`, {
-            method: "GET",
-            headers: authHeaders,
-          }),
-          fetch(`${urlGeral}legal-guardians/`, {
-            method: "GET",
-            headers: authHeaders,
-          }),
-        ]);
+        setLoadingMaterials(true);
+        const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+        const matRes = await fetch(`${urlGeral}materials/${qs}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
 
         const matJson = await matRes.json().catch(() => ({}));
-        const guardJson = await guardRes.json().catch(() => ({}));
-
         const mats: Material[] = matJson?.materials ?? matJson ?? [];
-        const guards: LegalGuardian[] =
-          guardJson?.legal_guardians ?? guardJson ?? [];
 
         setMaterialItemsMain(
           mats.map((m) => ({
@@ -447,6 +462,27 @@ export function CollectionPage() {
             label: m.material_name || m.material_code,
           })),
         );
+      } catch (e) {
+        console.error("Erro ao carregar materiais:", e);
+      } finally {
+        setLoadingMaterials(false);
+      }
+    })();
+  }, [urlGeral, authHeaders, materialQd]);
+
+  // carregar responsáveis
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingGuardians(true);
+        const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+        const guardRes = await fetch(`${urlGeral}legal-guardians/${qs}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+
+        const guardJson = await guardRes.json().catch(() => ({}));
+        const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
 
         setGuardianItemsMain(
           guards.map((g) => ({
@@ -456,10 +492,12 @@ export function CollectionPage() {
           })),
         );
       } catch (e) {
-        console.error("Erro ao carregar materiais ou responsáveis:", e);
+        console.error("Erro ao carregar responsáveis:", e);
+      } finally {
+        setLoadingGuardians(false);
       }
     })();
-  }, [urlGeral, authHeaders]);
+  }, [urlGeral, authHeaders, guardianQd]);
 
   const { hasAdministrativo } = usePermissions();
 
@@ -487,6 +525,7 @@ export function CollectionPage() {
       if (qMain) params.set("q", qMain);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       params.set("offset", String(offset));
       params.set("limit", String(limit));
@@ -543,6 +582,7 @@ export function CollectionPage() {
     qMain,
     materialIdMain,
     guardianIdMain,
+    excludeNI,
     collection_id,
     value,
     offset,
@@ -716,6 +756,7 @@ export function CollectionPage() {
     setQMain("");
     setMaterialIdMain(null);
     setGuardianIdMain(null);
+    setExcludeNI(false);
     setOffset(0);
   };
 
@@ -1078,12 +1119,12 @@ export function CollectionPage() {
 
       if (!res.ok) {
         throw new Error(
-          data?.error || data?.message || "Erro ao adicionar nome do processo.",
+          data?.error || data?.message || "Erro ao adicionar número do processo.",
         );
       }
 
       toast.success(
-        data?.message || "Nome do processo adicionado com sucesso!", {
+        data?.message || "Número do processo adicionado com sucesso!", {
         duration: 12000,
       });
 
@@ -1093,7 +1134,7 @@ export function CollectionPage() {
       setSeiOpen(false);
       setSeiProcess("");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar nome do processo.");
+      toast.error(e?.message || "Erro ao adicionar número do processo.");
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1280,7 +1321,11 @@ export function CollectionPage() {
                   : "flex items-start gap-4"
               }
             >
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full items-center">
+                {collection.document_path
+                  ?
+                  <Alert className="p-2 items-center text-white bg-red-500 border-0">COLEÇÃO FINALIZADA</Alert> 
+                  : ""}
                 <Button
                   className="flex-1"
                   variant="outline"
@@ -1294,7 +1339,7 @@ export function CollectionPage() {
                 </Button>
 
                 {collection.sei_process ? (
-                  collection.parecer_pdf ? (
+                  collection.document_path ? (
                     <Button
                       onClick={(e) => e.stopPropagation()}
                       disabled={true}
@@ -1460,12 +1505,12 @@ export function CollectionPage() {
                     disabled={
                       addingToCollection ||
                       selectedLfdItems.size === 0 ||
-                      !!collection?.parecer_pdf ||
+                      !!collection?.document_path ||
                       !!collection?.sei_process
                     }
                     className="h-9"
                     title={
-                      !!collection?.parecer_pdf
+                      !!collection?.document_path
                         ? "Ações desabilitadas: Parecer técnico já enviado"
                         : "Adicionar à coleção"
                     }
@@ -1487,13 +1532,13 @@ export function CollectionPage() {
                       variant="destructive"
                       onClick={() => setRemoveSelectedOpen(true)}
                       title={
-                        !!collection?.parecer_pdf || !!collection?.sei_process
+                        !!collection?.document_path || !!collection?.sei_process
                           ? "Ações desabilitadas: Parecer técnico ou nome do processo já enviado"
                           : "Remover selecionados da coleção"
                       }
                       disabled={
                         selectedCollectionItems.size === 0 ||
-                        !!collection?.parecer_pdf ||
+                        !!collection?.document_path ||
                         !!collection?.sei_process
                       }
                     >
@@ -1556,6 +1601,18 @@ export function CollectionPage() {
                               <Trash size={16} />
                             </Button>
                           )}
+
+                          <Button
+                            variant={excludeNI ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              setExcludeNI(!excludeNI);
+                              setOffset(0);
+                            }}
+                          >
+                            <ShieldCheck size={16} className="mr-2" />
+                            Apenas patrimoniados
+                          </Button>
                           {/* Pesquisa */}
                           <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
                             <div>
@@ -1582,6 +1639,8 @@ export function CollectionPage() {
                               setMaterialIdMain(v);
                               setOffset(0);
                             }}
+                            onSearch={setMaterialQ}
+                            isLoading={loadingMaterials}
                             placeholder="Material"
                           />
                           <Combobox
@@ -1591,6 +1650,8 @@ export function CollectionPage() {
                               setGuardianIdMain(v);
                               setOffset(0);
                             }}
+                            onSearch={setGuardianQ}
+                            isLoading={loadingGuardians}
                             placeholder="Responsável"
                           />
 
@@ -1797,7 +1858,7 @@ export function CollectionPage() {
                     <SelectValue placeholder="Itens" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[10, 20, 40, 80, 160].map((val) => (
+                    {[10, 20, 40, 80, 160, 320].map((val) => (
                       <SelectItem key={val} value={val.toString()}>
                         {val}
                       </SelectItem>

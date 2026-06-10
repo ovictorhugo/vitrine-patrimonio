@@ -260,6 +260,7 @@ export const WORKFLOWS = {
     },
     { key: "REJEITADOS_COMISSAO", name: "Recusados" },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
+    { key: "DESCARTADOS", name: "Descarte Final" },
   ],
 } as const;
 
@@ -647,9 +648,8 @@ export function ItensVitrine() {
       if (debouncedQ) params.set("q", debouncedQ);
 
       const qs = params.toString();
-      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${
-        qs ? `?${qs}` : ""
-      }`;
+      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""
+        }`;
 
       const res = await fetch(url, {
         headers: {
@@ -1476,10 +1476,9 @@ export function ItensVitrine() {
       urlBase: urlGeral,
       sheetName: "Itens",
       filename:
-        `itens_${
-          (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
+        `itens_${(colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
           "todos"
-        }${onlyVisible ? "_visiveis" : ""}`
+          }${onlyVisible ? "_visiveis" : ""}`
           .replace(/\s+/g, "_")
           .toLowerCase() + ".xlsx",
     });
@@ -1509,7 +1508,7 @@ export function ItensVitrine() {
       <main className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3">
             <div className="flex gap-2 items-center">
               <Button
                 onClick={() => {
@@ -1545,26 +1544,8 @@ export function ItensVitrine() {
             }
           >
             <div className="flex gap-2 items-center">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  navigate("/dashboard/remocao", {
-                    replace: true,
-                  })
-                }
-              >
-                <Trash2 size={16} />
-                Remoção de itens
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowFilters((s) => !s)}
-              >
-                <SlidersHorizontal size={16} />
-                {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-              </Button>
+
+
               <div className="flex">
                 <Button
                   size="sm"
@@ -1600,9 +1581,10 @@ export function ItensVitrine() {
             <div
               className={isMobile ? "flex justify-center gap-4" : "flex gap-4"}
             >
-              {hasAnunciarItem && !isMobile ? (
+
+              {hasAnunciarItem ? (
                 <Link to={"/dashboard/novo-item"}>
-                  <Button size="sm">
+                  <Button size="default">
                     <Plus size={16} className="" />
                     Anunciar item
                   </Button>
@@ -1610,7 +1592,6 @@ export function ItensVitrine() {
               ) : (
                 <></>
               )}
-
               {isMobile ? (
                 <>
                   <DownloadPdfButton
@@ -1654,7 +1635,14 @@ export function ItensVitrine() {
                   label="Baixar Tudo"
                   method="catalog"
                 />
-              )}
+              )} <Button
+                size="default"
+                variant="outline"
+                onClick={() => setShowFilters((s) => !s)}
+              >
+                <SlidersHorizontal size={16} />
+                {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+              </Button>
             </div>
           </div>
         </div>
@@ -1666,9 +1654,8 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
-                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                }`}
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                  }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1766,9 +1753,8 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
-                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                }`}
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                  }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1795,9 +1781,8 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-5 p-0 ${
-                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                }`}
+                className={`absolute left-0 z-10 h-10 w-5 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                  }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1906,9 +1891,8 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
-                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                }`}
+                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                  }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1943,11 +1927,10 @@ export function ItensVitrine() {
         {/* Board / Expandido */}
         {expandedColumn === null ? (
           <div
-            className={`relative flex-1 ${
-              showFilters
-                ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
-                : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
-            }`}
+            className={`relative flex-1 ${showFilters
+              ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
+              : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
+              }`}
           >
             <div
               ref={boardScrollRef}
@@ -2015,14 +1998,13 @@ export function ItensVitrine() {
                                   className="flex flex-col min-h-0 w-full max-w-full relative h-full"
                                 >
                                   <ScrollArea
-                                    className={`h-full relative flex ${
-                                      snapshot.isDraggingOver
-                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                        : ""
-                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                    className={`h-full relative flex ${snapshot.isDraggingOver
+                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                      : ""
+                                      } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                   >
                                     {(loading || loadingColumns[col.key]) &&
-                                    !items.length ? (
+                                      !items.length ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square mt-2 w-full rounded-md" />
@@ -2137,8 +2119,6 @@ export function ItensVitrine() {
                         colorClass: "text-zinc-500",
                       };
                       const { Icon } = meta;
-
-                      // 👇 NOVO
                       const totalForCol = statusCounts[col.key] ?? items.length;
 
                       return (
@@ -2187,14 +2167,13 @@ export function ItensVitrine() {
                                   className="flex flex-col min-h-0 w-full max-w-full relative h-full"
                                 >
                                   <ScrollArea
-                                    className={`h-full relative flex ${
-                                      snapshot.isDraggingOver
-                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                        : ""
-                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                    className={`h-full relative flex ${snapshot.isDraggingOver
+                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                      : ""
+                                      } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                   >
                                     {(loading || loadingColumns[col.key]) &&
-                                    !items.length ? (
+                                      !items.length && col.key != "DESCARTADOS" ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square mt-2 w-full rounded-md" />
@@ -2288,6 +2267,15 @@ export function ItensVitrine() {
                                         </div>
                                       );
                                     })()}
+
+                                    {col.key === "DESCARTADOS" ? <><Button variant="outline" size="lg"
+                                      onClick={() =>
+                                        navigate("/dashboard/remocao", {
+                                          replace: true,
+                                        })
+                                      }
+                                    >
+                                      <Trash2 size={16} />Ir para coleções de Descarte</Button></> : <></>}
 
                                     <ScrollBar orientation="vertical" />
                                   </ScrollArea>

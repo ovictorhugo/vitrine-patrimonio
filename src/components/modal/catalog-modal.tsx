@@ -56,6 +56,7 @@ import {
   File,
   Landmark,
   BookmarkPlus,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -328,6 +329,7 @@ export const WORKFLOW_STATUS_META: Record<
 
   ACERVO_HISTORICO: { Icon: Landmark, colorClass: "text-zinc-500" },
   EM_REMOCAO: { Icon: Wrench, colorClass: "text-eng-blue" },
+  REJEITADOS_REMOCAO: { Icon: X, colorClass: "text-eng-blue" },
 };
 
 export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
@@ -346,7 +348,8 @@ export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   DESCARTADOS: "Processo Finalizado",
 
   ACERVO_HISTORICO: "Acervo Histórico",
-  EM_REMOCAO: "Em processo de remoção"
+  EM_REMOCAO: "Em processo de remoção",
+  REJEITADOS_REMOCAO: "Remoção do item rejeitada",
 };
 
 const money = (v?: string) => {

@@ -161,7 +161,6 @@ export interface CollectionDTO {
   items: CollectionItemDTO[];
   sei_process?: string;
   document_path?: string;
-  parecer_pdf?: string;
 }
 
 export function CollectionPage() {

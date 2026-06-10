@@ -50,9 +50,9 @@ export function InCollectionTab({
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
             {filteredItems.map((ci) => (
-              <ItemPatrimonio 
-                key={ci.id} 
-                {...(ci.catalog as any)} 
+              <ItemPatrimonio
+                key={ci.id}
+                {...(ci.catalog as any)}
                 selected={selectedItems?.has(ci.catalog.id)}
                 isApproved={ci.is_approved === true}
                 onItemClick={toggleItem}
@@ -70,7 +70,7 @@ export function InCollectionTab({
                 itemId={ci.id}
                 sel={ci.status ? "true" : "false"}
                 comm={ci.comment ?? ""}
-                isLocked={!!collection?.parecer_pdf || !!collection?.sei_process}
+                isLocked={!!collection?.document_path || !!collection?.sei_process}
                 onUpdated={(patch) => {
                   const prevStatus = ci.status;
                   const hasNewStatus = typeof patch.status === "boolean";
@@ -91,16 +91,16 @@ export function InCollectionTab({
                     prev.map((it) =>
                       it.id === ci.id
                         ? {
-                            ...it,
-                            status:
-                              typeof patch.status === "boolean"
-                                ? patch.status
-                                : it.status,
-                            comment:
-                              typeof patch.comment === "string"
-                                ? patch.comment
-                                : it.comment,
-                          }
+                          ...it,
+                          status:
+                            typeof patch.status === "boolean"
+                              ? patch.status
+                              : it.status,
+                          comment:
+                            typeof patch.comment === "string"
+                              ? patch.comment
+                              : it.comment,
+                        }
                         : it,
                     ),
                   );

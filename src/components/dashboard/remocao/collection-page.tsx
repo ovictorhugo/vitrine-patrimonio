@@ -30,6 +30,7 @@ import {
   X,
   Trash2,
   Info,
+  ShieldCheck,
 } from "lucide-react";
 import {
   useCallback,
@@ -251,6 +252,8 @@ function Combobox({
   emptyText = "Nenhum item encontrado",
   triggerClassName,
   disabled = false,
+  onSearch,
+  isLoading = false,
 }: {
   items: ComboboxItem[];
   value?: UUID | null;
@@ -259,6 +262,8 @@ function Combobox({
   emptyText?: string;
   triggerClassName?: string;
   disabled?: boolean;
+  onSearch?: (term: string) => void;
+  isLoading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((i) => i.id === value) || null;
@@ -285,8 +290,11 @@ function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0">
         <Command>
-          <CommandInput />
-          <CommandEmpty>{emptyText}</CommandEmpty>
+          <CommandInput
+            placeholder={placeholder}
+            onValueChange={(v) => onSearch?.(v)}
+          />
+          <CommandEmpty>{isLoading ? "Carregando..." : emptyText}</CommandEmpty>
           <CommandList className="gap-2 flex flex-col ">
             <CommandGroup className="gap-2 flex flex-col ">
               <CommandItem
@@ -343,6 +351,7 @@ export function CollectionPage() {
   >(new Set());
   const [addingToCollection, setAddingToCollection] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [excludeNI, setExcludeNI] = useState(false);
 
   // loading da coleção (nome, descrição, etc.)
   const [loadingCollection, setLoadingCollection] = useState(false);
@@ -369,12 +378,8 @@ export function CollectionPage() {
   const initialOffset = Number(qs.get("offset") || "0");
   const initialLimit = Number(qs.get("limit") || "10");
 
-  const [offset, setOffset] = useState<number>(
-    Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0,
-  );
-  const [limit, setLimit] = useState<number>(
-    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 10,
-  );
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
 
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
@@ -408,38 +413,44 @@ export function CollectionPage() {
   const [sectorId, setSectorId] = useState<UUID | null>(null);
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
+  // ====== helper de debounce ======
+  function useDebounced<T>(value: T, delay = 300) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+      const id = setTimeout(() => setDebounced(value), delay);
+      return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+  }
+
   // pesquisa, material e responsável (para a LISTA principal)
   const [qMain, setQMain] = useState("");
-  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>(
-    [],
-  );
-  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>(
-    [],
-  );
+  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>([]);
+  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>([]);
   const [materialIdMain, setMaterialIdMain] = useState<UUID | null>(null);
   const [guardianIdMain, setGuardianIdMain] = useState<UUID | null>(null);
 
-  // carregar materiais e responsáveis para filtros principais
+  const [materialQ, setMaterialQ] = useState("");
+  const [guardianQ, setGuardianQ] = useState("");
+  const materialQd = useDebounced(materialQ);
+  const guardianQd = useDebounced(guardianQ);
+
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [loadingGuardians, setLoadingGuardians] = useState(false);
+
+  // carregar materiais
   useEffect(() => {
     (async () => {
       try {
-        const [matRes, guardRes] = await Promise.all([
-          fetch(`${urlGeral}materials/`, {
-            method: "GET",
-            headers: authHeaders,
-          }),
-          fetch(`${urlGeral}legal-guardians/`, {
-            method: "GET",
-            headers: authHeaders,
-          }),
-        ]);
+        setLoadingMaterials(true);
+        const qs = materialQd ? `?q=${encodeURIComponent(materialQd)}` : "";
+        const matRes = await fetch(`${urlGeral}materials/${qs}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
 
         const matJson = await matRes.json().catch(() => ({}));
-        const guardJson = await guardRes.json().catch(() => ({}));
-
         const mats: Material[] = matJson?.materials ?? matJson ?? [];
-        const guards: LegalGuardian[] =
-          guardJson?.legal_guardians ?? guardJson ?? [];
 
         setMaterialItemsMain(
           mats.map((m) => ({
@@ -448,6 +459,27 @@ export function CollectionPage() {
             label: m.material_name || m.material_code,
           })),
         );
+      } catch (e) {
+        console.error("Erro ao carregar materiais:", e);
+      } finally {
+        setLoadingMaterials(false);
+      }
+    })();
+  }, [urlGeral, authHeaders, materialQd]);
+
+  // carregar responsáveis
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingGuardians(true);
+        const qs = guardianQd ? `?q=${encodeURIComponent(guardianQd)}` : "";
+        const guardRes = await fetch(`${urlGeral}legal-guardians/${qs}`, {
+          method: "GET",
+          headers: authHeaders,
+        });
+
+        const guardJson = await guardRes.json().catch(() => ({}));
+        const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
 
         setGuardianItemsMain(
           guards.map((g) => ({
@@ -457,18 +489,20 @@ export function CollectionPage() {
           })),
         );
       } catch (e) {
-        console.error("Erro ao carregar materiais ou responsáveis:", e);
+        console.error("Erro ao carregar responsáveis:", e);
+      } finally {
+        setLoadingGuardians(false);
       }
     })();
-  }, [urlGeral, authHeaders]);
+  }, [urlGeral, authHeaders, guardianQd]);
 
   const { hasAdministrativo } = usePermissions();
 
   const tabs = [
+    { id: "in-collection", label: "Coleções para Remoção", icon: Package },
     { id: "lfd", label: "LFD - Lista Final de Desfazimento", icon: Trash },
-    { id: "in-collection", label: "Itens da coleção", icon: Package },
     { id: "aprovados", label: "Itens aprovados", icon: BookmarkCheck },
-    { id: "parecer", label: "Parecer", icon: FileText },
+    { id: "parecer", label: "Adicionar parecer", icon: FileText },
     ...(hasAdministrativo
       ? [{ id: "administrator", label: "Administrador", icon: Package }]
       : []),
@@ -489,6 +523,7 @@ export function CollectionPage() {
       if (qMain) params.set("q", qMain);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       params.set("offset", String(offset));
       params.set("limit", String(limit));
@@ -546,6 +581,7 @@ export function CollectionPage() {
     qMain,
     materialIdMain,
     guardianIdMain,
+    excludeNI,
     collection_id,
     value,
     offset,
@@ -719,6 +755,7 @@ export function CollectionPage() {
     setQMain("");
     setMaterialIdMain(null);
     setGuardianIdMain(null);
+    setExcludeNI(false);
     setOffset(0);
   };
 
@@ -1518,12 +1555,12 @@ export function CollectionPage() {
                     disabled={
                       addingToCollection ||
                       selectedLfdItems.size === 0 ||
-                      !!collection?.parecer_pdf ||
+                      !!collection?.document_path ||
                       !!collection?.sei_process
                     }
                     className="h-9"
                     title={
-                      !!collection?.parecer_pdf
+                      !!collection?.document_path
                         ? "Ações desabilitadas: Parecer técnico já enviado"
                         : "Adicionar à coleção"
                     }
@@ -1545,13 +1582,13 @@ export function CollectionPage() {
                       variant="destructive"
                       onClick={() => setRemoveSelectedOpen(true)}
                       title={
-                        !!collection?.parecer_pdf || !!collection?.sei_process
+                        !!collection?.document_path || !!collection?.sei_process
                           ? "Ações desabilitadas: Parecer técnico ou Processo SEI já enviado"
                           : "Remover selecionados da coleção"
                       }
                       disabled={
                         selectedCollectionItems.size === 0 ||
-                        !!collection?.parecer_pdf ||
+                        !!collection?.document_path ||
                         !!collection?.sei_process
                       }
                     >
@@ -1561,13 +1598,13 @@ export function CollectionPage() {
                       className="px-3 min-w-fit h-9 bg-red-600 hover:bg-red-700 text-white"
                       onClick={() => setRefuseOpen(true)}
                       title={
-                        !collection?.parecer_pdf
+                        !collection?.document_path
                           ? "Adicione um parecer técnico antes de recusar itens"
                           : "Recusar selecionados"
                       }
                       disabled={
                         selectedCollectionItems.size === 0 ||
-                        !collection?.parecer_pdf
+                        !collection?.document_path
                       }
                     >
                       <X size={16} className="mr-2" /> Recusar itens
@@ -1576,13 +1613,13 @@ export function CollectionPage() {
                       className="px-3 min-w-fit h-9 bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => setApproveOpen(true)}
                       title={
-                        !collection?.parecer_pdf
+                        !collection?.document_path
                           ? "Adicione um parecer técnico antes de aprovar itens"
                           : "Aprovar selecionados"
                       }
                       disabled={
                         selectedCollectionItems.size === 0 ||
-                        !collection?.parecer_pdf
+                        !collection?.document_path
                       }
                     >
                       <Check size={16} className="mr-2" /> Aprovar itens
@@ -1644,6 +1681,21 @@ export function CollectionPage() {
                               <Trash size={16} />
                             </Button>
                           )}
+
+
+                          <Button
+                            variant={excludeNI ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              setExcludeNI(!excludeNI);
+                              setOffset(0);
+                            }}
+                          >
+                            <ShieldCheck size={16} className="mr-2" />
+                            Apenas patrimoniados
+                          </Button>
+
+
                           {/* Pesquisa */}
                           <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
                             <div>
@@ -1662,6 +1714,7 @@ export function CollectionPage() {
                             </div>
                           </Alert>
 
+
                           {/* Material e Responsável */}
                           <Combobox
                             items={materialItemsMain}
@@ -1670,6 +1723,8 @@ export function CollectionPage() {
                               setMaterialIdMain(v);
                               setOffset(0);
                             }}
+                            onSearch={setMaterialQ}
+                            isLoading={loadingMaterials}
                             placeholder="Material"
                           />
                           <Combobox
@@ -1679,6 +1734,8 @@ export function CollectionPage() {
                               setGuardianIdMain(v);
                               setOffset(0);
                             }}
+                            onSearch={setGuardianQ}
+                            isLoading={loadingGuardians}
                             placeholder="Responsável"
                           />
 
@@ -1744,6 +1801,7 @@ export function CollectionPage() {
                             disabled={!sectorId}
                           />
 
+
                           <Button
                             variant="outline"
                             size="sm"
@@ -1804,7 +1862,7 @@ export function CollectionPage() {
 
           {/* TAB LFD */}
           <TabsContent value="lfd">
-            <div className="p-8 pt-0">
+            <div className="p-8 pt-0 flex flex-col gap-6">
               {loadingItems ? (
                 <div
                   className={
@@ -1824,36 +1882,64 @@ export function CollectionPage() {
                   Nenhum item adicionado.
                 </div>
               ) : (
-                <div
-                  className={
-                    viewMode === "list"
-                      ? "grid sm:grid-cols-2 gap-4"
-                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
-                  }
-                >
-                  {lfdItems.map((item) =>
-                    viewMode === "list" ? (
-                      <PatrimonioItemCollection
-                        key={item.id}
-                        invId={item.id}
-                        entry={item as any}
-                        collectionId=""
-                        itemId={item.id}
-                        sel="false"
-                        comm=""
-                        selected={selectedLfdItems.has(item.id)}
-                        onItemClick={toggleLfdItem}
-                      />
-                    ) : (
-                      <ItemPatrimonio
-                        key={item.id}
-                        {...(item as any)}
-                        selected={selectedLfdItems.has(item.id)}
-                        onItemClick={toggleLfdItem}
-                      />
-                    ),
-                  )}
-                </div>
+                <>
+                  <div
+                    className={
+                      viewMode === "list"
+                        ? "grid sm:grid-cols-2 gap-4"
+                        : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+                    }
+                  >
+                    {lfdItems.map((item) =>
+                      viewMode === "list" ? (
+                        <PatrimonioItemCollection
+                          key={item.id}
+                          invId={item.id}
+                          entry={item as any}
+                          collectionId=""
+                          itemId={item.id}
+                          sel="false"
+                          comm=""
+                          selected={selectedLfdItems.has(item.id)}
+                          onItemClick={toggleLfdItem}
+                        />
+                      ) : (
+                        <ItemPatrimonio
+                          key={item.id}
+                          {...(item as any)}
+                          selected={selectedLfdItems.has(item.id)}
+                          onItemClick={toggleLfdItem}
+                        />
+                      ),
+                    )}
+                  </div>
+                  <div className="flex justify-center w-full">
+                    <Button
+                      onClick={handleAddSelectedToCollection}
+                      disabled={
+                        addingToCollection ||
+                        selectedLfdItems.size === 0 ||
+                        !!collection?.document_path ||
+                        !!collection?.sei_process
+                      }
+                      className="h-10 px-8"
+                      title={
+                        !!collection?.document_path
+                          ? "Ações desabilitadas: Parecer técnico já enviado"
+                          : "Adicionar à coleção"
+                      }
+                    >
+                      {addingToCollection ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="mr-2 h-4 w-4" />
+                      )}
+                      {selectedLfdItems.size > 0
+                        ? `Adicionar ${selectedLfdItems.size} ${selectedLfdItems.size === 1 ? "item" : "itens"} à coleção`
+                        : "Adicionar à coleção"}
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           </TabsContent>
@@ -1900,7 +1986,7 @@ export function CollectionPage() {
                     <SelectValue placeholder="Itens" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[10, 20, 40, 80, 160].map((val) => (
+                    {[10, 20, 40, 80, 160, 320].map((val) => (
                       <SelectItem key={val} value={val.toString()}>
                         {val}
                       </SelectItem>

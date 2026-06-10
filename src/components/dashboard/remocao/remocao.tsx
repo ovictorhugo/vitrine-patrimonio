@@ -76,7 +76,7 @@ export function Remocao() {
 
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "12");
+  const initialLimit = Number(qs.get("limit") || "10");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 
@@ -475,7 +475,7 @@ export function Remocao() {
             <SelectValue placeholder="Itens" />
           </SelectTrigger>
           <SelectContent>
-            {[12, 24, 36, 48, 84, 162].map((val) => (
+            {[10, 20, 48, 80, 160, 320].map((val) => (
               <SelectItem key={val} value={val.toString()}>
                 {val}
               </SelectItem>

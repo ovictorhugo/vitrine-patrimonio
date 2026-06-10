@@ -160,7 +160,7 @@ export function ParecerTab({ collection_id, collection, reload }: ParecerTabProp
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = collection?.parecer_pdf || "parecer.pdf";
+      a.download = collection?.document_path || "parecer.pdf";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -172,7 +172,7 @@ export function ParecerTab({ collection_id, collection, reload }: ParecerTabProp
   };
 
   const renderContent = () => {
-    const hasSavedParecer = !!collection?.parecer_pdf && docsLocal.length === 0 && !isReplacing;
+    const hasSavedParecer = !!collection?.document_path && docsLocal.length === 0 && !isReplacing;
     if (verificationStatus === "loading") {
       return (
         <div className="flex flex-col h-64 items-center justify-center">
@@ -195,9 +195,9 @@ export function ParecerTab({ collection_id, collection, reload }: ParecerTabProp
             {isJustUploaded ? "Parecer enviado com sucesso!" : "Parecer já salvo na coleção!"}
           </h1>
           <p className="text-center text-neutral-500 max-w-[500px] mb-8">
-            {isJustUploaded 
+            {isJustUploaded
               ? "O arquivo PDF foi anexado à coleção."
-              : `O arquivo ${collection.parecer_pdf} encontra-se salvo no sistema.`}
+              : `O arquivo ${collection.document_path} encontra-se salvo no sistema.`}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button variant="default" onClick={handleDownloadParecer}>
@@ -245,9 +245,8 @@ export function ParecerTab({ collection_id, collection, reload }: ParecerTabProp
           <div className="flex flex-col w-full justify-center items-center">
             <div
               {...getRootProps()}
-              className={`border-dashed h-full mb-2 flex-col border bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 ${
-                isMobile ? "w-full" : "w-[600px]"
-              } flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800`}
+              className={`border-dashed h-full mb-2 flex-col border bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 ${isMobile ? "w-full" : "w-[600px]"
+                } flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800`}
             >
               <input {...getInputProps()} />
               <div className="p-4 border rounded-md dark:border-neutral-700">
