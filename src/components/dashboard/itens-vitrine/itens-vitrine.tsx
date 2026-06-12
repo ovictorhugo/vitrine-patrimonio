@@ -28,6 +28,7 @@ import {
   Calendar,
   BookMarked,
   Trash2,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Select,
@@ -607,6 +608,7 @@ export function ItensVitrine() {
   const [tab, setTab] = useState<BoardKind>("desfazimento");
   const isMobile = useIsMobile();
   const [showFilters, setShowFilters] = useState(false);
+  const [excludeNI, setExcludeNI] = useState(false);
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [guardians, setGuardians] = useState<LegalGuardian[]>([]);
@@ -646,6 +648,7 @@ export function ItensVitrine() {
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
       if (debouncedQ) params.set("q", debouncedQ);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const qs = params.toString();
       const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""
@@ -684,6 +687,7 @@ export function ItensVitrine() {
     sectorId,
     locationId,
     debouncedQ,
+    excludeNI,
   ]);
 
   useEffect(() => {
@@ -799,6 +803,7 @@ export function ItensVitrine() {
         if (sectorId) params.set("sector_id", sectorId);
         if (locationId) params.set("location_id", locationId);
         if (debouncedQ) params.set("q", debouncedQ);
+        if (excludeNI) params.set("exclude_asset_status", "NI");
 
         const res = await fetch(
           `${urlGeral}catalog/cards?${params.toString()}`,
@@ -859,6 +864,7 @@ export function ItensVitrine() {
       locationId,
       PAGE_SIZE,
       debouncedQ,
+      excludeNI,
     ],
   );
 
@@ -910,6 +916,8 @@ export function ItensVitrine() {
     else params.delete("location_id");
     if (debouncedQ) params.set("q", debouncedQ);
     else params.delete("q");
+    if (excludeNI) params.set("exclude_asset_status", "NI");
+    else params.delete("exclude_asset_status");
 
     const newSearch = params.toString();
     const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
@@ -923,6 +931,7 @@ export function ItensVitrine() {
     sectorId,
     locationId,
     debouncedQ,
+    excludeNI,
   ]);
 
   const postWorkflowChange = async (
@@ -1195,6 +1204,7 @@ export function ItensVitrine() {
     setAgencies([]);
     setSectors([]);
     setLocations([]);
+    setExcludeNI(false);
   };
 
   const unitItems = useMemo(
@@ -1602,6 +1612,7 @@ export function ItensVitrine() {
                       legal_guardian_id: guardianId || undefined,
                       sector_id: locationId || undefined,
                       location_id: sectorId || undefined,
+                      exclude_asset_status: excludeNI ? "NI" : undefined,
                     }}
                     label="Baixar Tudo"
                     method="catalog"
@@ -1631,6 +1642,7 @@ export function ItensVitrine() {
                     legal_guardian_id: guardianId || undefined,
                     sector_id: locationId || undefined,
                     location_id: sectorId || undefined,
+                    exclude_asset_status: excludeNI ? "NI" : undefined,
                   }}
                   label="Baixar Tudo"
                   method="catalog"
@@ -1682,7 +1694,14 @@ export function ItensVitrine() {
                         />
                       </div>
                     </Alert>
-
+                    <Button
+                      size={"sm"}
+                      variant={excludeNI ? "default" : "outline"}
+                      onClick={() => setExcludeNI(!excludeNI)}
+                    >
+                      <ShieldCheck size={16} className="mr-2" />
+                      Apenas patrimoniado
+                    </Button>
                     <Combobox
                       items={materialItems}
                       value={materialId}
@@ -1741,6 +1760,7 @@ export function ItensVitrine() {
                       placeholder="Local de guarda"
                       disabled={!sectorId}
                     />
+
 
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                       <Trash size={16} />
@@ -1916,6 +1936,13 @@ export function ItensVitrine() {
                   {isImage ? <Eye size={16} /> : <EyeClosed size={16} />}
                 </Button>
               )}
+              <Button
+                size={"sm"}
+                variant={excludeNI ? "default" : "outline"}
+                onClick={() => setExcludeNI(!excludeNI)}
+              >
+                Apenas patrimoniado
+              </Button>
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 <Trash size={16} />
                 Limpar filtros

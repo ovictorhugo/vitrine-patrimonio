@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, replace, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import {
@@ -535,10 +535,13 @@ export function CollectionPage() {
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            text || `Falha ao carregar itens da LFD (HTTP ${res.status}).`,
-          );
+          let errorMessage = "Falha ao carregar itens da LFD.";
+          try {
+            const errorData = await res.json();
+            if (errorData?.detail) errorMessage = errorData.detail;
+          } catch { }
+          toast.error("Erro", { description: errorMessage });
+          return;
         }
 
         const data = await res.json();
@@ -550,10 +553,13 @@ export function CollectionPage() {
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            text || `Falha ao carregar coleção (HTTP ${res.status}).`,
-          );
+          let errorMessage = "Falha ao carregar coleção.";
+          try {
+            const errorData = await res.json();
+            if (errorData?.detail) errorMessage = errorData.detail;
+          } catch { }
+          toast.error("Erro", { description: errorMessage });
+          return;
         }
 
         const data: CollectionItemsResponse = await res.json();
@@ -601,10 +607,13 @@ export function CollectionPage() {
       )}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(
-          text || `Falha ao carregar estatísticas (HTTP ${res.status}).`,
-        );
+        let errorMessage = "Falha ao carregar estatísticas.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
 
       const json = await res.json();
@@ -790,8 +799,13 @@ export function CollectionPage() {
         },
       );
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao adicionar itens à coleção");
+        let errorMessage = "Erro ao adicionar itens à coleção";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Itens adicionados com sucesso!", {
         duration: 12000,
@@ -830,8 +844,13 @@ export function CollectionPage() {
       );
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao recusar itens");
+        let errorMessage = "Erro ao recusar itens";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Itens recusados com sucesso!", {
         duration: 12000,
@@ -928,8 +947,13 @@ export function CollectionPage() {
       );
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao aprovar itens");
+        let errorMessage = "Erro ao aprovar itens";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Itens aprovados com sucesso!", {
         duration: 12000,
@@ -963,10 +987,13 @@ export function CollectionPage() {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(
-          text || `Falha ao carregar coleção (HTTP ${res.status}).`,
-        );
+        let errorMessage = "Falha ao carregar coleção.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
 
       const data: CollectionDTO = await res.json();
@@ -1041,7 +1068,7 @@ export function CollectionPage() {
       if (pathSegments.length > 1) {
         pathSegments.pop();
         const previousPath = "/" + pathSegments.join("/");
-        navigate(previousPath);
+        navigate(previousPath, { replace: true });
       } else navigate("/");
     }
   };
@@ -1081,8 +1108,13 @@ export function CollectionPage() {
         },
       );
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao adicionar itens por filtro");
+        let errorMessage = "Erro ao adicionar itens por filtro";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Itens adicionados com sucesso!", {
         duration: 12000,
@@ -1122,8 +1154,13 @@ export function CollectionPage() {
         },
       );
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao remover itens por filtro");
+        let errorMessage = "Erro ao remover itens por filtro";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Itens removidos com sucesso!", {
         duration: 12000,
@@ -1163,9 +1200,13 @@ export function CollectionPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(
-          data?.error || data?.message || "Erro ao adicionar processo SEI.",
-        );
+        let errorMessage = "Erro na requisição";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
 
       toast.success(data?.message || "Processo SEI adicionado com sucesso!", {
@@ -1203,8 +1244,13 @@ export function CollectionPage() {
         body: JSON.stringify({ name: newName, description: newDescription }),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao atualizar a coleção.");
+        let errorMessage = "Erro ao atualizar a coleção.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       setCollection((prev) =>
         prev ? { ...prev, name: newName, description: newDescription } : prev,
@@ -1235,8 +1281,13 @@ export function CollectionPage() {
         headers: authHeaders,
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Falha ao deletar a coleção.");
+        let errorMessage = "Falha ao deletar a coleção.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch { }
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       toast.success("Coleção deletada com sucesso.", {
         duration: 12000,
@@ -1350,7 +1401,7 @@ export function CollectionPage() {
                   const seg = path.split("/").filter(Boolean);
                   if (seg.length > 1) {
                     seg.pop();
-                    navigate("/" + seg.join("/"));
+                    navigate("/" + seg.join("/"), { replace: true, state:0 });
                   } else navigate("/");
                 }
               }}

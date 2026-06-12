@@ -208,9 +208,14 @@ export function PatrimonioItemCollection({
         });
 
         if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(txt || `Falha ao atualizar (HTTP ${res.status}).`);
-        }
+        let errorMessage = "Falha ao atualizar.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
 
         // sucesso — atualiza o pai localmente (sem refetch)
         onUpdated?.(payload);
@@ -258,9 +263,14 @@ export function PatrimonioItemCollection({
         });
 
         if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(txt || `Falha ao deletar (HTTP ${res.status}).`);
-        }
+        let errorMessage = "Falha ao deletar.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
 
         toast.success("Item removido da coleção.");
         setDeleteOpen(false);

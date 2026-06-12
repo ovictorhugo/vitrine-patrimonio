@@ -62,7 +62,15 @@ export function AdministratorTab({
         },
       );
 
-      if (!res.ok) throw new Error("Erro ao limpar processo");
+      if (!res.ok) {
+        let errorMessage = "Erro ao limpar processo";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
 
       toast.success("Nome do processo limpo com sucesso!");
       reload();
@@ -90,10 +98,13 @@ export function AdministratorTab({
       );
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(
-          errorData?.detail || "Erro ao executar ação administrativa",
-        );
+        let errorMessage = "Erro ao executar ação administrativa";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
 
       const data = await res.json();

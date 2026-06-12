@@ -108,8 +108,15 @@ export function Remocao() {
         offset,
       )}&limit=${encodeURIComponent(limit)}&admin=${hasAdministrativo}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
-      if (!res.ok)
-        throw new Error(`Falha ao carregar coleções (HTTP ${res.status})`);
+      if (!res.ok) {
+        let errorMessage = "Falha ao carregar coleções";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
       const data: CollectionResponse = await res.json();
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
@@ -120,10 +127,6 @@ export function Remocao() {
       setLoadingList(false);
     }
   };
-  useEffect(() => {
-    fetchInventories();
-  }, [urlGeral, offset, limit]);
-
   const [isOpen, setIsOpen] = useState(false);
   const handleSubmit = async () => {
     try {
@@ -137,7 +140,15 @@ export function Remocao() {
         headers: authHeaders,
         body: JSON.stringify({ description, name: key, type: "REMOCAO" }),
       });
-      if (!res.ok) throw new Error(`Falha ao criar (HTTP ${res.status})`);
+      if (!res.ok) {
+        let errorMessage = "Falha ao criar";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
       await res.json().catch(() => null);
       toast.success("Coleção criada");
       setKey("");
@@ -159,6 +170,13 @@ export function Remocao() {
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
     const { hasAdministrativo } = usePermissions();
+
+
+  useEffect(() => {
+    fetchInventories();
+  }, [urlGeral, offset, limit]);
+
+
 
   /* ========= EDIT/DELETE COLLECTION ========= */
   const [editOpen, setEditOpen] = useState(false);
@@ -202,8 +220,13 @@ export function Remocao() {
         body: JSON.stringify({ name: newName, description: newDescription }),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao atualizar a coleção.");
+        let errorMessage = "Erro ao atualizar a coleção.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       setCollections((prev) =>
         prev.map((c) =>
@@ -234,8 +257,13 @@ export function Remocao() {
         headers: authHeaders,
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Erro ao deletar a coleção.");
+        let errorMessage = "Erro ao deletar a coleção.";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
       }
       setCollections((prev) =>
         prev.filter((c) => c.id !== currentCollectionId),
@@ -268,7 +296,15 @@ export function Remocao() {
           },
         });
 
-        if (!res.ok) throw new Error("Erro ao carregar estatísticas");
+        if (!res.ok) {
+        let errorMessage = "Erro ao carregar estatísticas";
+        try {
+          const errorData = await res.json();
+          if (errorData?.detail) errorMessage = errorData.detail;
+        } catch {}
+        toast.error("Erro", { description: errorMessage });
+        return;
+      }
 
         const data: StatusCount[] = await res.json();
 
