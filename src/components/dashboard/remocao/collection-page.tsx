@@ -1,4 +1,4 @@
-import { Link, replace, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../ui/button";
 import { Helmet } from "react-helmet";
 import {
@@ -342,6 +342,7 @@ export function CollectionPage() {
 
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [lfdItems, setLfdItems] = useState<Catalog[]>([]);
+  const [allItems, setAllItems] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [selectedLfdItems, setSelectedLfdItems] = useState<Set<string>>(
     new Set(),
@@ -414,7 +415,7 @@ export function CollectionPage() {
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
   // ====== helper de debounce ======
-  function useDebounced<T>(value: T, delay = 300) {
+  function useDebounced<T>(value: T, delay = 500) {
     const [debounced, setDebounced] = useState(value);
     useEffect(() => {
       const id = setTimeout(() => setDebounced(value), delay);
@@ -434,6 +435,7 @@ export function CollectionPage() {
   const [guardianQ, setGuardianQ] = useState("");
   const materialQd = useDebounced(materialQ);
   const guardianQd = useDebounced(guardianQ);
+  const qMainDebounced = useDebounced(qMain);
 
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [loadingGuardians, setLoadingGuardians] = useState(false);
@@ -520,11 +522,12 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-      if (qMain) params.set("q", qMain);
+      if (qMainDebounced) params.set("q", qMainDebounced);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
       if (excludeNI) params.set("exclude_asset_status", "NI");
 
+      if (collection_id) params.set("not_in_collection", collection_id);
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
@@ -548,6 +551,7 @@ export function CollectionPage() {
 
         setLfdItems(data.catalog_entries);
       } else {
+        params.delete("not_in_collection")
         const url = `${urlGeral}collection_items/${collection_id}${params.toString() ? `?${params.toString()}` : ""
           }`;
 
@@ -572,7 +576,6 @@ export function CollectionPage() {
       toast("Erro ao carregar coleção de desfazimento", {
         description: e?.message || String(e),
         action: { label: "Fechar", onClick: () => { } },
-        duration: 12000,
       });
     } finally {
       setLoadingItems(false);
@@ -584,7 +587,7 @@ export function CollectionPage() {
     agencyId,
     sectorId,
     locationId,
-    qMain,
+    qMainDebounced,
     materialIdMain,
     guardianIdMain,
     excludeNI,
@@ -807,15 +810,11 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens adicionados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens adicionados com sucesso!");
       setSelectedLfdItems(new Set());
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao adicionar itens");
     } finally {
       setAddingToCollection(false);
       fetchStatistics();
@@ -852,16 +851,12 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens recusados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens recusados com sucesso!");
       setSelectedCollectionItems(new Set());
       setRefuseOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao recusar itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao recusar itens");
     } finally {
       setRefusing(false);
       fetchStatistics();
@@ -921,9 +916,7 @@ export function CollectionPage() {
       setRemoveSelectedOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao remover itens");
     } finally {
       setRemovingSelected(false);
       fetchStatistics();
@@ -955,16 +948,12 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens aprovados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens aprovados com sucesso!");
       setSelectedCollectionItems(new Set());
       setApproveOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao aprovar itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao aprovar itens");
     } finally {
       setApproving(false);
       fetchStatistics();
@@ -975,13 +964,13 @@ export function CollectionPage() {
   const fmt = (n: number) => n.toLocaleString("pt-BR");
 
   // GET COLLECTION
-  const type_search = queryUrl.get("collection_id");
+  const collectionId = queryUrl.get("collection_id");
   const [collection, setCollection] = useState<CollectionDTO | null>(null);
 
   const fetchCollection = async () => {
     try {
       setLoadingCollection(true);
-      const res = await fetch(`${urlGeral}collections/${type_search}`, {
+      const res = await fetch(`${urlGeral}collections/${collectionId}?admin=${hasAdministrativo}`, {
         method: "GET",
         headers: authHeaders,
       });
@@ -1002,7 +991,6 @@ export function CollectionPage() {
       toast("Erro ao carregar coleção", {
         description: e?.message || String(e),
         action: { label: "Fechar", onClick: () => { } },
-        duration: 12000,
       });
     } finally {
       setLoadingCollection(false);
@@ -1012,7 +1000,6 @@ export function CollectionPage() {
 
   useEffect(() => {
     fetchCollection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlGeral]);
 
   const [loadingMessage, setLoadingMessage] = useState(
@@ -1056,22 +1043,6 @@ export function CollectionPage() {
     };
   }, []);
 
-  const handleVoltar = () => {
-    const currentPath = location.pathname;
-    const hasQueryParams = location.search.length > 0;
-    if (hasQueryParams) {
-      navigate(currentPath);
-    } else {
-      const pathSegments = currentPath
-        .split("/")
-        .filter((segment) => segment !== "");
-      if (pathSegments.length > 1) {
-        pathSegments.pop();
-        const previousPath = "/" + pathSegments.join("/");
-        navigate(previousPath, { replace: true });
-      } else navigate("/");
-    }
-  };
 
   // Dialogs: Editar / Deletar
   const [editOpen, setEditOpen] = useState(false);
@@ -1099,6 +1070,7 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const res = await fetch(
         `${urlGeral}collection_items/add_by_filters/${collection_id}?${params.toString()}`,
@@ -1108,23 +1080,19 @@ export function CollectionPage() {
         },
       );
       if (!res.ok) {
+        const errorData = await res.json();
         let errorMessage = "Erro ao adicionar itens por filtro";
         try {
-          const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
         } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens adicionados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens adicionados com sucesso!");
       setFilterOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao adicionar itens");
     } finally {
       setAddingByFilter(false);
       fetchStatistics();
@@ -1145,6 +1113,7 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const res = await fetch(
         `${urlGeral}collection_items/remove_by_filters/${collection_id}?${params.toString()}`,
@@ -1162,16 +1131,12 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens removidos com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens removidos com sucesso!");
       setRemoveFilterOpen(false);
       fetchCollectionItems();
       fetchStatistics();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao remover itens",);
     } finally {
       setRemovingByFilter(false);
       fetchStatistics();
@@ -1180,9 +1145,7 @@ export function CollectionPage() {
 
   const handleSaveSei = async () => {
     if (!seiProcess.trim()) {
-      toast.error("Por favor, digite o texto do processo.", {
-        duration: 12000,
-      });
+      toast.error("Por favor, digite o texto do processo.");
       return;
     }
 
@@ -1209,9 +1172,7 @@ export function CollectionPage() {
         return;
       }
 
-      toast.success(data?.message || "Processo SEI adicionado com sucesso!", {
-        duration: 12000,
-      });
+      toast.success(data?.message || "Processo adicionado com sucesso!");
 
       setCollection((prev) =>
         prev ? { ...prev, sei_process: seiProcess } : prev,
@@ -1219,9 +1180,7 @@ export function CollectionPage() {
       setSeiOpen(false);
       setSeiProcess("");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar processo SEI.", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Erro ao adicionar processo.");
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1255,14 +1214,10 @@ export function CollectionPage() {
       setCollection((prev) =>
         prev ? { ...prev, name: newName, description: newDescription } : prev,
       );
-      toast.success("Coleção atualizada com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar a coleção.", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Falha ao atualizar a coleção.");
     } finally {
       setUpdateLoading(false);
     }
@@ -1289,14 +1244,10 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Coleção deletada com sucesso.", {
-        duration: 12000,
-      });
+      toast.success("Coleção deletada com sucesso.");
       navigate("/dashboard/desfazimento");
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao deletar a coleção.", {
-        duration: 12000,
-      });
+      toast.error(e?.message || "Falha ao deletar a coleção.");
     } finally {
       setDeleteLoading(false);
     }
@@ -1365,7 +1316,7 @@ export function CollectionPage() {
           </h1>
 
           <div className="flex gap-3 mt-8">
-            <Button onClick={handleVoltar} variant={"ghost"}>
+            <Button onClick={() => navigate("/dashboard/remocao", { replace: true })} variant={"ghost"}>
               <Undo2 size={16} /> Voltar
             </Button>
             <Link to={"/"}>
@@ -1393,18 +1344,7 @@ export function CollectionPage() {
         <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
           <div className="flex gap-2 items-center">
             <Button
-              onClick={() => {
-                const path = location.pathname;
-                const hasQuery = location.search.length > 0;
-                if (hasQuery) navigate(path);
-                else {
-                  const seg = path.split("/").filter(Boolean);
-                  if (seg.length > 1) {
-                    seg.pop();
-                    navigate("/" + seg.join("/"), { replace: true, state:0 });
-                  } else navigate("/");
-                }
-              }}
+              onClick={() => navigate("/dashboard/remocao", { replace: true })}
               variant="outline"
               size="icon"
               className="h-7 w-7"
@@ -1427,6 +1367,10 @@ export function CollectionPage() {
               }
             >
               <div className="flex gap-2 w-full">
+                {collection.document_path
+                  ?
+                  <Alert className="p-2 items-center text-white bg-red-500 border-0">COLEÇÃO FINALIZADA</Alert>
+                  : ""}
                 <Button
                   className="flex-1"
                   variant="outline"
@@ -1452,7 +1396,7 @@ export function CollectionPage() {
                     disabled={true}
                     variant="outline"
                   >
-                    <Download size={16} className="mr-2" /> Baixar PDF
+                    <Download size={16} className="mr-2" /> Baixar documentação
                   </Button>
                 )}
                 <Button
@@ -1518,7 +1462,7 @@ export function CollectionPage() {
         <Tabs defaultValue="in-collection" value={value}>
           {/* header das tabs */}
           <div className="dark:bg-neutral-900/60 bg-neutral-50/60 px-4 border-b border-b-neutral-200 dark:border-b-neutral-800">
-            <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent align-center">
+            <div className="p-0 flex gap-2 h-auto bg-transparent dark:bg-transparent">
               {tabs.map(({ id, label, icon: Icon }) => (
                 <div
                   key={id}
@@ -1762,7 +1706,7 @@ export function CollectionPage() {
                                 className="border-0 p-0 h-9 flex flex-1 w-full"
                                 value={qMain}
                                 onChange={(e) => {
-                                  setQMain(e.target.value);
+                                  setQMain(e.target.value.toUpperCase());
                                   setOffset(0);
                                 }}
                                 placeholder="Buscar por código, descrição, material, marca, modelo..."
@@ -2257,11 +2201,16 @@ export function CollectionPage() {
                   locationId}
               </p>
             )}
+            {excludeNI && (
+              <p>
+                <strong>Apenas itens patrimoniados</strong></p>
+            )}
             {!qMain &&
               !materialIdMain &&
               !guardianIdMain &&
               !unitId &&
               !agencyId &&
+              !excludeNI &&
               !sectorId &&
               !locationId && (
                 <p>
@@ -2346,12 +2295,16 @@ export function CollectionPage() {
                 {locations?.find((l) => l.id === locationId)?.location_code ||
                   locationId}
               </p>
+            )} {excludeNI && (
+              <p>
+                <strong>Apenas itens patrimoniados</strong></p>
             )}
             {!qMain &&
               !materialIdMain &&
               !guardianIdMain &&
               !unitId &&
               !agencyId &&
+              !excludeNI &&
               !sectorId &&
               !locationId && (
                 <p className="text-red-500 font-medium">
@@ -2420,7 +2373,7 @@ export function CollectionPage() {
           <div className="space-y-4 text-sm mt-2 text-justify">
             <p>
               • A coleção de itens a serem removidos fica aberta para alterações
-              até que o Processo SEI ou o parecer seja adicionado à coleção.
+              até que o Processo ou o parecer seja adicionado à coleção.
             </p>
             <p>
               • Quando o Processo SEI é adicionado, não será mais possível

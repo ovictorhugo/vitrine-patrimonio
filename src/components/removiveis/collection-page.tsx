@@ -377,13 +377,9 @@ export function CollectionPage() {
   const initialOffset = Number(qs.get("offset") || "0");
   const initialLimit = Number(qs.get("limit") || "10");
 
-  const [offset, setOffset] = useState<number>(
-    Number.isFinite(initialOffset) && initialOffset >= 0 ? initialOffset : 0,
-  );
-  const [limit, setLimit] = useState<number>(
-    Number.isFinite(initialLimit) && initialLimit > 0 ? initialLimit : 10,
-  );
-
+  const [offset, setOffset] = useState<number>(initialOffset);
+  const [limit, setLimit] = useState<number>(initialLimit);
+  
   const isFirstPage = offset === 0;
   const isLastPage = items.length < limit;
 
@@ -403,7 +399,6 @@ export function CollectionPage() {
 
   useEffect(() => {
     handleNavigate(offset, limit, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offset, limit]);
 
   // ======= Filtros hierárquicos E adicionais da LISTA da coleção =======
@@ -417,7 +412,7 @@ export function CollectionPage() {
   const [locationId, setLocationId] = useState<UUID | null>(null);
 
   // ====== helper de debounce ======
-  function useDebounced<T>(value: T, delay = 300) {
+  function useDebounced<T>(value: T, delay = 500) {
     const [debounced, setDebounced] = useState(value);
     useEffect(() => {
       const id = setTimeout(() => setDebounced(value), delay);
@@ -437,6 +432,7 @@ export function CollectionPage() {
   const [guardianQ, setGuardianQ] = useState("");
   const materialQd = useDebounced(materialQ);
   const guardianQd = useDebounced(guardianQ);
+  const qMainDebounced = useDebounced(qMain);
 
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [loadingGuardians, setLoadingGuardians] = useState(false);
@@ -502,8 +498,8 @@ export function CollectionPage() {
   const { hasAdministrativo } = usePermissions();
 
   const tabs = [
-    { id: "available", label: "Disponíveis para remoção", icon: Trash },
     { id: "in-collection", label: "Itens da coleção", icon: Package },
+    { id: "available", label: "Disponíveis para remoção", icon: Trash },
     { id: "docs", label: "Documentação", icon: FileText },
     ...(hasAdministrativo
       ? [{ id: "administrator", label: "Administrador", icon: Package }]
@@ -522,11 +518,12 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
-      if (qMain) params.set("q", qMain);
+      if (qMainDebounced) params.set("q", qMainDebounced);
       if (materialIdMain) params.set("material_id", materialIdMain);
       if (guardianIdMain) params.set("legal_guardian_id", guardianIdMain);
       if (excludeNI) params.set("exclude_asset_status", "NI");
 
+      if (collection_id) params.set("not_in_collection", collection_id);
       params.set("offset", String(offset));
       params.set("limit", String(limit));
 
@@ -537,32 +534,33 @@ export function CollectionPage() {
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
-        let errorMessage = "Falha ao carregar itens da LFD.";
-        try {
-          const errorData = await res.json();
-          if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
-        toast.error("Erro", { description: errorMessage });
-        return;
-      }
+          let errorMessage = "Falha ao carregar itens da LFD.";
+          try {
+            const errorData = await res.json();
+            if (errorData?.detail) errorMessage = errorData.detail;
+          } catch { }
+          toast.error("Erro", { description: errorMessage });
+          return;
+        }
 
         const data = await res.json();
 
         setLfdItems(data.catalog_entries);
       } else {
+        params.delete("not_in_collection")
         const url = `${urlGeral}collection_items/${collection_id}${params.toString() ? `?${params.toString()}` : ""
           }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
-        let errorMessage = "Falha ao carregar coleção.";
-        try {
-          const errorData = await res.json();
-          if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
-        toast.error("Erro", { description: errorMessage });
-        return;
-      }
+          let errorMessage = "Falha ao carregar coleção.";
+          try {
+            const errorData = await res.json();
+            if (errorData?.detail) errorMessage = errorData.detail;
+          } catch { }
+          toast.error("Erro", { description: errorMessage });
+          return;
+        }
 
         const data: CollectionItemsResponse = await res.json();
         const list = Array.isArray((data as any)?.collection_items)
@@ -585,7 +583,7 @@ export function CollectionPage() {
     agencyId,
     sectorId,
     locationId,
-    qMain,
+    qMainDebounced,
     materialIdMain,
     guardianIdMain,
     excludeNI,
@@ -612,7 +610,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -804,7 +802,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -847,13 +845,11 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens recusados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens recusados com sucesso!");
       setSelectedCollectionItems(new Set());
       setRefuseOpen(false);
       fetchCollectionItems();
@@ -863,6 +859,7 @@ export function CollectionPage() {
       setRefusing(false);
       fetchStatistics();
       fetchCollection();
+      fetchCollectionItems();
     }
   };
 
@@ -923,20 +920,21 @@ export function CollectionPage() {
       setRemovingSelected(false);
       fetchStatistics();
       fetchCollection();
+      fetchCollectionItems();
     }
   };
 
   const fmt = (n: number) => n.toLocaleString("pt-BR");
 
   // GET COLLECTION
-  const type_search = queryUrl.get("collection_id");
+  const collectionId = queryUrl.get("collection_id");
   const [collection, setCollection] = useState<CollectionDTO | null>(null);
 
   const fetchCollection = async () => {
     try {
       setLoadingCollection(true);
       const res = await fetch(
-        `${urlGeral}collections/${type_search}?admin=${hasAdministrativo}`,
+        `${urlGeral}collections/${collectionId}?admin=${hasAdministrativo}`,
         {
           method: "GET",
           headers: authHeaders,
@@ -948,7 +946,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -963,12 +961,12 @@ export function CollectionPage() {
     } finally {
       setLoadingCollection(false);
       fetchStatistics();
+      fetchCollectionItems();
     }
   };
 
   useEffect(() => {
     fetchCollection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlGeral]);
 
   const [loadingMessage, setLoadingMessage] = useState(
@@ -1012,23 +1010,6 @@ export function CollectionPage() {
     };
   }, []);
 
-  const handleVoltar = () => {
-    const currentPath = location.pathname;
-    const hasQueryParams = location.search.length > 0;
-    if (hasQueryParams) {
-      navigate(currentPath);
-    } else {
-      const pathSegments = currentPath
-        .split("/")
-        .filter((segment) => segment !== "");
-      if (pathSegments.length > 1) {
-        pathSegments.pop();
-        const previousPath = "/" + pathSegments.join("/");
-        navigate(previousPath);
-      } else navigate("/");
-    }
-  };
-
   // Dialogs: Editar / Deletar
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -1055,6 +1036,7 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const res = await fetch(
         `${urlGeral}collection_items/add_by_filters/${collection_id}?${params.toString()}`,
@@ -1068,7 +1050,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1099,6 +1081,7 @@ export function CollectionPage() {
       if (agencyId) params.set("agency_id", agencyId);
       if (sectorId) params.set("sector_id", sectorId);
       if (locationId) params.set("location_id", locationId);
+      if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const res = await fetch(
         `${urlGeral}collection_items/remove_by_filters/${collection_id}?${params.toString()}`,
@@ -1112,7 +1095,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1154,7 +1137,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1197,7 +1180,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1217,6 +1200,11 @@ export function CollectionPage() {
 
   const handleDeleteCollection = async () => {
     try {
+
+      if (collection?.sei_process || collection?.document_path) {
+        toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+        return;
+      }
       setDeleteLoading(true);
       const res = await fetch(`${urlGeral}collections/${collection_id}`, {
         method: "DELETE",
@@ -1227,7 +1215,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1306,7 +1294,7 @@ export function CollectionPage() {
           </h1>
 
           <div className="flex gap-3 mt-8">
-            <Button onClick={handleVoltar} variant={"ghost"}>
+            <Button onClick={() => navigate("/removiveis", { replace: true })} variant={"ghost"}>
               <Undo2 size={16} /> Voltar
             </Button>
             <Link to={"/"}>
@@ -1334,18 +1322,7 @@ export function CollectionPage() {
         <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
           <div className="flex gap-2 items-center">
             <Button
-              onClick={() => {
-                const path = location.pathname;
-                const hasQuery = location.search.length > 0;
-                if (hasQuery) navigate(path);
-                else {
-                  const seg = path.split("/").filter(Boolean);
-                  if (seg.length > 1) {
-                    seg.pop();
-                    navigate("/" + seg.join("/"));
-                  } else navigate("/");
-                }
-              }}
+              onClick={() => navigate("/removiveis", { replace: true })}
               variant="outline"
               size="icon"
               className="h-7 w-7"
@@ -1370,7 +1347,7 @@ export function CollectionPage() {
               <div className="flex gap-2 w-full items-center">
                 {collection.document_path
                   ?
-                  <Alert className="p-2 items-center text-white bg-red-500 border-0">COLEÇÃO FINALIZADA</Alert> 
+                  <Alert className="p-2 items-center text-white bg-red-500 border-0">COLEÇÃO FINALIZADA</Alert>
                   : ""}
                 <Button
                   className="flex-1"
@@ -1669,7 +1646,7 @@ export function CollectionPage() {
                                 className="border-0 p-0 h-9 flex flex-1 w-full"
                                 value={qMain}
                                 onChange={(e) => {
-                                  setQMain(e.target.value);
+                                  setQMain(e.target.value.toUpperCase());
                                   setOffset(0);
                                 }}
                                 placeholder="Buscar por código, descrição, material, marca, modelo..."
@@ -2021,7 +1998,7 @@ export function CollectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Dialog SEI */}
+      {/* Dialog Processo */}
       <Dialog open={seiOpen} onOpenChange={setSeiOpen}>
         <DialogContent>
           <DialogHeader>
@@ -2119,11 +2096,15 @@ export function CollectionPage() {
                 {locations?.find((l) => l.id === locationId)?.location_code ||
                   locationId}
               </p>
+            )}      {excludeNI && (
+              <p>
+                <strong>Apenas itens patrimoniados</strong></p>
             )}
             {!qMain &&
               !materialIdMain &&
               !guardianIdMain &&
               !unitId &&
+              !excludeNI &&
               !agencyId &&
               !sectorId &&
               !locationId && (
@@ -2209,11 +2190,15 @@ export function CollectionPage() {
                 {locations?.find((l) => l.id === locationId)?.location_code ||
                   locationId}
               </p>
+            )}      {excludeNI && (
+              <p>
+                <strong>Apenas itens patrimoniados</strong></p>
             )}
             {!qMain &&
               !materialIdMain &&
               !guardianIdMain &&
               !unitId &&
+              !excludeNI &&
               !agencyId &&
               !sectorId &&
               !locationId && (

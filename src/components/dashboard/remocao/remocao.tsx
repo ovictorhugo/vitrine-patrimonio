@@ -101,7 +101,7 @@ export function Remocao() {
     handleNavigate(offset, limit, true);
   }, [offset, limit]);
 
-  const fetchInventories = async () => {
+  const fetchCollections = async () => {
     try {
       setLoadingList(true);
       const url = `${urlGeral}collections/?type=REMOCAO&offset=${encodeURIComponent(
@@ -113,7 +113,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -128,6 +128,10 @@ export function Remocao() {
     }
   };
   const [isOpen, setIsOpen] = useState(false);
+  const { hasAdministrativo } = usePermissions();
+  useEffect(() => {
+    fetchCollections();
+  }, [urlGeral, offset, limit, location.search]);
   const handleSubmit = async () => {
     try {
       if (!key.trim()) {
@@ -135,7 +139,7 @@ export function Remocao() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${urlGeral}collections/`, {
+      const res = await fetch(`${urlGeral}collections/?admin=${hasAdministrativo}`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ description, name: key, type: "REMOCAO" }),
@@ -145,7 +149,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -155,7 +159,7 @@ export function Remocao() {
       setDescription("");
       setIsOpen(false);
       setOffset(0);
-      await fetchInventories();
+      await fetchCollections();
     } catch (e: any) {
       toast.error("Erro ao criar", { description: e?.message || String(e) });
     } finally {
@@ -169,12 +173,7 @@ export function Remocao() {
 
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
-    const { hasAdministrativo } = usePermissions();
 
-
-  useEffect(() => {
-    fetchInventories();
-  }, [urlGeral, offset, limit]);
 
 
 
@@ -224,7 +223,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -246,10 +245,10 @@ export function Remocao() {
 
   const handleDeleteCollection = async () => {
     if (!currentCollectionId) return;
-      if (currentCollection?.sei_process || currentCollection?.document_path) {
-        toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
-        return;
-      }
+    if (currentCollection?.sei_process || currentCollection?.document_path) {
+      toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+      return;
+    }
     try {
       setDeleteLoading(true);
       const res = await fetch(`${urlGeral}collections/${currentCollectionId}`, {
@@ -261,7 +260,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -272,7 +271,7 @@ export function Remocao() {
       setDeleteOpen(false);
       setCurrentCollectionId(null);
       // opcional: se esvaziar página, você pode fazer:
-      // await fetchInventories();
+      // await fetchCollections();
     } catch (e: any) {
       toast.error(e?.message || "Falha ao deletar a coleção.");
     } finally {
@@ -297,14 +296,14 @@ export function Remocao() {
         });
 
         if (!res.ok) {
-        let errorMessage = "Erro ao carregar estatísticas";
-        try {
-          const errorData = await res.json();
-          if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
-        toast.error("Erro", { description: errorMessage });
-        return;
-      }
+          let errorMessage = "Erro ao carregar estatísticas";
+          try {
+            const errorData = await res.json();
+            if (errorData?.detail) errorMessage = errorData.detail;
+          } catch { }
+          toast.error("Erro", { description: errorMessage });
+          return;
+        }
 
         const data: StatusCount[] = await res.json();
 
@@ -360,17 +359,7 @@ export function Remocao() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-2 items-center">
           <Button
-            onClick={() => {
-              const path = location.pathname;
-              if (location.search.length > 0) navigate(path);
-              else {
-                const seg = path.split("/").filter(Boolean);
-                if (seg.length > 1) {
-                  seg.pop();
-                  navigate("/" + seg.join("/"));
-                } else navigate("/");
-              }
-            }}
+            onClick={() => navigate("/", { replace: true })}
             variant="outline"
             size="icon"
             className="h-7 w-7"
@@ -515,7 +504,7 @@ export function Remocao() {
             <SelectValue placeholder="Itens" />
           </SelectTrigger>
           <SelectContent>
-            {[10, 20, 48, 80, 160, 320].map((val) => (
+            {[10, 20, 40, 80, 160, 320].map((val) => (
               <SelectItem key={val} value={val.toString()}>
                 {val}
               </SelectItem>
@@ -543,7 +532,7 @@ export function Remocao() {
           </Button>
         </div>
       </div>
-      
+
       {/* =================== Dialog EDITAR =================== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
@@ -623,6 +612,6 @@ export function Remocao() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }

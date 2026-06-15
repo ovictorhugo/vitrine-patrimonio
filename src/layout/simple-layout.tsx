@@ -179,11 +179,11 @@ export default function SimpleLayout({
           <AppSidebarAdmin />
 
           <SidebarInset className=" ">
-            <main className="h-full flex flex-col flex-1 ">
-              <div className="flex p-8 pt-8 pb-2 h-[68px] items-center justify-between top-0 sticky z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur ">
-                <div className="flex  pb-0 items-center gap-2">
+            <main className="h-full flex flex-col">
+              <div className="flex p-0 px-8 border-radius rounded-br-[20px] h-[60px] w-fit  items-center justify-between sticky top-0 z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur">
+                <div className="flex pb-0 items-center gap-2">
                   <SidebarTrigger className="" />
-                  <Separator orientation="vertical" className="mr-2 h-4" />
+                  <Separator orientation="vertical" className="h-4" />
 
                   <Breadcrumb>
                     <BreadcrumbList>
@@ -213,13 +213,13 @@ export default function SimpleLayout({
                   </Breadcrumb>
                 </div>
 
-                <div>
+                {/* <div>
                   {loggedIn && (
                     <Badge variant={"outline"} className="text-gray-500">
                       Sessão restante: {formatRemaining(remainingMs)}
                     </Badge>
                   )}
-                </div>
+                </div> */}
               </div>
               {/* Assuming Header is another component */}
 

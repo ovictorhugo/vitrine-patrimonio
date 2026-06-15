@@ -76,7 +76,7 @@ export function Removiveis() {
 
   const qs = new URLSearchParams(location.search);
   const initialOffset = Number(qs.get("offset") || "0");
-  const initialLimit = Number(qs.get("limit") || "12");
+  const initialLimit = Number(qs.get("limit") || "10");
   const [offset, setOffset] = useState<number>(initialOffset);
   const [limit, setLimit] = useState<number>(initialLimit);
 
@@ -101,19 +101,19 @@ export function Removiveis() {
     handleNavigate(offset, limit, true);
   }, [offset, limit]);
 
-  const fetchInventories = async () => {
+  const fetchCollections = async () => {
     try {
       setLoadingList(true);
       const url = `${urlGeral}collections/?type=REMOCAO_DISPONIVEIS&offset=${encodeURIComponent(
         offset,
-      )}&limit=${encodeURIComponent(limit)}`;
+      )}&limit=${encodeURIComponent(limit)}&admin=${hasAdministrativo}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok) {
         let errorMessage = "Falha ao carregar coleções";
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -128,8 +128,8 @@ export function Removiveis() {
     }
   };
   useEffect(() => {
-    fetchInventories();
-  }, [urlGeral, offset, limit]);
+    fetchCollections();
+  }, [urlGeral, offset, limit, location.search]);
   const { hasAdministrativo } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const handleSubmit = async () => {
@@ -149,7 +149,7 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -159,7 +159,7 @@ export function Removiveis() {
       setDescription("");
       setIsOpen(false);
       setOffset(0);
-      await fetchInventories();
+      await fetchCollections();
     } catch (e: any) {
       toast.error("Erro ao criar", { description: e?.message || String(e) });
     } finally {
@@ -220,7 +220,7 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -258,7 +258,7 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch {}
+        } catch { }
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -269,7 +269,7 @@ export function Removiveis() {
       setDeleteOpen(false);
       setCurrentCollectionId(null);
       // opcional: se esvaziar página, você pode fazer:
-      // await fetchInventories();
+      // await fetchCollections();
     } catch (e: any) {
       toast.error(e?.message || "Falha ao deletar a coleção.");
     } finally {
@@ -289,17 +289,7 @@ export function Removiveis() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-2 items-center">
           <Button
-            onClick={() => {
-              const path = location.pathname;
-              if (location.search.length > 0) navigate(path);
-              else {
-                const seg = path.split("/").filter(Boolean);
-                if (seg.length > 1) {
-                  seg.pop();
-                  navigate("/" + seg.join("/"));
-                } else navigate("/");
-              }
-            }}
+            onClick={() => navigate("/", { replace: true })}
             variant="outline"
             size="icon"
             className="h-7 w-7"
