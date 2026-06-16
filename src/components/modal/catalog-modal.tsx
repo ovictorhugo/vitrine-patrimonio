@@ -330,6 +330,7 @@ export const WORKFLOW_STATUS_META: Record<
   ACERVO_HISTORICO: { Icon: Landmark, colorClass: "text-zinc-500" },
   EM_REMOCAO: { Icon: Wrench, colorClass: "text-eng-blue" },
   REJEITADOS_REMOCAO: { Icon: X, colorClass: "text-eng-blue" },
+  REMOVIDO_DESFAZIMENTO: { Icon: Trash, colorClass: "text-eng-blue" },
 };
 
 export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
@@ -350,6 +351,7 @@ export const WORKFLOW_STATUS_LABELS: Record<string, string> = {
   ACERVO_HISTORICO: "Acervo Histórico",
   EM_REMOCAO: "Em processo de remoção",
   REJEITADOS_REMOCAO: "Remoção do item rejeitada",
+  REMOVIDO_DESFAZIMENTO: "Remoção concluída",
 };
 
 const money = (v?: string) => {
@@ -493,9 +495,7 @@ export function CatalogModal() {
     (data as any)?.catalog ?? (data as CatalogResponseDTO | null);
 
   // 2. Transformamos o catalog em um ESTADO do React
-  const [catalog, setCatalog] = useState<any>(
-    initialCatalog,
-  );
+  const [catalog, setCatalog] = useState<any>(initialCatalog);
 
   // 3. (Opcional, mas recomendado) Garante que ao fechar e abrir outro item, o estado reseta
   useEffect(() => {
@@ -621,7 +621,8 @@ export function CatalogModal() {
         if (!res.ok) {
           const text = await res.text().catch(() => "");
           throw new Error(
-            `Falha ao aceitar transferência (${res.status}): ${text || "Erro desconhecido"
+            `Falha ao aceitar transferência (${res.status}): ${
+              text || "Erro desconhecido"
             }`,
           );
         }
@@ -697,7 +698,7 @@ export function CatalogModal() {
         window.dispatchEvent(
           new CustomEvent("catalog:deleted", { detail: { id: catalog.id } }),
         );
-      } catch { }
+      } catch {}
       onClose();
     } catch (e: any) {
       toast("Erro ao excluir", {
@@ -839,8 +840,9 @@ export function CatalogModal() {
     { id: "documentos", label: "Documentos", icon: File },
     {
       id: "transferencia",
-      label: `Pedidos de transferência${transfers?.length ? ` (${transfers.length})` : ""
-        }`,
+      label: `Pedidos de transferência${
+        transfers?.length ? ` (${transfers.length})` : ""
+      }`,
       icon: Archive,
       condition: !(
         (hasCatalogo || user?.id == catalog?.user?.id) &&
@@ -1097,7 +1099,8 @@ export function CatalogModal() {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(
-          `Falha ao alterar workflow (${res.status}): ${text || "Erro desconhecido"
+          `Falha ao alterar workflow (${res.status}): ${
+            text || "Erro desconhecido"
           }`,
         );
       }
@@ -1320,11 +1323,14 @@ export function CatalogModal() {
                               className={`text-white h-6 py-1 text-xs font-medium ${diff.bgColor}`}
                             >
                               {diff.months > 0
-                                ? `${diff.months} ${diff.months === 1 ? "mês" : "meses"
-                                } e ${diff.days} ${diff.days === 1 ? "dia" : "dias"
-                                }`
-                                : `${diff.days} ${diff.days === 1 ? "dia" : "dias"
-                                }`}
+                                ? `${diff.months} ${
+                                    diff.months === 1 ? "mês" : "meses"
+                                  } e ${diff.days} ${
+                                    diff.days === 1 ? "dia" : "dias"
+                                  }`
+                                : `${diff.days} ${
+                                    diff.days === 1 ? "dia" : "dias"
+                                  }`}
                             </Badge>
                           )}
                         </div>
@@ -1347,10 +1353,11 @@ export function CatalogModal() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${!canScrollLeft
-                              ? "opacity-30 cursor-not-allowed"
-                              : ""
-                              }`}
+                            className={`absolute left-0 z-10 h-8 w-8 p-0 top-1 ${
+                              !canScrollLeft
+                                ? "opacity-30 cursor-not-allowed"
+                                : ""
+                            }`}
                             onClick={scrollLeft}
                             disabled={!canScrollLeft}
                           >
@@ -1369,10 +1376,11 @@ export function CatalogModal() {
                                     !condition && (
                                       <div
                                         key={id}
-                                        className={`pb-2 border-b-2 transition-all text-black dark:text-white ${value === id
-                                          ? "border-b-[#719CB8]"
-                                          : "border-b-transparent"
-                                          }`}
+                                        className={`pb-2 border-b-2 transition-all text-black dark:text-white ${
+                                          value === id
+                                            ? "border-b-[#719CB8]"
+                                            : "border-b-transparent"
+                                        }`}
                                         onClick={(event) => {
                                           event.stopPropagation();
                                           setValue(id);
@@ -1395,10 +1403,11 @@ export function CatalogModal() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`absolute right-0 z-10 h-8 w-8 p-0 top-1 ${!canScrollRight
-                              ? "opacity-30 cursor-not-allowed"
-                              : ""
-                              }`}
+                            className={`absolute right-0 z-10 h-8 w-8 p-0 top-1 ${
+                              !canScrollRight
+                                ? "opacity-30 cursor-not-allowed"
+                                : ""
+                            }`}
                             onClick={scrollRight}
                             disabled={!canScrollRight}
                           >
@@ -1413,10 +1422,11 @@ export function CatalogModal() {
                           <>
                             <div className="flex group ">
                               <div
-                                className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${qualisColor[
-                                  csvCodTrimmed as keyof typeof qualisColor
-                                ] || "bg-zinc-300"
-                                  } min-h-full`}
+                                className={`w-2 min-w-2 rounded-l-md dark:border-neutral-800 border border-neutral-200 border-r-0 ${
+                                  qualisColor[
+                                    csvCodTrimmed as keyof typeof qualisColor
+                                  ] || "bg-zinc-300"
+                                } min-h-full`}
                               />
                               <Alert className="flex flex-col flex-1 h-fit rounded-l-none p-0">
                                 <div className="flex mb-1 gap-3 justify-between p-4 pb-0">
@@ -1439,10 +1449,11 @@ export function CatalogModal() {
                                         asset?.csv_code !== "None" && (
                                           <div className="text-sm text-gray-500 dark:text-gray-300 font-normal flex gap-1 items-center">
                                             <div
-                                              className={`w-4 h-4 rounded-md ${qualisColor[
-                                                csvCodTrimmed as keyof typeof qualisColor
-                                              ] || "bg-zinc-300"
-                                                }`}
+                                              className={`w-4 h-4 rounded-md ${
+                                                qualisColor[
+                                                  csvCodTrimmed as keyof typeof qualisColor
+                                                ] || "bg-zinc-300"
+                                              }`}
                                             />
                                             {csvCodToText[
                                               csvCodTrimmed as keyof typeof csvCodToText
@@ -1462,7 +1473,7 @@ export function CatalogModal() {
                                           {!!asset?.legal_guardian &&
                                             asset.legal_guardian
                                               .legal_guardians_name !==
-                                            "None" && (
+                                              "None" && (
                                               <div className="flex gap-1 items-center">
                                                 <Avatar className="rounded-md h-5 w-5">
                                                   <AvatarImage
@@ -1526,7 +1537,7 @@ export function CatalogModal() {
 
                               {catalog.conservation_status &&
                                 (catalog.conservation_status as any) in
-                                CONSERVATION_MAP && (
+                                  CONSERVATION_MAP && (
                                   <div className="grid gap-3 w-full">
                                     <div className="flex w-full items-start gap-3 text-muted-foreground">
                                       {
@@ -1686,57 +1697,57 @@ export function CatalogModal() {
 
                           {((shouldShowReviewer && reviewerFromCommission) ||
                             (shouldShowJustification && justificationText)) && (
-                              <Alert className="mt-8">
-                                {shouldShowReviewer &&
-                                  reviewerFromCommission &&
-                                  loggedIn && (
-                                    <div className="flex gap-3 items-center">
-                                      <Avatar className="rounded-md h-12 w-12">
-                                        <AvatarImage
-                                          src={
-                                            reviewerFromCommission.id
-                                              ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
-                                              : undefined
-                                          }
-                                        />
-                                        <AvatarFallback className="flex items-center justify-center">
-                                          <User size={16} />
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div>
-                                        <p className="text-sm w-fit text-gray-500">
-                                          Parecerista
-                                        </p>
-                                        <p className="text-black dark:text-white font-medium text-lg truncate">
-                                          {reviewerFromCommission.username ??
-                                            "Não informado"}
-                                        </p>
-                                      </div>
+                            <Alert className="mt-8">
+                              {shouldShowReviewer &&
+                                reviewerFromCommission &&
+                                loggedIn && (
+                                  <div className="flex gap-3 items-center">
+                                    <Avatar className="rounded-md h-12 w-12">
+                                      <AvatarImage
+                                        src={
+                                          reviewerFromCommission.id
+                                            ? `${urlGeral}user/upload/${reviewerFromCommission.id}/icon`
+                                            : undefined
+                                        }
+                                      />
+                                      <AvatarFallback className="flex items-center justify-center">
+                                        <User size={16} />
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="text-sm w-fit text-gray-500">
+                                        Parecerista
+                                      </p>
+                                      <p className="text-black dark:text-white font-medium text-lg truncate">
+                                        {reviewerFromCommission.username ??
+                                          "Não informado"}
+                                      </p>
                                     </div>
-                                  )}
-
-                                {shouldShowJustification && justificationText && (
-                                  <div
-                                    className={
-                                      reviewerFromCommission ? "mt-4" : ""
-                                    }
-                                  >
-                                    <p className=" w-fit text-gray-500 mb-2">
-                                      Justificativa
-                                    </p>
-                                    <p
-                                      className={
-                                        isMobile
-                                          ? "text-gray-500 text-xs text-justify"
-                                          : "text-gray-500 text-sm text-justify"
-                                      }
-                                    >
-                                      {justificationText}
-                                    </p>
                                   </div>
                                 )}
-                              </Alert>
-                            )}
+
+                              {shouldShowJustification && justificationText && (
+                                <div
+                                  className={
+                                    reviewerFromCommission ? "mt-4" : ""
+                                  }
+                                >
+                                  <p className=" w-fit text-gray-500 mb-2">
+                                    Justificativa
+                                  </p>
+                                  <p
+                                    className={
+                                      isMobile
+                                        ? "text-gray-500 text-xs text-justify"
+                                        : "text-gray-500 text-sm text-justify"
+                                    }
+                                  >
+                                    {justificationText}
+                                  </p>
+                                </div>
+                              )}
+                            </Alert>
+                          )}
 
                           {/* Histórico */}
                           {loggedIn && (
@@ -1869,7 +1880,7 @@ export function CatalogModal() {
                           catalog={catalog}
                           urlGeral={urlGeral}
                           token={token}
-                          onChange={() => { }}
+                          onChange={() => {}}
                         />
                       </TabsContent>
 
@@ -1878,7 +1889,7 @@ export function CatalogModal() {
                           catalog={catalog}
                           urlGeral={urlGeral}
                           token={token}
-                          onChange={() => { }}
+                          onChange={() => {}}
                         />
                       </TabsContent>
 
