@@ -113,16 +113,15 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
       const data: CollectionResponse = await res.json();
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
-      toast.error("Erro ao carregar coleções", {
-        description: e?.message || String(e),
-      });
+      console.error(e);
+      toast.error("Falha ao carregar coleções. Tente novamente mais tarde.");
     } finally {
       setLoadingList(false);
     }
@@ -139,17 +138,20 @@ export function Remocao() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${urlGeral}collections/?admin=${hasAdministrativo}`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ description, name: key, type: "REMOCAO" }),
-      });
+      const res = await fetch(
+        `${urlGeral}collections/?admin=${hasAdministrativo}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ description, name: key, type: "REMOCAO" }),
+        },
+      );
       if (!res.ok) {
-        let errorMessage = "Falha ao criar";
+        let errorMessage = "Falha ao criar coleção";
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -161,7 +163,8 @@ export function Remocao() {
       setOffset(0);
       await fetchCollections();
     } catch (e: any) {
-      toast.error("Erro ao criar", { description: e?.message || String(e) });
+      console.error(e);
+      toast.error("Falha ao criar a coleção. Tente novamente mais tarde.");
     } finally {
       setCreating(false);
     }
@@ -173,9 +176,6 @@ export function Remocao() {
 
   const queryUrl = useQuery();
   const type_search = queryUrl.get("collection_id");
-
-
-
 
   /* ========= EDIT/DELETE COLLECTION ========= */
   const [editOpen, setEditOpen] = useState(false);
@@ -223,7 +223,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -237,7 +237,8 @@ export function Remocao() {
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar a coleção.");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setUpdateLoading(false);
     }
@@ -246,7 +247,9 @@ export function Remocao() {
   const handleDeleteCollection = async () => {
     if (!currentCollectionId) return;
     if (currentCollection?.sei_process || currentCollection?.document_path) {
-      toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+      toast.error(
+        "Não é possível deletar uma coleção com documentação ou número de processo",
+      );
       return;
     }
     try {
@@ -260,7 +263,7 @@ export function Remocao() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -273,7 +276,8 @@ export function Remocao() {
       // opcional: se esvaziar página, você pode fazer:
       // await fetchCollections();
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao deletar a coleção.");
+      console.error(e);
+      toast.error("Falha ao excluir a coleção. Tente novamente mais tarde.");
     } finally {
       setDeleteLoading(false);
     }
@@ -300,7 +304,7 @@ export function Remocao() {
           try {
             const errorData = await res.json();
             if (errorData?.detail) errorMessage = errorData.detail;
-          } catch { }
+          } catch {}
           toast.error("Erro", { description: errorMessage });
           return;
         }
@@ -393,13 +397,18 @@ export function Remocao() {
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
                   <Label>Nome*</Label>
-                  <Input value={key} onChange={(e) => setKey(e.target.value)} />
+                  <Input
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                    maxLength={50}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    maxLength={100}
                   />
                 </div>
               </div>
@@ -552,6 +561,7 @@ export function Remocao() {
               <Label>Nome</Label>
               <Input
                 value={newName}
+                maxLength={50}
                 onChange={(e) => setNewName(e.target.value)}
               />
             </div>
@@ -560,6 +570,7 @@ export function Remocao() {
               <Textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
+                maxLength={100}
               />
             </div>
           </div>
@@ -612,6 +623,6 @@ export function Remocao() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 }

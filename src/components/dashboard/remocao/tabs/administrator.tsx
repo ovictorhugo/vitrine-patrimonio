@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "../../../ui/button";
 import { useContext, useState } from "react";
 import { Loader2, Trash2, FileMinus, FileX, Undo } from "lucide-react";
+import { useIsMobile } from "../../../../hooks/use-mobile";
 
 interface AdministratorTabProps {
   loadingItems: boolean;
@@ -119,16 +120,17 @@ export function AdministratorTab({
       setActionLoading(null);
     }
   };
+  const isMobile = useIsMobile();
 
   return (
     <TabsContent value="administrator">
       <div className="p-8 pt-0">
-        <div className="m-6 ml-0 text-sm font-medium text-neutral-600 dark:text-neutral-300">
+        <div className="p-6 pb-4 text-sm font-medium text-neutral-600 dark:text-neutral-300">
           {collection?.document_path
             ? "Parecer adicionado"
             : "Parecer não adicionado"}
         </div>
-        <div className="flex flex-col flex-wrap gap-4 mb-6 max-w-[300px]">
+        <div className="flex gap-4 mb-6 max-w-[500px]">
           <Button
             variant="destructive"
             onClick={() => handleAdminAction(2)}

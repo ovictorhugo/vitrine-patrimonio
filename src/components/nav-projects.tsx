@@ -53,7 +53,7 @@ export function NavProjects({
                 setItensSelecionados([]);
               }}
               asChild
-              className={`${item.url == location.pathname ? "bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white" : "cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"}`}
+              className={`hover:font-bold ${item.url == location.pathname ? "bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white" : "cursor-pointer hover:text-eng-blue hover:bg-eng-blue/10 dark:hover:bg-neutral-800 transition-all"}`}
             >
               <Link to={item.url}>
                 <item.icon />

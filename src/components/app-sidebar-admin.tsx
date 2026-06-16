@@ -106,39 +106,39 @@ export function AppSidebarAdmin({
           items: [
             ...(loggedIn
               ? [
-                  {
-                    title: "Solicitar empréstimo",
-                    url: "/pedir-emprestimo-audiovisual",
-                    icon: PackageCheck,
-                  },
-                ]
+                {
+                  title: "Solicitar empréstimo",
+                  url: "/pedir-emprestimo-audiovisual",
+                  icon: PackageCheck,
+                },
+              ]
               : []),
             ...(loggedIn
               ? [
-                  {
-                    title: "Remoção de itens",
-                    url: "/removiveis",
-                    icon: MonitorX,
-                  },
-                ]
+                {
+                  title: "Remoção de itens",
+                  url: "/removiveis",
+                  icon: MonitorX,
+                },
+              ]
               : []),
             ...(hasCriarEtiqueta
               ? [
-                  {
-                    title: "Criar etiqueta",
-                    url: "/dashboard/criar-etiqueta",
-                    icon: Barcode,
-                  },
-                ]
+                {
+                  title: "Criar etiqueta",
+                  url: "/dashboard/criar-etiqueta",
+                  icon: Barcode,
+                },
+              ]
               : []),
             ...(hasAnunciarItem
               ? [
-                  {
-                    title: "Anunciar item",
-                    url: "/dashboard/novo-item",
-                    icon: Plus,
-                  },
-                ]
+                {
+                  title: "Anunciar item",
+                  url: "/dashboard/novo-item",
+                  icon: Plus,
+                },
+              ]
               : []),
             {
               title: "Buscar patrimônio",
@@ -157,12 +157,12 @@ export function AppSidebarAdmin({
             },
             ...(hasBuscaAvancada
               ? [
-                  {
-                    title: "Busca avançada",
-                    url: "/dashboard/busca-avancada",
-                    icon: TextSearch,
-                  },
-                ]
+                {
+                  title: "Busca avançada",
+                  url: "/dashboard/busca-avancada",
+                  icon: TextSearch,
+                },
+              ]
               : []),
           ],
         },
@@ -188,122 +188,122 @@ export function AppSidebarAdmin({
           : []),
         ...(hasAdministrativo
           ? [
-              {
-                name: "Administrativo",
-                url: "/dashboard/administrativo",
-                icon: SlidersHorizontal,
-              },
-            ]
+            {
+              name: "Administrativo",
+              url: "/dashboard/administrativo",
+              icon: SlidersHorizontal,
+            },
+          ]
           : []),
 
         ...(hasMovimentacao
           ? [
-              {
-                name: adminLabel("Movimentação"),
-                url: "/dashboard/movimentacao",
-                icon: adminIcon(ArrowRightLeft, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Movimentação"),
+              url: "/dashboard/movimentacao",
+              icon: adminIcon(ArrowRightLeft, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasAudiovisual
           ? [
-              {
-                name: adminLabel("Audiovisual"),
-                url: "/dashboard/audiovisual",
-                icon: adminIcon(SquarePlay, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Audiovisual"),
+              url: "/dashboard/audiovisual",
+              icon: adminIcon(SquarePlay, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasSalas
           ? [
-              {
-                name: "Salas",
-                url: "/dashboard/salas",
-                icon: DoorOpen,
-              },
-            ]
+            {
+              name: "Salas",
+              url: "/dashboard/salas",
+              icon: DoorOpen,
+            },
+          ]
           : []),
 
         ...(hasAcervoHistorico
           ? [
-              {
-                name: "Acervo Histórico",
-                url: "/dashboard/acervo-historico",
-                icon: Landmark,
-              },
-            ]
+            {
+              name: "Acervo Histórico",
+              url: "/dashboard/acervo-historico",
+              icon: Landmark,
+            },
+          ]
           : []),
 
         ...(hasComissaoApoioLocal
           ? [
-              {
-                name: adminLabel("Comissão de Apoio Local"),
-                url: "/dashboard/comissao-apoio-local",
-                icon: adminIcon(ContactRound, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Comissão de Apoio Local"),
+              url: "/dashboard/comissao-apoio-local",
+              icon: adminIcon(ContactRound, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasCargosFuncoes
           ? [
-              {
-                name: "Cargos e funções",
-                url: "/dashboard/cargos-funcoes",
-                icon: Users,
-              },
-            ]
+            {
+              name: "Cargos e funções",
+              url: "/dashboard/cargos-funcoes",
+              icon: Users,
+            },
+          ]
           : []),
 
         ...(hasComissaoPermanente
           ? [
-              {
-                name: adminLabel("Comissão Permanente"),
-                url: "/dashboard/comissao-permanente",
-                icon: adminIcon(ClipboardCheck, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Comissão Permanente"),
+              url: "/dashboard/comissao-permanente",
+              icon: adminIcon(ClipboardCheck, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasDesfazimento
           ? [
-              {
-                name: adminLabel("Desfazimento"),
-                url: "/dashboard/desfazimento",
-                icon: adminIcon(Trash2, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Desfazimento"),
+              url: "/dashboard/desfazimento",
+              icon: adminIcon(Trash2, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasAlienacao
           ? [
-              {
-                name: adminLabel("Alienação"),
-                url: "/dashboard/alienacao",
-                icon: adminIcon(Coins, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Alienação"),
+              url: "/dashboard/alienacao",
+              icon: adminIcon(Coins, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasDepartamento
           ? [
-              {
-                name: adminLabel("Setor/Departamento"),
-                url: "/dashboard/setor-departamento",
-                icon: adminIcon(Building2, LayoutDashboard),
-              },
-            ]
+            {
+              name: adminLabel("Setor/Departamento"),
+              url: "/dashboard/setor-departamento",
+              icon: adminIcon(Building2, LayoutDashboard),
+            },
+          ]
           : []),
 
         ...(hasFinalizados
           ? [
-              {
-                name: "Finalizados",
-                url: "/dashboard/finalizados",
-                icon: Recycle,
-              },
-            ]
+            {
+              name: "Finalizados",
+              url: "/dashboard/finalizados",
+              icon: Recycle,
+            },
+          ]
           : []),
       ],
     };

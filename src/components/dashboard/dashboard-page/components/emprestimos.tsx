@@ -65,14 +65,12 @@ export function Emprestimos() {
             icon={<CalendarCheck size={24} className="text-gray-400" />}
           />
         </AccordionTrigger>
-        <AccordionContent>
-          <Alert className="px-8">
+        <AccordionContent className="mx-12">
+          <Alert className="px-4">
             {emprestimos.length == 0 ? (
-              <div className="text-xl">
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-lg">
                   Você ainda não tem empréstimos
                 </h1>
-              </div>
             ) : (
               <>
                 <div className="flex w-full justify-end">

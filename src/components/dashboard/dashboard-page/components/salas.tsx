@@ -182,11 +182,10 @@ export function Salas() {
               aria-label="Rolar para a esquerda"
               variant="outline"
               size="sm"
-              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollLeft || disableNav
-                  ? "opacity-30 cursor-not-allowed"
-                  : ""
-              }`}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${!canScrollLeft || disableNav
+                ? "opacity-30 cursor-not-allowed"
+                : ""
+                }`}
               onClick={(event) => {
                 event.stopPropagation();
                 scrollLeft();
@@ -216,7 +215,11 @@ export function Salas() {
                     </div>
                   ) : locations.length === 0 ? (
                     <div className="w-full">
-                      <Alert variant="default">Você ainda não tem salas.</Alert>
+                      <Alert variant="default">  
+                        <h1 className="text-lg">
+                          Você ainda não tem salas
+                        </h1>
+                      </Alert>
                     </div>
                   ) : (
                     locations.map((location) => (
@@ -258,11 +261,10 @@ export function Salas() {
               aria-label="Rolar para a direita"
               variant="outline"
               size="sm"
-              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollRight || disableNav
-                  ? "opacity-30 cursor-not-allowed"
-                  : ""
-              }`}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${!canScrollRight || disableNav
+                ? "opacity-30 cursor-not-allowed"
+                : ""
+                }`}
               onClick={(event) => {
                 event.stopPropagation();
                 scrollRight();

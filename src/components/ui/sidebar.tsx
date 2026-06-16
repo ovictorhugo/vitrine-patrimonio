@@ -352,7 +352,7 @@ const SidebarInset = React.forwardRef<
       >
         <Header />
         <div className="flex-grow flex relative h-full w-full  md:h-[calc(100vh - 40px)] -xl overflow-y-auto">
-          <div className="flex-grow relative h-full w-full  bg-neutral-50 md:h-[calc(100vh - 40px)] dark:bg-neutral-900 md:rounded-xl overflow-y-auto">
+          <div className="flex-grow relative h-full w-full  bg-neutral-50 md:h-[calc(100vh - 40px)] dark:bg-neutral-900  overflow-y-auto">
             <div
               className={`w-full h-full relative grid grid-cols-1 flex-grow `}
               {...props}
@@ -393,7 +393,7 @@ const SidebarHeader = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 pb-0", className)}
       {...props}
     />
   );
@@ -677,7 +677,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className,
       )}
       {...props}
@@ -753,7 +753,7 @@ const SidebarMenuSub = React.forwardRef<
     ref={ref}
     data-sidebar="menu-sub"
     className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
+      "mx-3.5 flex min-w-0 translate-x-px flex-col border-l border-sidebar-border py-0.5",
       "group-data-[collapsible=icon]:hidden",
       className,
     )}

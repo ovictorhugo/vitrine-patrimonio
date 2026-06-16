@@ -3,6 +3,8 @@
 import {
   BadgeCheck,
   Bell,
+  ChevronsLeft,
+  ChevronsRight,
   ChevronsUpDown,
   CreditCard,
   LayoutDashboard,
@@ -28,10 +30,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "./ui/sidebar";
+
+import { Badge } from "./ui/badge";
 import { useModal } from "./hooks/use-modal-store";
 import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../context/context";
+import { useSessionCountdown } from "../context/useSessionCountdown";
 
 export function NavUser({
   user,
@@ -49,6 +54,7 @@ export function NavUser({
     setLoggedIn,
     user: userContext,
     urlGeral,
+    loggedIn,
   } = useContext(UserContext);
   const history = useNavigate();
 
@@ -62,6 +68,24 @@ export function NavUser({
     }
   };
 
+  const remainingMs = useSessionCountdown();
+  const formatRemaining = (totalMs: number) => {
+    const totalSec = Math.max(0, Math.floor(totalMs / 1000));
+
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days} dia${days > 1 ? "s" : ""}`);
+    if (hours > 0 || days > 0) parts.push(`${hours}h`);
+    parts.push(`${String(minutes).padStart(2, "0")}m`);
+    parts.push(`${String(seconds).padStart(2, "0")}s`);
+
+    return parts.join(" ");
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -69,7 +93,7 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-eng-blue/10"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
@@ -80,11 +104,10 @@ export function NavUser({
                   <User size={16} />
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-sm leading-tight hover:text-eng-blue">
                 <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsRight className="ml-auto size-4 hover:text-eng-blue" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -99,31 +122,34 @@ export function NavUser({
                 style={{
                   backgroundImage: `url(${urlGeral}user/upload/${userContext?.id}/cover) `,
                 }}
-              ></div>
+              />
 
-              <div className="flex items-center  flex-col  px-1 py-1.5 text-left text-sm">
-                <div>
-                  <Avatar className="h-16 w-16 rounded-lg -top-8 relative">
-                    <AvatarImage
-                      src={`${urlGeral}user/upload/${userContext?.id}/icon`}
-                      alt={user.name}
-                    />
-                    <AvatarFallback className="rounded-lg">
-                      <User size={16} />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="grid flex-1 -top-3 relative text-center text-sm leading-tight">
+              <div className="flex items-center flex-col px-1 pt-1.5 text-left text-sm">
+                <Avatar className="h-16 w-16 rounded-lg -top-12">
+                  <AvatarImage
+                    src={`${urlGeral}user/upload/${userContext?.id}/icon`}
+                    alt={user.name}
+                  />
+                  <AvatarFallback className="rounded-lg">
+                    <User size={16} />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid -top-8 text-center text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate text-xs">{user.email}</span>{" "}
+                  <div className="flex flex-1 justify-center my-4">
+                    <Badge variant={"outline"} className="text-gray-500">
+                      Sessão restante: {formatRemaining(remainingMs)}
+                    </Badge>
+                  </div>
                 </div>
-                          
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
             <DropdownMenuGroup className="px-1">
               <Link to={"/dashboard"}>
-                <DropdownMenuItem className="gap-2">
+                <DropdownMenuItem className="gap-2 hover:text-eng-blue">
                   <User size={16} />
                   Minha página
                 </DropdownMenuItem>
@@ -132,7 +158,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup className="px-1">
               <Link to={"/dashboard?pagina_user=perfil_seguranca"}>
-                <DropdownMenuItem className="gap-2">
+                <DropdownMenuItem className="gap-2 hover:text-eng-blue">
                   <Shield size={16} />
                   Perfil e segurança
                 </DropdownMenuItem>
@@ -148,7 +174,7 @@ export function NavUser({
                   localStorage.removeItem("permission");
                   localStorage.removeItem("role");
                 }}
-                className="gap-2"
+                className="gap-2 hover:text-eng-blue"
               >
                 <LogOut size={16} />
                 Sair da sessão

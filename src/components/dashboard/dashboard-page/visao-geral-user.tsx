@@ -96,7 +96,7 @@ export function VisaoGeralUser() {
       if (!file) {
         toast("Parece que os campos estão vazios", {
           description: "Selecione um arquivo de imagem para enviar.",
-          action: { label: "Fechar", onClick: () => {} },
+          action: { label: "Fechar", onClick: () => { } },
         });
         return;
       }
@@ -131,12 +131,12 @@ export function VisaoGeralUser() {
           } catch {
             try {
               desc = await res.text();
-            } catch {}
+            } catch { }
           }
 
           toast.error("Falha no upload", {
             description: desc,
-            action: { label: "Fechar", onClick: () => {} },
+            action: { label: "Fechar", onClick: () => { } },
           });
           return;
         }
@@ -149,14 +149,14 @@ export function VisaoGeralUser() {
 
         toast(folder === "profile" ? "Ícone atualizado" : "Capa atualizada", {
           description: "Upload realizado com sucesso.",
-          action: { label: "Fechar", onClick: () => {} },
+          action: { label: "Fechar", onClick: () => { } },
         });
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Erro desconhecido";
         toast.error("Erro de rede", {
           description: message,
-          action: { label: "Fechar", onClick: () => {} },
+          action: { label: "Fechar", onClick: () => { } },
         });
       } finally {
         input.value = "";
@@ -169,7 +169,7 @@ export function VisaoGeralUser() {
   const isMobile = useIsMobile();
 
   return (
-    <main className=" w-full grid grid-cols-1 ">
+    <main className="w-full grid grid-cols-1">
       <Helmet>
         <title>Dashboard | Sistema Patrimônio</title>
         <meta name="description" content={`Dashboard | Sistema Patrimônio`} />
@@ -178,36 +178,19 @@ export function VisaoGeralUser() {
 
       <main className="grid grid-cols-1 ">
         <Tabs defaultValue={tabs[0].id} value={value} className="">
-          <div className="md:p-8 p-4 pb-0">
+          <div className={`p-8 py-0  ${isMobile ? "px-2" : ""
+            }`}>
             <div
               style={{ backgroundImage: `url(${urlBackground})` }}
-              className="bg-eng-blue bg-no-repeat bg-center bg-cover border dark:border-neutral-800 w-full rounded-md h-[300px]"
+              className={`bg-eng-blue bg-no-repeat bg-center bg-cover border-0 dark:border-neutral-800 w-full rounded-md h-[200px]`}
             >
               <div
                 className={`w-full h-full rounded-md bg-black/25 pb-0 md:pb-0 p-4 md:p-8 flex-col flex justify-between `}
               >
                 <div
-                  className={`flex gap-4 justify-between md:flex-row ${
-                    isMobile ? "pt-4" : ""
-                  }`}
+                  className={`flex gap-4 justify-end md:flex-row ${isMobile ? "pt-4" : ""
+                    }`}
                 >
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleVoltar}
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 text-eng-blue hover:text-eng-blue"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="sr-only">Voltar</span>
-                    </Button>
-                    <div className="flex gap-2 md:flex-col lg:flex-row">
-                      <h1 className="flex-1 shrink-0 text-white whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                        Dashboard
-                      </h1>
-                    </div>
-                  </div>
-
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button
                       variant="outline"
@@ -224,7 +207,7 @@ export function VisaoGeralUser() {
                   <div className="flex justify-between w-full gap-8">
                     <div className="absolute">
                       <div className="relative group">
-                        <Avatar className=" rounded-lg  h-24 w-24 relative -top-12 xl:top-0">
+                        <Avatar className=" rounded-lg h-24 w-24 relative -top-16 xl:-top-6">
                           <AvatarImage
                             className={"rounded-md h-24 w-24"}
                             src={urlPerfil}
@@ -243,26 +226,24 @@ export function VisaoGeralUser() {
                         </div>
                       </div>
                     </div>
-                    <div className="  w-24 min-w-24"></div>
+                    <div className="w-24 min-w-24" />
 
-                    <div className="relative  grid-cols-1 hidden xl:grid">
+                    <div className="relative grid-cols-1 hidden xl:grid">
                       <ScrollArea className="relative overflow-x-auto">
                         <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent">
                           {tabs.map(({ id, label, icon: Icon }) => (
                             <div
                               key={id}
-                              className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
-                                value === id
-                                  ? "border-b-white"
-                                  : "border-b-transparent"
-                              }`}
+                              className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id
+                                ? "border-b-white"
+                                : "border-b-transparent"
+                                }`}
                               onClick={() => setValue(id)}
                             >
                               <Button
                                 variant="ghost"
-                                className={`m-0 text-white hover:text-eng-blue ${
-                                  value === id ? "bg-white text-eng-blue" : ""
-                                }`}
+                                className={`m-0 text-white hover:text-eng-blue ${value === id ? "bg-white text-eng-blue" : ""
+                                  }`}
                               >
                                 <Icon size={16} />
                                 {label}
@@ -281,11 +262,11 @@ export function VisaoGeralUser() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:gap-8  z-[2] pt-8 md:p-0">
+          <div className="grid grid-cols-1 gap-4 z-[2] pt-2">
             <div className="flex justify-between  md:px-8 items-center ">
               <div className="flex flex-col  gap-6 mt-8 px-8">
                 <div>
-                  <h1 className="text-2xl mb-2 max-w-[800px] font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1.1] md:block">
+                  <h1 className="text-2xl mb-2 font-bold leading-tight tracking-tighter md:text-4xl lg:leading-[1] md:block">
                     {user?.username}
                   </h1>
 
@@ -303,34 +284,31 @@ export function VisaoGeralUser() {
               </div>
             </div>
 
-            <div>
-              <div className="px-8 md:px-8">
-                <div className="relative grid grid-cols-1 xl:hidden">
-                  <ScrollArea className="relative w-full overflow-x-auto">
-                    <div className="flex w-full gap-2">
-                      <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent border pt-2 px-2 dark:bg-neutral-800 w-full">
-                        {tabs.map(({ id, label, icon: Icon }) => (
-                          <div
-                            key={id}
-                            className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
-                              value === id
-                                ? "border-b-[#719CB8]"
-                                : "border-b-transparent"
+            <div className="px-8 md:px-8">
+              <div className="relative grid grid-cols-1 xl:hidden">
+                <ScrollArea className="relative w-full overflow-x-auto">
+                  <div className="flex w-full gap-2">
+                    <TabsList className="p-0 justify-start flex gap-2 h-auto bg-transparent dark:bg-transparent border pt-2 px-2 dark:bg-neutral-800 w-full">
+                      {tabs.map(({ id, label, icon: Icon }) => (
+                        <div
+                          key={id}
+                          className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id
+                            ? "border-b-[#719CB8]"
+                            : "border-b-transparent"
                             }`}
-                            onClick={() => setValue(id)}
-                          >
-                            <Button variant="ghost" className="m-0">
-                              <Icon size={16} />
-                              {label}
-                            </Button>
-                          </div>
-                        ))}
-                      </TabsList>
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                  <div></div>
-                </div>
+                          onClick={() => setValue(id)}
+                        >
+                          <Button variant="ghost" className="m-0">
+                            <Icon size={16} />
+                            {label}
+                          </Button>
+                        </div>
+                      ))}
+                    </TabsList>
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+                <div></div>
               </div>
             </div>
 

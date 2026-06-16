@@ -47,7 +47,7 @@ export function CollectionItem({
       <div className="w-full">
         <Alert className="bg-center cursor-pointer bg-cover bg-no-repeat p-0">
           <CardContent className="flex aspect-square justify-between flex-col p-4">
-            <p className="font-medium uppercase flex items-center gap-1 text-xs text-gray-500">
+            <p className="font-medium uppercase flex items-center gap-1 text-sm lg:text-normal text-gray-500">
               {type}
             </p>
             <div>
@@ -58,10 +58,10 @@ export function CollectionItem({
                 <Calendar size={12} />
                 {props.created_at
                   ? new Date(props.created_at).toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })
                   : ""}
               </p>
             </div>
@@ -70,7 +70,7 @@ export function CollectionItem({
       </div>
 
       {hasColecoes && (
-        <div className="absolute top-2 right-2 hidden group-hover:flex gap-2 z-[2]">
+        <div className="absolute top-4 right-4 hidden group-hover:flex gap-2 z-[2]">
           <Button
             size="icon"
             variant="outline"

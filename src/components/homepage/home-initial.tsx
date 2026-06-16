@@ -179,7 +179,7 @@ export function HomeInicial() {
   const workflows = useMemo(() => ["VITRINE"], []);
 
   return (
-    <div className="    ">
+    <div className="">
       <Helmet>
         <title>{`Página Inicial | Sistema Patrimônio`}</title>
         <meta
@@ -314,9 +314,8 @@ export function HomeInicial() {
                   return (
                     <div key={key} className="">
                       <CardHeader
-                        className={`flex flex-row items-center justify-between space-y-0 ${
-                          isMobile ? "p-3" : ""
-                        }`}
+                        className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? "p-3" : ""
+                          }`}
                       >
                         <div className="min-w-0">
                           <CardTitle className="text-[0.9rem] md:text-sm font-medium truncate">
@@ -351,9 +350,8 @@ export function HomeInicial() {
                   return (
                     <div key={key} className="">
                       <CardHeader
-                        className={`flex flex-row items-center justify-between space-y-0 ${
-                          isMobile ? "p-3" : ""
-                        }`}
+                        className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? "p-3" : ""
+                          }`}
                       >
                         <div className="min-w-0">
                           <CardTitle className="text-[0.9rem] md:text-sm font-medium truncate">

@@ -34,7 +34,7 @@ export function NavMain({
       onClick?: () => void // Adiciona a opção de clique direto
     })[]
   }[]
-})  {
+}) {
 
   const location = useLocation()
   return (
@@ -57,32 +57,32 @@ export function NavMain({
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
-              <SidebarMenuSub>
-  {item.items?.map((subItem) => (
-    <SidebarMenuSubItem key={subItem.title}>
-      {subItem.onClick ? (
-        <SidebarMenuSubButton 
-          onClick={subItem.onClick} 
-          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"
-        >
-          <span className="flex z-[99] items-center gap-1 truncate">
-            {subItem.icon && <subItem.icon className="h-4 min-h-4" />} 
-           <p className="truncate"> {subItem.title}</p>
-          </span>
-        </SidebarMenuSubButton>
-      ) : (
-        <SidebarMenuSubButton asChild className={` ${subItem.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue  hover:text-white transition-all text-white'):('cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all')}`}>
-          <Link to={subItem.url!} title={subItem.title}>
-            <span className="flex z-[99] items-center gap-1 truncate">
-              {subItem.icon && <subItem.icon className="h-4 min-h-4" />} 
-              <p className="truncate"> {subItem.title}</p>
-            </span>
-          </Link>
-        </SidebarMenuSubButton>
-      )}
-    </SidebarMenuSubItem>
-  ))}
-</SidebarMenuSub>
+                <SidebarMenuSub>
+                  {item.items?.map((subItem) => (
+                    <SidebarMenuSubItem key={subItem.title}>
+                      {subItem.onClick ? (
+                        <SidebarMenuSubButton
+                          onClick={subItem.onClick}
+                          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-all"
+                        >
+                          <span className="flex z-[99] items-center truncate">
+                            {subItem.icon && <subItem.icon className="h-4 min-h-4" />}
+                            <p className="truncate"> {subItem.title}</p>
+                          </span>
+                        </SidebarMenuSubButton>
+                      ) : (
+                        <SidebarMenuSubButton asChild className={`hover:font-bold border-eng-blue ${subItem.url == location.pathname ? ('bg-eng-blue hover:bg-eng-dark-blue hover:text-white transition-all text-white') : ('cursor-pointer hover:text-eng-blue hover:bg-eng-blue/10 dark:hover:bg-neutral-800 transition-all')}`}>
+                          <Link to={subItem.url!} title={subItem.title}>
+                            <span className="flex z-[99] items-center truncate">
+                              {subItem.icon && <subItem.icon className="h-4 min-h-4" />}
+                              <p className="truncate"> {subItem.title}</p>
+                            </span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      )}
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>
           </Collapsible>

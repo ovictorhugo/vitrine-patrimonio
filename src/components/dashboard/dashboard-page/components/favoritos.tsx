@@ -171,11 +171,10 @@ export function Favoritos() {
               aria-label="Rolar para a esquerda"
               variant="outline"
               size="sm"
-              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollLeft || disableNav
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${!canScrollLeft || disableNav
                   ? "opacity-30 cursor-not-allowed"
                   : ""
-              }`}
+                }`}
               onClick={(event) => {
                 event.stopPropagation();
                 scrollLeft();
@@ -202,11 +201,9 @@ export function Favoritos() {
                   ) : favorites.length === 0 ? (
                     <div className="w-full">
                       <Alert variant="default">
-                        <div className="text-xl">
-                          <h1 className="text-2xl font-bold">
-                            Você ainda não tem favoritos
-                          </h1>
-                        </div>
+                        <h1 className="text-lg">
+                          Você ainda não tem favoritos
+                        </h1>
                       </Alert>
                     </div>
                   ) : (
@@ -225,11 +222,10 @@ export function Favoritos() {
               aria-label="Rolar para a direita"
               variant="outline"
               size="sm"
-              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${
-                !canScrollRight || disableNav
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 ${!canScrollRight || disableNav
                   ? "opacity-30 cursor-not-allowed"
                   : ""
-              }`}
+                }`}
               onClick={(event) => {
                 event.stopPropagation();
                 scrollRight();

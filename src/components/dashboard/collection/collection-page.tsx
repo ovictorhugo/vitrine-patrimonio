@@ -149,6 +149,7 @@ export interface CollectionItemDTO {
   status: boolean;
   comment: string;
   catalog: CatalogDTO;
+  is_approved?: boolean;
 }
 
 /** ----- Collection (raiz da resposta) ----- */

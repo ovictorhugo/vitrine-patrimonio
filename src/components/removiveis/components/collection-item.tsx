@@ -47,7 +47,7 @@ export function CollectionItem({
       <div className="w-full">
         <Alert className="bg-center cursor-pointer bg-cover bg-no-repeat p-0">
           <CardContent className="flex aspect-square justify-between flex-col p-4">
-            <p className="font-medium uppercase flex items-center gap-1 text-xs text-gray-500">
+            <p className="font-medium uppercase flex items-center gap-1 text-sm lg:text-normal text-gray-500">
               {type}
             </p>
             <div>

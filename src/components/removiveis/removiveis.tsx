@@ -113,16 +113,17 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
       const data: CollectionResponse = await res.json();
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
-      toast.error("Erro ao carregar coleções", {
-        description: e?.message || String(e),
-      });
+      console.error(e);
+      toast.error(
+        "Falha ao carregar as coleções. Tente novamente mais tarde.",
+      );
     } finally {
       setLoadingList(false);
     }
@@ -139,17 +140,24 @@ export function Removiveis() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${urlGeral}collections/?admin=${hasAdministrativo}`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ description, name: key, type: "REMOCAO_DISPONIVEIS" }),
-      });
+      const res = await fetch(
+        `${urlGeral}collections/?admin=${hasAdministrativo}`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            description,
+            name: key,
+            type: "REMOCAO_DISPONIVEIS",
+          }),
+        },
+      );
       if (!res.ok) {
         let errorMessage = "Falha ao criar";
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -161,7 +169,7 @@ export function Removiveis() {
       setOffset(0);
       await fetchCollections();
     } catch (e: any) {
-      toast.error("Erro ao criar", { description: e?.message || String(e) });
+      toast.error("Erro ao criar coleção. Tente novamente mais tarde.");
     } finally {
       setCreating(false);
     }
@@ -220,7 +228,7 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -234,7 +242,7 @@ export function Removiveis() {
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar a coleção.");
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setUpdateLoading(false);
     }
@@ -244,7 +252,9 @@ export function Removiveis() {
     if (!currentCollectionId) return;
 
     if (currentCollection?.sei_process || currentCollection?.document_path) {
-      toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+      toast.error(
+        "Não é possível deletar uma coleção com documentação ou número de processo",
+      );
       return;
     }
     try {
@@ -258,7 +268,7 @@ export function Removiveis() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -271,7 +281,10 @@ export function Removiveis() {
       // opcional: se esvaziar página, você pode fazer:
       // await fetchCollections();
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao deletar a coleção.");
+      console.error(e);
+      toast.error(
+        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -322,13 +335,18 @@ export function Removiveis() {
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
                   <Label>Nome*</Label>
-                  <Input value={key} onChange={(e) => setKey(e.target.value)} />
+                  <Input
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                    maxLength={50}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    maxLength={100}
                   />
                 </div>
               </div>
@@ -371,7 +389,6 @@ export function Removiveis() {
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
       </div>
-
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {loadingList ? (
@@ -462,6 +479,7 @@ export function Removiveis() {
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                maxLength={50}
               />
             </div>
             <div className="grid gap-1.5">
@@ -469,6 +487,7 @@ export function Removiveis() {
               <Textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
+                maxLength={100}
               />
             </div>
           </div>

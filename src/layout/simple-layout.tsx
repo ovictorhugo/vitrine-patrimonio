@@ -94,24 +94,7 @@ export default function SimpleLayout({
     }
   }, [loggedIn, onOpen]);
 
-  const formatRemaining = (totalMs: number) => {
-    const totalSec = Math.max(0, Math.floor(totalMs / 1000));
 
-    const days = Math.floor(totalSec / 86400);
-    const hours = Math.floor((totalSec % 86400) / 3600);
-    const minutes = Math.floor((totalSec % 3600) / 60);
-    const seconds = totalSec % 60;
-
-    const parts: string[] = [];
-    if (days > 0) parts.push(`${days} dia${days > 1 ? "s" : ""}`);
-    if (hours > 0 || days > 0) parts.push(`${hours}h`);
-    parts.push(`${String(minutes).padStart(2, "0")}m`);
-    parts.push(`${String(seconds).padStart(2, "0")}s`);
-
-    return parts.join(" ");
-  };
-
-  const remainingMs = useSessionCountdown();
 
   if (isMobile) {
     return (
@@ -171,7 +154,7 @@ export default function SimpleLayout({
     return (
       <div>
         <SidebarProvider
-          className="    "
+          className=""
           defaultOpen={true}
           open={isCollapsed}
           onOpenChange={() => setIsCollapsed((prev) => !prev)}
@@ -180,9 +163,9 @@ export default function SimpleLayout({
 
           <SidebarInset className=" ">
             <main className="h-full flex flex-col">
-              <div className="flex p-0 px-8 border-radius rounded-br-[20px] h-[60px] w-fit  items-center justify-between sticky top-0 z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur">
+              <div className="flex p-0 px-8 border-b border-r border-solid border-eng-blue rounded-br-[20px] h-[60px] w-fit  items-center justify-between sticky top-0 z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur">
                 <div className="flex pb-0 items-center gap-2">
-                  <SidebarTrigger className="" />
+                  <SidebarTrigger />
                   <Separator orientation="vertical" className="h-4" />
 
                   <Breadcrumb>
@@ -212,17 +195,7 @@ export default function SimpleLayout({
                     </BreadcrumbList>
                   </Breadcrumb>
                 </div>
-
-                {/* <div>
-                  {loggedIn && (
-                    <Badge variant={"outline"} className="text-gray-500">
-                      Sessão restante: {formatRemaining(remainingMs)}
-                    </Badge>
-                  )}
-                </div> */}
               </div>
-              {/* Assuming Header is another component */}
-
               <div className="h-full ">{children}</div>
             </main>
           </SidebarInset>

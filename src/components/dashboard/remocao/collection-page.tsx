@@ -426,8 +426,12 @@ export function CollectionPage() {
 
   // pesquisa, material e responsável (para a LISTA principal)
   const [qMain, setQMain] = useState("");
-  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>([]);
-  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>([]);
+  const [materialItemsMain, setMaterialItemsMain] = useState<ComboboxItem[]>(
+    [],
+  );
+  const [guardianItemsMain, setGuardianItemsMain] = useState<ComboboxItem[]>(
+    [],
+  );
   const [materialIdMain, setMaterialIdMain] = useState<UUID | null>(null);
   const [guardianIdMain, setGuardianIdMain] = useState<UUID | null>(null);
 
@@ -481,7 +485,8 @@ export function CollectionPage() {
         });
 
         const guardJson = await guardRes.json().catch(() => ({}));
-        const guards: LegalGuardian[] = guardJson?.legal_guardians ?? guardJson ?? [];
+        const guards: LegalGuardian[] =
+          guardJson?.legal_guardians ?? guardJson ?? [];
 
         setGuardianItemsMain(
           guards.map((g) => ({
@@ -533,8 +538,9 @@ export function CollectionPage() {
 
       if (value === "lfd") {
         params.set("workflow_status", "DESFAZIMENTO");
-        const url = `${urlGeral}catalog/cards${params.toString() ? `?${params.toString()}` : ""
-          }`;
+        const url = `${urlGeral}catalog/cards${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
@@ -542,7 +548,7 @@ export function CollectionPage() {
           try {
             const errorData = await res.json();
             if (errorData?.detail) errorMessage = errorData.detail;
-          } catch { }
+          } catch {}
           toast.error("Erro", { description: errorMessage });
           return;
         }
@@ -551,9 +557,10 @@ export function CollectionPage() {
 
         setLfdItems(data.catalog_entries);
       } else {
-        params.delete("not_in_collection")
-        const url = `${urlGeral}collection_items/${collection_id}${params.toString() ? `?${params.toString()}` : ""
-          }`;
+        params.delete("not_in_collection");
+        const url = `${urlGeral}collection_items/${collection_id}${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
 
         const res = await fetch(url, { method: "GET", headers: authHeaders });
         if (!res.ok) {
@@ -561,7 +568,7 @@ export function CollectionPage() {
           try {
             const errorData = await res.json();
             if (errorData?.detail) errorMessage = errorData.detail;
-          } catch { }
+          } catch {}
           toast.error("Erro", { description: errorMessage });
           return;
         }
@@ -575,7 +582,7 @@ export function CollectionPage() {
     } catch (e: any) {
       toast("Erro ao carregar coleção de desfazimento", {
         description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => { } },
+        action: { label: "Fechar", onClick: () => {} },
       });
     } finally {
       setLoadingItems(false);
@@ -614,7 +621,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -806,7 +813,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -814,7 +821,8 @@ export function CollectionPage() {
       setSelectedLfdItems(new Set());
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setAddingToCollection(false);
       fetchStatistics();
@@ -847,7 +855,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -856,7 +864,8 @@ export function CollectionPage() {
       setRefuseOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao recusar itens");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setRefusing(false);
       fetchStatistics();
@@ -916,7 +925,8 @@ export function CollectionPage() {
       setRemoveSelectedOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setRemovingSelected(false);
       fetchStatistics();
@@ -944,7 +954,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -953,7 +963,8 @@ export function CollectionPage() {
       setApproveOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao aprovar itens");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setApproving(false);
       fetchStatistics();
@@ -970,17 +981,20 @@ export function CollectionPage() {
   const fetchCollection = async () => {
     try {
       setLoadingCollection(true);
-      const res = await fetch(`${urlGeral}collections/${collectionId}?admin=${hasAdministrativo}`, {
-        method: "GET",
-        headers: authHeaders,
-      });
+      const res = await fetch(
+        `${urlGeral}collections/${collectionId}?admin=${hasAdministrativo}`,
+        {
+          method: "GET",
+          headers: authHeaders,
+        },
+      );
 
       if (!res.ok) {
         let errorMessage = "Falha ao carregar coleção.";
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -989,8 +1003,7 @@ export function CollectionPage() {
       setCollection(data);
     } catch (e: any) {
       toast("Erro ao carregar coleção", {
-        description: e?.message || String(e),
-        action: { label: "Fechar", onClick: () => { } },
+        action: { label: "Fechar", onClick: () => {} },
       });
     } finally {
       setLoadingCollection(false);
@@ -1043,7 +1056,6 @@ export function CollectionPage() {
     };
   }, []);
 
-
   // Dialogs: Editar / Deletar
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -1084,7 +1096,7 @@ export function CollectionPage() {
         let errorMessage = "Erro ao adicionar itens por filtro";
         try {
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1092,7 +1104,8 @@ export function CollectionPage() {
       setFilterOpen(false);
       fetchCollectionItems();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar itens");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setAddingByFilter(false);
       fetchStatistics();
@@ -1127,7 +1140,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1136,7 +1149,8 @@ export function CollectionPage() {
       fetchCollectionItems();
       fetchStatistics();
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao remover itens",);
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setRemovingByFilter(false);
       fetchStatistics();
@@ -1167,7 +1181,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1180,7 +1194,8 @@ export function CollectionPage() {
       setSeiOpen(false);
       setSeiProcess("");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao adicionar processo.");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1207,7 +1222,7 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
@@ -1217,7 +1232,8 @@ export function CollectionPage() {
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar a coleção.");
+      console.error(e);
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setUpdateLoading(false);
     }
@@ -1225,9 +1241,10 @@ export function CollectionPage() {
 
   const handleDeleteCollection = async () => {
     try {
-
       if (collection?.sei_process || collection?.document_path) {
-        toast.error("Não é possível deletar uma coleção com documentação ou número de processo");
+        toast.error(
+          "Não é possível deletar uma coleção com documentação ou número de processo",
+        );
         return;
       }
       setDeleteLoading(true);
@@ -1240,14 +1257,15 @@ export function CollectionPage() {
         try {
           const errorData = await res.json();
           if (errorData?.detail) errorMessage = errorData.detail;
-        } catch { }
+        } catch {}
         toast.error("Erro", { description: errorMessage });
         return;
       }
       toast.success("Coleção deletada com sucesso.");
-      navigate("/dashboard/desfazimento");
+      navigate("/dashboard/remocao", { replace: true });
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao deletar a coleção.");
+      console.error(e);
+      toast.error("Falha ao excluir a coleção. Tente novamente mais tarde.");
     } finally {
       setDeleteLoading(false);
     }
@@ -1316,7 +1334,10 @@ export function CollectionPage() {
           </h1>
 
           <div className="flex gap-3 mt-8">
-            <Button onClick={() => navigate("/dashboard/remocao", { replace: true })} variant={"ghost"}>
+            <Button
+              onClick={() => navigate("/dashboard/remocao", { replace: true })}
+              variant={"ghost"}
+            >
               <Undo2 size={16} /> Voltar
             </Button>
             <Link to={"/"}>
@@ -1367,10 +1388,13 @@ export function CollectionPage() {
               }
             >
               <div className="flex gap-2 w-full">
-                {collection.document_path
-                  ?
-                  <Alert className="p-2 items-center text-white bg-red-500 border-0">COLEÇÃO FINALIZADA</Alert>
-                  : ""}
+                {collection.document_path && collection.sei_process ? (
+                  <Alert className="p-2 items-center text-white bg-red-500 border-0">
+                    DOCUMENTAÇÃO FINALIZADA
+                  </Alert>
+                ) : (
+                  ""
+                )}
                 <Button
                   className="flex-1"
                   variant="outline"
@@ -1429,8 +1453,8 @@ export function CollectionPage() {
             </div>
           </div>
           {/* Cards de status (usando estatísticas agregadas) */}
-          <div className="flex flex-col sm:flex-row justify-center gap-8 px-8">
-            <Alert className="p-0 w-[50%]">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 px-8">
+            <Alert className="p-0 min-w-[200px] w-[30%]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Itens na coleção
@@ -1444,7 +1468,7 @@ export function CollectionPage() {
               </CardContent>
             </Alert>
 
-            <Alert className="p-0  w-[50%]">
+            <Alert className="p-0 min-w-[200px] w-[30%]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Itens aprovados
@@ -1466,8 +1490,9 @@ export function CollectionPage() {
               {tabs.map(({ id, label, icon: Icon }) => (
                 <div
                   key={id}
-                  className={`pb-2 border-b-2 text-black dark:text-white transition-all ${value === id ? "border-b-[#719CB8]" : "border-b-transparent"
-                    }`}
+                  className={`pb-2 border-b-2 text-black dark:text-white transition-all ${
+                    value === id ? "border-b-[#719CB8]" : "border-b-transparent"
+                  }`}
                   onClick={() => {
                     setValue(id);
                     setOffset(0);
@@ -1646,8 +1671,9 @@ export function CollectionPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute left-0 z-10 h-10 ${isMobile ? "w-5" : "w-10"
-                        } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                      className={`absolute left-0 z-10 h-10 ${
+                        isMobile ? "w-5" : "w-10"
+                      } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
                       onClick={scrollLeft}
                       disabled={!canScrollLeft}
                     >
@@ -1682,7 +1708,6 @@ export function CollectionPage() {
                             </Button>
                           )}
 
-
                           <Button
                             variant={excludeNI ? "default" : "outline"}
                             size="sm"
@@ -1694,7 +1719,6 @@ export function CollectionPage() {
                             <ShieldCheck size={16} className="mr-2" />
                             Apenas patrimoniados
                           </Button>
-
 
                           {/* Pesquisa */}
                           <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
@@ -1710,10 +1734,10 @@ export function CollectionPage() {
                                   setOffset(0);
                                 }}
                                 placeholder="Buscar por código, descrição, material, marca, modelo..."
+                                maxLength={30}
                               />
                             </div>
                           </Alert>
-
 
                           {/* Material e Responsável */}
                           <Combobox
@@ -1801,7 +1825,6 @@ export function CollectionPage() {
                             disabled={!sectorId}
                           />
 
-
                           <Button
                             variant="outline"
                             size="sm"
@@ -1816,9 +1839,11 @@ export function CollectionPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`absolute right-0 z-10 h-10 ${isMobile ? "w-5" : "w-10"
-                        } p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                        }`}
+                      className={`absolute right-0 z-10 h-10 ${
+                        isMobile ? "w-5" : "w-10"
+                      } p-0 rounded-md ${
+                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                      }`}
                       onClick={scrollRight}
                       disabled={!canScrollRight}
                     >
@@ -2121,7 +2146,7 @@ export function CollectionPage() {
               <Input
                 value={seiProcess}
                 onChange={(e) => setSeiProcess(e.target.value)}
-                maxLength={50}
+                maxLength={30}
                 type="number"
               />
             </div>
@@ -2203,7 +2228,8 @@ export function CollectionPage() {
             )}
             {excludeNI && (
               <p>
-                <strong>Apenas itens patrimoniados</strong></p>
+                <strong>Apenas itens patrimoniados</strong>
+              </p>
             )}
             {!qMain &&
               !materialIdMain &&
@@ -2295,9 +2321,11 @@ export function CollectionPage() {
                 {locations?.find((l) => l.id === locationId)?.location_code ||
                   locationId}
               </p>
-            )} {excludeNI && (
+            )}{" "}
+            {excludeNI && (
               <p>
-                <strong>Apenas itens patrimoniados</strong></p>
+                <strong>Apenas itens patrimoniados</strong>
+              </p>
             )}
             {!qMain &&
               !materialIdMain &&
@@ -2373,19 +2401,20 @@ export function CollectionPage() {
           <div className="space-y-4 text-sm mt-2 text-justify">
             <p>
               • A coleção de itens a serem removidos fica aberta para alterações
-              até que o Processo ou o parecer seja adicionado à coleção.
+              até que o <b>Processo</b> ou o <b>parecer</b> seja adicionado à
+              coleção.
             </p>
             <p>
-              • Quando o Processo SEI é adicionado, não será mais possível
-              adicionar ou remover itens desta coleção.
+              • Quando o Processo é adicionado, não será mais possível
+              <b>adicionar</b> ou <b>remover</b> itens desta coleção.
             </p>
             <p>
               • Quando o parecer é adicionado, é liberado para o usuário definir
-              se os itens foram aprovados ou recusados pela PRA.{" "}
+              se os itens foram aprovados ou recusados pela PRA.
             </p>
             <p>
-              • Os itens recusados voltarão ao fluxo de desfazimento, enquanto os
-              aprovados serão definidos como prontos para remoção.
+              • Os itens recusados voltarão ao fluxo de desfazimento, enquanto
+              os aprovados serão definidos como prontos para remoção.
             </p>
           </div>
           <DialogFooter>
