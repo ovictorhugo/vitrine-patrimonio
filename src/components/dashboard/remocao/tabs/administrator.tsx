@@ -174,7 +174,7 @@ export function AdministratorTab({
             ) : (
               <Trash2 size={16} className="mr-2" />
             )}
-            Remover itens não aprovados
+            Remover todos os itens
           </Button>
         </div>
       </div>
