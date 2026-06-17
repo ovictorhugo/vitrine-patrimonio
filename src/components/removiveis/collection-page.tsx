@@ -1374,7 +1374,7 @@ export function CollectionPage() {
               <div className="flex gap-2 w-full items-center">
                 {collection.document_path && collection.sei_process ? (
                   <Alert className="p-2 items-center text-white bg-red-500 border-0">
-                    COLEÇÃO FINALIZADA
+                    Documentação Finalizada
                   </Alert>
                 ) : (
                   ""

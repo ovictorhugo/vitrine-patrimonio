@@ -94,8 +94,6 @@ export default function SimpleLayout({
     }
   }, [loggedIn, onOpen]);
 
-
-
   if (isMobile) {
     return (
       <div>
@@ -161,7 +159,7 @@ export default function SimpleLayout({
         >
           <AppSidebarAdmin />
 
-          <SidebarInset className=" ">
+          <SidebarInset>
             <main className="h-full flex flex-col">
               <div className="flex p-0 px-8 border-b border-r border-solid border-eng-blue rounded-br-[20px] h-[60px] w-fit  items-center justify-between sticky top-0 z-[3] supports-[backdrop-filter]:bg-neutral-50/60 supports-[backdrop-filter]:dark:bg-neutral-900/60 backdrop-blur">
                 <div className="flex pb-0 items-center gap-2">

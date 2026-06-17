@@ -32,6 +32,7 @@ export function Header() {
   const { theme } = useTheme();
   const { onOpen } = useModalHomepage();
   const { onOpen: onOpenModal } = useModal();
+  Header;
   const isMobile = useIsMobile();
 
   const handleClick = () => {
@@ -73,9 +74,6 @@ export function Header() {
                 className="border-0 h-full flex flex-1 dark:bg-transparent"
                 placeholder="Buscar patrimônio..."
               />
-              <p className="bg-neutral-100 rounded-md text-[10px] mr-1  dark:bg-neutral-800 h-6 flex items-center justify-center px-2">
-                Ctrl + Q
-              </p>
               <Button
                 className={` h-6 w-6  text-white border-0 `}
                 size={"icon"}
@@ -135,9 +133,6 @@ export function Header() {
                 className="border-0 h-full flex flex-1 dark:bg-transparent"
                 placeholder="Buscar patrimônio..."
               />
-              <p className="bg-neutral-100 rounded-md text-[10px] mr-1  dark:bg-neutral-800 h-6 flex items-center justify-center px-2">
-                Ctrl + Q
-              </p>
               <Button
                 className={` h-6 w-6  text-white border-0 `}
                 size={"icon"}

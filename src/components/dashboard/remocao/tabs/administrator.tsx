@@ -13,31 +13,15 @@ import { Loader2, Trash2, FileMinus, FileX, Undo } from "lucide-react";
 import { useIsMobile } from "../../../../hooks/use-mobile";
 
 interface AdministratorTabProps {
-  loadingItems: boolean;
   items: CollectionItem[];
   collection_id: string | null;
-  setCountDesfazimento: React.Dispatch<React.SetStateAction<number>>;
-  setCountNaoDesfazimento: React.Dispatch<React.SetStateAction<number>>;
-  setItems: React.Dispatch<React.SetStateAction<CollectionItem[]>>;
-  handleItemDeleted: (deletedId: string) => void;
-  viewMode: "list" | "grid";
-  selectedItems?: Set<string>;
-  toggleItem?: (id: string) => void;
   reload: () => void;
   collection: any;
 }
 
 export function AdministratorTab({
-  loadingItems,
   items,
   collection_id,
-  setCountDesfazimento,
-  setCountNaoDesfazimento,
-  setItems,
-  handleItemDeleted,
-  viewMode,
-  selectedItems,
-  toggleItem,
   reload,
   collection,
 }: AdministratorTabProps) {
@@ -183,7 +167,7 @@ export function AdministratorTab({
           <Button
             variant="destructive"
             onClick={() => handleAdminAction(1)}
-            disabled={actionLoading === 1 || !collection_id || !!collection?.sei_process}
+            disabled={actionLoading === 1 || !collection_id || !!collection?.sei_process && items.length > 0}
           >
             {actionLoading === 1 ? (
               <Loader2 size={16} className="mr-2 animate-spin" />

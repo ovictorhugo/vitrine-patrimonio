@@ -32,7 +32,7 @@ export function InCollectionTab({
   toggleItem,
   collection,
 }: InCollectionTabProps) {
-  const filteredItems = items.filter((e) => !e.is_approved);
+  const filteredItems = items.filter((e) => e.is_approved == null);
 
   return (
     <TabsContent value="in-collection">

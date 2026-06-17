@@ -21,11 +21,7 @@ import { useIsMobile } from "../../../hooks/use-mobile";
 import { TabsContent } from "../../ui/tabs";
 import React from "react";
 
-type VerificationStatus =
-  | "idle"
-  | "loading"
-  | "success"
-  | "invalid";
+type VerificationStatus = "idle" | "loading" | "success" | "invalid";
 
 interface DocumentacaoTabProps {
   collection_id: string | null;
@@ -33,10 +29,15 @@ interface DocumentacaoTabProps {
   reload: () => void;
 }
 
-export function DocumentacaoTab({ collection_id, collection, reload }: DocumentacaoTabProps) {
+export function DocumentacaoTab({
+  collection_id,
+  collection,
+  reload,
+}: DocumentacaoTabProps) {
   const isMobile = useIsMobile();
   const [docsLocal, setDocsLocal] = useState<File[]>([]);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("idle");
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>("idle");
   const [resultMessage, setResultMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
@@ -121,16 +122,21 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
       formData.append("file", file);
 
       // Endpoint especificado pelo usuário
-      const response = await fetch(`${urlGeral}collections/enviar-parecer/${collection_id}`, {
-        method: "POST",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: formData,
-      });
+      const response = await fetch(
+        `${urlGeral}collections/enviar-parecer/${collection_id}`,
+        {
+          method: "POST",
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: formData,
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         setVerificationStatus("invalid");
-        setResultMessage(data?.detail || data?.message || "Erro ao processar arquivo.");
+        setResultMessage(
+          data?.detail || data?.message || "Erro ao processar arquivo.",
+        );
         return;
       }
 
@@ -172,7 +178,8 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
   };
 
   const renderContent = () => {
-    const hasSavedParecer = !!collection?.document_path && docsLocal.length === 0 && !isReplacing;
+    const hasSavedParecer =
+      !!collection?.document_path && docsLocal.length === 0 && !isReplacing;
     if (verificationStatus === "loading") {
       return (
         <div className="flex flex-col h-64 items-center justify-center">
@@ -184,15 +191,23 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
       );
     }
 
-    if (verificationStatus === "success" || (hasSavedParecer && verificationStatus === "idle")) {
+    if (
+      verificationStatus === "success" ||
+      (hasSavedParecer && verificationStatus === "idle")
+    ) {
       const isJustUploaded = verificationStatus === "success";
       return (
         <div className="flex flex-col items-center justify-center p-8">
           <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full mb-6">
-            <CheckIcon size={48} className="text-green-600 dark:text-green-400" />
+            <CheckIcon
+              size={48}
+              className="text-green-600 dark:text-green-400"
+            />
           </div>
           <h1 className="text-center text-2xl font-bold mb-4">
-            {isJustUploaded ? "Documentação enviada com sucesso!" : "Documentação já salva na coleção!"}
+            {isJustUploaded
+              ? "Documentação enviada com sucesso!"
+              : "Documentação já salva na coleção!"}
           </h1>
           <p className="text-center text-neutral-500 max-w-[500px] mb-8">
             {isJustUploaded
@@ -204,7 +219,6 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
               <Download size={18} className="mr-2" />
               Baixar documentação
             </Button>
-
           </div>
         </div>
       );
@@ -237,7 +251,9 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
           <div className="inline-flex z-[2] items-center rounded-lg bg-amber-100/50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-500 gap-2 mb-3 px-3 my-8 py-1 text-sm font-medium border border-amber-200 dark:border-amber-800/30">
             <Info size={16} className="min-w-fit" />
             <div className="h-full w-[1px] bg-amber-200 dark:bg-amber-800/30"></div>
-            Faça o upload da documentação desta coleção ASSINADA em PDF. Atenção: Esta ação é IRREVERSÍVEL. O arquivo não poderá ser substituído.
+            Faça o upload da documentação desta coleção ASSINADA em PDF.
+            Atenção: Esta ação é IRREVERSÍVEL. O arquivo não poderá ser
+            substituído.
           </div>
         </div>
 
@@ -245,8 +261,9 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
           <div className="flex flex-col w-full justify-center items-center">
             <div
               {...getRootProps()}
-              className={`border-dashed h-full mb-2 flex-col border bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 ${isMobile ? "w-full" : "w-[600px]"
-                } flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800`}
+              className={`border-dashed h-full mb-2 flex-col border bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 p-6 text-center rounded-md text-neutral-400 text-sm cursor-pointer transition-all gap-3 ${
+                isMobile ? "w-full" : "w-[600px]"
+              } flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800`}
             >
               <input {...getInputProps()} />
               <div className="p-4 border rounded-md dark:border-neutral-700">
@@ -256,7 +273,8 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
                 <p>Solte o arquivo aqui…</p>
               ) : (
                 <p>
-                  Arraste e solte o arquivo aqui ou clique para selecionar (até {MAX_MB} MB)
+                  Arraste e solte o arquivo aqui ou clique para selecionar (até{" "}
+                  {MAX_MB} MB)
                 </p>
               )}
             </div>
@@ -265,9 +283,14 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
 
         {docsLocal.length > 0 && (
           <div className="flex flex-col w-full justify-center items-center">
-            <ul className={isMobile ? "w-full space-y-2" : "w-[600px] space-y-2"}>
+            <ul
+              className={isMobile ? "w-full space-y-2" : "w-[600px] space-y-2"}
+            >
               {docsLocal.map((f, i) => (
-                <Alert key={i} className="flex group justify-between items-center bg-white dark:bg-neutral-900">
+                <Alert
+                  key={i}
+                  className="flex group justify-between items-center bg-white dark:bg-neutral-900"
+                >
                   <div className="flex items-center min-h-8 gap-2 w-full">
                     <File size={16} />
                     <span className="truncate max-w-[85%]">
@@ -297,13 +320,25 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
             </ul>
           </div>
         )}
-
+        {docsLocal.length != 0 && !collection.sei_process ? (
+          <p className="text-red-500 mt-8">
+            Só é possível enviar a documentação após adicionar o número do
+            processo.
+          </p>
+        ) : (
+          <></>
+        )}
         <div className="w-full flex justify-center pt-8">
           <Button
             size="default"
             className="rounded"
             onClick={handleVerify}
-            disabled={docsLocal.length === 0 || busy || !collection_id || !collection.sei_process}
+            disabled={
+              docsLocal.length === 0 ||
+              busy ||
+              !collection_id ||
+              !collection.sei_process
+            }
           >
             Enviar documentação <Check size={16} className="ml-2" />
           </Button>
@@ -314,9 +349,7 @@ export function DocumentacaoTab({ collection_id, collection, reload }: Documenta
 
   return (
     <TabsContent value="docs">
-      <div className="p-8 pt-0 w-full">
-        {renderContent()}
-      </div>
+      <div className="p-8 pt-0 w-full">{renderContent()}</div>
     </TabsContent>
   );
 }

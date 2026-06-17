@@ -363,6 +363,7 @@ export function CollectionPage() {
   // estatísticas agregadas vindas da API
   const [countDesfazimento, setCountDesfazimento] = useState(0); // coletados
   const [countNaoDesfazimento, setCountNaoDesfazimento] = useState(0); // pendentes
+  const [countRefused, setCountRefused] = useState(0); // recusados
 
   const { urlGeral } = useContext(UserContext);
   const token = useMemo(() => localStorage.getItem("jwt_token"), []);
@@ -627,8 +628,10 @@ export function CollectionPage() {
       }
 
       const json = await res.json();
+
       setCountDesfazimento(json?.total ?? 0);
       setCountNaoDesfazimento(json?.approved ?? 0);
+      setCountRefused(json?.refused ?? 0);
     } catch (e) {
       console.error("Erro ao buscar estatísticas da coleção:", e);
     }
@@ -1379,67 +1382,74 @@ export function CollectionPage() {
             </h1>
           </div>
 
-          {hasColecoes && (
-            <div
-              className={
-                isMobile
-                  ? "flex flex-col items-center gap-4 w-full"
-                  : "flex items-start gap-4"
-              }
-            >
-              <div className="flex gap-2 w-full">
-                {collection.document_path && collection.sei_process ? (
-                  <Alert className="p-2 items-center text-white bg-red-500 border-0">
-                    DOCUMENTAÇÃO FINALIZADA
-                  </Alert>
-                ) : (
-                  ""
-                )}
-                <Button
-                  className="flex-1"
-                  variant="outline"
-                  disabled={!!collection.sei_process}
-                  onClick={() => setSeiOpen(true)}
-                >
-                  <FileArchive size={16} />
-                  {collection.sei_process
-                    ? collection.sei_process
-                    : "Adicionar processo sei"}
-                </Button>
+          <div
+            className={
+              isMobile
+                ? "flex flex-col items-center gap-4 w-full"
+                : "flex items-start gap-4 w-fit"
+            }
+          >
+            <div className="flex gap-2 w-full">
+              {collection.document_path &&
+              collection.sei_process &&
+              !items?.some((i) => i.is_approved == null) ? (
+                <Alert className="p-2 items-center text-white bg-orange-400 border-0">
+                  Coleção Finalizada
+                </Alert>
+              ) : (
+                ""
+              )}
+              {collection.document_path && collection.sei_process ? (
+                <Alert className="p-2 items-center text-white bg-red-500 border-0 w-fit text-nowrap">
+                  Documentação Fechada
+                </Alert>
+              ) : (
+                ""
+              )}
+              <Button
+                className="flex-1"
+                variant="outline"
+                disabled={!!collection.sei_process}
+                onClick={() => setSeiOpen(true)}
+              >
+                <FileArchive size={16} />
+                {collection.sei_process
+                  ? collection.sei_process
+                  : "Adicionar processo sei"}
+              </Button>
 
-                {collection.sei_process ? (
-                  <DownloadPdfButton
-                    filters={{ collection_id: collection_id || undefined }}
-                    id={collection_id || undefined}
-                    label="Baixar PDF"
-                    method="colecao_remocao"
-                  />
-                ) : (
-                  <Button
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={true}
-                    variant="outline"
-                  >
-                    <Download size={16} className="mr-2" /> Baixar documentação
-                  </Button>
-                )}
+              {collection.sei_process ? (
+                <DownloadPdfButton
+                  filters={{ collection_id: collection_id || undefined }}
+                  id={collection_id || undefined}
+                  label="Baixar PDF"
+                  method="colecao_remocao"
+                />
+              ) : (
                 <Button
-                  className="flex-1"
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={true}
                   variant="outline"
-                  onClick={() => setEditOpen(true)}
                 >
-                  <Pencil size={16} />
+                  <Download size={16} className="mr-2" /> Baixar documentação
                 </Button>
-                <Button
-                  className="flex-1"
-                  variant="destructive"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash size={16} />
-                </Button>
-              </div>
+              )}
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil size={16} />
+              </Button>
+              <Button
+                className="flex-1"
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash size={16} />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 ">
           <div className="justify-center px-4 md:px-8 w-full mx-auto flex flex-col items-center gap-2 mt-4">
@@ -1478,6 +1488,20 @@ export function CollectionPage() {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {fmt(countNaoDesfazimento)}
+                </div>
+              </CardContent>
+            </Alert>
+
+            <Alert className="p-0 min-w-[200px] w-[30%]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Itens reprovados
+                </CardTitle>
+                <XCircle className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {fmt(countRefused)}
                 </div>
               </CardContent>
             </Alert>
@@ -1871,16 +1895,8 @@ export function CollectionPage() {
           />
 
           <AdministratorTab
-            loadingItems={loadingItems}
             items={items}
             collection_id={collection_id}
-            setCountDesfazimento={setCountDesfazimento}
-            setCountNaoDesfazimento={setCountNaoDesfazimento}
-            setItems={setItems}
-            handleItemDeleted={handleItemDeleted}
-            viewMode={viewMode}
-            selectedItems={selectedCollectionItems}
-            toggleItem={toggleCollectionItem}
             reload={fetchCollection}
             collection={collection}
           />
@@ -2403,9 +2419,14 @@ export function CollectionPage() {
               • A coleção de itens a serem removidos fica aberta para alterações
               até que o <b>Processo</b> ou o <b>parecer</b> seja adicionado à
               coleção.
+            </p>{" "}
+            <p>
+              • Use o botão + ou o ícone de lixeira dentro dos filtros para usar
+              a funcionalidade de adicionar/remover itens por filtros,
+              facilitando a edição de vários itens por vez.
             </p>
             <p>
-              • Quando o Processo é adicionado, não será mais possível
+              • Quando o Processo é adicionado, não será mais possível{" "}
               <b>adicionar</b> ou <b>remover</b> itens desta coleção.
             </p>
             <p>
