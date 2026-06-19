@@ -118,6 +118,7 @@ export function Remocao() {
         return;
       }
       const data: CollectionResponse = await res.json();
+
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
       console.error(e);
@@ -440,13 +441,13 @@ export function Remocao() {
         >
           <Info size={12} />
           <div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-          Aqui você verá os itens a serem descartados
+          Aqui você verá os itens a serem desfeitos
         </Link>
 
         <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-          Agrupe os itens da lista de desfazimento para realizar o{" "}
+          Agrupe aqui os itens da LFD para realizar o{" "}
           <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
-            descarte
+            desfazimento
           </strong>
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>

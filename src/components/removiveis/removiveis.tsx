@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet";
 import { Button } from "../ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle,
   ChevronLeft,
@@ -36,8 +36,6 @@ import { CollectionDTO } from "../dashboard/collection/collection-page";
 import { useQuery } from "../authentication/signIn";
 import { CollectionPage } from "./collection-page";
 import { CollectionItem } from "./components/collection-item";
-import { Alert } from "../ui/alert";
-import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { usePermissions } from "../permissions";
 import {
   Select,
@@ -121,9 +119,7 @@ export function Removiveis() {
       setCollections(Array.isArray(data?.collections) ? data.collections : []);
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao carregar as coleções. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao carregar as coleções. Tente novamente mais tarde.");
     } finally {
       setLoadingList(false);
     }
@@ -282,9 +278,7 @@ export function Removiveis() {
       // await fetchCollections();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setDeleteLoading(false);
     }
@@ -378,13 +372,13 @@ export function Removiveis() {
         >
           <Info size={12} />
           <div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-          Aqui você verá os itens pronto para serem removidos
+          Aqui você verá os itens pronto para serem descartados
         </Link>
 
         <h1 className="z-[2] text-center max-w-[800px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-          Agrupe os itens para criar a sua lista de{" "}
+          Agrupe aqui os itens já desfazidos para criar uma lista de{" "}
           <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
-            remoção
+            descarte
           </strong>
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>

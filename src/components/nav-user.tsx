@@ -3,6 +3,7 @@
 import {
   BadgeCheck,
   Bell,
+  ChevronsDown,
   ChevronsLeft,
   ChevronsRight,
   ChevronsUpDown,
@@ -90,12 +91,12 @@ export function NavUser({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild className="group/user">
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-eng-blue/10"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-hover/user:bg-eng-blue/20"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="h-12 w-12 rounded-lg">
                 <AvatarImage
                   src={`${urlGeral}user/upload/${userContext?.id}/icon`}
                   alt={user.name}
@@ -104,15 +105,17 @@ export function NavUser({
                   <User size={16} />
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight hover:text-eng-blue">
-                <span className="truncate font-semibold">{user.name}</span>
+              <div className="grid flex-1 text-left text-lg leading-tight group-hover/user:text-eng-blue">
+                <span className="truncate font-semibold">
+                  {user.name.split(" ", 2).join(" ")}
+                </span>
               </div>
-              <ChevronsRight className="ml-auto size-4 hover:text-eng-blue" />
+              <ChevronsDown className="ml-auto size-4 group-hover/user:text-eng-blue" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) p-0 min-w-[300px] rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            className="w-(--radix-dropdown-menu-trigger-width) p-0 min-w-[300px] rounded-lg ml-[30px]"
+            side="bottom"
             align="end"
             sideOffset={4}
           >

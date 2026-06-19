@@ -162,6 +162,7 @@ export interface CollectionDTO {
   items: CollectionItemDTO[];
   sei_process?: string;
   document_path?: string;
+  user: UserDTO;
 }
 
 export function CollectionPage() {

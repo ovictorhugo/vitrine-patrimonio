@@ -60,7 +60,7 @@ import {
 } from "../../ui/accordion";
 import { HeaderResultTypeHome } from "../../header-result-type-home";
 import { CollectionItem } from "./components/collection-item";
-import { RowsItemsVitrine } from "./components/rows-items-vitrine";
+import { RowsItemsVitrine } from "../desfazimento/components/rows-items-vitrine";
 import { Alert } from "../../ui/alert";
 import { CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { usePermissions } from "../../permissions";
@@ -96,7 +96,7 @@ export function Desfazimento() {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }),
-    [token]
+    [token],
   );
 
   // ===== paginação via querystring (padrão offset/limit)
@@ -112,14 +112,14 @@ export function Desfazimento() {
   const handleNavigate = (
     newOffset: number,
     newLimit: number,
-    replace = false
+    replace = false,
   ) => {
     const params = new URLSearchParams(location.search);
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit));
     navigate(
       { pathname: location.pathname, search: params.toString() },
-      { replace }
+      { replace },
     );
   };
 
@@ -132,7 +132,7 @@ export function Desfazimento() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // função registrada pela grade para remover itens após POST
   const [removeFromGrid, setRemoveFromGrid] = useState<(ids: string[]) => void>(
-    () => () => {}
+    () => () => {},
   );
 
   // ===== coleções (com paginação)
@@ -140,7 +140,7 @@ export function Desfazimento() {
     try {
       setLoadingList(true);
       const url = `${urlGeral}collections/?type=SMAL&offset=${encodeURIComponent(
-        offset
+        offset,
       )}&limit=${encodeURIComponent(limit)}`;
       const res = await fetch(url, { method: "GET", headers: authHeaders });
       if (!res.ok)
@@ -271,7 +271,7 @@ export function Desfazimento() {
     }
 
     const targetCollection = collections.find(
-      (c) => c.id === targetCollectionId
+      (c) => c.id === targetCollectionId,
     );
     if (!targetCollection) {
       toast.message("Alvo não é uma coleção conhecida.");
@@ -298,8 +298,8 @@ export function Desfazimento() {
             status: false,
             comment: "",
           }),
-        })
-      )
+        }),
+      ),
     );
 
     const okIds: string[] = [];
@@ -311,7 +311,7 @@ export function Desfazimento() {
 
     if (okIds.length) {
       toast.success(
-        `${okIds.length} item(ns) adicionados em "${targetCollection.name}"`
+        `${okIds.length} item(ns) adicionados em "${targetCollection.name}"`,
       );
       removeFromGrid(okIds);
       setSelectedIds((prev) => {
@@ -334,12 +334,12 @@ export function Desfazimento() {
   const [newName, setNewName] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
   const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(
-    null
+    null,
   );
 
   const currentCollection = useMemo(
     () => collections.find((c) => c.id === currentCollectionId) || null,
-    [collections, currentCollectionId]
+    [collections, currentCollectionId],
   );
 
   useEffect(() => {
@@ -375,8 +375,8 @@ export function Desfazimento() {
         prev.map((c) =>
           c.id === currentCollectionId
             ? { ...c, name: newName, description: newDescription }
-            : c
-        )
+            : c,
+        ),
       );
       toast.success("Coleção atualizada com sucesso!");
       setEditOpen(false);
@@ -400,7 +400,7 @@ export function Desfazimento() {
         throw new Error(text || "Erro ao deletar a coleção.");
       }
       setCollections((prev) =>
-        prev.filter((c) => c.id !== currentCollectionId)
+        prev.filter((c) => c.id !== currentCollectionId),
       );
       toast.success("Coleção deletada.");
       setDeleteOpen(false);
@@ -431,7 +431,7 @@ export function Desfazimento() {
               Accept: "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (!res.ok) throw new Error("Erro ao carregar estatísticas");
@@ -582,7 +582,7 @@ export function Desfazimento() {
       </div>
 
       {/* HERO + BUSCA */}
-      <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-8 md:py-12 md:pb-8 lg:py-24 lg:pb-20">
+      <div className="justify-center  px-4 md:px-8 w-full mx-auto flex max-w-[1200px] flex-col items-center gap-2 py-4 pb-8">
         <Link
           to={"/informacoes"}
           className="inline-flex z-[2] items-center rounded-lg  bg-neutral-100 dark:bg-neutral-700  gap-2 mb-3 px-3 py-1 text-sm font-medium"
@@ -594,16 +594,13 @@ export function Desfazimento() {
         </Link>
 
         <h1 className="z-[2] text-center max-w-[900px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">
-          Agrupe os itens em coleções para o acompanhamento, controle e{" "}
+          Agrupe os itens em coleções para iniciar o desfazimento a partir da{" "}
           <strong className="bg-eng-blue rounded-md px-3 pb-2 text-white font-medium">
-            descarte
+            coleta
           </strong>
         </h1>
         <p className="max-w-[750px] text-center text-lg font-light text-foreground"></p>
 
-        <div className="lg:max-w-[60vw] lg:w-[60vw] w-full">
-          <Search />
-        </div>
       </div>
 
       <div className="grid gap-8 sm:grid-cols-3">
@@ -614,8 +611,8 @@ export function Desfazimento() {
                 {item.status === "TRUE"
                   ? "Coletados"
                   : item.status === "FALSE"
-                  ? "Pendentes"
-                  : "Sem coleção"}
+                    ? "Pendentes"
+                    : "Sem coleção"}
               </CardTitle>
               {getIcon(item.status)}
             </CardHeader>

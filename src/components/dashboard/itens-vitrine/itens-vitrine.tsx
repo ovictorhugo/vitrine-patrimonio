@@ -261,7 +261,6 @@ export const WORKFLOWS = {
     },
     { key: "REJEITADOS_COMISSAO", name: "Recusados" },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
-    { key: "DESCARTADOS", name: "Descarte Final" },
   ],
 } as const;
 
@@ -284,7 +283,6 @@ export const WORKFLOW_STATUS_META: Record<
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
   DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
-  DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
 /* ========================= Regras por coluna ========================= */
@@ -651,8 +649,9 @@ export function ItensVitrine() {
       if (excludeNI) params.set("exclude_asset_status", "NI");
 
       const qs = params.toString();
-      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${qs ? `?${qs}` : ""
-        }`;
+      const url = `${urlGeral}statistics/catalog/count-by-workflow-status${
+        qs ? `?${qs}` : ""
+      }`;
 
       const res = await fetch(url, {
         headers: {
@@ -1486,9 +1485,10 @@ export function ItensVitrine() {
       urlBase: urlGeral,
       sheetName: "Itens",
       filename:
-        `itens_${(colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
+        `itens_${
+          (colKey && (columns.find((c) => c.key === colKey)?.name || colKey)) ||
           "todos"
-          }${onlyVisible ? "_visiveis" : ""}`
+        }${onlyVisible ? "_visiveis" : ""}`
           .replace(/\s+/g, "_")
           .toLowerCase() + ".xlsx",
     });
@@ -1554,8 +1554,6 @@ export function ItensVitrine() {
             }
           >
             <div className="flex gap-2 items-center">
-
-
               <div className="flex">
                 <Button
                   size="sm"
@@ -1591,7 +1589,6 @@ export function ItensVitrine() {
             <div
               className={isMobile ? "flex justify-center gap-4" : "flex gap-4"}
             >
-
               {hasAnunciarItem ? (
                 <Link to={"/dashboard/novo-item"}>
                   <Button size="default">
@@ -1647,7 +1644,8 @@ export function ItensVitrine() {
                   label="Baixar Tudo"
                   method="catalog"
                 />
-              )} <Button
+              )}{" "}
+              <Button
                 size="default"
                 variant="outline"
                 onClick={() => setShowFilters((s) => !s)}
@@ -1666,8 +1664,9 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-10 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                  }`}
+                className={`absolute left-0 z-10 h-10 w-10 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1700,7 +1699,7 @@ export function ItensVitrine() {
                       onClick={() => setExcludeNI(!excludeNI)}
                     >
                       <ShieldCheck size={16} className="mr-2" />
-                      Apenas patrimoniado
+                      Apenas inventariados
                     </Button>
                     <Combobox
                       items={materialItems}
@@ -1761,7 +1760,6 @@ export function ItensVitrine() {
                       disabled={!sectorId}
                     />
 
-
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                       <Trash size={16} />
                       Limpar filtros
@@ -1773,8 +1771,9 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                  }`}
+                className={`absolute right-0 z-10 h-10 w-10 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1801,8 +1800,9 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute left-0 z-10 h-10 w-5 p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
-                  }`}
+                className={`absolute left-0 z-10 h-10 w-5 p-0 ${
+                  !canScrollLeft ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
               >
@@ -1911,8 +1911,9 @@ export function ItensVitrine() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${!canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                  }`}
+                className={`absolute right-0 z-10 h-10 w-5 p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
                 onClick={scrollRight}
                 disabled={!canScrollRight}
               >
@@ -1941,7 +1942,7 @@ export function ItensVitrine() {
                 variant={excludeNI ? "default" : "outline"}
                 onClick={() => setExcludeNI(!excludeNI)}
               >
-                Apenas patrimoniado
+                Apenas inventariados
               </Button>
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 <Trash size={16} />
@@ -1954,10 +1955,11 @@ export function ItensVitrine() {
         {/* Board / Expandido */}
         {expandedColumn === null ? (
           <div
-            className={`relative flex-1 ${showFilters
-              ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
-              : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
-              }`}
+            className={`relative flex-1 ${
+              showFilters
+                ? "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-306px)]"
+                : "max-h-[calc(100vh-248px)] sm:max-h-[calc(100vh-250px)] "
+            }`}
           >
             <div
               ref={boardScrollRef}
@@ -2025,13 +2027,14 @@ export function ItensVitrine() {
                                   className="flex flex-col min-h-0 w-full max-w-full relative h-full"
                                 >
                                   <ScrollArea
-                                    className={`h-full relative flex ${snapshot.isDraggingOver
-                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                      : ""
-                                      } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                    className={`h-full relative flex ${
+                                      snapshot.isDraggingOver
+                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                        : ""
+                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                   >
                                     {(loading || loadingColumns[col.key]) &&
-                                      !items.length ? (
+                                    !items.length ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square mt-2 w-full rounded-md" />
@@ -2194,13 +2197,14 @@ export function ItensVitrine() {
                                   className="flex flex-col min-h-0 w-full max-w-full relative h-full"
                                 >
                                   <ScrollArea
-                                    className={`h-full relative flex ${snapshot.isDraggingOver
-                                      ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
-                                      : ""
-                                      } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
+                                    className={`h-full relative flex ${
+                                      snapshot.isDraggingOver
+                                        ? "bg-neutral-200 dark:bg-neutral-800 rounded-md"
+                                        : ""
+                                    } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                   >
                                     {(loading || loadingColumns[col.key]) &&
-                                      !items.length && col.key != "DESCARTADOS" ? (
+                                    !items.length ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square mt-2 w-full rounded-md" />
@@ -2294,15 +2298,6 @@ export function ItensVitrine() {
                                         </div>
                                       );
                                     })()}
-
-                                    {col.key === "DESCARTADOS" ? <><Button variant="outline" size="lg"
-                                      onClick={() =>
-                                        navigate("/dashboard/remocao", {
-                                          replace: true,
-                                        })
-                                      }
-                                    >
-                                      <Trash2 size={16} />Ir para coleções de Descarte</Button></> : <></>}
 
                                     <ScrollBar orientation="vertical" />
                                   </ScrollArea>

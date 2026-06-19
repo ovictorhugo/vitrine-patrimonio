@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUp, ChevronsUpDown } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -108,6 +108,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
           <DropdownMenuTrigger
             asChild
             disabled={!loggedIn && teams.length === 0}
+            className="group/team-switcher"
           >
             <SidebarMenuButton
               size="lg"
@@ -118,7 +119,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
                   <SymbolEEWhite />
                 </div>
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-sm leading-tight group-hover/team-switcher:text-eng-blue">
                 <span className="truncate font-semibold">
                   {teams.find((t) => t.name === role)?.name || "Selecionar"}
                 </span>
@@ -126,14 +127,14 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
                   {teams.find((t) => t.name === role)?.plan || ""}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto" />
+              <ChevronsUp className="ml-auto group-hover/team-switcher:text-eng-blue" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg ml-[10px]"
             align="start"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? "bottom" : "top"}
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-slate-500 dark:text-slate-400">

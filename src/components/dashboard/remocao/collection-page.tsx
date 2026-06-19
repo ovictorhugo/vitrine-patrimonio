@@ -1741,7 +1741,7 @@ export function CollectionPage() {
                             }}
                           >
                             <ShieldCheck size={16} className="mr-2" />
-                            Apenas patrimoniados
+                            Apenas inventariados
                           </Button>
 
                           {/* Pesquisa */}

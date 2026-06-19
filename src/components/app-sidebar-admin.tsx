@@ -32,6 +32,8 @@ import {
   FileCheck,
   MonitorCheck,
   MonitorX,
+  ClipboardPen,
+  BaggageClaim,
 } from "lucide-react";
 import { DotsThree } from "phosphor-react";
 
@@ -62,6 +64,7 @@ export function AppSidebarAdmin({
     hasAnunciarItem,
     hasBuscaAvancada,
     hasCargosFuncoes,
+    hasColecoes,
     hasAlienacao,
     hasDesfazimento,
     hasMovimentacao,
@@ -116,9 +119,9 @@ export function AppSidebarAdmin({
             ...(loggedIn
               ? [
                   {
-                    title: "Remoção de itens",
+                    title: "Descarte",
                     url: "/removiveis",
-                    icon: MonitorX,
+                    icon: Trash2,
                   },
                 ]
               : []),
@@ -206,6 +209,16 @@ export function AppSidebarAdmin({
             ]
           : []),
 
+        ...(hasColecoes
+          ? [
+              {
+                name: adminLabel("Desfazimento"),
+                url: "/dashboard/remocao",
+                icon: adminIcon(Trash2, LayoutDashboard),
+              },
+            ]
+          : []),
+
         ...(hasAudiovisual
           ? [
               {
@@ -269,9 +282,9 @@ export function AppSidebarAdmin({
         ...(hasDesfazimento
           ? [
               {
-                name: adminLabel("Desfazimento"),
+                name: adminLabel("Coleta"),
                 url: "/dashboard/desfazimento",
-                icon: adminIcon(Trash2, LayoutDashboard),
+                icon: adminIcon(BaggageClaim, LayoutDashboard),
               },
             ]
           : []),
@@ -358,16 +371,16 @@ export function AppSidebarAdmin({
 
   return (
     <Sidebar collapsible="icon" className="border-0" {...props}>
-      <SidebarHeader>
-        <AccountSwitcher />
-      </SidebarHeader>
+      <SidebarHeader>{loggedIn && <NavUser user={data.user} />}</SidebarHeader>
 
       <SidebarContent>
         <NavProjects key={`projects-${navKey}`} projects={data.projects} />
         <NavMain key={`main-${navKey}`} items={data.navMain} />
       </SidebarContent>
 
-      <SidebarFooter>{loggedIn && <NavUser user={data.user} />}</SidebarFooter>
+      <SidebarFooter>
+        <AccountSwitcher />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
