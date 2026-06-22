@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronsUp, ChevronsUpDown } from "lucide-react";
+import { ChevronsDown, ChevronsUp, ChevronsUpDown } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -127,7 +127,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
                   {teams.find((t) => t.name === role)?.plan || ""}
                 </span>
               </div>
-              <ChevronsUp className="ml-auto group-hover/team-switcher:text-eng-blue" />
+              <ChevronsDown className="ml-auto group-hover/team-switcher:text-eng-blue" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 

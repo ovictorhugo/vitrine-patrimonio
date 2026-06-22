@@ -305,7 +305,7 @@ export function Removiveis() {
             <span className="sr-only">Voltar</span>
           </Button>
           <h1 className="text-xl font-semibold tracking-tight">
-            Disponíveis Remoção
+            Descarte
           </h1>
         </div>
 
@@ -372,7 +372,7 @@ export function Removiveis() {
         >
           <Info size={12} />
           <div className="h-full w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-          Aqui você verá os itens pronto para serem descartados
+          Aqui você verá os itens a serem descartados
         </Link>
 
         <h1 className="z-[2] text-center max-w-[800px] text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1] md:block mb-4">

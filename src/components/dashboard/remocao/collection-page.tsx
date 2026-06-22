@@ -1500,9 +1500,7 @@ export function CollectionPage() {
                 <XCircle className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {fmt(countRefused)}
-                </div>
+                <div className="text-2xl font-bold">{fmt(countRefused)}</div>
               </CardContent>
             </Alert>
           </div>
@@ -2164,6 +2162,7 @@ export function CollectionPage() {
                 onChange={(e) => setSeiProcess(e.target.value)}
                 maxLength={30}
                 type="number"
+                min={0}
               />
             </div>
           </div>

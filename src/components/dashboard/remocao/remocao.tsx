@@ -372,7 +372,7 @@ export function Remocao() {
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
-          <h1 className="text-xl font-semibold tracking-tight">Remoção</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Desfazimento</h1>
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">
@@ -459,7 +459,7 @@ export function Remocao() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {item.status === "APROVADOS"
-                  ? "Aprovados para remoção"
+                  ? "Aprovados para descarte"
                   : item.status === "EM_ANALISE"
                     ? "Pendentes de aprovação PRA"
                     : "Itens sem coleção"}

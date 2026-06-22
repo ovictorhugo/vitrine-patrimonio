@@ -2054,6 +2054,7 @@ export function CollectionPage() {
                 onChange={(e) => setSeiProcess(e.target.value)}
                 maxLength={30}
                 type="number"
+                min={0}
               />
             </div>
           </div>

@@ -508,7 +508,7 @@ export function Desfazimento() {
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
-          <h1 className="text-xl font-semibold tracking-tight">Desfazimento</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Coleta de itens</h1>
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">

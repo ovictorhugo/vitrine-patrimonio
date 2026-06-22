@@ -95,17 +95,21 @@ export function DownloadPdfButton({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      if (method === "catalog") {
-        setLoading(false);
-        setOpenEmailDialog(true);
+      if (!res.ok) {
+        toast.error("Erro ao baixar PDF, tente novamente mais tarde.");
         return;
       }
 
-      if (method === "colecao_remocao" || method === "colecao_removiveis") {
-        toast.success("Processamento do PDF iniciado. Você receberá um e-mail em breve com o arquivo.");
+      if (
+        method === "catalog" ||
+        method === "colecao_remocao" ||
+        method === "colecao_removiveis"
+      ) {
+        toast.success(
+          "Processamento do PDF iniciado. Você receberá um e-mail em breve com o arquivo.",
+        );
         setLoading(false);
+        setOpenEmailDialog(true);
         return;
       }
 
@@ -141,7 +145,7 @@ export function DownloadPdfButton({
         )}
         {label}
       </Button>
-      {method === "catalog" && (
+      {openEmailDialog && (
         <Dialog open={openEmailDialog} onOpenChange={setOpenEmailDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>

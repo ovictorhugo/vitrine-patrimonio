@@ -6,6 +6,7 @@ import {
   ChevronsDown,
   ChevronsLeft,
   ChevronsRight,
+  ChevronsUp,
   ChevronsUpDown,
   CreditCard,
   LayoutDashboard,
@@ -110,7 +111,7 @@ export function NavUser({
                   {user.name.split(" ", 2).join(" ")}
                 </span>
               </div>
-              <ChevronsDown className="ml-auto size-4 group-hover/user:text-eng-blue" />
+              <ChevronsUp className="ml-auto size-4 group-hover/user:text-eng-blue" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

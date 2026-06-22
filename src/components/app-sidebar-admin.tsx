@@ -209,16 +209,6 @@ export function AppSidebarAdmin({
             ]
           : []),
 
-        ...(hasColecoes
-          ? [
-              {
-                name: adminLabel("Desfazimento"),
-                url: "/dashboard/remocao",
-                icon: adminIcon(Trash2, LayoutDashboard),
-              },
-            ]
-          : []),
-
         ...(hasAudiovisual
           ? [
               {
@@ -282,9 +272,9 @@ export function AppSidebarAdmin({
         ...(hasDesfazimento
           ? [
               {
-                name: adminLabel("Coleta"),
+                name: adminLabel("Desfazimento"),
                 url: "/dashboard/desfazimento",
-                icon: adminIcon(BaggageClaim, LayoutDashboard),
+                icon: adminIcon(Trash2, LayoutDashboard),
               },
             ]
           : []),
@@ -371,16 +361,16 @@ export function AppSidebarAdmin({
 
   return (
     <Sidebar collapsible="icon" className="border-0" {...props}>
-      <SidebarHeader>{loggedIn && <NavUser user={data.user} />}</SidebarHeader>
+      <SidebarHeader>
+        <AccountSwitcher />
+      </SidebarHeader>
 
       <SidebarContent>
         <NavProjects key={`projects-${navKey}`} projects={data.projects} />
         <NavMain key={`main-${navKey}`} items={data.navMain} />
       </SidebarContent>
 
-      <SidebarFooter>
-        <AccountSwitcher />
-      </SidebarFooter>
+      <SidebarFooter>{loggedIn && <NavUser user={data.user} />}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

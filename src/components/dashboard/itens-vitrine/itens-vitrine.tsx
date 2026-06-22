@@ -261,6 +261,7 @@ export const WORKFLOWS = {
     },
     { key: "REJEITADOS_COMISSAO", name: "Recusados" },
     { key: "DESFAZIMENTO", name: "LFD - Lista Final de Desfazimento" },
+    { key: "DESCARTADOS", name: "Descarte Final" },
   ],
 } as const;
 
@@ -283,6 +284,7 @@ export const WORKFLOW_STATUS_META: Record<
   REVIEW_REQUESTED_COMISSION: { Icon: ListTodo, colorClass: "text-purple-500" },
   REJEITADOS_COMISSAO: { Icon: XCircle, colorClass: "text-red-500" },
   DESFAZIMENTO: { Icon: Trash, colorClass: "text-green-600" },
+  DESCARTADOS: { Icon: Recycle, colorClass: "text-green-600" },
 };
 
 /* ========================= Regras por coluna ========================= */
@@ -1699,7 +1701,7 @@ export function ItensVitrine() {
                       onClick={() => setExcludeNI(!excludeNI)}
                     >
                       <ShieldCheck size={16} className="mr-2" />
-                      Apenas inventariados
+                      Apenas patrimoniado
                     </Button>
                     <Combobox
                       items={materialItems}
@@ -1942,7 +1944,7 @@ export function ItensVitrine() {
                 variant={excludeNI ? "default" : "outline"}
                 onClick={() => setExcludeNI(!excludeNI)}
               >
-                Apenas inventariados
+                Apenas patrimoniado
               </Button>
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 <Trash size={16} />
@@ -2204,7 +2206,8 @@ export function ItensVitrine() {
                                     } [&>[data-radix-scroll-area-viewport]]:w-full [&>[data-radix-scroll-area-viewport]]:max-w-full [&>[data-radix-scroll-area-viewport]]:min-w-0 [&>[data-radix-scroll-area-viewport]>div]:w-full [&>[data-radix-scroll-area-viewport]>div]:max-w-full [&>[data-radix-scroll-area-viewport]>div]:min-w-0`}
                                   >
                                     {(loading || loadingColumns[col.key]) &&
-                                    !items.length ? (
+                                    !items.length &&
+                                    col.key != "DESCARTADOS" ? (
                                       <>
                                         <Skeleton className="aspect-square w-full rounded-md" />
                                         <Skeleton className="aspect-square mt-2 w-full rounded-md" />
@@ -2298,6 +2301,25 @@ export function ItensVitrine() {
                                         </div>
                                       );
                                     })()}
+
+                                    {col.key === "DESCARTADOS" ? (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="lg"
+                                          onClick={() =>
+                                            navigate("/dashboard/remocao", {
+                                              replace: true,
+                                            })
+                                          }
+                                        >
+                                          <Trash2 size={16} />
+                                          Ir para coleções de Descarte
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <></>
+                                    )}
 
                                     <ScrollBar orientation="vertical" />
                                   </ScrollArea>
