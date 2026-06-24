@@ -157,12 +157,12 @@ export interface CollectionDTO {
   id: UUID;
   name: string;
   description: string;
-  user_id: UUID;
+  user_id?: UUID;
   created_at: ISODateString;
   items: CollectionItemDTO[];
   sei_process?: string;
   document_path?: string;
-  user: UserDTO;
+  user?: UserDTO;
 }
 
 export function CollectionPage() {

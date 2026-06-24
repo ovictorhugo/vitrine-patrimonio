@@ -341,7 +341,6 @@ export function CollectionPage() {
 
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [lfdItems, setLfdItems] = useState<Catalog[]>([]);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [selectedLfdItems, setSelectedLfdItems] = useState<Set<string>>(
     new Set(),
   );
@@ -349,7 +348,6 @@ export function CollectionPage() {
     Set<string>
   >(new Set());
   const [addingToCollection, setAddingToCollection] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [excludeNI, setExcludeNI] = useState(false);
 
   // loading da coleção (nome, descrição, etc.)
@@ -554,7 +552,7 @@ export function CollectionPage() {
         setLfdItems(data.catalog_entries);
       } else {
         params.delete("not_in_collection");
-        const url = `${urlGeral}collection_items/${collection_id}${
+        const url = `${urlGeral}collections/cards/${collection_id}${
           params.toString() ? `?${params.toString()}` : ""
         }`;
 
@@ -812,16 +810,12 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens adicionados com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens adicionados com sucesso!");
       setSelectedLfdItems(new Set());
       fetchCollectionItems();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setAddingToCollection(false);
       fetchStatistics();
@@ -861,12 +855,9 @@ export function CollectionPage() {
       toast.success("Itens recusados com sucesso!");
       setSelectedCollectionItems(new Set());
       setRefuseOpen(false);
-      fetchCollectionItems();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setRefusing(false);
       fetchStatistics();
@@ -918,9 +909,7 @@ export function CollectionPage() {
           `${successCount} itens removidos, mas ${failCount} falharam.`,
         );
       } else {
-        toast.success("Itens removidos com sucesso!", {
-          duration: 12000,
-        });
+        toast.success("Itens removidos com sucesso!");
       }
 
       setSelectedCollectionItems(new Set());
@@ -928,9 +917,7 @@ export function CollectionPage() {
       fetchCollectionItems();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setRemovingSelected(false);
       fetchStatistics();
@@ -949,7 +936,7 @@ export function CollectionPage() {
     try {
       setLoadingCollection(true);
       const res = await fetch(
-        `${urlGeral}collections/${collectionId}?admin=${hasAdministrativo}`,
+        `${urlGeral}collections/${collectionId}`,
         {
           method: "GET",
           headers: authHeaders,
@@ -975,7 +962,6 @@ export function CollectionPage() {
     } finally {
       setLoadingCollection(false);
       fetchStatistics();
-      fetchCollectionItems();
     }
   };
 
@@ -1073,9 +1059,7 @@ export function CollectionPage() {
       fetchCollectionItems();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setAddingByFilter(false);
       fetchStatistics();
@@ -1114,17 +1098,13 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Itens removidos com sucesso!", {
-        duration: 12000,
-      });
+      toast.success("Itens removidos com sucesso!");
       setRemoveFilterOpen(false);
       fetchCollectionItems();
       fetchStatistics();
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao excluir a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao excluir a coleção. Tente novamente mais tarde.");
     } finally {
       setRemovingByFilter(false);
       fetchStatistics();
@@ -1171,9 +1151,7 @@ export function CollectionPage() {
       setSeiProcess("");
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setSeiLoading(false);
       fetchCollection();
@@ -1211,9 +1189,7 @@ export function CollectionPage() {
       setEditOpen(false);
     } catch (e: any) {
       console.error(e);
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setUpdateLoading(false);
     }
@@ -1241,14 +1217,10 @@ export function CollectionPage() {
         toast.error("Erro", { description: errorMessage });
         return;
       }
-      toast.success("Coleção deletada com sucesso.", {
-        duration: 12000,
-      });
+      toast.success("Coleção deletada com sucesso.");
       navigate("/removiveis", { replace: true });
     } catch (e: any) {
-      toast.error(
-        "Falha ao atualizar a coleção. Tente novamente mais tarde.",
-      );
+      toast.error("Falha ao atualizar a coleção. Tente novamente mais tarde.");
     } finally {
       setDeleteLoading(false);
     }
@@ -1346,7 +1318,7 @@ export function CollectionPage() {
       </Helmet>
       <main className="flex flex-col gap-8  flex-1 min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center p-8 pb-0 justify-between flex-wrap gap-3">
+        <div className="flex items-center p-8 py-0 justify-between flex-wrap gap-3">
           <div className="flex gap-2 items-center">
             <Button
               onClick={() => navigate("/removiveis", { replace: true })}
@@ -1363,77 +1335,77 @@ export function CollectionPage() {
             </h1>
           </div>
 
-          {hasColecoes && (
-            <div
-              className={
-                isMobile
-                  ? "flex flex-col items-center gap-4 w-full"
-                  : "flex items-start gap-4"
-              }
-            >
-              <div className="flex gap-2 w-full items-center">
-                {collection.document_path && collection.sei_process ? (
-                  <Alert className="p-2 items-center text-white bg-red-500 border-0">
-                    Documentação Finalizada
-                  </Alert>
-                ) : (
-                  ""
-                )}
-                <Button
-                  className="flex-1"
-                  variant="outline"
-                  disabled={!!collection.sei_process}
-                  onClick={() => setSeiOpen(true)}
-                >
-                  <FileArchive size={16} />
-                  {collection.sei_process
-                    ? collection.sei_process
-                    : "Travar coleção"}
-                </Button>
+          <div
+            className={
+              isMobile
+                ? "flex flex-col items-center gap-4 w-full"
+                : "flex items-start gap-4"
+            }
+          >
+            <div className="flex gap-2 w-full items-center">
+              {collection.document_path &&
+              collection.sei_process &&
+              !loadingItems ? (
+                <Alert className="p-2 items-center text-white bg-red-500 border-0">
+                  Documentação Finalizada
+                </Alert>
+              ) : (
+                ""
+              )}
+              <Button
+                className="flex-1"
+                variant="outline"
+                disabled={!!collection.sei_process}
+                onClick={() => setSeiOpen(true)}
+              >
+                <FileArchive size={16} />
+                {collection.sei_process
+                  ? collection.sei_process
+                  : "Travar coleção"}
+              </Button>
 
-                {collection.sei_process ? (
-                  collection.document_path ? (
-                    <Button
-                      onClick={(e) => e.stopPropagation()}
-                      disabled={true}
-                      variant="outline"
-                    >
-                      Processo finalizado
-                    </Button>
-                  ) : (
-                    <DownloadPdfButton
-                      filters={{ collection_id: collection_id || undefined }}
-                      id={collection_id || undefined}
-                      label="Baixar documentação"
-                      method="colecao_removiveis"
-                    />
-                  )
-                ) : (
+              {collection.sei_process ? (
+                collection.document_path ? (
                   <Button
                     onClick={(e) => e.stopPropagation()}
                     disabled={true}
                     variant="outline"
                   >
-                    <Download size={16} className="mr-2" /> Baixar documentação
+                    Processo finalizado
                   </Button>
-                )}
+                ) : (
+                  <DownloadPdfButton
+                    filters={{ collection_id: collection_id || undefined }}
+                    id={collection_id || undefined}
+                    label="Baixar documentação"
+                    method="colecao_removiveis"
+                  />
+                )
+              ) : (
                 <Button
-                  className="flex-1"
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={true}
                   variant="outline"
-                  onClick={() => setEditOpen(true)}
                 >
-                  <Pencil size={16} />
+                  <Download size={16} className="mr-2" /> Baixar documentação
                 </Button>
-                <Button
-                  className="flex-1"
-                  variant="destructive"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash size={16} />
-                </Button>
-              </div>
+              )}
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil size={16} />
+              </Button>
+              <Button
+                className="flex-1"
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash size={16} />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 ">
           <div className="justify-center px-4 md:px-8 w-full mx-auto flex flex-col items-center gap-2 mt-4">
@@ -1447,7 +1419,7 @@ export function CollectionPage() {
             </div>
           </div>
           {/* Cards de status (usando estatísticas agregadas) */}
-          <div className="flex flex-col sm:flex-row justify-end gap-8 px-8">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 px-8">
             <Alert className="p-0 min-w-[200px] w-[30%]">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -1505,23 +1477,242 @@ export function CollectionPage() {
             </div>
           </div>
 
+          {/* Barra de filtros da lista principal */}
+          <div className="p-4">
+            <div className="relative grid grid-cols-1 ">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute left-0 z-10 h-10 ${
+                  isMobile ? "w-5" : "w-10"
+                } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+
+              <div className={isMobile ? "mx-8" : "mx-14"}>
+                <div
+                  ref={scrollAreaRef}
+                  className="overflow-x-auto scrollbar-hide"
+                  onScroll={checkScrollability}
+                >
+                  <div className="flex gap-3 items-center">
+                    {value === "available" && (
+                      <Button
+                        variant="default"
+                        className="px-3 min-w-fit h-10"
+                        onClick={() => setFilterOpen(true)}
+                        title="Adicionar por filtros"
+                      >
+                        <PlusCircle size={16} /> Adicionar por filtros
+                      </Button>
+                    )}
+                    {value === "in-collection" && (
+                      <Button
+                        variant="destructive"
+                        className="px-3 min-w-fit h-10"
+                        onClick={() => setRemoveFilterOpen(true)}
+                        title="Remover por filtros"
+                      >
+                        <Trash size={16} /> Remover por filtros
+                      </Button>
+                    )}
+
+                    {/* Pesquisa */}
+                    <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
+                      <div>
+                        <Search size={16} className="text-gray-500" />
+                      </div>
+                      <div className="relative w-full">
+                        <Input
+                          className="border-0 p-0 h-9 flex flex-1 w-full"
+                          value={qMain}
+                          onChange={(e) => {
+                            setQMain(e.target.value.toUpperCase());
+                            setOffset(0);
+                          }}
+                          placeholder="Buscar por código, descrição, material, marca, modelo..."
+                          maxLength={30}
+                        />
+                      </div>
+                    </Alert>
+                    <Button
+                      variant={excludeNI ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setExcludeNI(!excludeNI);
+                        setOffset(0);
+                      }}
+                    >
+                      <ShieldCheck size={16} className="mr-2" />
+                      Apenas inventariados
+                    </Button>
+                    {/* Material e Responsável */}
+                    <Combobox
+                      items={materialItemsMain}
+                      value={materialIdMain}
+                      onChange={(v) => {
+                        setMaterialIdMain(v);
+                        setOffset(0);
+                      }}
+                      onSearch={setMaterialQ}
+                      isLoading={loadingMaterials}
+                      placeholder="Material"
+                    />
+                    <Combobox
+                      items={guardianItemsMain}
+                      value={guardianIdMain}
+                      onChange={(v) => {
+                        setGuardianIdMain(v);
+                        setOffset(0);
+                      }}
+                      onSearch={setGuardianQ}
+                      isLoading={loadingGuardians}
+                      placeholder="Responsável"
+                    />
+
+                    <Separator className="h-8" orientation="vertical" />
+
+                    {/* SELECTS EM CADEIA */}
+                    <Combobox
+                      items={(units ?? []).map((u) => ({
+                        id: u.id,
+                        code: u.unit_code,
+                        label: u.unit_name || u.unit_code,
+                      }))}
+                      value={unitId}
+                      onChange={(v) => {
+                        setUnitId(v);
+                        setOffset(0);
+                      }}
+                      placeholder="Unidade"
+                    />
+
+                    <Combobox
+                      items={(agencies ?? []).map((a) => ({
+                        id: a.id,
+                        code: a.agency_code,
+                        label: a.agency_name || a.agency_code,
+                      }))}
+                      value={agencyId}
+                      onChange={(v) => {
+                        setAgencyId(v);
+                        setOffset(0);
+                      }}
+                      placeholder={"Organização"}
+                      disabled={!unitId}
+                    />
+
+                    <Combobox
+                      items={(sectors ?? []).map((s) => ({
+                        id: s.id,
+                        code: s.sector_code,
+                        label: s.sector_name || s.sector_code,
+                      }))}
+                      value={sectorId}
+                      onChange={(v) => {
+                        setSectorId(v);
+                        setOffset(0);
+                      }}
+                      placeholder={"Setor"}
+                      disabled={!agencyId}
+                    />
+
+                    <Combobox
+                      items={(locations ?? []).map((l) => ({
+                        id: l.id,
+                        code: l.location_code,
+                        label: l.location_name || l.location_code,
+                      }))}
+                      value={locationId}
+                      onChange={(v) => {
+                        setLocationId(v);
+                        setOffset(0);
+                      }}
+                      placeholder="Local de guarda"
+                      disabled={!sectorId}
+                    />
+
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      <Trash size={16} /> Limpar filtros
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className={`absolute right-0 z-10 h-10 ${
+                  isMobile ? "w-5" : "w-10"
+                } p-0 rounded-md ${
+                  !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                onClick={scrollRight}
+                disabled={!canScrollRight}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </div>
           {value !== "administrator" && value !== "docs" && (
             <>
-              <div className="flex justify-start gap-4 mb-4 px-8 pt-4">
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setViewMode((prev) => (prev === "list" ? "grid" : "list"))
-                  }
-                >
-                  {viewMode === "list" ? (
-                    <List size={16} className="mr-2" />
-                  ) : (
-                    <LayoutGrid size={16} className="mr-2" />
-                  )}
-                  {viewMode === "list" ? "Lista" : "Grade"}
-                </Button>
+              <div className="flex gap-4 mb-4 px-8 justify-end">
+                {value === "available" && (
+                  <Button
+                    onClick={handleAddSelectedToCollection}
+                    disabled={
+                      addingToCollection ||
+                      selectedLfdItems.size === 0 ||
+                      !!collection?.document_path ||
+                      !!collection?.sei_process
+                    }
+                    className="h-9"
+                    title={
+                      !!collection?.document_path
+                        ? "Ações desabilitadas: Parecer técnico já enviado"
+                        : "Adicionar à coleção"
+                    }
+                  >
+                    {addingToCollection ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    {selectedLfdItems.size > 0
+                      ? `Adicionar ${selectedLfdItems.size} ${selectedLfdItems.size === 1 ? "item" : "itens"} à coleção`
+                      : "Adicionar à coleção"}
+                  </Button>
+                )}
+                {value === "in-collection" && (
+                  <div className="flex gap-2">
+                    {!(
+                      !!collection?.document_path || !!collection?.sei_process
+                    ) && (
+                      <Button
+                        className="px-3 min-w-fit h-9"
+                        variant="destructive"
+                        onClick={() => setRemoveSelectedOpen(true)}
+                        title={
+                          !!collection?.document_path ||
+                          !!collection?.sei_process
+                            ? "Ações desabilitadas: Parecer técnico ou nome do processo já enviado"
+                            : "Remover selecionados da coleção"
+                        }
+                        disabled={
+                          selectedCollectionItems.size === 0 ||
+                          !!collection?.document_path ||
+                          !!collection?.sei_process
+                        }
+                      >
+                        <Trash2 size={16} className="mr-2" /> Remover itens da
+                        coleção
+                      </Button>
+                    )}
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -1552,254 +1743,7 @@ export function CollectionPage() {
                   <CheckSquare size={16} className="mr-2" />
                   Selecionar todos
                 </Button>
-
-                {value === "available" && (
-                  <Button
-                    onClick={handleAddSelectedToCollection}
-                    disabled={
-                      addingToCollection ||
-                      selectedLfdItems.size === 0 ||
-                      !!collection?.document_path ||
-                      !!collection?.sei_process
-                    }
-                    className="h-9"
-                    title={
-                      !!collection?.document_path
-                        ? "Ações desabilitadas: Parecer técnico já enviado"
-                        : "Adicionar à coleção"
-                    }
-                  >
-                    {addingToCollection ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="mr-2 h-4 w-4" />
-                    )}
-                    {selectedLfdItems.size > 0
-                      ? `Adicionar ${selectedLfdItems.size} ${selectedLfdItems.size === 1 ? "item" : "itens"} à coleção`
-                      : "Adicionar à coleção"}
-                  </Button>
-                )}
-                {value === "in-collection" && (
-                  <div className="flex gap-2">
-                    <Button
-                      className="px-3 min-w-fit h-9"
-                      variant="destructive"
-                      onClick={() => setRemoveSelectedOpen(true)}
-                      title={
-                        !!collection?.document_path || !!collection?.sei_process
-                          ? "Ações desabilitadas: Parecer técnico ou nome do processo já enviado"
-                          : "Remover selecionados da coleção"
-                      }
-                      disabled={
-                        selectedCollectionItems.size === 0 ||
-                        !!collection?.document_path ||
-                        !!collection?.sei_process
-                      }
-                    >
-                      <Trash2 size={16} className="mr-2" /> Remover itens
-                    </Button>
-                  </div>
-                )}
-
-                <div className="ml-auto">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowFilters((s) => !s)}
-                  >
-                    <SlidersHorizontal size={16} className="mr-2" />
-                    {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-                  </Button>
-                </div>
               </div>
-
-              {/* Barra de filtros da lista principal */}
-              {showFilters && (
-                <div className="p-8 pt-0 pb-4">
-                  <div className="relative grid grid-cols-1 ">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`absolute left-0 z-10 h-10 ${
-                        isMobile ? "w-5" : "w-10"
-                      } p-0 ${!canScrollLeft ? "opacity-30 cursor-not-allowed" : ""}`}
-                      onClick={scrollLeft}
-                      disabled={!canScrollLeft}
-                    >
-                      <ChevronLeft size={16} />
-                    </Button>
-
-                    <div className={isMobile ? "mx-8" : "mx-14"}>
-                      <div
-                        ref={scrollAreaRef}
-                        className="overflow-x-auto scrollbar-hide"
-                        onScroll={checkScrollability}
-                      >
-                        <div className="flex gap-3 items-center">
-                          {value === "available" && (
-                            <Button
-                              variant="default"
-                              className="px-3 min-w-fit h-10"
-                              onClick={() => setFilterOpen(true)}
-                              title="Adicionar por filtros"
-                            >
-                              <PlusCircle size={16} />
-                            </Button>
-                          )}
-                          {value === "in-collection" && (
-                            <Button
-                              variant="destructive"
-                              className="px-3 min-w-fit h-10"
-                              onClick={() => setRemoveFilterOpen(true)}
-                              title="Remover por filtros"
-                            >
-                              <Trash size={16} />
-                            </Button>
-                          )}
-
-                          <Button
-                            variant={excludeNI ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              setExcludeNI(!excludeNI);
-                              setOffset(0);
-                            }}
-                          >
-                            <ShieldCheck size={16} className="mr-2" />
-                            Apenas inventariados
-                          </Button>
-                          {/* Pesquisa */}
-                          <Alert className="w-[300px] min-w-[300px] py-0 h-10 rounded-md flex gap-3 items-center">
-                            <div>
-                              <Search size={16} className="text-gray-500" />
-                            </div>
-                            <div className="relative w-full">
-                              <Input
-                                className="border-0 p-0 h-9 flex flex-1 w-full"
-                                value={qMain}
-                                onChange={(e) => {
-                                  setQMain(e.target.value.toUpperCase());
-                                  setOffset(0);
-                                }}
-                                placeholder="Buscar por código, descrição, material, marca, modelo..."
-                                maxLength={30}
-                              />
-                            </div>
-                          </Alert>
-
-                          {/* Material e Responsável */}
-                          <Combobox
-                            items={materialItemsMain}
-                            value={materialIdMain}
-                            onChange={(v) => {
-                              setMaterialIdMain(v);
-                              setOffset(0);
-                            }}
-                            onSearch={setMaterialQ}
-                            isLoading={loadingMaterials}
-                            placeholder="Material"
-                          />
-                          <Combobox
-                            items={guardianItemsMain}
-                            value={guardianIdMain}
-                            onChange={(v) => {
-                              setGuardianIdMain(v);
-                              setOffset(0);
-                            }}
-                            onSearch={setGuardianQ}
-                            isLoading={loadingGuardians}
-                            placeholder="Responsável"
-                          />
-
-                          <Separator className="h-8" orientation="vertical" />
-
-                          {/* SELECTS EM CADEIA */}
-                          <Combobox
-                            items={(units ?? []).map((u) => ({
-                              id: u.id,
-                              code: u.unit_code,
-                              label: u.unit_name || u.unit_code,
-                            }))}
-                            value={unitId}
-                            onChange={(v) => {
-                              setUnitId(v);
-                              setOffset(0);
-                            }}
-                            placeholder="Unidade"
-                          />
-
-                          <Combobox
-                            items={(agencies ?? []).map((a) => ({
-                              id: a.id,
-                              code: a.agency_code,
-                              label: a.agency_name || a.agency_code,
-                            }))}
-                            value={agencyId}
-                            onChange={(v) => {
-                              setAgencyId(v);
-                              setOffset(0);
-                            }}
-                            placeholder={"Organização"}
-                            disabled={!unitId}
-                          />
-
-                          <Combobox
-                            items={(sectors ?? []).map((s) => ({
-                              id: s.id,
-                              code: s.sector_code,
-                              label: s.sector_name || s.sector_code,
-                            }))}
-                            value={sectorId}
-                            onChange={(v) => {
-                              setSectorId(v);
-                              setOffset(0);
-                            }}
-                            placeholder={"Setor"}
-                            disabled={!agencyId}
-                          />
-
-                          <Combobox
-                            items={(locations ?? []).map((l) => ({
-                              id: l.id,
-                              code: l.location_code,
-                              label: l.location_name || l.location_code,
-                            }))}
-                            value={locationId}
-                            onChange={(v) => {
-                              setLocationId(v);
-                              setOffset(0);
-                            }}
-                            placeholder="Local de guarda"
-                            disabled={!sectorId}
-                          />
-
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={clearFilters}
-                          >
-                            <Trash size={16} /> Limpar filtros
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`absolute right-0 z-10 h-10 ${
-                        isMobile ? "w-5" : "w-10"
-                      } p-0 rounded-md ${
-                        !canScrollRight ? "opacity-30 cursor-not-allowed" : ""
-                      }`}
-                      onClick={scrollRight}
-                      disabled={!canScrollRight}
-                    >
-                      <ChevronRight size={16} />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -1807,15 +1751,8 @@ export function CollectionPage() {
           <InCollectionTab
             loadingItems={loadingItems}
             items={items}
-            collection_id={collection_id}
-            setCountDesfazimento={setCountDesfazimento}
-            setCountNaoDesfazimento={setCountNaoDesfazimento}
-            setItems={setItems}
-            handleItemDeleted={handleItemDeleted}
-            viewMode={viewMode}
             selectedItems={selectedCollectionItems}
             toggleItem={toggleCollectionItem}
-            collection={collection}
           />
 
           <AdministratorTab
@@ -1826,7 +1763,7 @@ export function CollectionPage() {
             setCountNaoDesfazimento={setCountNaoDesfazimento}
             setItems={setItems}
             handleItemDeleted={handleItemDeleted}
-            viewMode={viewMode}
+            viewMode={"grid"}
             selectedItems={selectedCollectionItems}
             toggleItem={toggleCollectionItem}
             reload={fetchCollection}
@@ -1839,9 +1776,7 @@ export function CollectionPage() {
               {loadingItems ? (
                 <div
                   className={
-                    viewMode === "list"
-                      ? "grid sm:grid-cols-2 gap-4"
-                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+                    "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-2"
                   }
                 >
                   {skeletons.map((item, index) => (
@@ -1857,33 +1792,17 @@ export function CollectionPage() {
               ) : (
                 <div
                   className={
-                    viewMode === "list"
-                      ? "grid sm:grid-cols-2 gap-4"
-                      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4"
+                    "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-1"
                   }
                 >
-                  {lfdItems.map((item) =>
-                    viewMode === "list" ? (
-                      <PatrimonioItemCollection
-                        key={item.id}
-                        invId={item.id}
-                        entry={item as any}
-                        collectionId=""
-                        itemId={item.id}
-                        sel="false"
-                        comm=""
-                        selected={selectedLfdItems.has(item.id)}
-                        onItemClick={toggleLfdItem}
-                      />
-                    ) : (
-                      <ItemPatrimonio
-                        key={item.id}
-                        {...(item as any)}
-                        selected={selectedLfdItems.has(item.id)}
-                        onItemClick={toggleLfdItem}
-                      />
-                    ),
-                  )}
+                  {lfdItems.map((item) => (
+                    <ItemPatrimonio
+                      key={item.id}
+                      {...(item as any)}
+                      selected={selectedLfdItems.has(item.id)}
+                      onItemClick={toggleLfdItem}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -1981,7 +1900,7 @@ export function CollectionPage() {
               <Textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                maxLength={100}
+                maxLength={200}
               />
             </div>
           </div>
@@ -2041,7 +1960,7 @@ export function CollectionPage() {
               Travar coleção
             </DialogTitle>
             <DialogDescription className="text-zinc-500">
-              Adicione um nome para este processo para travar a coleção. Esse
+              Adicione um número para este processo para travar a coleção. Esse
               processo não é reversível
             </DialogDescription>
           </DialogHeader>
@@ -2132,7 +2051,7 @@ export function CollectionPage() {
                 {locations?.find((l) => l.id === locationId)?.location_code ||
                   locationId}
               </p>
-            )}{" "}
+            )}
             {excludeNI && (
               <p>
                 <strong>Apenas itens patrimoniados</strong>
@@ -2142,8 +2061,8 @@ export function CollectionPage() {
               !materialIdMain &&
               !guardianIdMain &&
               !unitId &&
-              !excludeNI &&
               !agencyId &&
+              !excludeNI &&
               !sectorId &&
               !locationId && (
                 <p>

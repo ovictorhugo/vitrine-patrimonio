@@ -109,16 +109,15 @@ export function AdministratorTab({
   return (
     <TabsContent value="administrator">
       <div className="p-8 pt-0">
-        <div className="p-6 pb-4 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-          {collection?.document_path
-            ? "Parecer adicionado"
-            : "Parecer não adicionado"}
-        </div>
-        <div className="flex gap-4 mb-6 max-w-[500px]">
+        <div className="flex justify-center gap-4 mt-16">
           <Button
             variant="destructive"
             onClick={() => handleAdminAction(2)}
-            disabled={actionLoading === 2 || !collection_id || !items.some((item) => item.is_approved === true)}
+            disabled={
+              actionLoading === 2 ||
+              !collection_id ||
+              items.some((item) => item.is_approved === null)
+            }
           >
             {actionLoading === 2 ? (
               <Loader2 size={16} className="mr-2 animate-spin" />
@@ -134,7 +133,7 @@ export function AdministratorTab({
             disabled={
               actionLoading === 4 ||
               !collection_id ||
-              items.some((item) => item.is_approved === true) ||
+              !items.some((item) => item.is_approved === null) ||
               !collection?.document_path
             }
           >
@@ -167,7 +166,11 @@ export function AdministratorTab({
           <Button
             variant="destructive"
             onClick={() => handleAdminAction(1)}
-            disabled={actionLoading === 1 || !collection_id || !!collection?.sei_process && items.length > 0}
+            disabled={
+              actionLoading === 1 ||
+              !collection_id ||
+              (!!collection?.sei_process && items.length > 0)
+            }
           >
             {actionLoading === 1 ? (
               <Loader2 size={16} className="mr-2 animate-spin" />

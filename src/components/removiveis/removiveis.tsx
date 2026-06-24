@@ -142,7 +142,7 @@ export function Removiveis() {
           method: "POST",
           headers: authHeaders,
           body: JSON.stringify({
-            description,
+            description: description,
             name: key,
             type: "REMOCAO_DISPONIVEIS",
           }),
@@ -304,9 +304,7 @@ export function Removiveis() {
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Voltar</span>
           </Button>
-          <h1 className="text-xl font-semibold tracking-tight">
-            Descarte
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight">Descarte</h1>
         </div>
 
         <div className="hidden gap-3 items-center xl:flex">
